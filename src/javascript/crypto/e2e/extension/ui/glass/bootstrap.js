@@ -19,32 +19,29 @@
  */
 
 goog.require('e2e.ext.ui.Glass');
+goog.require('e2e.ext.utils.text');
 goog.require('goog.crypt.base64');
 
 goog.provide('e2e.ext.ui.glass.bootstrap');
 
-
-/**
- * The list of origins that can use the looking glass.
- * @type {!Array.<string>}
- * @const
- */
-var LOOKING_GLASS_WHITELIST = [
-  'https://mail.google.com'
-];
-
 // Create the looking glass.
-window.addEventListener('message', function(evt) {
-  if (LOOKING_GLASS_WHITELIST.indexOf(evt.origin) == -1) {
+var initLookingGlass = function(evt) {
+  if (!(e2e.ext.utils.text.isYmailOrigin(evt.origin) ||
+        e2e.ext.utils.text.isGmailOrigin(evt.origin))) {
     return;
   }
-
-  var pgpMessage = evt.data ? evt.data : '';
+  var input = evt.data ? JSON.parse(evt.data) : null;
+  var pgpMessage = input.string;
   /** @type {e2e.ext.ui.Glass} */
   window.lookingGlass = new e2e.ext.ui.Glass(
-      goog.crypt.base64.decodeString(pgpMessage, true));
+    goog.crypt.base64.decodeString(pgpMessage, true),
+    input.mode, input.origin, input.selector);
   window.lookingGlass.decorate(document.documentElement);
-});
+
+  window.removeEventListener('message', initLookingGlass);
+};
+
+window.addEventListener('message', initLookingGlass);
 
 
 /**

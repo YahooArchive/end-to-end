@@ -26,6 +26,7 @@ goog.require('goog.array');
 goog.require('goog.format.EmailAddress');
 goog.require('goog.string');
 goog.require('goog.string.format');
+goog.require('goog.Uri');
 
 
 goog.scope(function() {
@@ -116,4 +117,27 @@ utils.extractValidEmail = function(recipient) {
   return email;
 };
 
-});  // goog.scope
+
+/**
+ * Checks whether a URI is an HTTPS ymail origin.
+ * @param {string} uri Full URI string of the origin.
+ * @return {boolean}
+ */
+utils.isYmailOrigin = function(uri) {
+  uri = new goog.Uri(uri);
+  return (uri.getScheme() === 'https'
+          && goog.string.endsWith(uri.getDomain(), '.mail.yahoo.com'));
+};
+
+
+/**
+ * Checks whether a URI is an HTTPS Gmail origin.
+ * @param {string} uri Full URI string of the origin.
+ * @return {boolean}
+ */
+utils.isGmailOrigin = function(uri) {
+  uri = new goog.Uri(uri);
+  return (uri.getScheme() === 'https' &&
+          uri.getDomain() === 'mail.google.com');
+};
+}); // goog.scope

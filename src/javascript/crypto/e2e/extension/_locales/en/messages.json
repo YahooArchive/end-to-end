@@ -39,9 +39,9 @@
     "message": "Insert into the page",
     "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into the page."
   },
-  "promptEncryptSignInsertIntoGmailLabel": {
-    "message": "Insert into the compose window",
-    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into Gmail."
+  "promptEncryptSignInsertIntoSupportedLabel": {
+    "message": "Insert into Compose",
+    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into a supported provider."
   },
   "promptEncryptSignSaveDraftLabel": {
     "message": "Save encrypted draft",
@@ -104,15 +104,15 @@
     "description": "A sentence notifying that user needs to chose a passphrase or recipients in order to encrypt and sign a message."
   },
   "glassKeyringLockedError": {
-    "message": "Please unlock the KeyRing before reading messages inline. To do this, please click the End-To-End icon in the upper-right area of the screen.",
-    "description": "An error message indicating that the user must unlock their KeyRing before reading messages inline."
+    "message": "Please unlock the KeyRing to use End to End. Click the End-To-End icon in the URL bar, then reload this message.",
+    "description": "An error message indicating that the user must unlock their KeyRing."
   },
   "glassCannotDecrypt": {
-    "message": "Unable to decrypt contents. Please try reloading the page and clicking the End-To-End icon in the upper right corner of the screen.",
+    "message": "Unable to decrypt contents.",
     "description": "A generic error message indicating that something went wrong while reading messages inline."
   },
   "actionUserSpecified": {
-    "message": "Select an End-To-End action...",
+    "message": "Select an action...",
     "description": "A phrase prompting the user to select a PGP action."
   },
   "actionUnlockKeyring": {
@@ -130,6 +130,10 @@
   "actionConfigureExtension": {
     "message": "Options",
     "description": "A short phrase directing the user how to configure/manage the extension."
+  },
+  "actionLockKeyring": {
+    "message": "Lock keyring",
+    "description": "A short phrase directing the user to lock their keyring."
   },
   "actionCancelPgpAction": {
     "message": "Cancel",
@@ -216,11 +220,11 @@
     "description": "A sentence confirming that the user has successfully changed the keyring's passphrase."
   },
   "genKeyTitle": {
-    "message": "Sign up to receive secret messages",
+    "message": "Generate a new PGP key",
     "description": "A section title indicating where the user can generate a new PGP key."
   },
   "genKeyEmailLabel": {
-    "message": "Please enter the email address you will use to receive secret messages.\nNote that everyone will know you can receive secret messages here.",
+    "message": "Please enter your email address so we can make your keys:\n(We won't do anything else with this email address.)",
     "description": "A sentence fragment prompting the user to provide his/her email address."
   },
   "genKeyPassphraseLabel": {
@@ -228,15 +232,15 @@
     "description": "A noun indicating where the user needs to specify a passphrase for her new PGP key."
   },
   "genKeyGenerateButtonLabel": {
-    "message": "Sign Up",
-    "description": "A verb prompting the user to register to receive secret messages."
+    "message": "Make key",
+    "description": "A verb prompting the user to generate a new PGP key."
   },
   "settingsTitle": {
     "message": "End-To-End Keys and Settings",
     "description": "A page title indicating to the user that the current page will allow her to modify the extension's settings."
   },
   "settingsKeyringLockedError": {
-    "message": "Please unlock the KeyRing or set an initial KeyRing passphrase before using the Options page. To do this, please click the lock icon in the upper-right area of the screen.",
+    "message": "Please unlock the KeyRing or set an initial KeyRing passphrase before using the Options page.",
     "description": "An error message indicating that the user must unlock their KeyRing and/or choose an initial passphrase for the KeyRing before using the Options page."
   },
   "promptRecipientsPlaceholder": {
@@ -320,7 +324,7 @@
     "description": "A sentence describing instructions."
   },
   "welcomeBasicsLine2": {
-    "message": "Here's a short demonstration how you could use the extension in GMail:",
+    "message": "Here's a short demonstration how you could use the extension in GMail or Yahoo Mail:",
     "description": "A sentence describing a link to an instruction video or screenshot."
   },
   "welcomeBasicsLine3": {
@@ -355,6 +359,10 @@
     "message": "Unable to open keyring. Please enter your keyring's passphrase.",
     "description": "A message describing keyring access problems and prompting the user to enter passphrase."
   },
+  "passphraseIncorrectWarning": {
+    "message": "Passphrase is incorrect.",
+    "description": "A message informing the user that passphrase validation failed."
+  },
   "preferencesSectionTitle": {
     "message": "Extension preferences",
     "description": "A section title, can be a sentence fragment"
@@ -368,8 +376,8 @@
     "description": "A sentence prompting the user to prevent the extension from guessing the intended actions."
   },
   "preferenceLookingGlass": {
-    "message": "Show the decrypted text inside Gmail when possible.",
-    "description": "A sentence prompting the user to enable the looking glass for Gmail."
+    "message": "Show the decrypted text inside supported email providers when possible.",
+    "description": "A sentence prompting the user to enable the looking glass in supported providers."
   },
   "throttleErrorMsg": {
     "message": "The requested operation cannot be performed at this time. Please try again in 1 minute.",
@@ -390,6 +398,13 @@
   "dialogSelectAll": {
     "message": "Select all",
     "description": "A fragment indicating to the user to select all items in the dialog."
+  },
+  "lookingGlassTitle": {
+    "message": "Secure message",
+    "description": "Text that appears at the top of a looking glass."
+  },
+  "composeGlassTitle": {
+    "message": "Secure Compose is active!",
+    "description": "Title of the pageAction when Secure Compose is active."
   }
-
 }

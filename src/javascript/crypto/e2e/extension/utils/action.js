@@ -120,14 +120,16 @@ utils.getSelectedContent = function(callback, errorCallback, opt_scope) {
  *     encountered.
  * @param {T=} opt_scope Optional. The scope in which the function and the
  *     callbacks will be called.
+ * @param {string=} opt_subject Optional. The subject of the message.
  * @template T
  */
 utils.updateSelectedContent = function(content, recipients, origin,
-    expectMoreUpdates, callback, errorCallback, opt_scope) {
+    expectMoreUpdates, callback, errorCallback, opt_scope, opt_subject) {
   var scope = opt_scope || goog.global;
+  var subject = opt_subject || '';
   utils.getExtensionLauncher(function(launcher) {
     launcher.updateSelectedContent(content, recipients, origin,
-        expectMoreUpdates, goog.bind(callback, scope));
+        expectMoreUpdates, subject, goog.bind(callback, scope));
   }, errorCallback, opt_scope);
 };
 

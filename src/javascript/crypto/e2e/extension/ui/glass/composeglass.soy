@@ -1,0 +1,106 @@
+// Copyright 2013 Yahoo Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+{namespace e2e.ext.ui.templates.composeglass autoescape="strict"}
+
+
+/**
+ * Renders the base layout for the Compose Glass UI.
+ * @param extName The name of the extension.
+ */
+{template .main}
+  <html>
+    <head>
+      <title>{$extName}</title>
+      <link rel="stylesheet"/>
+    </head>
+    <body>
+      <div id="{e2e.ext.constants.ElementId.HEADER}">
+        <div>
+          <h1 id="{e2e.ext.constants.ElementId.TITLE}"></h1>
+        </div>
+      </div>
+      <div id="{e2e.ext.constants.ElementId.ERROR_DIV}"></div>
+      <div id="{e2e.ext.constants.ElementId.BODY}"></div>
+      <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
+    </body>
+  </html>
+{/template}
+
+
+/**
+ * Renders the required UI elements for PGP encryption.
+ * @param insertCheckboxEnabled A boolean flag if the insert checkbox should be displayed.
+ * @param fromLabel The label to describe the "From:" select box.
+ * @param noPrivateKeysFound The label to inform the user that he needs a private key to use
+ *      signing functionality
+ * @param signerCheckboxTitle The label for the checkbox to sign messages.
+ * @param availableSigningKeys The keys that can be used to sign a message.
+ * @param passphraseEncryptionLinkTitle The title for the passphrase encryption link.
+ * @param backButtonTitle The title for the back button.
+ * @param actionButtonTitle The title of the prompt button.
+ * @param saveDraftButtonTitle The title of the save button.
+ * @param insertButtonTitle The title of the insert button.
+ * @param optionsButtonTitle The title of the options button.
+ * @param cancelButtonTitle The title of the cancel button.
+ * @param subject The value of the subject field.
+ */
+{template .renderEncrypt}
+  <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}">
+    <div>{$fromLabel}</div>
+    <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"
+      {if length($availableSigningKeys) == 0}disabled{/if}
+    >
+      {foreach $key in $availableSigningKeys}
+        <option>{$key}</option>
+      {/foreach}
+    </select>
+    {if length($availableSigningKeys) == 0}{$noPrivateKeysFound}{/if}
+  </div>
+  <div id="{e2e.ext.constants.ElementId.CHIP_HOLDER}"></div>
+  <div id="{e2e.ext.constants.ElementId.PASSPHRASE_ENCRYPTION_LINK}">
+    + {$passphraseEncryptionLinkTitle}
+  </div>
+  <div id="subjectHolder">
+    <input type="text" placeholder="Subject:" value="{$subject}" />
+  </div>
+  <textarea></textarea>
+  <div class="{e2e.ext.constants.CssClass.HIDDEN}">
+    <input type="checkbox" id="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}"
+    {if length($availableSigningKeys) > 0}
+      checked
+    {else}
+      disabled
+    {/if}>
+    <label for="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
+      {$signerCheckboxTitle}
+    </label>
+  </div>
+  <div>
+  <button class="{e2e.ext.constants.CssClass.BACK}{sp}
+                 {e2e.ext.constants.CssClass.HIDDEN}">
+    <img src="images/back.png" title="{$backButtonTitle}"/>
+  </button>
+  <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
+  {if $insertCheckboxEnabled}
+    <button class="{e2e.ext.constants.CssClass.INSERT}{sp}
+                   {e2e.ext.constants.CssClass.HIDDEN}">
+      {$insertButtonTitle}
+    </button>
+    <button class="{e2e.ext.constants.CssClass.SAVE}">{$saveDraftButtonTitle}</button>
+  {/if}
+  <button class="{e2e.ext.constants.CssClass.OPTIONS}">{$optionsButtonTitle}</button>
+  <button class="{e2e.ext.constants.CssClass.CANCEL}">{$cancelButtonTitle}</button>
+  </div>
+{/template}

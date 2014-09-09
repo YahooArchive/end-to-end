@@ -264,6 +264,19 @@ api.Api.prototype.executeAction_ = function(callback, req) {
             });
           });
       break;
+    case constants.Actions.LIST_KEYS:
+      outgoing.error = this.runWrappedProcessor_(
+          /**@this api.Api */ function() {
+            this.pgpCtx_.getAllKeys(incoming.content == 'private').addCallback(
+                function(result) {
+                  outgoing.content = result;
+                  callback(outgoing);
+                }).addErrback(function(error) {
+                  outgoing.error = error.toString();
+                  callback(outgoing);
+                });
+          });
+      break;
   }
 
   if (outgoing.error) {

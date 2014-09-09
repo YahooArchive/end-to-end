@@ -23,14 +23,20 @@
 goog.provide('e2e.ext.Launcher');
 
 goog.require('e2e.ext.api.Api');
+goog.require('e2e.ext.constants');
 goog.require('e2e.ext.ui.preferences');
+goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.text');
+goog.require('e2e.openpgp.Context');
 goog.require('e2e.openpgp.ContextImpl');
+goog.require('goog.structs.Map');
 
 goog.scope(function() {
 var ext = e2e.ext;
 var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
 var preferences = e2e.ext.ui.preferences;
+var utils = e2e.ext.utils;
 
 
 
@@ -79,22 +85,24 @@ ext.Launcher = function() {
  * @param {string} origin The web origin where the original message was created.
  * @param {boolean} expectMoreUpdates True if more updates are expected. False
  *     if this is the final update to the selected content.
+ * @param {string} subject Subject of the message
  * @param {!function(...)} callback The function to invoke once the content has
  *     been updated.
  * @expose
  */
 ext.Launcher.prototype.updateSelectedContent =
-    function(content, recipients, origin, expectMoreUpdates, callback) {
+    function(content, recipients, origin, expectMoreUpdates, subject, callback) {
   this.getActiveTab_(goog.bind(function(tabId) {
     chrome.tabs.sendMessage(tabId, {
       value: content,
       response: true,
       detach: !Boolean(expectMoreUpdates),
       origin: origin,
-      recipients: recipients
+      recipients: recipients,
+      subject: subject
     });
     callback();
-  }, this));
+  }, this), true);
 };
 
 
@@ -110,18 +118,19 @@ ext.Launcher.prototype.getSelectedContent = function(callback) {
       editableElem: true,
       enableLookingGlass: preferences.isLookingGlassEnabled()
     }, callback);
-  }, this));
+  }, this), true);
 };
 
 
 /**
- * Finds the current active tab and determines if a helper script is running
- * inside of it. If no helper script is running, then one is injected.
+ * Finds the current active tab.
  * @param {!function(...)} callback The function to invoke once the active tab
  *     is found.
+ * @param {boolean=} runHelper Whether the helper script must be run first.
  * @private
  */
-ext.Launcher.prototype.getActiveTab_ = function(callback) {
+ext.Launcher.prototype.getActiveTab_ = function(callback, runHelper) {
+  runHelper = runHelper || false;
   chrome.tabs.query({
     active: true,
     currentWindow: true
@@ -137,9 +146,20 @@ ext.Launcher.prototype.getActiveTab_ = function(callback) {
       this.lastTabId_ = tab.id;
     }
 
-    chrome.tabs.executeScript(tab.id, {file: 'helper_binary.js'}, function() {
+    // The helper script is inserted automatically on all Yahoo Mail pages.
+    if (utils.text.isYmailOrigin(tab.url) || !runHelper) {
       callback(tab.id);
-    });
+    } else {
+      try {
+        chrome.tabs.executeScript(tab.id, {file: 'helper_binary.js'},
+                                  function () {
+          callback(tab.id);
+        });
+      } catch(e) {
+        // chrome-extension:// tabs will throw an error. Ignore.
+        callback(tab.id);
+      }
+    }
   }, this));
 };
 
@@ -148,7 +168,6 @@ ext.Launcher.prototype.getActiveTab_ = function(callback) {
  * Asks for the keyring passphrase and start the launcher. Will throw an
  * exception if the password is wrong.
  * @param {string=} opt_passphrase The passphrase of the keyring.
- * @expose
  */
 ext.Launcher.prototype.start = function(opt_passphrase) {
   this.start_(opt_passphrase || '');
@@ -161,7 +180,34 @@ ext.Launcher.prototype.start = function(opt_passphrase) {
  * @private
  */
 ext.Launcher.prototype.start_ = function(passphrase) {
+  // Add listeners to change Browser Action state
+  chrome.tabs.onActivated.addListener(goog.bind(function(activeInfo) {
+    chrome.tabs.get(activeInfo.tabId, goog.bind(function(tab) {
+      if (utils.text.isYmailOrigin(tab.url)) {
+        this.updateYmailBrowserAction_(activeInfo.tabId);
+      } else {
+        this.updatePassphraseWarning_();
+      }
+    }, this));
+  }, this));
+  chrome.tabs.onUpdated.addListener(goog.bind(function(tabId, changeInfo, tab) {
+    if (utils.text.isYmailOrigin(tab.url)) {
+      this.updateYmailBrowserAction_(tabId);
+    } else {
+      this.updatePassphraseWarning_();
+    }
+  }, this));
+
   this.pgpContext_.setKeyRingPassphrase(passphrase);
+  this.installResponseHandler_();
+
+  // All ymail tabs need to be reloaded for the e2ebind API to work
+  chrome.tabs.query({url: 'https://*.mail.yahoo.com/*'}, function(tabs) {
+    goog.array.forEach(tabs, function(tab) {
+      chrome.tabs.reload(tab.id);
+    });
+  });
+
   if (goog.global.chrome &&
       goog.global.chrome.runtime &&
       goog.global.chrome.runtime.getManifest) {
@@ -175,7 +221,127 @@ ext.Launcher.prototype.start_ = function(passphrase) {
   preferences.initDefaults();
 
   this.showWelcomeScreen_();
-  this.updatePassphraseWarning_();
+
+  // Proxy requests between content scripts in the active tab
+  chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
+    if (message.e2ebind || message.composeGlass) {
+      console.log('launcher.js got message to proxy', message);
+      this.getActiveTab_(goog.bind(function(tabId) {
+        // Execute the action, then forward the response to the correct tab.
+        this.executeRequest_(message, tabId, function(response) {
+          if (message.e2ebind) {
+            response.e2ebind = true;
+          } else if (message.composeGlass) {
+            response.composeGlass = true;
+          }
+          console.log('launcher.js sending', response);
+          chrome.tabs.sendMessage(tabId, response);
+        });
+      }, this));
+    }
+  }, this));
+};
+
+/**
+ * Stops the launcher. Called to lock the keyring.
+ */
+ext.Launcher.prototype.stop = function() {
+  this.started_ = false;
+  // Remove HTTP response modifier
+  this.removeResponseHandler_();
+  // Set the browseraction icon to red
+  this.getActiveTab_(goog.bind(function(tabId) {
+    this.updateYmailBrowserAction_(tabId);
+    chrome.tabs.reload(tabId);
+  }, this));
+  // Remove the API
+  this.ctxApi_.removeAPI();
+  // Unset the passphrase on the keyring
+  this.pgpContext_.unsetKeyringPassphrase();
+};
+
+/**
+* Execute a message'd request on the PGP content, then forward the response.
+* @param {Object} args - The args of this request. Always has at least an action property.
+* @param {number} tabId - The ID of the active tab
+* @param {Function} callback - Function to call with the result.
+* @private
+*/
+ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
+  if (args.action === 'get_private_keys') {
+    //TODO(yan): Refactor to use context API
+    this.getContext().getAllKeys(true).addCallback(function(keys) {
+      var result = [];
+      if (keys) {
+        keys = new goog.structs.Map(keys);
+        result = keys.getKeys();
+      }
+      callback({keys: result});
+    });
+  } else if (args.action === 'get_public_keys') {
+    //TODO(yan): Refactor to use context API
+    this.getContext().getAllKeys().addCallback(function(keys) {
+      var result = [];
+      if (keys) {
+        keys = new goog.structs.Map(keys);
+        result = keys.getKeys();
+      }
+      callback({keys: result});
+    });
+  } else if (args.action === 'get_started') {
+    callback({started: this.started_});
+  } else if (args.action === 'show_notification') {
+    utils.showNotification(args.msg, function() {
+      callback({});
+    });
+  } else if (args.action === 'popup_closed') {
+    callback({popup_closed: true});
+  } else if (args.action === 'glass_closed') {
+    callback({
+      glass_closed: true,
+      hash: args.hash
+    });
+  } else if (args.action === 'set_draft') {
+    callback({
+      value: args.value,
+      response: args.response,
+      detach: args.detach,
+      origin: args.origin,
+      recipients: args.recipients,
+      subject: args.subject
+    });
+  } else if (args.action === 'get_selected_content') {
+    callback({
+      editableElem: true,
+      enableLookingGlass: preferences.isLookingGlassEnabled()
+    });
+  } else if (args.action === 'open_options') {
+    chrome.tabs.create({
+      url: 'settings.html',
+      active: true
+    });
+    callback({});
+  } else if (args.action === 'change_pageaction') {
+    chrome.browserAction.setTitle({
+      tabId: tabId,
+      title: chrome.i18n.getMessage('composeGlassTitle')
+    });
+    chrome.browserAction.setIcon({
+      tabId: tabId,
+      path: 'images/yahoo/icon-128-green.png'
+    });
+    callback({});
+  } else if (args.action === 'reset_pageaction') {
+    chrome.browserAction.setTitle({
+      title: chrome.i18n.getMessage('extName'),
+      tabId: tabId
+    });
+    chrome.browserAction.setIcon({
+      tabId: tabId,
+      path: 'images/yahoo/icon-128.png'
+    });
+    callback({});
+  }
 };
 
 
@@ -218,6 +384,38 @@ ext.Launcher.prototype.updatePassphraseWarning_ = function() {
   }
 };
 
+/**
+ * Changes the browser action state when Yahoo Mail page is active.
+ * @param {number} tabId - The ID of the active tab
+ * @private
+ */
+ext.Launcher.prototype.updateYmailBrowserAction_ = function(tabId) {
+  chrome.browserAction.setPopup({
+    tabId: tabId,
+    popup: 'yprompt.html'
+  });
+  chrome.browserAction.setBadgeText({text: ''});
+  if (this.hasPassphrase()) {
+    chrome.browserAction.setTitle({
+      tabId: tabId,
+      title: chrome.i18n.getMessage('extName')
+    });
+    chrome.browserAction.setIcon({
+      tabId: tabId,
+      path: 'images/yahoo/icon-128.png'
+    });
+  } else {
+    chrome.browserAction.setTitle({
+      tabId: tabId,
+      title: chrome.i18n.getMessage('passphraseEmptyWarning')
+    });
+    chrome.browserAction.setIcon({
+      tabId: tabId,
+      path: 'images/yahoo/icon-128-red.png'
+    });
+  }
+};
+
 
 /**
  * Shows the welcome screen to first-time users.
@@ -229,4 +427,35 @@ ext.Launcher.prototype.showWelcomeScreen_ = function() {
   }
 };
 
-});  // goog.scope
+/**
+ * Modifies HTTP responses relevant to E2E on Yahoo Mail.
+ * @private
+ */
+ext.Launcher.prototype.modifyResponse_ = function(details) {
+  details.responseHeaders.push({
+    name: 'Content-Security-Policy',
+    value: 'object-src \'none\'; frame-src chrome-extension:'
+  });
+  return {responseHeaders: details.responseHeaders};
+};
+
+/**
+ * Installs the handler for HTTP responses to be modified by E2E on Yahoo Mail.
+ * @private
+ */
+ext.Launcher.prototype.installResponseHandler_ = function() {
+  chrome.webRequest.onHeadersReceived.addListener(
+    ext.Launcher.prototype.modifyResponse_,
+    {urls: ['https://*.mail.yahoo.com/*']},
+    ['blocking', 'responseHeaders']);
+};
+
+/**
+ * Removes handler for HTTP responses.
+ * @private
+ */
+ext.Launcher.prototype.removeResponseHandler_ = function() {
+  chrome.webRequest.onHeadersReceived.removeListener(
+    ext.Launcher.prototype.modifyResponse_);
+};
+}); // goog.scope
