@@ -68,6 +68,18 @@ function setUp() {
   stubs.setPath('chrome.i18n.getMessage', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.addListener', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.removeListener', goog.nullFunction);
+  stubs.setPath('chrome.runtime.onMessage.addListener', function() {});
+  stubs.setPath('chrome.tabs.onActivated.addListener', function() {});
+  stubs.setPath('chrome.tabs.onUpdated.addListener', function() {});
+  stubs.setPath('chrome.tabs.query', function(req, callback) {
+    callback([{id: 1}]);
+  });
+  stubs.setPath('chrome.tabs.reload', function() {});
+  stubs.setPath('chrome.tabs.sendMessage', function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.addListener',
+                function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.removeListener',
+                function() {});
 
   launcher = new e2e.ext.Launcher();
   launcher.start();
@@ -125,6 +137,7 @@ function testUpdateSelectedContent() {
   var recipients = [];
   var origin = 'irrelevant';
   var expectMoreUpdates = false;
+  var subject = 'irrelevant';
   var callback = mockControl.createFunctionMock();
   callback();
 
@@ -132,11 +145,12 @@ function testUpdateSelectedContent() {
   stubs.set(
       launcher, 'updateSelectedContent', mockControl.createFunctionMock());
   launcher.updateSelectedContent(
-      content, recipients, origin, expectMoreUpdates, callbackArg);
+      content, recipients, origin, expectMoreUpdates, subject, callbackArg);
 
   mockControl.$replayAll();
   utils.updateSelectedContent(
-      content, recipients, origin, expectMoreUpdates, callback);
+      content, recipients, origin, expectMoreUpdates, callback,
+      goog.nullFunction, null, subject);
   callbackArg.arg();
   mockControl.$verifyAll();
 }

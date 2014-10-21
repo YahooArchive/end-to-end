@@ -76,9 +76,20 @@ function setUp() {
   stubs.setPath('chrome.notifications.create', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.addListener', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.removeListener', goog.nullFunction);
-  stubs.setPath('chrome.tabs.query', goog.nullFunction);
-  stubs.setPath('chrome.tabs.onUpdated.addListener', goog.nullFunction);
-  stubs.setPath('chrome.tabs.onRemoved.addListener', goog.nullFunction);
+  stubs.setPath('chrome.runtime.onMessage.addListener', function() {});
+  stubs.setPath('chrome.tabs.onActivated.addListener', function() {});
+  stubs.setPath('chrome.tabs.onUpdated.addListener', function() {});
+  stubs.setPath('chrome.tabs.onRemoved.addListener', function() {});
+  stubs.setPath('chrome.tabs.executeScript', function() {});
+  stubs.setPath('chrome.tabs.query', function(req, callback) {
+    callback([{id: 1}]);
+  });
+  stubs.setPath('chrome.tabs.reload', function() {});
+  stubs.setPath('chrome.tabs.sendMessage', function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.addListener',
+                function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.removeListener',
+                function() {});
   stubs.setPath('window.confirm', function(msg) { return true;});
 
   stubs.replace(goog.Timer.prototype, 'start', goog.nullFunction);
@@ -397,8 +408,9 @@ function testContentInsertedOnEncrypt() {
   stubs.set(prompt.pgpLauncher_, 'updateSelectedContent',
       mockControl.createFunctionMock('updateSelectedContent'));
   var encryptedMsg = new goog.testing.mockmatchers.SaveArgument(goog.isString);
+  var subject = new goog.testing.mockmatchers.SaveArgument(goog.isString);
   prompt.pgpLauncher_.updateSelectedContent(encryptedMsg, [USER_ID], origin,
-      false, goog.testing.mockmatchers.ignoreArgument);
+      false, subject, goog.testing.mockmatchers.ignoreArgument);
 
   mockControl.$replayAll();
   populatePgpKeys();

@@ -125,8 +125,20 @@ function setUp() {
   });
   stubs.setPath('chrome.runtime.onConnect.addListener', function() {});
   stubs.setPath('chrome.runtime.onConnect.removeListener', function() {});
+  stubs.setPath('chrome.runtime.onMessage.addListener', function() {});
+  stubs.setPath('chrome.tabs.onActivated.addListener', function() {});
   stubs.setPath('chrome.tabs.onUpdated.addListener', function() {});
   stubs.setPath('chrome.tabs.onRemoved.addListener', function() {});
+  stubs.setPath('chrome.tabs.executeScript', function() {});
+  stubs.setPath('chrome.tabs.query', function(req, callback) {
+    callback([{id: 1}]);
+  });
+  stubs.setPath('chrome.tabs.reload', function() {});
+  stubs.setPath('chrome.tabs.sendMessage', function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.addListener',
+                function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.removeListener',
+                function() {});
 
   launcher.start();
   e2e.ext.ui.Welcome.IMAGE_PATH_ = '';

@@ -90,6 +90,15 @@ function setUp() {
   });
   stubs.setPath('chrome.runtime.onConnect.addListener', function() {});
   stubs.setPath('chrome.runtime.onConnect.removeListener', function() {});
+  stubs.setPath('chrome.runtime.onMessage.addListener', function() {});
+  stubs.setPath('chrome.tabs.onActivated.addListener', function() {});
+  stubs.setPath('chrome.tabs.onUpdated.addListener', function() {});
+  stubs.setPath('chrome.tabs.query', function() {});
+  stubs.setPath('chrome.tabs.sendMessage', function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.addListener',
+                function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.removeListener',
+                function() {});
   stubs.replace(window, 'confirm', function(msg) { return true;});
 
   page = new e2e.ext.ui.Settings();

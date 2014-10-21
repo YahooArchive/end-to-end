@@ -57,9 +57,18 @@ function setUp() {
   stubs.setPath('chrome.notifications.create', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.addListener', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.removeListener', goog.nullFunction);
-  stubs.setPath('chrome.tabs.query', goog.nullFunction);
-  stubs.setPath('chrome.tabs.onUpdated.addListener', goog.nullFunction);
-  stubs.setPath('chrome.tabs.onRemoved.addListener', goog.nullFunction);
+  stubs.setPath('chrome.runtime.onMessage.addListener', function() {});
+  stubs.setPath('chrome.tabs.onActivated.addListener', function() {});
+  stubs.setPath('chrome.tabs.onUpdated.addListener', function() {});
+  stubs.setPath('chrome.tabs.query', function(req, callback) {
+    callback([{id: 1}]);
+  });
+  stubs.setPath('chrome.tabs.reload', function() {});
+  stubs.setPath('chrome.tabs.sendMessage', function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.addListener',
+                function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.removeListener',
+                function() {});
 
   launcher = new e2e.ext.Launcher();
   launcher.start();

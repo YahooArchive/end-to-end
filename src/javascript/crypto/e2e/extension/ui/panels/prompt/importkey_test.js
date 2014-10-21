@@ -81,9 +81,15 @@ function setUp() {
   stubs.setPath('chrome.notifications.create', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.addListener', goog.nullFunction);
   stubs.setPath('chrome.runtime.onConnect.removeListener', goog.nullFunction);
+  stubs.setPath('chrome.runtime.onMessage.addListener', goog.nullFunction);
   stubs.setPath('chrome.tabs.query', goog.nullFunction);
+  stubs.setPath('chrome.tabs.onActivated.addListener', goog.nullFunction);
   stubs.setPath('chrome.tabs.onUpdated.addListener', goog.nullFunction);
   stubs.setPath('chrome.tabs.onRemoved.addListener', goog.nullFunction);
+  stubs.setPath('chrome.webRequest.onHeadersReceived.addListener',
+                goog.nullFunction);
+  stubs.setPath('chrome.webRequest.onHeadersReceived.removeListener',
+                goog.nullFunction);
 
   launcher = new e2e.ext.Launcher();
   launcher.start();

@@ -43,19 +43,27 @@ function setUp() {
   mockControl = new goog.testing.MockControl();
 
   stubs.setPath('chrome.browserAction.setBadgeText', function() {});
+  stubs.setPath('chrome.browserAction.setIcon', function() {});
   stubs.setPath('chrome.browserAction.setTitle', function() {});
   stubs.setPath('chrome.i18n.getMessage', function() {});
   stubs.setPath('chrome.notifications.clear', function() {});
   stubs.setPath('chrome.notifications.create', function() {});
   stubs.setPath('chrome.runtime.onConnect.addListener', function() {});
   stubs.setPath('chrome.runtime.onConnect.removeListener', function() {});
+  stubs.setPath('chrome.runtime.onMessage.addListener', function() {});
+  stubs.setPath('chrome.tabs.onActivated.addListener', function() {});
   stubs.setPath('chrome.tabs.onUpdated.addListener', function() {});
   stubs.setPath('chrome.tabs.onRemoved.addListener', function() {});
   stubs.setPath('chrome.tabs.executeScript', function() {});
   stubs.setPath('chrome.tabs.query', function(req, callback) {
     callback([{id: 1}]);
   });
+  stubs.setPath('chrome.tabs.reload', function() {});
   stubs.setPath('chrome.tabs.sendMessage', function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.addListener',
+                function() {});
+  stubs.setPath('chrome.webRequest.onHeadersReceived.removeListener',
+                function() {});
   localStorage.clear();
   preferences.setWelcomePageEnabled(false);
   launcher = new e2e.ext.Launcher();
@@ -94,6 +102,7 @@ function testGetSelectedContent() {
 function testUpdateSelectedContent() {
   var content = 'some text';
   var origin = 'http://www.example.com';
+  var subject = 'some subject';
   var executeScriptArg = new mockmatchers.SaveArgument(goog.isFunction);
   stubs.setPath('chrome.tabs.executeScript',
       mockControl.createFunctionMock('executeScript'));
@@ -111,7 +120,8 @@ function testUpdateSelectedContent() {
 
   mockControl.$replayAll();
 
-  launcher.updateSelectedContent(content, [], origin, false, callbackMock);
+  launcher.updateSelectedContent(content, [], origin, false, subject,
+                                 callbackMock);
   executeScriptArg.arg();
   assertEquals('Sending incorrect content', content, messageArg.arg.value);
   mockControl.$verifyAll();
@@ -145,9 +155,9 @@ function testStart() {
       mockControl.createFunctionMock('showWelcomeScreen_'));
   launcher.showWelcomeScreen_();
 
-  stubs.set(launcher, 'updatePassphraseWarning_',
-      mockControl.createFunctionMock('updatePassphraseWarning_'));
-  launcher.updatePassphraseWarning_();
+  stubs.set(launcher, 'installResponseHandler_',
+      mockControl.createFunctionMock('installResponseHandler_'));
+  launcher.installResponseHandler_();
 
   stubs.set(launcher.ctxApi_, 'installApi',
       mockControl.createFunctionMock('installApi'));
