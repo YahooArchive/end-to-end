@@ -132,6 +132,8 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   switch (incoming.action) {
     case constants.Actions.ENCRYPT_SIGN:
     case constants.Actions.DECRYPT_VERIFY:
+    case constants.Actions.LIST_ALL_UIDS:
+    case constants.Actions.GET_KEYRING_UNLOCKED:
       // Propagate the decryptPassphrase if needed.
       incoming.passphraseCallback = function(uid, passphraseCallback) {
         if (incoming.decryptPassphrase) {
@@ -149,10 +151,16 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       return;
   }
 
-  if (window.launcher && !window.launcher.hasPassphrase()) {
+  var hasPassphrase = window.launcher ? window.launcher.hasPassphrase() : false;
+
+  if (!hasPassphrase) {
     callback({
       error: chrome.i18n.getMessage('glassKeyringLockedError')
     });
+    return;
+  } else if (incoming.action === constants.Actions.GET_KEYRING_UNLOCKED) {
+    outgoing.content = true;
+    callback(outgoing);
     return;
   }
 
