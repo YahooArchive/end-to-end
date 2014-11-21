@@ -171,7 +171,7 @@ e2ebind.clickHandler_ = function(e) {
         var composeElem = goog.dom.getAncestorByTagNameAndClass(elt,
                                                                 'div',
                                                                 'compose');
-        var draft = {};
+        var draft = /** @type {messages.e2ebindDraft} */ {};
         draft.from = window.config.signer ? '<' + window.config.signer + '>' :
             '';
 
@@ -439,25 +439,49 @@ e2ebind.handleProviderRequest_ = function(request) {
 * @private
 */
 e2ebind.installReadGlass_ = function(elem, opt_text) {
-  var DOMelem = elem;
-
-  if (!DOMelem) {
-    throw 'Element not found.';
-  }
-
-  if (Boolean(DOMelem.lookingGlass)) {
+  if (Boolean(elem.lookingGlass)) {
     return;
   }
 
   var selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
-      opt_text ? opt_text : DOMelem.innerText);
+      opt_text ? opt_text : elem.innerText);
   var action = utils.text.getPgpAction(selectionBody, true);
 
   if (action == constants.Actions.DECRYPT_VERIFY) {
-    var glassWrapper = new ui.GlassWrapper(DOMelem, opt_text);
+    var glassWrapper = new ui.GlassWrapper(elem, opt_text);
     window.helper.registerDisposable(glassWrapper);
     glassWrapper.installGlass();
   }
+};
+
+
+/**
+* Installs a compose glass in the page.
+* @param {Element} elem Element to install the glass in
+* @param {messages.e2ebindDraft} draft The draft content to put in the glass
+* @private
+*/
+e2ebind.installComposeGlass_ = function(elem, draft) {
+  if (Boolean(elem.composeGlass)) {
+    return;
+  }
+
+  var hash = this.messagingTable.getRandomString();
+  var glassWrapper = new ui.ComposeGlassWrapper(elem, draft, hash);
+  window.helper.registerDisposable(glassWrapper);
+  glassWrapper.installGlass();
+
+  var closeHandler = function(message) {
+    if (message.e2ebind && message.glass_closed &&
+        (message.hash === glassWrapper.hash)) {
+      console.log('e2ebind got glass closed');
+      glassWrapper.dispose();
+      chrome.runtime.onMessage.removeListener(closeHandler);
+    }
+  };
+
+  // Listen for when the glass should be removed
+  chrome.runtime.onMessage.addListener(closeHandler);
 };
 
 

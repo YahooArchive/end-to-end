@@ -165,7 +165,8 @@ messages.e2ebindResponse;
  *   to: !Array.<string>,
  *   cc: Array.<string>,
  *   bcc: Array.<string>,
- *   subject: (string|undefined)
+ *   subject: (string|undefined),
+ *   from: (string|undefined)
  * }}
  */
 messages.e2ebindDraft;
