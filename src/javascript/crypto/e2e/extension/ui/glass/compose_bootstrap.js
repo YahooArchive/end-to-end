@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 /**
  * @fileoverview Bootstraps the compose glass.
  */
@@ -19,6 +20,7 @@ goog.require('e2e.ext.ui.ComposeGlass');
 goog.require('e2e.ext.utils.text');
 
 goog.provide('e2e.ext.ui.glass.compose.bootstrap');
+
 
 var initComposeGlass = function(evt) {
   window.removeEventListener(initComposeGlass);
@@ -35,6 +37,7 @@ var initComposeGlass = function(evt) {
   window.composeGlass.decorate(document.documentElement);
 };
 window.addEventListener('message', initComposeGlass);
+
 
 /**
  * Specifies whether the looking glass has been bootstrapped.

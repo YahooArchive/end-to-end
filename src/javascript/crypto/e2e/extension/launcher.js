@@ -24,9 +24,11 @@ goog.provide('e2e.ext.Launcher');
 
 goog.require('e2e.ext.api.Api');
 goog.require('e2e.ext.ui.preferences');
+goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
+goog.require('e2e.openpgp.Context');
 goog.require('e2e.openpgp.ContextImpl');
-goog.require('goog.structs.Map');
+goog.require('goog.array');
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -143,13 +145,18 @@ ext.Launcher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
     }
 
     // NOTE(yan): The helper script is executed automaticaly on ymail pages.
-    if (utils.text.isYmailOrigin(tab.url)) {
+    if (utils.text.isYmailOrigin(tab.url) || !runHelper) {
       callback(tab.id);
     } else {
-      chrome.tabs.executeScript(tab.id, {file: 'helper_binary.js'},
-                                function() {
-                                  callback(tab.id);
-                                });
+      try {
+        chrome.tabs.executeScript(tab.id, {file: 'helper_binary.js'},
+                                  function() {
+                                    callback(tab.id);
+                                  });
+      } catch (e) {
+        // chrome-extension:// tabs throw an error. Ignore.
+        callback(tab.id);
+      }
     }
   }, this));
 };
@@ -172,7 +179,24 @@ ext.Launcher.prototype.start = function(opt_passphrase) {
  * @private
  */
 ext.Launcher.prototype.start_ = function(passphrase) {
-  this.ctxApi_.installApi();
+  // Add listeners to change Browser Action state
+  chrome.tabs.onActivated.addListener(goog.bind(function(activeInfo) {
+    chrome.tabs.get(activeInfo.tabId, goog.bind(function(tab) {
+      if (utils.text.isYmailOrigin(tab.url)) {
+        this.updateYmailBrowserAction_(activeInfo.tabId);
+      } else {
+        this.updatePassphraseWarning_();
+      }
+    }, this));
+  }, this));
+  chrome.tabs.onUpdated.addListener(goog.bind(function(tabId, changeInfo, tab) {
+    if (utils.text.isYmailOrigin(tab.url)) {
+      this.updateYmailBrowserAction_(tabId);
+    } else {
+      this.updatePassphraseWarning_();
+    }
+  }, this));
+
   this.pgpContext_.setKeyRingPassphrase(passphrase);
   this.installResponseHandler_();
 
@@ -191,11 +215,11 @@ ext.Launcher.prototype.start_ = function(passphrase) {
         'Version',
         manifest.name + ' v' + manifest.version);
   }
+  this.ctxApi_.installApi();
   this.started_ = true;
   preferences.initDefaults();
 
   this.showWelcomeScreen_();
-  this.updatePassphraseWarning_();
 
   // Proxy requests between content scripts in the active tab
   chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
@@ -387,6 +411,7 @@ ext.Launcher.prototype.showWelcomeScreen_ = function() {
 
 /**
  * Modifies HTTP responses relevant to E2E on Yahoo Mail.
+ * @param {Object} details
  * @private
  */
 ext.Launcher.prototype.modifyResponse_ = function(details) {
@@ -404,9 +429,9 @@ ext.Launcher.prototype.modifyResponse_ = function(details) {
  */
 ext.Launcher.prototype.installResponseHandler_ = function() {
   chrome.webRequest.onHeadersReceived.addListener(
-    ext.Launcher.prototype.modifyResponse_,
-    {urls: ['https://*.mail.yahoo.com/*']},
-    ['blocking', 'responseHeaders']);
+      ext.Launcher.prototype.modifyResponse_,
+      {urls: ['https://*.mail.yahoo.com/*']},
+      ['blocking', 'responseHeaders']);
 };
 
 
@@ -418,4 +443,4 @@ ext.Launcher.prototype.removeResponseHandler_ = function() {
   chrome.webRequest.onHeadersReceived.removeListener(
     ext.Launcher.prototype.modifyResponse_);
 };
-}); // goog.scope
+});  // goog.scope

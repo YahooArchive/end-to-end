@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 /**
  * @fileoverview Similar to prompt.js, but operates as a content script instead
  * of in the main process.
@@ -27,10 +28,8 @@ goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.draftmanagerAsync');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolder');
-goog.require('e2e.ext.ui.preferences');
 goog.require('e2e.ext.ui.templates.composeglass');
 goog.require('e2e.ext.utils');
-goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Timer');
@@ -41,6 +40,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
+goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -51,7 +51,6 @@ var drafts = e2e.ext.ui.draftmanagerAsync;
 var ext = e2e.ext;
 var messages = e2e.ext.messages;
 var panels = e2e.ext.ui.panels;
-var preferences = e2e.ext.ui.preferences;
 var templates = e2e.ext.ui.templates.composeglass;
 var ui = e2e.ext.ui;
 var utils = e2e.ext.utils;

@@ -27,6 +27,7 @@ goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.constants.e2ebind.responseActions');
+goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
