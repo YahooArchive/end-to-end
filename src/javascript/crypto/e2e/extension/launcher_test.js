@@ -82,6 +82,7 @@ function testGetSelectedContent() {
 function testUpdateSelectedContent() {
   var content = 'some text';
   var origin = 'http://www.example.com';
+  var subject = 'some subject';
   var executeScriptArg = new mockmatchers.SaveArgument(goog.isFunction);
   stubs.setPath('chrome.tabs.executeScript',
       mockControl.createFunctionMock('executeScript'));
@@ -99,7 +100,8 @@ function testUpdateSelectedContent() {
 
   mockControl.$replayAll();
 
-  launcher.updateSelectedContent(content, [], origin, false, callbackMock);
+  launcher.updateSelectedContent(content, [], origin, false, subject,
+                                 callbackMock);
   executeScriptArg.arg();
   assertEquals('Sending incorrect content', content, messageArg.arg.value);
   mockControl.$verifyAll();
@@ -133,9 +135,9 @@ function testStart() {
       mockControl.createFunctionMock('showWelcomeScreen_'));
   launcher.showWelcomeScreen_();
 
-  stubs.set(launcher, 'updatePassphraseWarning_',
-      mockControl.createFunctionMock('updatePassphraseWarning_'));
-  launcher.updatePassphraseWarning_();
+  stubs.set(launcher, 'installResponseHandler_',
+      mockControl.createFunctionMock('installResponseHandler_'));
+  launcher.installResponseHandler_();
 
   stubs.set(launcher.ctxApi_, 'installApi',
       mockControl.createFunctionMock('installApi'));

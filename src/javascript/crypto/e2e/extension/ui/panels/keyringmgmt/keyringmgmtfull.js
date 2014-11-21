@@ -30,6 +30,7 @@ goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
+goog.require('goog.functions');
 goog.require('goog.structs.Map');
 goog.require('goog.ui.Component');
 goog.require('soy');
@@ -120,7 +121,9 @@ panels.KeyringMgmtFull.prototype.decorateInternal = function(elem) {
   var storedKeys = goog.array.map(this.pgpKeys_.getKeys(), function(userId) {
     return {
       userId: userId,
-      keys: this.getKeysDescription_(this.pgpKeys_.get(userId))
+      keys: this.getKeysDescription_(this.pgpKeys_.get(userId), function(key) {
+        return key.key ? !key.key.secret : !key.secret;
+      })
     };
   }, this);
   soy.renderElement(elem, templates.listKeys, {
@@ -172,7 +175,9 @@ panels.KeyringMgmtFull.prototype.addNewKey = function(userId, pgpKeys) {
   soy.renderElement(tr, templates.keyEntry, {
     keyMeta: {
       'userId': userId,
-      'keys': this.getKeysDescription_(pgpKeys)
+      'keys': this.getKeysDescription_(pgpKeys, function(key) {
+        return key.key ? !key.key.secret : !key.secret;
+      })
     },
     exportLabel: chrome.i18n.getMessage('keyMgmtExportLabel'),
     removeLabel: chrome.i18n.getMessage('keyMgmtRemoveLabel')
@@ -236,11 +241,14 @@ panels.KeyringMgmtFull.prototype.resetControls = function() {
 /**
  * Returns a human readable representation of the given collection of PGP keys.
  * @param {Array} keys Raw collection of PGP keys.
+ * @param {function(Object)=: boolean} keySelector Filter to select specific PGP keys
  * @return {Array} A collection of PGP key metadata.
  * @private
  */
-panels.KeyringMgmtFull.prototype.getKeysDescription_ = function(keys) {
-  return goog.array.flatten(goog.array.map(keys, function(key) {
+panels.KeyringMgmtFull.prototype.getKeysDescription_ = function(keys, keySelector) {
+  keySelector = keySelector ? keySelector : goog.functions.TRUE;
+  return goog.array.flatten(goog.array.map(goog.array.filter(keys, keySelector),
+                                           function(key) {
     var type = (key.key.secret ?
         chrome.i18n.getMessage('secretKeyDescription') :
         chrome.i18n.getMessage('publicKeyDescription'));
@@ -248,7 +256,8 @@ panels.KeyringMgmtFull.prototype.getKeysDescription_ = function(keys) {
       type: type,
       algorithm: key.key.algorithm,
       fingerprint: goog.crypt.byteArrayToHex(key.key.fingerprint)
-    }].concat(goog.array.map(key.subKeys, function(subKey) {
+    }].concat(goog.array.map(goog.array.filter(key.subKeys, keySelector),
+                             function(subKey) {
       var type = (subKey.secret ?
           chrome.i18n.getMessage('secretSubKeyDescription') :
           chrome.i18n.getMessage('publicSubKeyDescription'));
