@@ -184,8 +184,7 @@ e2ebind.clickHandler_ = function(e) {
               draft.cc = getDraftResult.cc;
               draft.bcc = getDraftResult.bcc;
               draft.subject = getDraftResult.subject;
-              // Compose glass implementation will be in a future patch.
-              //e2ebind.installComposeGlass_(composeElem, draft);
+              e2ebind.installComposeGlass_(composeElem, draft);
             }, this));
           } else {
             e2ebind.getCurrentMessage(goog.bind(function(result) {
@@ -198,7 +197,7 @@ e2ebind.clickHandler_ = function(e) {
                     DOMelem.lookingGlass.getOriginalContent() :
                     DOMelem.innerText);
               }
-              //e2ebind.installComposeGlass_(composeElem, draft);
+              e2ebind.installComposeGlass_(composeElem, draft);
             }, this));
           }
         }, this));
