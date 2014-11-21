@@ -126,7 +126,7 @@ ext.Launcher.prototype.getSelectedContent = function(callback) {
  * @private
  */
 ext.Launcher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
-  runHelper = opt_runHelper || false;
+  var runHelper = opt_runHelper || false;
   chrome.tabs.query({
     active: true,
     currentWindow: true
