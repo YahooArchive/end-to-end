@@ -183,29 +183,6 @@ ext.Helper.prototype.setGmonkeyValue_ = function(msg) {
   this.setValueHandler_ = goog.nullFunction;
 };
 
-/**
- * Sets recipients and message body into provider's compose window via e2ebind.
- * @param {messages.BridgeMessageResponse} msg The response bridge message from
- *     the extension.
- * @private
- */
-ext.Helper.prototype.setProviderValue_ = function(msg) {
-  if (msg.launcher || msg.e2ebind || msg.request) {
-    return;
-  }
-  if (msg.response && msg.origin == this.getOrigin_()) {
-    console.log('Setting e2e draft');
-    e2ebind.set_draft({
-      to: msg.recipients,
-      body: msg.value,
-      subject: msg.subject
-    });
-  }
-  if (msg.detach) {
-    chrome.runtime.onMessage.removeListener(this.setValueHandler_);
-    this.setValueHandler_ = goog.nullFunction;
-  }
-};
 
 /**
  * Sets recipients and message body into provider's compose window via e2ebind.
@@ -233,10 +210,6 @@ ext.Helper.prototype.setE2ebindValue_ = function(msg) {
  */
 ext.Helper.prototype.runOnce = function() {
   chrome.runtime.onMessage.addListener(this.getValueHandler_);
-
-  // Start the e2ebind API. Currently only used on Yahoo Mail.
-  // TODO(yan): Make this gmonkey compatible?
-  e2ebind.start();
 
   if (this.isGmail_() && !window.ENABLED_LOOKING_GLASS) {
     this.activeViewListenerKey_ = goog.events.listen(
@@ -533,14 +506,6 @@ ext.Helper.prototype.isYmail_ = function() {
   return utils.text.isYmailOrigin(this.getOrigin_());
 };
 
-/**
- * Indicates if the current web app is Yahoo Mail.
- * @return {boolean} True if ymail. Otherwise false.
- * @private
- */
-ext.Helper.prototype.isYmail_ = function() {
-  return utils.text.isYmailOrigin(this.getOrigin_());
-};
 
 /**
  * Returns the origin for the current page.

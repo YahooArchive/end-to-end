@@ -27,7 +27,6 @@ goog.require('goog.array');
 goog.require('goog.format.EmailAddress');
 goog.require('goog.string');
 goog.require('goog.string.format');
-goog.require('goog.Uri');
 
 
 goog.scope(function() {

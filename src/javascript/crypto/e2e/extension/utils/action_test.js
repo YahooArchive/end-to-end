@@ -122,7 +122,6 @@ function testUpdateSelectedContent() {
   var origin = 'irrelevant';
   var subject = 'irrelevant';
   var expectMoreUpdates = false;
-  var subject = 'irrelevant';
   var callback = mockControl.createFunctionMock();
   callback();
 

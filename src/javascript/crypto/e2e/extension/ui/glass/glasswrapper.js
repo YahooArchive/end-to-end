@@ -21,6 +21,7 @@
 goog.provide('e2e.ext.ui.ComposeGlassWrapper');
 goog.provide('e2e.ext.ui.GlassWrapper');
 
+goog.require('e2e.ext.messages');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Disposable');
 goog.require('goog.array');
@@ -152,24 +153,24 @@ ui.GlassWrapper.prototype.getOriginalContent = function() {
 
 goog.scope(function() {
   var ui = e2e.ext.ui;
+  var messages = e2e.ext.messages;
 
   /**
    * Constructor for the compose glass wrapper.
    * @param {Element} targetElem Element that hosts the looking glass.
-   * @param {Object} draft Draft data
-   * @param {mode=} mode Scroll or resize mode.
-   * @param {string=} hash Hash to uniquely identify this wrapper
+   * @param {messages.e2ebindDraft} draft Draft data
+   * @param {string} hash Hash to uniquely identify this wrapper
    * @constructor
    * @extends {goog.Disposable}
    */
-  ui.ComposeGlassWrapper = function(targetElem, draft, mode, hash) {
+  ui.ComposeGlassWrapper = function(targetElem, draft, hash) {
     goog.base(this);
 
     this.targetElem_ = targetElem;
     this.draft = draft;
     this.targetElem_.setAttribute('original_content', this.body);
-    this.mode = mode || 'scroll';
-    this.hash = hash || '';
+    this.mode = 'scroll';
+    this.hash = hash;
   };
   goog.inherits(ui.ComposeGlassWrapper, goog.Disposable);
 

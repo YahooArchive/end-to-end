@@ -30,18 +30,12 @@ window.addEventListener('message', function(evt) {
       !e2e.ext.utils.text.isYmailOrigin(evt.origin)) {
     return;
   }
-  var input = evt.data ? JSON.parse(evt.data) : null;
-  var pgpMessage = input.string;
+  var pgpMessage = evt.data ? evt.data : '';
   /** @type {e2e.ext.ui.Glass} */
   window.lookingGlass = new e2e.ext.ui.Glass(
-    goog.crypt.base64.decodeString(pgpMessage, true),
-    input.mode, input.origin, input.selector);
+      goog.crypt.base64.decodeString(pgpMessage, true));
   window.lookingGlass.decorate(document.documentElement);
-
-  window.removeEventListener('message', initLookingGlass);
-};
-
-window.addEventListener('message', initLookingGlass);
+});
 
 
 /**

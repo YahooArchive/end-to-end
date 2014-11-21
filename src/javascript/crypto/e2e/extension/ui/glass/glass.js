@@ -21,20 +21,19 @@
 
 goog.provide('e2e.ext.ui.Glass');
 
-goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.Actions');
+/** @suppress {extraRequire} manually import typedefs due to b/15739810 */
+goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.ui.templates.glass');
-goog.require('e2e.openpgp.ContextImpl');
 goog.require('e2e.random');
-
-goog.require('goog.events.MouseWheelEvent');
 goog.require('goog.events.MouseWheelHandler');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
-
 goog.require('soy');
 
 goog.scope(function() {
 var constants = e2e.ext.constants;
+var messages = e2e.ext.messages;
 var templates = e2e.ext.ui.templates.glass;
 var ui = e2e.ext.ui;
 
@@ -44,13 +43,10 @@ var ui = e2e.ext.ui;
  * Constructor for the looking glass.
  * @param {string} pgpMessage The encrypted PGP message that needs to be
  *     decrypted and displayed to the user.
- * @param {string} mode Either scroll mode or resize mode
- * @param {string} origin
- * @param {string=} selector Selector for a host element if it is to be resized
  * @constructor
  * @extends {goog.ui.Component}
  */
-ui.Glass = function(pgpMessage, mode, origin, selector) {
+ui.Glass = function(pgpMessage) {
   goog.base(this);
 
   /**
@@ -60,9 +56,6 @@ ui.Glass = function(pgpMessage, mode, origin, selector) {
    * @private
    */
   this.pgpMessage_ = pgpMessage;
-  this.mode = mode;
-  this.origin = origin;
-  this.selector = selector;
 
   /**
    * The communication channel with the extension.
@@ -138,32 +131,12 @@ ui.Glass.prototype.decorateInternal = function(elem) {
 ui.Glass.prototype.renderContents_ = function(response) {
   var elem = this.getElement();
   soy.renderElement(elem, templates.contentFrame, {
-    label: chrome.i18n.getMessage('lookingGlassTitle'),
+    label: chrome.i18n.getMessage('extName'),
     content: response.content || this.pgpMessage_,
     error: response.error
   });
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('glass_styles.css');
-
-  // If the mode is 'resize', post out a message with our height. Only supported
-  // in E2Ebind API.
-  var _this = this;
-  console.log('selector is', _this.selector);
-  if ((_this.mode === 'resize') && _this.selector) {
-    // Wait for styles to be applied. Non-catastropic if this takes >30ms.
-    window.setTimeout(function() {
-      var message = {
-        e2ebind: true,
-        action: 'set_glass_size',
-        args: {
-          height: window.document.querySelector('fieldset').offsetHeight +
-            Math.floor(Math.random() * 18),
-          selector: _this.selector
-        }
-      };
-      chrome.runtime.sendMessage(message);
-    }, 30);
-  }
 };
 
 
@@ -171,21 +144,19 @@ ui.Glass.prototype.renderContents_ = function(response) {
 ui.Glass.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  if (this.mode === 'scroll') {
-    var mouseWheelHandler = new goog.events.MouseWheelHandler(
+  var mouseWheelHandler = new goog.events.MouseWheelHandler(
       this.getElement(), true);
-    this.registerDisposable(mouseWheelHandler);
+  this.registerDisposable(mouseWheelHandler);
 
-    this.getHandler().listen(
-        mouseWheelHandler,
-        goog.events.MouseWheelHandler.EventType.MOUSEWHEEL,
-        this.scroll_);
-  }
+  this.getHandler().listen(
+      mouseWheelHandler,
+      goog.events.MouseWheelHandler.EventType.MOUSEWHEEL,
+      this.scroll_);
 };
 
 
 /**
- * Scrolls the looking glass up/down, if the mode is 'scroll'.
+ * Scrolls the looking glass up/down.
  * @param {goog.events.MouseWheelEvent} evt The mouse wheel event to
  *     scroll up/down.
  * @private

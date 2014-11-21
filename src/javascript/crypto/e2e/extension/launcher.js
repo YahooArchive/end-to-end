@@ -23,7 +23,6 @@
 goog.provide('e2e.ext.Launcher');
 
 goog.require('e2e.ext.api.Api');
-goog.require('e2e.ext.constants');
 goog.require('e2e.ext.ui.preferences');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.ContextImpl');
@@ -31,8 +30,6 @@ goog.require('goog.structs.Map');
 
 goog.scope(function() {
 var ext = e2e.ext;
-var constants = e2e.ext.constants;
-var messages = e2e.ext.messages;
 var preferences = e2e.ext.ui.preferences;
 var utils = e2e.ext.utils;
 
@@ -83,7 +80,6 @@ ext.Launcher = function() {
  * @param {string} origin The web origin where the original message was created.
  * @param {boolean} expectMoreUpdates True if more updates are expected. False
  *     if this is the final update to the selected content.
- * @param {string} subject Subject of the message
  * @param {!function(...)} callback The function to invoke once the content has
  *     been updated.
  * @param {string=} opt_subject The subject of the message if applicable.
@@ -126,11 +122,11 @@ ext.Launcher.prototype.getSelectedContent = function(callback) {
  * Finds the current active tab.
  * @param {!function(...)} callback The function to invoke once the active tab
  *     is found.
- * @param {boolean=} runHelper Whether the helper script must be run first.
+ * @param {boolean=} opt_runHelper Whether the helper script must be run first.
  * @private
  */
-ext.Launcher.prototype.getActiveTab_ = function(callback, runHelper) {
-  runHelper = runHelper || false;
+ext.Launcher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
+  runHelper = opt_runHelper || false;
   chrome.tabs.query({
     active: true,
     currentWindow: true
@@ -163,6 +159,7 @@ ext.Launcher.prototype.getActiveTab_ = function(callback, runHelper) {
  * Asks for the keyring passphrase and start the launcher. Will throw an
  * exception if the password is wrong.
  * @param {string=} opt_passphrase The passphrase of the keyring.
+ * @expose
  */
 ext.Launcher.prototype.start = function(opt_passphrase) {
   this.start_(opt_passphrase || '');
@@ -198,6 +195,7 @@ ext.Launcher.prototype.start_ = function(passphrase) {
   preferences.initDefaults();
 
   this.showWelcomeScreen_();
+  this.updatePassphraseWarning_();
 
   // Proxy requests between content scripts in the active tab
   chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
@@ -219,6 +217,7 @@ ext.Launcher.prototype.start_ = function(passphrase) {
   }, this));
 };
 
+
 /**
  * Stops the launcher. Called to lock the keyring.
  */
@@ -237,37 +236,17 @@ ext.Launcher.prototype.stop = function() {
   this.pgpContext_.unsetKeyringPassphrase();
 };
 
+
 /**
-* Execute a message'd request on the PGP content, then forward the response.
-* @param {Object} args - The args of this request. Always has at least an action property.
+* Execute a message request on the PGP content, then forward the response.
+* @param {Object} args - The args of this request. Always has at least an
+*   action property.
 * @param {number} tabId - The ID of the active tab
 * @param {Function} callback - Function to call with the result.
 * @private
 */
 ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
-  if (args.action === 'get_private_keys') {
-    //TODO(yan): Refactor to use context API
-    this.getContext().getAllKeys(true).addCallback(function(keys) {
-      var result = [];
-      if (keys) {
-        keys = new goog.structs.Map(keys);
-        result = keys.getKeys();
-      }
-      callback({keys: result});
-    });
-  } else if (args.action === 'get_public_keys') {
-    //TODO(yan): Refactor to use context API
-    this.getContext().getAllKeys().addCallback(function(keys) {
-      var result = [];
-      if (keys) {
-        keys = new goog.structs.Map(keys);
-        result = keys.getKeys();
-      }
-      callback({keys: result});
-    });
-  } else if (args.action === 'get_started') {
-    callback({started: this.started_});
-  } else if (args.action === 'show_notification') {
+  if (args.action === 'show_notification') {
     utils.showNotification(args.msg, function() {
       callback({});
     });
@@ -361,6 +340,7 @@ ext.Launcher.prototype.updatePassphraseWarning_ = function() {
   }
 };
 
+
 /**
  * Changes the browser action state when Yahoo Mail page is active.
  * @param {number} tabId - The ID of the active tab
@@ -404,6 +384,7 @@ ext.Launcher.prototype.showWelcomeScreen_ = function() {
   }
 };
 
+
 /**
  * Modifies HTTP responses relevant to E2E on Yahoo Mail.
  * @private
@@ -416,6 +397,7 @@ ext.Launcher.prototype.modifyResponse_ = function(details) {
   return {responseHeaders: details.responseHeaders};
 };
 
+
 /**
  * Installs the handler for HTTP responses to be modified by E2E on Yahoo Mail.
  * @private
@@ -426,6 +408,7 @@ ext.Launcher.prototype.installResponseHandler_ = function() {
     {urls: ['https://*.mail.yahoo.com/*']},
     ['blocking', 'responseHeaders']);
 };
+
 
 /**
  * Removes handler for HTTP responses.
