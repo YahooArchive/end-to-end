@@ -369,10 +369,6 @@ ext.Launcher.prototype.updatePassphraseWarning_ = function() {
  * @private
  */
 ext.Launcher.prototype.updateYmailBrowserAction_ = function(tabId) {
-  chrome.browserAction.setPopup({
-    tabId: tabId,
-    popup: 'yprompt.html'
-  });
   chrome.browserAction.setBadgeText({text: ''});
   if (this.hasPassphrase()) {
     chrome.browserAction.setTitle({

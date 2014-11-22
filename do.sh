@@ -148,7 +148,6 @@ e2e_build_extension() {
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Prompt" --js_output_file "$BUILD_EXT_DIR/prompt_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Settings" --js_output_file "$BUILD_EXT_DIR/settings_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Welcome" --js_output_file "$BUILD_EXT_DIR/welcome_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.YPrompt" --js_output_file "$BUILD_EXT_DIR/yprompt_binary.js"
   echo ""
   # compile css files
   echo "Compiling CSS files..."
@@ -157,7 +156,6 @@ e2e_build_extension() {
   $csscompile_e2e "$SRC_EXT_DIR/ui/prompt/prompt.css" > "$BUILD_EXT_DIR/prompt_styles.css"
   $csscompile_e2e "$SRC_EXT_DIR/ui/settings/settings.css" > "$BUILD_EXT_DIR/settings_styles.css"
   $csscompile_e2e "$SRC_EXT_DIR/ui/welcome/welcome.css" > "$BUILD_EXT_DIR/welcome_styles.css"
-  $csscompile_e2e "$SRC_EXT_DIR/ui/prompt/yprompt.css" > "$BUILD_EXT_DIR/yprompt_styles.css"
   echo "Copying extension files..."
   # copy extension files
   cp -fr "$SRC_EXT_DIR/images" "$BUILD_EXT_DIR"
