@@ -221,7 +221,7 @@ ext.Launcher.prototype.start_ = function(passphrase) {
 
   this.showWelcomeScreen_();
 
-  // Proxy requests between content scripts in the active tab
+  // Proxy requests for compose glass in the active tab
   chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
     if (message.e2ebind || message.composeGlass) {
       console.log('launcher.js got message to proxy', message);
@@ -233,6 +233,7 @@ ext.Launcher.prototype.start_ = function(passphrase) {
           } else if (message.composeGlass) {
             response.composeGlass = true;
           }
+          response.action = message.action;
           console.log('launcher.js sending', response);
           chrome.tabs.sendMessage(tabId, response);
         });
@@ -256,14 +257,17 @@ ext.Launcher.prototype.stop = function() {
   }, this));
   // Unset the passphrase on the keyring
   this.pgpContext_.unsetKeyringPassphrase();
+  // Remoeve the API
+  this.ctxApi_.removeApi();
 };
 
 
 /**
 * Execute a message request on the PGP content, then forward the response.
 * @param {messages.launcherMessage} args The message request
-* @param {number} tabId - The ID of the active tab
-* @param {function} callback - Function to call with the result.
+* @param {number} tabId The ID of the active tab
+* @param {function(messages.launcherMessage)} callback Function to call with
+*   the result.
 * @private
 */
 ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
@@ -272,8 +276,6 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
     utils.showNotification(args.msg, function() {
       callback({});
     });
-  } else if (args.action === 'popup_closed') {
-    callback({popup_closed: true});
   } else if (args.action === 'glass_closed') {
     callback({
       glass_closed: true,

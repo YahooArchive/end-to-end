@@ -123,8 +123,8 @@ messages.ApiRequest.prototype.action;
  *   content: (string|undefined),
  *   completedAction: e2e.ext.constants.Actions,
  *   selectedUid: (string|undefined),
- *   error: (string | undefined),
- *   retry: boolean
+ *   error: (string|undefined),
+ *   retry: (boolean|undefined)
  * }}
  */
 messages.ApiResponse;

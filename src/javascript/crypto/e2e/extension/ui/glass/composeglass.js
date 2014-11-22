@@ -131,30 +131,6 @@ ui.ComposeGlass.prototype.disposeInternal = function() {
 
 
 /**
- * Send a message to the Launcher background page so it an execute an action
- * on the PGP content. TODO: replace with API calls in executeRequest.
- * @param {messages.launcherMessage} args Request to send the launcher
- * @param {function(messages.launcherMessage)=} opt_callback Function to call
- *   with the result of the action.
- * @private
- */
-var sendLauncher_ = function(args, opt_callback) {
-  var respHandler = function(message) {
-    if (!message.e2ebind) {
-      return;
-    }
-
-    opt_callback(message);
-    chrome.runtime.onMessage.removeListener(respHandler);
-  };
-  if (opt_callback) {
-    chrome.runtime.onMessage.addListener(respHandler);
-  }
-
-  chrome.runtime.sendMessage(args);
-};
-
-/**
  * A holder for the intended recipients of a PGP message.
  * @type {panels.ChipHolder}
  * @private
@@ -174,7 +150,7 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   styles.href = chrome.extension.getURL('composeglass_styles.css');
 
   // This tells the helper to attach the set_draft handler in e2ebind
-  sendLauncher_({
+  utils.sendProxyRequest({
     composeGlass: true,
     action: 'get_selected_content'
   });
@@ -226,7 +202,7 @@ ui.ComposeGlass.prototype.processActiveContent_ = function() {
  */
 ui.ComposeGlass.prototype.updateActiveContent_ =
   function(content, recipients, subject, callback) {
-  sendLauncher_({
+  utils.sendProxyRequest({
     composeGlass: true,
     action: 'set_draft',
     value: content,
@@ -267,9 +243,8 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
       this.close();
     } else if (
       goog.dom.classlist.contains(target, constants.CssClass.OPTIONS)) {
-      sendLauncher_({
-        composeGlass: true,
-        action: 'open_options'
+      utils.sendExtensionRequest({
+        action: constants.Actions.OPEN_OPTIONS
       });
     }
   }
@@ -369,13 +344,13 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       // Show green icon in the URL bar when the secure text area is in focus
       // so page XSS attacks are less likely to compromise plaintext
       textArea.onfocus = function() {
-        sendLauncher_({
+        utils.sendExtensionRequest({
           composeGlass: true,
           action: 'change_pageaction'
         });
       };
       textArea.onblur = function() {
-        sendLauncher_({
+        utils.sendExtensionRequest({
           composeGlass: true,
           action: 'reset_pageaction'
         });
@@ -557,7 +532,7 @@ ui.ComposeGlass.prototype.close = function() {
       });
   goog.dispose(this);
   console.log('compose glass sending glass_closed');
-  sendLauncher_({
+  utils.sendExtensionRequest({
     e2ebind: true,
     action: 'glass_closed',
     hash: this.hash
@@ -650,7 +625,7 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
-  sendLauncher_({action: 'show_notification', e2ebind: true, msg: msg},
+  utils.sendExtensionRequest({action: 'show_notification', e2ebind: true, msg: msg},
                 callback);
 };
 

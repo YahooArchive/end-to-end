@@ -162,7 +162,7 @@ e2ebind.clickHandler_ = function(e) {
   var elt = e.target;
 
   if (elt.id === constants.ElementId.E2EBIND_ICON) {
-    e2ebind.sendExtensionRequest_({
+    utils.sendExtensionRequest({
       action: constants.Actions.GET_KEYRING_UNLOCKED
     }, goog.bind(function(response) {
       if (response.error || !response.content) {
@@ -571,7 +571,7 @@ e2ebind.setDraft = function(args) {
 * @private
 */
 e2ebind.validateSigner_ = function(signer, callback) {
-  e2ebind.sendExtensionRequest_({
+  utils.sendExtensionRequest({
     action: constants.Actions.LIST_ALL_UIDS,
     content: 'private'
   }, function(response) {
@@ -591,7 +591,7 @@ e2ebind.validateSigner_ = function(signer, callback) {
 * @private
 */
 e2ebind.validateRecipients_ = function(recipients, callback) {
-  e2ebind.sendExtensionRequest_({
+  utils.sendExtensionRequest({
     action: constants.Actions.LIST_ALL_UIDS,
     content: 'public'
   }, function(response) {
@@ -604,31 +604,6 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
       results.push({valid: valid, recipient: recipient});
     });
     callback(results);
-  });
-};
-
-
-/**
-* Sends a request to the launcher to perform some action.
-* @param {Object} args The message we wish to send to the launcher,
-*   should heve an 'action' property.
-* @param {!function(messages.e2ebindResponse)} callback Callback to call with
-*   the result.
-* @private
-*/
-e2ebind.sendExtensionRequest_ = function(args, callback) {
-  var port = chrome.runtime.connect();
-  port.postMessage(args);
-
-  var respHandler = function(response) {
-    if (callback) {
-      callback(response);
-    }
-    port.disconnect();
-  };
-  port.onMessage.addListener(respHandler);
-  port.onDisconnect.addListener(function() {
-    port = null;
   });
 };
 

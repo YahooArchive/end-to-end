@@ -28,12 +28,14 @@ goog.require('e2e.ext.api.RequestThrottle');
 goog.require('e2e.ext.constants.Actions');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
+goog.require('e2e.ext.utils');
 goog.require('goog.ui.Component');
 
 goog.scope(function() {
 var api = e2e.ext.api;
 var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
+var utils = e2e.ext.utils;
 
 
 
@@ -123,10 +125,10 @@ api.Api.prototype.openPort_ = function(port) {
  * @private
  */
 api.Api.prototype.executeAction_ = function(callback, req) {
-  var incoming = /** @type {!messages.ApiRequest.<string>} */ (req);
-  var outgoing = {
+  var incoming = /** @type {!messages.ApiRequest.<(string|undefined)>} */ (req);
+  var outgoing = /** @type {!messages.ApiResponse} */ ({
     completedAction: incoming.action
-  };
+  });
 
   // Ensure that only certain actions are exposed via the API.
   switch (incoming.action) {
@@ -145,6 +147,39 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         callback(outgoing);
       };
       break;
+    case constants.Actions.SHOW_NOTIFICATION:
+      utils.showNotification(incoming.content, function() {
+        callback(outgoing);
+      });
+      return;
+    case constants.Actions.OPEN_OPTIONS:
+      chrome.tabs.create({
+        url: 'settings.html',
+        active: true
+      });
+      callback(outgoing);
+      return;
+    case constants.Actions.CHANGE_PAGEACTION:
+      chrome.browserAction.setTitle({
+        tabId: incoming.content,
+        title: chrome.i18n.getMessage('composeGlassTitle') });
+      chrome.browserAction.setIcon({
+        tabId: incoming.content,
+        path: 'images/yahoo/icon-128-green.png'
+      });
+      callback(outgoing);
+      return;
+    case constants.Actions.RESET_PAGEACTION:
+      chrome.browserAction.setTitle({
+        title: chrome.i18n.getMessage('extName'),
+        tabId: incoming.content
+      });
+      chrome.browserAction.setIcon({
+        tabId: incoming.content,
+        path: 'images/yahoo/icon-128.png'
+      });
+      callback(outgoing);
+      return;
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
       callback(outgoing);

@@ -133,5 +133,29 @@ utils.showNotification = function(msg, callback) {
   });
 };
 
+
+/**
+* Sends a request to the launcher to perform some action.
+* @param {messages.ApiRequest} args The message we wish to send to the launcher
+* @param {function(messages.e2ebindResponse)=} opt_callback optional callback
+*   to call with the result.
+* @private
+*/
+utils.sendExtensionRequest = function(args, opt_callback) {
+  var port = chrome.runtime.connect();
+  port.postMessage(args);
+
+  var respHandler = function(response) {
+    if (opt_callback) {
+      opt_callback(response);
+    }
+    port.disconnect();
+  };
+  port.onMessage.addListener(respHandler);
+  port.onDisconnect.addListener(function() {
+    port = null;
+  });
+};
+
 });  // goog.scope
 
