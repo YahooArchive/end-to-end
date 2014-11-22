@@ -90,14 +90,12 @@ goog.inherits(ui.YPrompt, goog.ui.Component);
 /**
  * Send a message to the Launcher background page so it an execute an action
  * on the PGP content.
- * @param {Object} args - Objects to send to the launcher in a message. Should
- *   at least have an 'action' property
- * @param {Function=} callback - Function to call with the result of the action.
- * @param {Function=} errorCallback - Function to call in the event of an error
- *   (NOT IMPLIMENTED)
+ * @param {messages.launcherMessage} args Message to send to launcher
+ * @param {function(messages.launcherMessage)=} callback function to call with
+ *   the result of the action.
  * @private
  */
-var sendLauncher_ = function(args, callback, errorCallback) {
+var sendLauncher_ = function(args, callback) {
   // This simply listens for a response.
   var respHandler = function(message) {
     if (!message.e2ebind) {
@@ -520,7 +518,7 @@ ui.YPrompt.prototype.renderGenericForm_ =
  *     rendered.
  * @param {?messages.BridgeMessageRequest} contentBlob The content that the user
  *     has selected.
- * @param {Bool=} showError Whether to show an error because previous passphrase
+ * @param {boolean=} showError Whether to show an error because previous passphrase
  *     attempt had failed
  * @private
  */

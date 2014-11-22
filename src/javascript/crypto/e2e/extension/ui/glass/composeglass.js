@@ -59,7 +59,7 @@ var utils = e2e.ext.utils;
 
 /**
  * Constructor for the UI compose glass.
- * @param {Object} draft Message draft
+ * @param {!messages.e2ebindDraft} draft Message draft
  * @param {string} mode Either scroll mode or resize mode
  * @param {string} origin The origin that requested the compose glass
  * @param {string} hash Hash to uniquely identify this compose glass instance
@@ -69,7 +69,6 @@ var utils = e2e.ext.utils;
 ui.ComposeGlass = function(draft, mode, origin, hash) {
   goog.base(this);
 
-  // TODO(yan): Add type def for draft data format: to, cc, bcc, subject, body
   this.recipients = draft.to.concat(draft.cc).concat(draft.bcc);
   this.subject = draft.subject;
   this.selection = draft.body;
@@ -134,28 +133,24 @@ ui.ComposeGlass.prototype.disposeInternal = function() {
 /**
  * Send a message to the Launcher background page so it an execute an action
  * on the PGP content. TODO: replace with API calls in executeRequest.
- * @param {Object} args - Objects to send to the launcher in a message. Should
- *   at least have an 'action' property
- * @param {Function=} callback - Function to call with the result of the action.
- * @param {Function=} errorCallback - Function to call in the event of an error
- *   (NOT IMPLIMENTED)
+ * @param {messages.launcherMessage} args Request to send the launcher
+ * @param {function(messages.launcherMessage)=} opt_callback Function to call
+ *   with the result of the action.
  * @private
  */
-var sendLauncher_ = function(args, callback, errorCallback) {
-  // This simply listens for a response.
+var sendLauncher_ = function(args, opt_callback) {
   var respHandler = function(message) {
     if (!message.e2ebind) {
       return;
     }
 
-    callback(message);
+    opt_callback(message);
     chrome.runtime.onMessage.removeListener(respHandler);
   };
-  if (callback) {
+  if (opt_callback) {
     chrome.runtime.onMessage.addListener(respHandler);
   }
 
-  // Send the message
   chrome.runtime.sendMessage(args);
 };
 
@@ -368,7 +363,8 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         subject: subject
       });
 
-      var textArea = elem.querySelector('textarea');
+      var textArea = /** @type {HTMLTextAreaElement} */
+          (elem.querySelector('textarea'));
 
       // Show green icon in the URL bar when the secure text area is in focus
       // so page XSS attacks are less likely to compromise plaintext
@@ -654,7 +650,8 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
-  sendLauncher_({action: 'show_notification', e2ebind: true, msg: msg}, callback);
+  sendLauncher_({action: 'show_notification', e2ebind: true, msg: msg},
+                callback);
 };
 
 /**
@@ -708,7 +705,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, evt) {
     var draft = e2e.openpgp.asciiArmor.markAsDraft(encrypted);
     if (evt.type == goog.events.EventType.CLICK) {
       this.updateActiveContent_(
-        textArea.value, recipients, '', goog.nullFunction);
+        formText.value, this.recipients, '', goog.nullFunction);
     } else {
       drafts.saveDraft(draft, origin);
     }

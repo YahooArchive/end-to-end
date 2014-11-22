@@ -75,6 +75,12 @@ e2e.openpgp.Context.prototype.setKeyRingPassphrase;
 
 
 /**
+ * @expose
+ */
+e2e.openpgp.Context.prototype.unsetKeyringPassphrase;
+
+
+/**
  * @param {string} passphrase Change the passphrase for encrypting the KeyRing
  *     when stored locally. Empty string for unencrypted.
  * @expose

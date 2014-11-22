@@ -124,6 +124,7 @@ e2e.ext.constants.CssClass = {
   HIDDEN: 'hidden',
   INVISIBLE: 'invisible',
   TRANSPARENT: 'transparent',
+  BACK: 'back',
 
   /* Used to display UIDs in the prompt. */
   CHIP: 'uid-chip',

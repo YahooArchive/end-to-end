@@ -132,8 +132,7 @@ e2ebind.MessagingTable_.prototype.get = function(hash, action) {
  */
 e2ebind.messageHandler_ = function(response) {
   try {
-    var data = /** @type {messages.e2ebindRequest} */
-        (window.JSON.parse(response.data));
+    var data = window.JSON.parse(response.data);
     if (response.source !== window.self ||
         response.origin !== window.location.origin ||
         data.api !== 'e2ebind' || data.source === 'E2E') {
@@ -141,10 +140,12 @@ e2ebind.messageHandler_ = function(response) {
     }
 
     if (data.action.toUpperCase() in constants.e2ebind.requestActions) {
-      e2ebind.handleProviderRequest_(data);
+      e2ebind.handleProviderRequest_(/** @type {messages.e2ebindRequest} */
+                                     (data));
     } else if (
         data.action.toUpperCase() in constants.e2ebind.responseActions) {
-      e2ebind.handleProviderResponse_(data);
+      e2ebind.handleProviderResponse_(/** @type {messages.e2ebindResponse} */
+                                      (data));
     }
   } catch (e) {
     return;
@@ -172,7 +173,7 @@ e2ebind.clickHandler_ = function(e) {
         var composeElem = goog.dom.getAncestorByTagNameAndClass(elt,
                                                                 'div',
                                                                 'compose');
-        var draft = /** @type {messages.e2ebindDraft} */ {};
+        var draft = /** @type {messages.e2ebindDraft} */ ({});
         draft.from = window.config.signer ? '<' + window.config.signer + '>' :
             '';
 
@@ -467,12 +468,13 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
     return;
   }
 
-  var hash = this.messagingTable.getRandomString();
+  var hash = e2ebind.messagingTable.getRandomString();
   var glassWrapper = new ui.ComposeGlassWrapper(elem, draft, hash);
   window.helper.registerDisposable(glassWrapper);
   glassWrapper.installGlass();
 
   var closeHandler = function(message) {
+    message.glass_closed = message.glass_closed || false;
     if (message.e2ebind && message.glass_closed &&
         (message.hash === glassWrapper.hash)) {
       console.log('e2ebind got glass closed');
@@ -535,6 +537,7 @@ e2ebind.hasDraft = function(callback) {
                       function(data) {
         var result = false;
 
+        data.result.has_draft = data.success.has_draft || false;
         if (data.success && data.result.has_draft) {
           result = true;
         }

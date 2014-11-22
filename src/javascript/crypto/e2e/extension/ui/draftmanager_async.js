@@ -83,7 +83,7 @@ draftmanager.clearDraft = function(origin) {
 draftmanager.getAllDrafts_ = function(callback) {
   var key = constants.StorageKey.LAST_SAVED_DRAFT;
   localStorage.get(key, function(item) {
-    var drafts = item[key] || {};
+    var drafts = /** @type {Object.<string, string>} */ (item[key] || {});
     callback(drafts);
   });
 };
@@ -92,7 +92,7 @@ draftmanager.getAllDrafts_ = function(callback) {
 /**
  * Persists the provided drafts into local storage, overriding any previous
  * drafts.
- * @param {!Object.<string, string>} drafts The drafts to persist in local
+ * @param {*} drafts The drafts to persist in local
  *     storage.
  * @private
  */

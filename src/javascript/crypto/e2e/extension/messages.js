@@ -26,6 +26,7 @@ goog.provide('e2e.ext.messages.GetSelectionRequest');
 goog.provide('e2e.ext.messages.e2ebindDraft');
 goog.provide('e2e.ext.messages.e2ebindRequest');
 goog.provide('e2e.ext.messages.e2ebindResponse');
+goog.provide('e2e.ext.messages.launcherMessage');
 
 
 goog.scope(function() {
@@ -170,5 +171,18 @@ messages.e2ebindResponse;
  * }}
  */
 messages.e2ebindDraft;
+
+
+/**
+ * Defines message format between content script and launcher.
+ * @typedef {{
+ *   action: string,
+ *   launcher: (boolean|undefined),
+ *   msg: (string|undefined),
+ *   e2ebind: (boolean|undefined)
+ *   composeGlass: (boolean|undefined),
+ * }}
+ */
+messages.launcherMessage;
 
 });  // goog.scope

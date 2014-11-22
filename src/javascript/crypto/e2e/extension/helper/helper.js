@@ -154,9 +154,11 @@ ext.Helper.prototype.isEditable_ = function(elem) {
  * @private
  */
 ext.Helper.prototype.setValue_ = function(elem, msg) {
+  /*
   if (msg.launcher || msg.e2ebind || msg.request) {
     return;
   }
+  */
   if (msg.response && msg.origin == this.getOrigin_()) {
     elem.value = msg.value;
     elem.innerText = msg.value;

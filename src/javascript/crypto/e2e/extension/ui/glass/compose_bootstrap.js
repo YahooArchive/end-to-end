@@ -23,12 +23,16 @@ goog.provide('e2e.ext.ui.glass.compose.bootstrap');
 
 
 var initComposeGlass = function(evt) {
-  window.removeEventListener(initComposeGlass);
+  window.removeEventListener('message', initComposeGlass);
   if (!e2e.ext.utils.text.isYmailOrigin(evt.origin)) {
     console.log('Got message from unsafe origin', evt.origin);
     return false;
   }
   var data = evt.data;
+  data.draft = data.draft || null;
+  if (!data.draft || !data.mode || !data.hash) {
+    return;
+  }
   /** @type {!e2e.ext.ui.ComposeGlass} */
   window.composeGlass = new e2e.ext.ui.ComposeGlass(data.draft,
                                                     data.mode,

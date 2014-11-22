@@ -21,7 +21,7 @@
 goog.provide('e2e.ext.ui.ComposeGlassWrapper');
 goog.provide('e2e.ext.ui.GlassWrapper');
 
-goog.require('e2e.ext.messages');
+goog.require('e2e.ext.messages.e2ebindDraft');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Disposable');
 goog.require('goog.array');
@@ -168,7 +168,7 @@ goog.scope(function() {
 
     this.targetElem_ = targetElem;
     this.draft = draft;
-    this.targetElem_.setAttribute('original_content', this.body);
+    this.targetElem_.setAttribute('original_content', this.draft.body);
     this.mode = 'scroll';
     this.hash = hash;
   };

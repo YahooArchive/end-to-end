@@ -254,8 +254,6 @@ ext.Launcher.prototype.stop = function() {
     this.updateYmailBrowserAction_(tabId);
     chrome.tabs.reload(tabId);
   }, this));
-  // Remove the API
-  this.ctxApi_.removeAPI();
   // Unset the passphrase on the keyring
   this.pgpContext_.unsetKeyringPassphrase();
 };
@@ -263,14 +261,14 @@ ext.Launcher.prototype.stop = function() {
 
 /**
 * Execute a message request on the PGP content, then forward the response.
-* @param {Object} args - The args of this request. Always has at least an
-*   action property.
+* @param {messages.launcherMessage} args The message request
 * @param {number} tabId - The ID of the active tab
-* @param {Function} callback - Function to call with the result.
+* @param {function} callback - Function to call with the result.
 * @private
 */
 ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
   if (args.action === 'show_notification') {
+    args.msg = args.msg || '';
     utils.showNotification(args.msg, function() {
       callback({});
     });
@@ -430,7 +428,8 @@ ext.Launcher.prototype.modifyResponse_ = function(details) {
 ext.Launcher.prototype.installResponseHandler_ = function() {
   chrome.webRequest.onHeadersReceived.addListener(
       ext.Launcher.prototype.modifyResponse_,
-      {urls: ['https://*.mail.yahoo.com/*']},
+      /** @type {!RequestFilter} */
+      ({urls: ['https://*.mail.yahoo.com/*']}),
       ['blocking', 'responseHeaders']);
 };
 

@@ -133,6 +133,5 @@ utils.showNotification = function(msg, callback) {
   });
 };
 
-
 });  // goog.scope
 
