@@ -120,7 +120,7 @@ messages.ApiRequest.prototype.action;
 /**
  * Defines the response message from the context API.
  * @typedef {{
- *   content: (string|undefined),
+ *   content: (string|Object|undefined),
  *   completedAction: e2e.ext.constants.Actions,
  *   selectedUid: (string|undefined),
  *   error: (string|undefined),

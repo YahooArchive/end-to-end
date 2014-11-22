@@ -104,20 +104,6 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
 };
 goog.inherits(ui.ComposeGlass, goog.ui.Component);
 
-/**
- * Sends request to the End-to-End launcher.
- * @param {!messages.ApiRequest} request
- * @param {function(*)} callback
- * @param {Port} port
- * @private
- */
-ui.ComposeGlass.prototype.executeRequest_ = function(request, callback, port) {
-  port.postMessage(request);
-  port.onMessage.addListener(function listener(response) {
-    callback(response.content);
-    port.onMessage.removeListener(listener);
-  });
-};
 
 /** @override */
 ui.ComposeGlass.prototype.disposeInternal = function() {
@@ -243,7 +229,7 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
       this.close();
     } else if (
       goog.dom.classlist.contains(target, constants.CssClass.OPTIONS)) {
-      utils.sendExtensionRequest({
+      utils.endExtensionRequest({
         action: constants.Actions.OPEN_OPTIONS
       });
     }
@@ -288,16 +274,16 @@ ui.ComposeGlass.prototype.getRecipientsEmailMap_ = function(recipients) {
 ui.ComposeGlass.prototype.renderEncrypt_ =
     function(elem, recipients, origin, subject, from, content) {
   var intendedRecipients = [];
-  var port = chrome.runtime.connect();
 
   var sniffedAction = utils.text.getPgpAction(
       content, this.preferences_.isActionSniffingEnabled);
 
   // Pre-populate the list of recipients during an encrypt/sign action.
-  this.executeRequest_(/** @type {!messages.ApiRequest} */ ({
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.LIST_KEYS,
     content: 'public'
-  }), goog.bind(function(searchResult) {
+  }), goog.bind(function(response) {
+    var searchResult = response.content;
     console.log('got LIST_KEYS public result', searchResult);
     var allAvailableRecipients = goog.object.getKeys(searchResult);
     var recipientsEmailMap = this.getRecipientsEmailMap_(
@@ -309,10 +295,11 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       }
     });
 
-    this.executeRequest_(/** @type {!messages.ApiRequest} */ ({
+    utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
       action: constants.Actions.LIST_KEYS,
       content: 'private'
-    }), goog.bind(function(privateKeyResult) {
+    }), goog.bind(function(response) {
+      var privateKeyResult = response.content;
       console.log('got LIST_KEYS private result', privateKeyResult);
       var availableSigningKeys = goog.object.getKeys(privateKeyResult);
       var signInsertLabel = from ?
@@ -345,13 +332,11 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       // so page XSS attacks are less likely to compromise plaintext
       textArea.onfocus = function() {
         utils.sendExtensionRequest({
-          composeGlass: true,
           action: 'change_pageaction'
         });
       };
       textArea.onblur = function() {
         utils.sendExtensionRequest({
-          composeGlass: true,
           action: 'reset_pageaction'
         });
       };
@@ -360,10 +345,11 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
 
       if (sniffedAction == constants.Actions.DECRYPT_VERIFY) {
         console.log('got decrypt_verify');
-        this.executeRequest_(/** @type {!messages.ApiRequest} */ ({
+        utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
           action: constants.Actions.DECRYPT_VERIFY,
           content: content
-        }), goog.bind(function(decrypted) {
+        }), goog.bind(function(response) {
+          var decrypted = response.content;
           if (e2e.openpgp.asciiArmor.isDraft(content)) {
             console.log('renderEncrypt setting draft content');
             textArea.value = decrypted;
@@ -371,8 +357,7 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
             console.log('renderEncrypt setting reply content');
             this.renderReply_(textArea, decrypted);
           }
-          port.disconnect();
-        }, this), port);
+        }, this));
       } else {
         drafts.hasDraft(origin, goog.bind(function(result) {
           if (!result) {
@@ -388,8 +373,9 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
                 if (goog.isDef(dialogResult)) {
                   // A passed object signals that the user has clicked the
                   // 'OK' button.
-                  drafts.getDraft(origin, function(draft) {
-                    this.executeRequest_(
+                  drafts.getDraft(origin, function(response) {
+                    var draft = response.content;
+                    utils.sendExtensionRequest(
                       /** @type {!messages.ApiRequest} */ ({
                       action: constants.Actions.DECRYPT_VERIFY,
                       content: draft
@@ -397,12 +383,10 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
                       console.log('got DECRYPT_VERIFY result', decrypted);
                       textArea.value = decrypted;
                       this.surfaceDismissButton_();
-                      port.disconnect();
-                    }, this), port);
+                    }, this));
                   });
                 } else {
                   drafts.clearDraft(origin);
-                  port.disconnect();
                 }
 
                 goog.dispose(dialog);
@@ -532,7 +516,7 @@ ui.ComposeGlass.prototype.close = function() {
       });
   goog.dispose(this);
   console.log('compose glass sending glass_closed');
-  utils.sendExtensionRequest({
+  utils.sendProxyRequest({
     e2ebind: true,
     action: 'glass_closed',
     hash: this.hash
@@ -552,7 +536,6 @@ ui.ComposeGlass.prototype.close = function() {
 ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
   var textArea = elem.querySelector('textarea');
   this.clearFailure_();
-  var port = chrome.runtime.connect();
   switch (action) {
     case ext.constants.Actions.ENCRYPT_SIGN:
       var request = /** @type {!messages.ApiRequest} */ ({
@@ -571,24 +554,24 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
           goog.dom.getElement(constants.ElementId.SIGN_MESSAGE_CHECK);
       request.signMessage = signerCheck && signerCheck.checked;
 
-      this.executeRequest_(
-          request, goog.bind(function(encrypted) {
+      utils.sendExtensionRequest(
+          request, goog.bind(function(result) {
+            var encrypted = result.content;
             this.clearSavedDraft_(origin);
             this.insertMessageIntoPage_(origin, encrypted);
-            port.disconnect();
-          }, this), port);
+          }, this));
       break;
     case constants.Actions.DECRYPT_VERIFY:
-      this.executeRequest_(/** @type {!messages.ApiRequest} */ ({
+      utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.DECRYPT_VERIFY,
         content: textArea.value
-      }), goog.bind(function(decrypted) {
+      }), goog.bind(function(result) {
+        var decrypted = result.content;
         textArea.value = decrypted;
         var successMessage = chrome.i18n.getMessage('promptDecryptionSuccessMsg');
         this.displaySuccess_(successMessage, goog.nullFunction);
         this.surfaceDismissButton_();
-        port.disconnect();
-      }, this), port);
+      }, this));
       break;
   }
 };
@@ -625,7 +608,7 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
-  utils.sendExtensionRequest({action: 'show_notification', e2ebind: true, msg: msg},
+  utils.sendExtensionRequest({action: 'show_notification', content: msg},
                 callback);
 };
 
@@ -670,13 +653,13 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
  */
 ui.ComposeGlass.prototype.saveDraft_ = function(origin, evt) {
   var formText = this.getElement().querySelector('textarea');
-  var port = chrome.runtime.connect();
 
-  this.executeRequest_(/** @type {!messages.ApiRequest} */ ({
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.ENCRYPT_SIGN,
     content: formText.value,
     currentUser: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
-  }), goog.bind(function(encrypted) {
+  }), goog.bind(function(response) {
+    var encrypted = response.content || '';
     var draft = e2e.openpgp.asciiArmor.markAsDraft(encrypted);
     if (evt.type == goog.events.EventType.CLICK) {
       this.updateActiveContent_(
@@ -684,8 +667,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, evt) {
     } else {
       drafts.saveDraft(draft, origin);
     }
-    port.disconnect();
-  }, this), port);
+  }, this));
 };
 
 
