@@ -211,11 +211,6 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
       // TODO(yan): make this go back to normal compose
       goog.dom.classlist.contains(target, constants.CssClass.BACK)) {
       this.close();
-    } else if (
-      goog.dom.classlist.contains(target, constants.CssClass.OPTIONS)) {
-      utils.endExtensionRequest({
-        action: constants.Actions.OPEN_OPTIONS
-      });
     }
   }
 };
@@ -301,7 +296,6 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         actionButtonTitle: chrome.i18n.getMessage(
             'promptEncryptSignActionLabel'),
         cancelButtonTitle: chrome.i18n.getMessage('actionCancelPgpAction'),
-        optionsButtonTitle: chrome.i18n.getMessage('actionConfigureExtension'),
         backButtonTitle: chrome.i18n.getMessage('actionBackToMenu'),
         saveDraftButtonTitle: chrome.i18n.getMessage(
             'promptEncryptSignSaveDraftLabel'),
