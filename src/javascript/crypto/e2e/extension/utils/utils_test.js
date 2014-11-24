@@ -115,3 +115,49 @@ function testShowNotification() {
   delayedCb.arg();
   mockControl.$verifyAll();
 }
+
+
+function testSendExtensionRequest() {
+  var args = {foo: 'bar'};
+  stubs.replace(chrome.runtime, 'connect', function() {
+    var response;
+    var port = {
+      postMessage: function(message) {
+        response = message;
+        return;
+      },
+      disconnect: function() {
+        port = null;
+        return;
+      },
+      onMessage: {},
+      onDisconnect: {}
+    };
+    port.onDisconnect.addListener = goog.nullFunction;
+    port.onMessage.addListener = function(cb) {
+      cb(response);
+    };
+    return port;
+  });
+  testCase.waitForAsync('waiting for send extension request');
+  utils.sendExtensionRequest(args, function(resp) {
+    assertObjectEquals(args, resp);
+    testCase.continueTesting();
+  });
+}
+
+
+function testSendProxyRequest() {
+  var args = {foo: 'bar'};
+  stubs.replace(chrome.runtime, 'sendMessage',
+                mockControl.createFunctionMock());
+  chrome.runtime.sendMessage(new goog.testing.mockmatchers.ArgumentMatcher(
+      function(arg) {
+        assertEquals(args, arg);
+        return true;
+      }
+  ));
+  mockControl.$replayAll();
+  utils.sendProxyRequest(args);
+  mockControl.$verifyAll();
+}
