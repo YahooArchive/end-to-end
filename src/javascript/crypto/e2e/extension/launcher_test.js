@@ -204,3 +204,46 @@ function testShowWelcomeScreenDisabled() {
   launcher.start();
   assertFalse('Incorrectly opening the welcome screen', openedWindow);
 }
+
+
+function testStop() {
+  stubs.set(launcher.ctxApi_, 'removeApi',
+      mockControl.createFunctionMock('removeApi'));
+  launcher.ctxApi_.removeApi();
+  mockControl.$replayAll();
+
+  launcher.start('test');
+  launcher.stop();
+  assertFalse(launcher.started_);
+  assertNull(launcher.pgpContext_.keyring_);
+  mockControl.$verifyAll();
+}
+
+
+function testProxyMessage() {
+  var message = {
+    action: constants.Actions.GLASS_CLOSED,
+    content: 'irrelevant',
+    proxy: true};
+
+  stubs.set(chrome.tabs, 'sendMessage',
+            mockControl.createFunctionMock('sendMessage'));
+  chrome.tabs.sendMessage(new goog.testing.mockmatchers.ArgumentMatcher(
+                              function(arg) {
+                                return goog.isNumber(arg);
+                              }
+                          ),
+                          new goog.testing.mockmatchers.ArgumentMatcher(
+                              function(arg) {
+                                assertObjectEquals({
+                                  action: constants.Actions.GLASS_CLOSED,
+                                  content: 'irrelevant'
+                                }, arg);
+                                return true;
+                              }
+                          ));
+  mockControl.$replayAll();
+  launcher.start('test');
+  launcher.proxyMessage(message);
+  mockControl.$verifyAll();
+}

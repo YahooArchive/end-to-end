@@ -225,23 +225,29 @@ ext.Launcher.prototype.start_ = function(passphrase) {
 
   this.showWelcomeScreen_();
 
-  // Proxy requests to the active tab
-  chrome.runtime.onMessage.addListener(goog.bind(function(incoming, sender) {
-    if (incoming.proxy === true) {
-      var message = /** @type {messages.proxyMessage} */ (incoming);
-      this.getActiveTab_(goog.bind(function(tabId) {
-        // Execute the action, then forward the response to the correct tab.
-        var content = this.executeRequest_(message, tabId);
-        if (content) {
-          var response = /** @type {messages.proxyMessage} */ ({
-            action: message.action,
-            content: content
-          });
-          chrome.tabs.sendMessage(tabId, response);
-        }
-      }, this));
-    }
+  chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
+    this.proxyMessage(message, sender);
   }, this));
+};
+
+
+/**
+ * Proxies a message to the active tab.
+ * @param {messages.proxyMessage} incoming
+ * @param {!MessageSender} sender
+ */
+ext.Launcher.prototype.proxyMessage = function(incoming, sender) {
+  if (incoming.proxy === true) {
+    var message = /** @type {messages.proxyMessage} */ (incoming);
+    this.getActiveTab_(goog.bind(function(tabId) {
+      // Execute the action, then forward the response to the correct tab.
+      var response = this.executeRequest_(message, tabId);
+      if (response) {
+        console.log('launcher proxying', response, tabId);
+        chrome.tabs.sendMessage(tabId, response);
+      }
+    }, this));
+  }
 };
 
 
