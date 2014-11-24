@@ -217,7 +217,7 @@ function testUnsupportedAction() {
   mockControl.$replayAll();
 
   api.executeAction_(callbackMock, {
-    action: constants.Actions.LIST_KEYS
+    action: 'foo'
   });
 
   mockControl.$verifyAll();

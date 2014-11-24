@@ -538,7 +538,7 @@ e2ebind.hasDraft = function(callback) {
                       function(data) {
         var result = false;
 
-        data.result.has_draft = data.success.has_draft || false;
+        data.result.has_draft = data.result.has_draft || false;
         if (data.success && data.result.has_draft) {
           result = true;
         }

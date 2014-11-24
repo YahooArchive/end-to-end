@@ -25,6 +25,7 @@ goog.require('e2e.ext.Helper');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.e2ebind');
+goog.require('e2e.ext.testingstubs');
 goog.require('goog.asserts');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
@@ -52,6 +53,7 @@ var providerRequestHandler = goog.nullFunction;
 function setUp() {
   window.config = {};
   mockControl = new goog.testing.MockControl();
+  e2e.ext.testingstubs.initStubs(stubs);
 
   stubs.setPath('chrome.runtime.getURL', function(filename) {
     return './' + filename;
@@ -118,7 +120,7 @@ function testIsStarted() {
 function testE2ebindIconClick() {
   var clickHandled = false;
 
-  stubs.replace(e2ebind, 'sendExtensionRequest_', function(request, cb) {
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
     if (request.action === constants.Actions.GET_KEYRING_UNLOCKED) {
       cb({content: true, completedAction: request.action});
     }
@@ -284,7 +286,7 @@ function testProviderRequestToValidateSigner() {
   var signer = 'yzhu@yahoo-inc.com';
   e2ebind.started_ = true;
 
-  stubs.replace(e2ebind, 'sendExtensionRequest_', function(request, cb) {
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
     var response = {};
     response.completedAction = request.action;
     if (request.action === constants.Actions.LIST_ALL_UIDS &&
@@ -320,7 +322,7 @@ function testProviderRequestToValidateRecipients() {
   e2ebind.started_ = true;
   window.valid = true;
 
-  stubs.replace(e2ebind, 'sendExtensionRequest_', function(request, cb) {
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
     var response = {};
     response.completedAction = request.action;
     if (request.action === constants.Actions.LIST_ALL_UIDS &&
@@ -358,7 +360,6 @@ function testProviderRequestToValidateRecipients() {
 
 
 function testGetCurrentMessage() {
-  var action = constants.e2ebind.responseActions.GET_CURRENT_MESSAGE;
   var text = 'some text';
 
   providerRequestHandler = function(data) {
@@ -378,7 +379,6 @@ function testGetCurrentMessage() {
 
 
 function testHasDraft() {
-  var action = constants.e2ebind.responseActions.HAS_DRAFT;
   providerRequestHandler = function(data) {
     data.success = true;
     data.result = {has_draft: true};
@@ -396,7 +396,6 @@ function testHasDraft() {
 
 
 function testGetDraft() {
-  var action = constants.e2ebind.responseActions.GET_DRAFT;
   providerRequestHandler = function(data) {
     data.success = true;
     data.result = draft;
@@ -418,7 +417,6 @@ function testGetDraft() {
 
 
 function testSetDraft() {
-  var action = constants.e2ebind.responseActions.SET_DRAFT;
   providerRequestHandler = function(data) {
     var response = data.args;
     assertEquals(draft.to, response.to);

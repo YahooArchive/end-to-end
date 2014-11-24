@@ -220,6 +220,7 @@ ext.Launcher.prototype.start_ = function(passphrase) {
   }
   this.ctxApi_.installApi();
   this.started_ = true;
+  this.updatePassphraseWarning_();
   preferences.initDefaults();
 
   this.showWelcomeScreen_();
