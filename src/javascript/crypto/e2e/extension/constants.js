@@ -50,6 +50,7 @@ e2e.ext.constants.Actions = {
   LIST_KEYS: 'list_keys',
   LIST_ALL_UIDS: 'list_all_uids',
   GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',
+  LOCK_KEYRING: 'lock_keyring',
 
   // Actions needed for the compose glass.
   SHOW_NOTIFICATION: 'show_notification',

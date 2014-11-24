@@ -95,6 +95,9 @@ ui.Prompt = function() {
   }, {
     value: constants.Actions.CONFIGURE_EXTENSION,
     title: chrome.i18n.getMessage('actionConfigureExtension')
+  }, {
+    value: constants.Actions.LOCK_KEYRING,
+    title: chrome.i18n.getMessage('actionLockKeyring')
   }];
 };
 goog.inherits(ui.Prompt, goog.ui.Component);
@@ -220,6 +223,9 @@ ui.Prompt.prototype.processSelectedContent_ =
         url: 'settings.html',
         active: false
       }, goog.nullFunction);
+      return;
+    case constants.Actions.LOCK_KEYRING:
+      this.pgpLauncher_.stop();
       return;
     case constants.Actions.NO_OP:
       this.close();
