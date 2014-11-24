@@ -267,7 +267,7 @@ ext.Launcher.prototype.stop = function() {
 * Executes an action from a proxy request.
 * @param {messages.proxyMessage} args The message request
 * @param {number} tabId The ID of the active tab
-* @return {(messages.proxyMessage|messages.BridgeMessageResponse|
+* @return {?(messages.proxyMessage|messages.BridgeMessageResponse|
 *           messages.GetSelectionRequest)}
 * @private
 */

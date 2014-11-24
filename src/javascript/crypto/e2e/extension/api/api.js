@@ -149,6 +149,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       };
       break;
     case constants.Actions.SHOW_NOTIFICATION:
+      incoming.content = incoming.content || '';
       utils.showNotification(incoming.content, function() {
         callback(outgoing);
       });

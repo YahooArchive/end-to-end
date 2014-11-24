@@ -120,7 +120,7 @@ messages.ApiRequest.prototype.action;
 /**
  * Defines the response message from the context API.
  * @typedef {{
- *   content: (string|Object|undefined),
+ *   content: (boolean|string|Object|undefined),
  *   completedAction: e2e.ext.constants.Actions,
  *   selectedUid: (string|undefined),
  *   error: (string|undefined),
@@ -177,7 +177,7 @@ messages.e2ebindDraft;
  * Defines general message format between extension content scripts.
  * @typedef {{
  *   proxy: (boolean|undefined),
- *   action: {e2e.ext.constants.Actions},
+ *   action: e2e.ext.constants.Actions,
  *   content: (Object|string|undefined)
  * }}
  */

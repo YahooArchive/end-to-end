@@ -119,9 +119,9 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   styles.href = chrome.extension.getURL('composeglass_styles.css');
 
   // This tells the helper to attach the set_draft handler in e2ebind
-  utils.sendProxyRequest({
+  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
     action: constants.Actions.GET_SELECTED_CONTENT
-  });
+  }));
   this.processActiveContent_();
 };
 
@@ -178,10 +178,10 @@ ui.ComposeGlass.prototype.updateActiveContent_ =
     recipients: recipients,
     subject: subject
   });
-  utils.sendProxyRequest({
+  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
     action: constants.Actions.SET_DRAFT,
     content: response
-  });
+  }));
   callback();
 };
 
@@ -309,14 +309,14 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       // Show green icon in the URL bar when the secure text area is in focus
       // so page XSS attacks are less likely to compromise plaintext
       textArea.onfocus = function() {
-        utils.sendProxyRequest({
+        utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
           action: constants.Actions.CHANGE_PAGEACTION
-        });
+        }));
       };
       textArea.onblur = function() {
-        utils.sendProxyRequest({
+        utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
           action: constants.Actions.RESET_PAGEACTION
-        });
+        }));
       };
 
       textArea.value = content;
@@ -352,7 +352,7 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
                   // A passed object signals that the user has clicked the
                   // 'OK' button.
                   drafts.getDraft(origin, function(response) {
-                    var draft = response.content;
+                    var draft = response;
                     utils.sendExtensionRequest(
                       /** @type {!messages.ApiRequest} */ ({
                       action: constants.Actions.DECRYPT_VERIFY,
@@ -495,10 +495,10 @@ ui.ComposeGlass.prototype.close = function() {
       });
   goog.dispose(this);
   console.log('compose glass sending glass_closed');
-  utils.sendProxyRequest({
+  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
     action: constants.Actions.GLASS_CLOSED,
     content: this.hash
-  });
+  }));
 };
 
 
@@ -587,8 +587,9 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
-  utils.sendExtensionRequest({action: 'show_notification', content: msg},
-                callback);
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: 'show_notification',
+    content: msg}), callback);
 };
 
 /**

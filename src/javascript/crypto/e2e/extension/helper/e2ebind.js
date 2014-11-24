@@ -29,6 +29,7 @@ goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.constants.e2ebind.responseActions');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
+goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Uri');
@@ -162,9 +163,9 @@ e2ebind.clickHandler_ = function(e) {
   var elt = e.target;
 
   if (elt.id === constants.ElementId.E2EBIND_ICON) {
-    utils.sendExtensionRequest({
+    utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
       action: constants.Actions.GET_KEYRING_UNLOCKED
-    }, goog.bind(function(response) {
+    }), goog.bind(function(response) {
       if (response.error || !response.content) {
         // Can't install compose glass if the keyring is locked
         window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
@@ -572,10 +573,10 @@ e2ebind.setDraft = function(args) {
 * @private
 */
 e2ebind.validateSigner_ = function(signer, callback) {
-  utils.sendExtensionRequest({
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.LIST_ALL_UIDS,
     content: 'private'
-  }, function(response) {
+  }), function(response) {
     response.content = response.content || [];
     var emails = utils.text.getValidEmailAddressesFromArray(response.content,
                                                             true);
@@ -592,10 +593,10 @@ e2ebind.validateSigner_ = function(signer, callback) {
 * @private
 */
 e2ebind.validateRecipients_ = function(recipients, callback) {
-  utils.sendExtensionRequest({
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.LIST_ALL_UIDS,
     content: 'public'
-  }, function(response) {
+  }), function(response) {
     response.content = response.content || [];
     var emails = utils.text.getValidEmailAddressesFromArray(response.content,
                                                             true);
