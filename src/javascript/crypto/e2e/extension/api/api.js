@@ -160,27 +160,6 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       });
       callback(outgoing);
       return;
-    case constants.Actions.CHANGE_PAGEACTION:
-      chrome.browserAction.setTitle({
-        tabId: incoming.content,
-        title: chrome.i18n.getMessage('composeGlassTitle') });
-      chrome.browserAction.setIcon({
-        tabId: incoming.content,
-        path: 'images/yahoo/icon-128-green.png'
-      });
-      callback(outgoing);
-      return;
-    case constants.Actions.RESET_PAGEACTION:
-      chrome.browserAction.setTitle({
-        title: chrome.i18n.getMessage('extName'),
-        tabId: incoming.content
-      });
-      chrome.browserAction.setIcon({
-        tabId: incoming.content,
-        path: 'images/yahoo/icon-128.png'
-      });
-      callback(outgoing);
-      return;
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
       callback(outgoing);

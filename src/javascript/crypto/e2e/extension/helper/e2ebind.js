@@ -473,10 +473,10 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
   window.helper.registerDisposable(glassWrapper);
   glassWrapper.installGlass();
 
-  var closeHandler = function(message) {
-    message.glass_closed = message.glass_closed || false;
-    if (message.e2ebind && message.glass_closed &&
-        (message.hash === glassWrapper.hash)) {
+  var closeHandler = function(incoming) {
+    var message = /** @type {messages.proxyMessage} */ (incoming);
+    if (message.action === constants.Actions.GLASS_CLOSED &&
+        message.content === glassWrapper.hash) {
       console.log('e2ebind got glass closed');
       glassWrapper.dispose();
       chrome.runtime.onMessage.removeListener(closeHandler);
@@ -554,7 +554,8 @@ e2ebind.hasDraft = function(callback) {
 e2ebind.setDraft = function(args) {
   // TODO(yan): Doesn't work when multiple provider compose windows are open
   // on the same page
-  e2ebind.sendRequest('set_draft', /** @type {messages.e2ebindDraft} */ ({
+  e2ebind.sendRequest(constants.e2ebind.responseActions.SET_DRAFT,
+                      /** @type {messages.e2ebindDraft} */ ({
     to: args.to || [],
     cc: args.cc || [],
     bcc: args.bcc || [],

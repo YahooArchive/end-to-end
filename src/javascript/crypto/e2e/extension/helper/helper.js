@@ -335,7 +335,7 @@ ext.Helper.prototype.getSelectedContentE2ebind_ = function(selectionRequest,
   this.attachSetValueHandler_(goog.bind(this.setE2ebindValue_, this));
 
   // ComposeGlass already has draft, so abort early
-  if (selectionRequest.composeGlass) {
+  if (selectionRequest.hasDraft) {
     return;
   }
 

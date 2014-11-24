@@ -23,6 +23,7 @@
 goog.provide('e2e.ext.Launcher');
 
 goog.require('e2e.ext.api.Api');
+goog.require('e2e.ext.constants');
 goog.require('e2e.ext.ui.preferences');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
@@ -34,7 +35,8 @@ goog.scope(function() {
 var ext = e2e.ext;
 var preferences = e2e.ext.ui.preferences;
 var utils = e2e.ext.utils;
-
+var constants = e2e.ext.constants;
+var messages = e2e.ext.messages;
 
 
 /**
@@ -114,7 +116,8 @@ ext.Launcher.prototype.getSelectedContent = function(callback) {
   this.getActiveTab_(goog.bind(function(tabId) {
     chrome.tabs.sendMessage(tabId, {
       editableElem: true,
-      enableLookingGlass: preferences.isLookingGlassEnabled()
+      enableLookingGlass: preferences.isLookingGlassEnabled(),
+      hasDraft: false
     }, callback);
   }, this), true);
 };
@@ -221,22 +224,20 @@ ext.Launcher.prototype.start_ = function(passphrase) {
 
   this.showWelcomeScreen_();
 
-  // Proxy requests for compose glass in the active tab
-  chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
-    if (message.e2ebind || message.composeGlass) {
-      console.log('launcher.js got message to proxy', message);
+  // Proxy requests to the active tab
+  chrome.runtime.onMessage.addListener(goog.bind(function(incoming, sender) {
+    if (incoming.proxy === true) {
+      var message = /** @type {messages.proxyMessage} */ (incoming);
       this.getActiveTab_(goog.bind(function(tabId) {
         // Execute the action, then forward the response to the correct tab.
-        this.executeRequest_(message, tabId, function(response) {
-          if (message.e2ebind) {
-            response.e2ebind = true;
-          } else if (message.composeGlass) {
-            response.composeGlass = true;
-          }
-          response.action = message.action;
-          console.log('launcher.js sending', response);
+        var content = this.executeRequest_(message, tabId);
+        if (content) {
+          var response = /** @type {messages.proxyMessage} */ ({
+            action: message.action,
+            content: content
+          });
           chrome.tabs.sendMessage(tabId, response);
-        });
+        }
       }, this));
     }
   }, this));
@@ -263,45 +264,36 @@ ext.Launcher.prototype.stop = function() {
 
 
 /**
-* Execute a message request on the PGP content, then forward the response.
-* @param {messages.launcherMessage} args The message request
+* Executes an action from a proxy request.
+* @param {messages.proxyMessage} args The message request
 * @param {number} tabId The ID of the active tab
-* @param {function(messages.launcherMessage)} callback Function to call with
-*   the result.
+* @return {(messages.proxyMessage|messages.BridgeMessageResponse|
+*           messages.GetSelectionRequest)}
 * @private
 */
-ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
-  if (args.action === 'show_notification') {
-    args.msg = args.msg || '';
-    utils.showNotification(args.msg, function() {
-      callback({});
+ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
+  if (args.action === constants.Actions.GLASS_CLOSED) {
+    return /** @type {messages.proxyMessage} */ ({
+      content: args.content,
+      action: args.action
     });
-  } else if (args.action === 'glass_closed') {
-    callback({
-      glass_closed: true,
-      hash: args.hash
+  } else if (args.action === constants.Actions.SET_DRAFT) {
+    var content = args.content;
+    return /** @type {messages.BridgeMessageResponse} */ ({
+      value: content.value,
+      response: content.response,
+      detach: content.detach,
+      origin: content.origin,
+      recipients: content.recipients,
+      subject: content.subject
     });
-  } else if (args.action === 'set_draft') {
-    callback({
-      value: args.value,
-      response: args.response,
-      detach: args.detach,
-      origin: args.origin,
-      recipients: args.recipients,
-      subject: args.subject
-    });
-  } else if (args.action === 'get_selected_content') {
-    callback({
+  } else if (args.action === constants.Actions.GET_SELECTED_CONTENT) {
+    return /** @type {messages.GetSelectionRequest} */ ({
       editableElem: true,
+      hasDraft: true,
       enableLookingGlass: preferences.isLookingGlassEnabled()
     });
-  } else if (args.action === 'open_options') {
-    chrome.tabs.create({
-      url: 'settings.html',
-      active: true
-    });
-    callback({});
-  } else if (args.action === 'change_pageaction') {
+  } else if (args.action === constants.Actions.CHANGE_PAGEACTION) {
     chrome.browserAction.setTitle({
       tabId: tabId,
       title: chrome.i18n.getMessage('composeGlassTitle')
@@ -310,8 +302,8 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
       tabId: tabId,
       path: 'images/yahoo/icon-128-green.png'
     });
-    callback({});
-  } else if (args.action === 'reset_pageaction') {
+    return null;
+  } else if (args.action === constants.Actions.RESET_PAGEACTION) {
     chrome.browserAction.setTitle({
       title: chrome.i18n.getMessage('extName'),
       tabId: tabId
@@ -320,7 +312,7 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId, callback) {
       tabId: tabId,
       path: 'images/yahoo/icon-128.png'
     });
-    callback({});
+    return null;
   }
 };
 
@@ -367,7 +359,7 @@ ext.Launcher.prototype.updatePassphraseWarning_ = function() {
 
 /**
  * Changes the browser action state when Yahoo Mail page is active.
- * @param {number} tabId - The ID of the active tab
+ * @param {number} tabId The ID of the active tab
  * @private
  */
 ext.Launcher.prototype.updateYmailBrowserAction_ = function(tabId) {
@@ -440,4 +432,5 @@ ext.Launcher.prototype.removeResponseHandler_ = function() {
   chrome.webRequest.onHeadersReceived.removeListener(
     ext.Launcher.prototype.modifyResponse_);
 };
+
 });  // goog.scope

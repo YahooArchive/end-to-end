@@ -78,12 +78,6 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
   this.from = draft.from;
 
   /**
-   * Keep track of communication channels with the extension
-   * @private
-   */
-  this.ports_ = [];
-
-  /**
    * A timer to automatically save drafts.
    * TODO(user): Optimize the frequency of which auto-save triggers as it will
    * cause additional CPU (and possibly network) utilization.
@@ -103,17 +97,6 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
   };
 };
 goog.inherits(ui.ComposeGlass, goog.ui.Component);
-
-
-/** @override */
-ui.ComposeGlass.prototype.disposeInternal = function() {
-  goog.array.forEach(this.ports_, function(port) {
-    port.disconnect();
-  });
-
-  this.ports_ = [];
-  goog.base(this, 'disposeInternal');
-};
 
 
 /**
@@ -137,8 +120,7 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
 
   // This tells the helper to attach the set_draft handler in e2ebind
   utils.sendProxyRequest({
-    composeGlass: true,
-    action: 'get_selected_content'
+    action: constants.Actions.GET_SELECTED_CONTENT
   });
   this.processActiveContent_();
 };
@@ -188,15 +170,17 @@ ui.ComposeGlass.prototype.processActiveContent_ = function() {
  */
 ui.ComposeGlass.prototype.updateActiveContent_ =
   function(content, recipients, subject, callback) {
-  utils.sendProxyRequest({
-    composeGlass: true,
-    action: 'set_draft',
+  var response = /** @type {messages.BridgeMessageResponse} */ ({
     value: content,
     response: true,
     detach: true,
     origin: this.origin,
     recipients: recipients,
     subject: subject
+  });
+  utils.sendProxyRequest({
+    action: constants.Actions.SET_DRAFT,
+    content: response
   });
   callback();
 };
@@ -331,13 +315,13 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       // Show green icon in the URL bar when the secure text area is in focus
       // so page XSS attacks are less likely to compromise plaintext
       textArea.onfocus = function() {
-        utils.sendExtensionRequest({
-          action: 'change_pageaction'
+        utils.sendProxyRequest({
+          action: constants.Actions.CHANGE_PAGEACTION
         });
       };
       textArea.onblur = function() {
-        utils.sendExtensionRequest({
-          action: 'reset_pageaction'
+        utils.sendProxyRequest({
+          action: constants.Actions.RESET_PAGEACTION
         });
       };
 
@@ -349,7 +333,7 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
           action: constants.Actions.DECRYPT_VERIFY,
           content: content
         }), goog.bind(function(response) {
-          var decrypted = response.content;
+          var decrypted = response.content || '';
           if (e2e.openpgp.asciiArmor.isDraft(content)) {
             console.log('renderEncrypt setting draft content');
             textArea.value = decrypted;
@@ -379,7 +363,8 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
                       /** @type {!messages.ApiRequest} */ ({
                       action: constants.Actions.DECRYPT_VERIFY,
                       content: draft
-                    }), goog.bind(function(decrypted) {
+                    }), goog.bind(function(response) {
+                      var decrypted = response.content || '';
                       console.log('got DECRYPT_VERIFY result', decrypted);
                       textArea.value = decrypted;
                       this.surfaceDismissButton_();
@@ -418,8 +403,8 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         this.getHandler().listenOnce(textArea, goog.events.EventType.KEYDOWN,
             goog.bind(this.autoSaveTimer_.start, this.autoSaveTimer_));
       }
-    }, this), port);
-  }, this), port);
+    }, this));
+  }, this));
 };
 
 
@@ -517,9 +502,8 @@ ui.ComposeGlass.prototype.close = function() {
   goog.dispose(this);
   console.log('compose glass sending glass_closed');
   utils.sendProxyRequest({
-    e2ebind: true,
-    action: 'glass_closed',
-    hash: this.hash
+    action: constants.Actions.GLASS_CLOSED,
+    content: this.hash
   });
 };
 
@@ -556,7 +540,7 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
 
       utils.sendExtensionRequest(
           request, goog.bind(function(result) {
-            var encrypted = result.content;
+            var encrypted = result.content || '';
             this.clearSavedDraft_(origin);
             this.insertMessageIntoPage_(origin, encrypted);
           }, this));
@@ -566,9 +550,10 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
         action: constants.Actions.DECRYPT_VERIFY,
         content: textArea.value
       }), goog.bind(function(result) {
-        var decrypted = result.content;
+        var decrypted = result.content || '';
         textArea.value = decrypted;
-        var successMessage = chrome.i18n.getMessage('promptDecryptionSuccessMsg');
+        var successMessage =
+            chrome.i18n.getMessage('promptDecryptionSuccessMsg');
         this.displaySuccess_(successMessage, goog.nullFunction);
         this.surfaceDismissButton_();
       }, this));

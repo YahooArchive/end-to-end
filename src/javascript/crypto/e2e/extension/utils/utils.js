@@ -26,6 +26,7 @@ goog.require('e2e.ext.constants.ElementId');
 
 goog.scope(function() {
 var constants = e2e.ext.constants;
+var messages = e2e.ext.messages;
 var utils = e2e.ext.utils;
 
 
@@ -139,7 +140,6 @@ utils.showNotification = function(msg, callback) {
 * @param {messages.ApiRequest} args The message we wish to send to the launcher
 * @param {function(messages.e2ebindResponse)=} opt_callback optional callback
 *   to call with the result.
-* @private
 */
 utils.sendExtensionRequest = function(args, opt_callback) {
   var port = chrome.runtime.connect();
@@ -155,6 +155,16 @@ utils.sendExtensionRequest = function(args, opt_callback) {
   port.onDisconnect.addListener(function() {
     port = null;
   });
+};
+
+
+/**
+ * Sends a request from a content script to proxy a message to the active tab.
+ * @param {messages.proxyMessage} args The message to proxy
+ */
+utils.sendProxyRequest = function(args) {
+  args.proxy = true;
+  chrome.runtime.sendMessage(args);
 };
 
 });  // goog.scope
