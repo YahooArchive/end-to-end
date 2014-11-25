@@ -162,13 +162,15 @@ ui.Prompt.prototype.processSelectedContent_ =
   var origin = '';
   var recipients = [];
   var canInject = false;
+  var isYmail = false;
 
   if (contentBlob) {
     if (contentBlob.request) {
       content = contentBlob.selection;
     }
     origin = contentBlob.origin;
-    if (origin && utils.text.isYmailOrigin(origin)) {
+    isYmail = origin ? utils.text.isYmailOrigin(origin) : false;
+    if (isYmail) {
       action = opt_action ||
           utils.text.getPgpAction(content, true,
                                   constants.Actions.USER_SPECIFIED);
@@ -223,7 +225,7 @@ ui.Prompt.prototype.processSelectedContent_ =
       var menuContainer =
           goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
       goog.dom.classlist.add(menuContainer, constants.CssClass.HIDDEN);
-      this.renderMenu_(elem, contentBlob);
+      this.renderMenu_(elem, contentBlob, isYmail);
       return;
     case constants.Actions.CONFIGURE_EXTENSION:
       chrome.tabs.create({
@@ -252,7 +254,7 @@ ui.Prompt.prototype.processSelectedContent_ =
   this.getHandler().listen(
       goog.dom.getElement(constants.ElementId.MENU_CONTAINER),
       goog.events.EventType.CLICK,
-      goog.bind(this.renderMenu_, this, elem, promptPanel),
+      goog.bind(this.renderMenu_, this, elem, promptPanel, isYmail),
       true);
 };
 
@@ -288,10 +290,13 @@ ui.Prompt.prototype.buttonClick_ = function(
  * @param {panels.prompt.PanelBase|messages.BridgeMessageRequest} blob The
  *     prompt UI panel that is displayed to the user or the content blob that
  *     the user has selected.
+ * @param {boolean=} opt_showReduced Whether to show a reduced version of the
+ *     menu.
  * @private
  */
-ui.Prompt.prototype.renderMenu_ = function(elem, blob) {
+ui.Prompt.prototype.renderMenu_ = function(elem, blob, opt_showReduced) {
   var contentBlob;
+  var showReduced = opt_showReduced || false;
   if (blob instanceof panels.prompt.PanelBase) {
     contentBlob = blob.getContent();
   } else {
@@ -300,6 +305,11 @@ ui.Prompt.prototype.renderMenu_ = function(elem, blob) {
 
   var menu = new goog.ui.PopupMenu();
   goog.array.forEach(this.selectableActions_, function(action) {
+    if (showReduced &&
+        (action.value === constants.Actions.ENCRYPT_SIGN ||
+         action.value === constants.Actions.DECRYPT_VERIFY)) {
+      return;
+    }
     var menuItem = new goog.ui.MenuItem(action.title);
     menuItem.setValue(action.value);
     menu.addChild(menuItem, true);
