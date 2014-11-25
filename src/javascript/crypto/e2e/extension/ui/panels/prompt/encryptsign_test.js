@@ -36,6 +36,7 @@ goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.dom');
+goog.require('goog.structs.Map');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
@@ -255,6 +256,43 @@ function testRenderReply() {
 }
 
 
+function testRenderSigningKeys() {
+  stubs.setPath('e2e.ext.actions.ListKeys.prototype.execute',
+      function(ctx, request, requestor, cb, errcb) {
+        var result;
+        if (request.content === 'private') {
+          result = new goog.structs.Map({yan: [{serialized: [1, 2, 3]}]});
+        } else {
+          result = new goog.structs.Map({yan: [{serialized: [1, 2, 3]}],
+              david: [{serialized: [4, 5, 6]}]});
+        }
+        cb(result);
+      });
+
+  panel.setContentInternal({
+    request: true,
+    selection: 'foo',
+    subject: 'shareKeySubject'
+  });
+  panel.render(document.body);
+
+  panel.onSignerSelect_();
+  asyncTestCase.waitForAsync('Waiting for signing to be rendered.');
+  window.setTimeout(function() {
+    assertEquals(chrome.i18n.getMessage('shareKeySubject'),
+                 goog.dom.getElement(constants.ElementId.SUBJECT_HOLDER).value);
+    assertEquals('yan',
+                 goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value);
+    assertEquals(e2e.openpgp.asciiArmor.encode('PUBLIC KEY BLOCK',
+                                               [1, 2, 3]),
+                 panel.getElement().querySelector('textarea').value.replace(
+                     /\n/g, '\r\n'
+                 ));
+    asyncTestCase.continueTesting();
+  }, 500);
+}
+
+
 function testSaveDraftIntoPage() {
   var origin = 'http://www.example.com';
   var plaintext = 'plaintext message';
@@ -300,9 +338,10 @@ function testSaveDraftIntoPage() {
     subject: subject
   });
   panel.render(document.body);
-  textArea = document.querySelector('textarea');
+  var textArea = document.querySelector('textarea');
   assertEquals(plaintext, textArea.value);
-  subjectInput = document.getElementById(constants.ElementId.SUBJECT_HOLDER);
+  var subjectInput =
+      document.getElementById(constants.ElementId.SUBJECT_HOLDER);
   assertEquals(subject, subjectInput.value);
 
   panel.saveDraft_(origin, {type: 'click'});

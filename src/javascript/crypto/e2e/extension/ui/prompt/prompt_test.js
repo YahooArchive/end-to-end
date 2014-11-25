@@ -661,6 +661,22 @@ function testNoOp() {
 }
 
 
+function testShareKey() {
+  var subject = 'irrelevant';
+  stubs.setPath('chrome.i18n.getMessage', function() {
+    if (arguments[0] === 'shareKeySubject') {
+      return subject;
+    } else {
+      return [].join.call(arguments);
+    }
+  });
+
+  prompt.processSelectedContent_(null, constants.Actions.SHARE_KEY);
+  assertEquals(subject,
+               goog.dom.getElement(constants.ElementId.SUBJECT_HOLDER).value);
+}
+
+
 function populatePgpKeys() {
   var ctx = prompt.pgpLauncher_.getContext();
   ctx.importKey(function(uid, callback) {

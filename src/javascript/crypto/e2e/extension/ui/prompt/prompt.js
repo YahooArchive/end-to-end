@@ -224,10 +224,12 @@ ui.Prompt.prototype.processSelectedContent_ =
           goog.bind(this.displayFailure_, this));
       break;
     case constants.Actions.SHARE_KEY:
+      contentBlob = /** @type {!messages.BridgeMessageRequest} */
+          (contentBlob || {});
       contentBlob.subject = chrome.i18n.getMessage('shareKeySubject');
       promptPanel = new panels.prompt.EncryptSign(
           this.actionExecutor_,
-          /** @type {!messages.BridgeMessageRequest} */ (contentBlob),
+          contentBlob,
           goog.bind(this.displayFailure_, this));
       break;
     case constants.Actions.GET_PASSPHRASE:
