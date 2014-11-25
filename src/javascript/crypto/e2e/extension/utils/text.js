@@ -75,9 +75,10 @@ utils.prettyTextWrap = function(str, maxlen) {
  * @param {string} content The content that the user has selected.
  * @param {boolean=} opt_enableSniffing Optional. True if action sniffing is to
  *     be enabled. Defaults to false.
+ * @param {constants.Actions=} opt_default Optional default action.
  * @return {constants.Actions} The requested PGP action.
  */
-utils.getPgpAction = function(content, opt_enableSniffing) {
+utils.getPgpAction = function(content, opt_enableSniffing, opt_default) {
   if (!Boolean(opt_enableSniffing)) {
     return constants.Actions.USER_SPECIFIED;
   }
@@ -94,7 +95,7 @@ utils.getPgpAction = function(content, opt_enableSniffing) {
     return constants.Actions.IMPORT_KEY;
   }
 
-  return constants.Actions.ENCRYPT_SIGN;
+  return opt_default || constants.Actions.ENCRYPT_SIGN;
 };
 
 

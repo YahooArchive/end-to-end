@@ -167,9 +167,16 @@ ui.Prompt.prototype.processSelectedContent_ =
     if (contentBlob.request) {
       content = contentBlob.selection;
     }
-    action = opt_action || contentBlob.action ||
-        utils.text.getPgpAction(content, preferences.isActionSniffingEnabled());
     origin = contentBlob.origin;
+    if (origin && utils.text.isYmailOrigin(origin)) {
+      action = opt_action ||
+          utils.text.getPgpAction(content, true,
+                                  constants.Actions.USER_SPECIFIED);
+    } else {
+      action = opt_action || contentBlob.action ||
+          utils.text.getPgpAction(content,
+                                  preferences.isActionSniffingEnabled());
+    }
     if (e2e.openpgp.asciiArmor.isDraft(content)) {
       action = constants.Actions.ENCRYPT_SIGN;
     }
