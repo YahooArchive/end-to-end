@@ -216,7 +216,7 @@ promptPanels.EncryptSign.prototype.renderSigningKeys_ = function() {
     action: constants.Actions.LIST_KEYS,
     content: 'private'
   }), this, goog.bind(function(privateKeyResult) {
-    var availableSigningKeys = privateKeyResult.getKeys();
+    var availableSigningKeys = goog.object.getKeys(privateKeyResult);
     var signerSelect = goog.dom.getElement(constants.ElementId.SIGNER_SELECT);
     var signCheck = goog.dom.getElement(constants.ElementId.SIGN_MESSAGE_CHECK);
 
@@ -262,7 +262,7 @@ promptPanels.EncryptSign.prototype.onSignerSelect_ = function() {
         var textArea = /** @type {HTMLTextAreaElement} */
             (this.getElement().querySelector('textarea'));
         var keys = [];
-        result.forEach(function(value, uid) {
+        goog.object.forEach(result, function(value, uid) {
           if (uid === currentUser) {
             goog.array.extend(keys, value);
           }

@@ -261,10 +261,12 @@ function testRenderSigningKeys() {
       function(ctx, request, requestor, cb, errcb) {
         var result;
         if (request.content === 'private') {
-          result = new goog.structs.Map({yan: [{serialized: [1, 2, 3]}]});
+          result = {yan: [{serialized: [1, 2, 3]}]};
         } else {
-          result = new goog.structs.Map({yan: [{serialized: [1, 2, 3]}],
-              david: [{serialized: [4, 5, 6]}]});
+          result = {
+            yan: [{serialized: [1, 2, 3]}],
+            david: [{serialized: [4, 5, 6]}]
+          };
         }
         cb(result);
       });
