@@ -72,15 +72,23 @@
     "description": "A sentence prompting the user to paste an encrypted PGP message."
   },
   "shareKeySubject": {
-    "message": "My Yahoo Mail encryption key",
+    "message": "My email encryption key",
     "description": "Default subject line for Share Key messages"
+  },
+  "shareKeyFromLabel": {
+    "message": "Share key(s) for this address:",
+    "description": "Label for 'from' field when sharing keys"
+  },
+  "shareKeyToLabel": {
+    "message": "Share with:",
+    "description": "Label for the 'to' field when sharing keys"
   },
   "promptDecryptVerifyActionLabel": {
     "message": "Read",
     "description": "A verb prompting the user to encrypt and/or sign a message."
   },
   "promptShareKeyTitle": {
-    "message": "Share an OpenPGP Key",
+    "message": "Share an Encryption Key",
     "description": "A friendly title for the key share action."
   },
   "promptShareKeyActionLabel": {

@@ -236,8 +236,15 @@ promptPanels.EncryptSign.prototype.renderSigningKeys_ = function() {
       keyElem.textContent = key;
       signerSelect.appendChild(keyElem);
     });
-    if (chrome.i18n.getMessage('shareKeySubject') ===
-        goog.dom.getElement(constants.ElementId.SUBJECT_HOLDER).value) {
+    var subjectHolder = goog.dom.getElement(constants.ElementId.SUBJECT_HOLDER);
+    if (subjectHolder && chrome.i18n.getMessage('shareKeySubject') ===
+        subjectHolder.value) {
+      goog.dom.getElement(constants.ElementId.TITLE).textContent =
+          chrome.i18n.getMessage('promptShareKeyTitle');
+      goog.dom.getElement(constants.ElementId.FROM_LABEL).textContent =
+          chrome.i18n.getMessage('shareKeyFromLabel');
+      goog.dom.getElement(constants.ElementId.TO_LABEL).textContent =
+          chrome.i18n.getMessage('shareKeyToLabel');
       this.onSignerSelect_();
       signerSelect.onchange = goog.bind(this.onSignerSelect_, this);
     }
