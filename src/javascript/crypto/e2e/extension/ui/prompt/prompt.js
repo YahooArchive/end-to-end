@@ -80,18 +80,23 @@ ui.Prompt = function() {
 
   /**
    * The End-to-End actions that the user can select in the prompt UI.
-   * @type {!Array.<!Object.<constants.Actions,string>>}
+   * @type {!Array.<!Object.<constants.Actions,string,boolean>>}
    * @private
    */
   this.selectableActions_ = [{
     value: constants.Actions.ENCRYPT_SIGN,
-    title: chrome.i18n.getMessage('promptEncryptSignTitle')
+    title: chrome.i18n.getMessage('promptEncryptSignTitle'),
+    optional: true
   }, {
     value: constants.Actions.DECRYPT_VERIFY,
-    title: chrome.i18n.getMessage('promptDecryptVerifyTitle')
+    title: chrome.i18n.getMessage('promptDecryptVerifyTitle'),
+    optional: true
   }, {
     value: constants.Actions.IMPORT_KEY,
     title: chrome.i18n.getMessage('promptImportKeyTitle')
+  }, {
+    value: constants.Actions.SHARE_KEY,
+    title: chrome.i18n.getMessage('promptShareKeyTitle')
   }, {
     value: constants.Actions.CONFIGURE_EXTENSION,
     title: chrome.i18n.getMessage('actionConfigureExtension')
@@ -218,6 +223,13 @@ ui.Prompt.prototype.processSelectedContent_ =
           /** @type {!messages.BridgeMessageRequest} */ (contentBlob || {}),
           goog.bind(this.displayFailure_, this));
       break;
+    case constants.Actions.SHARE_KEY:
+      contentBlob.subject = chrome.i18n.getMessage('shareKeySubject');
+      promptPanel = new panels.prompt.EncryptSign(
+          this.actionExecutor_,
+          /** @type {!messages.BridgeMessageRequest} */ (contentBlob),
+          goog.bind(this.displayFailure_, this));
+      break;
     case constants.Actions.GET_PASSPHRASE:
       this.renderKeyringPassphrase_(elem, contentBlob);
       break;
@@ -305,9 +317,7 @@ ui.Prompt.prototype.renderMenu_ = function(elem, blob, opt_showReduced) {
 
   var menu = new goog.ui.PopupMenu();
   goog.array.forEach(this.selectableActions_, function(action) {
-    if (showReduced &&
-        (action.value === constants.Actions.ENCRYPT_SIGN ||
-         action.value === constants.Actions.DECRYPT_VERIFY)) {
+    if (showReduced && action.optional) {
       return;
     }
     var menuItem = new goog.ui.MenuItem(action.title);

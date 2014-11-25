@@ -220,7 +220,10 @@ promptPanels.EncryptSign.prototype.renderSigningKeys_ = function() {
     var signerSelect = goog.dom.getElement(constants.ElementId.SIGNER_SELECT);
     var signCheck = goog.dom.getElement(constants.ElementId.SIGN_MESSAGE_CHECK);
 
-    if (availableSigningKeys.length == 0) {
+    var shareKey = (this.getContent().subject ===
+                    chrome.i18n.getMessage('shareKeySubject'));
+
+    if (availableSigningKeys.length === 0) {
       signCheck.disabled = true;
       signerSelect.disabled = true;
       var noKeysLabel = document.createTextNode(
@@ -229,6 +232,34 @@ promptPanels.EncryptSign.prototype.renderSigningKeys_ = function() {
       fromHolder.appendChild(noKeysLabel);
     } else {
       signCheck.checked = true;
+      signerSelect.onchange = function() {
+        var index = signerSelect.selectedIndex;
+        if (index !== -1 && shareKey) {
+          var currentUser =
+              goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
+          var request = {action: constants.Actions.LIST_KEYS,
+                         content: 'public'};
+          this.actionExecutor_.execute(request, this,
+              goog.bind(function(response) {
+                var keys = [];
+                var result = response.content;
+                goog.object.forEach(result, function(value, uid) {
+                  if (uid === currentUser) {
+                    keys.push(value);
+                  }
+                });
+                var armoredKey = e2e.openpgp.asciiArmor.encode(
+                    'PUBLIC KEY BLOCK',
+                    goog.array.flatten(goog.array.map(
+                        keys, function(key) {
+                      return key.serialized;
+                    })));
+                var textArea = /** @type {HTMLTextAreaElement} */
+                    (this.getElement().querySelector('textarea'));
+                textArea.value = armoredKey;
+              }, this));
+        }
+      };
     }
 
     goog.array.forEach(availableSigningKeys, function(key) {

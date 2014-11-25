@@ -47,6 +47,7 @@ e2e.ext.constants.Actions = {
   GET_KEYRING_BACKUP_DATA: 'get_keyring_backup_data',
   RESTORE_KEYRING_DATA: 'restore_keyring_data',
   IMPORT_KEY: 'import_key',
+  SHARE_KEY: 'share_key',
   LIST_KEYS: 'list_keys',
   LIST_ALL_UIDS: 'list_all_uids',
   GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',

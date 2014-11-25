@@ -71,9 +71,21 @@
     "message": "Paste here the protected message that you would like to read.",
     "description": "A sentence prompting the user to paste an encrypted PGP message."
   },
+  "shareKeySubject": {
+    "message": "My Yahoo Mail encryption key",
+    "description": "Default subject line for Share Key messages"
+  },
   "promptDecryptVerifyActionLabel": {
     "message": "Read",
     "description": "A verb prompting the user to encrypt and/or sign a message."
+  },
+  "promptShareKeyTitle": {
+    "message": "Share an OpenPGP Key",
+    "description": "A friendly title for the key share action."
+  },
+  "promptShareKeyActionLabel": {
+    "message": "Share",
+    "description": "A verb prompting the user to share a key."
   },
   "promptImportKeyTitle": {
     "message": "Import an OpenPGP Key",
