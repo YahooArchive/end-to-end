@@ -93,10 +93,17 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   glassFrame.scrolling = 'no';
   goog.style.setSize(glassFrame, goog.style.getSize(this.targetElem_));
   glassFrame.style.border = 0;
+  var pgpMessage = '';
+  var surroundings = ['', ''];
 
-  var pgpMessage = e2e.openpgp.asciiArmor.extractPgpBlock(
-      this.targetElem_.innerText);
-  var surroundings = this.targetElem_.innerText.split(pgpMessage);
+  if (this.originalText_) {
+    pgpMessage = this.originalText_;
+  } else {
+    pgpMessage =
+        e2e.openpgp.asciiArmor.extractPgpBlock(this.targetElem_.innerText);
+    surroundings = this.targetElem_.innerText.split(pgpMessage);
+  }
+
   this.targetElem_.textContent = '';
   this.targetElem_.appendChild(document.createTextNode(surroundings[0]));
   this.targetElem_.appendChild(document.createElement('p'));

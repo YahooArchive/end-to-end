@@ -451,7 +451,7 @@ e2ebind.installReadGlass_ = function(elem, opt_text) {
   var action = utils.text.getPgpAction(selectionBody, true);
 
   if (action == constants.Actions.DECRYPT_VERIFY) {
-    var glassWrapper = new ui.GlassWrapper(elem, opt_text);
+    var glassWrapper = new ui.GlassWrapper(elem, selectionBody);
     window.helper.registerDisposable(glassWrapper);
     glassWrapper.installGlass();
   }
