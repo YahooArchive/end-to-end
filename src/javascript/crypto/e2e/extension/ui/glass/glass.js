@@ -157,6 +157,7 @@ ui.Glass.prototype.renderContents_ = function(response) {
 ui.Glass.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
+  /*
   var mouseWheelHandler = new goog.events.MouseWheelHandler(
       this.getElement(), true);
   this.registerDisposable(mouseWheelHandler);
@@ -165,6 +166,7 @@ ui.Glass.prototype.enterDocument = function() {
       mouseWheelHandler,
       goog.events.MouseWheelHandler.EventType.MOUSEWHEEL,
       this.scroll_);
+  */
 };
 
 
