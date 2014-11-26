@@ -279,7 +279,8 @@ ext.Launcher.prototype.stop = function() {
 * @private
 */
 ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
-  if (args.action === constants.Actions.GLASS_CLOSED) {
+  if (args.action === constants.Actions.GLASS_CLOSED ||
+      args.action === constants.Actions.SET_GLASS_SIZE) {
     return /** @type {messages.proxyMessage} */ ({
       content: args.content,
       action: args.action

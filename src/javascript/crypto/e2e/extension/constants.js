@@ -53,7 +53,7 @@ e2e.ext.constants.Actions = {
   GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',
   LOCK_KEYRING: 'lock_keyring',
 
-  // Actions needed for the compose glass.
+  // Actions needed for the glasses.
   SHOW_NOTIFICATION: 'show_notification',
   GLASS_CLOSED: 'glass_closed',
   SET_DRAFT: 'set_draft',
@@ -61,6 +61,7 @@ e2e.ext.constants.Actions = {
   OPEN_OPTIONS: 'open_options',
   CHANGE_PAGEACTION: 'change_pageaction',
   RESET_PAGEACTION: 'reset_pageaction',
+  SET_GLASS_SIZE: 'set_glass_size',
 
   // Intended no-op. Used for closing the prompt UI when other visual elements
   // (e.g. looking glass) would display data.

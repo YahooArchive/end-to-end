@@ -25,6 +25,7 @@ goog.require('e2e.ext.constants.Actions');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.ui.templates.glass');
+goog.require('e2e.ext.utils');
 goog.require('e2e.random');
 goog.require('goog.events.MouseWheelHandler');
 goog.require('goog.style');
@@ -36,6 +37,7 @@ var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
 var templates = e2e.ext.ui.templates.glass;
 var ui = e2e.ext.ui;
+var utils = e2e.ext.utils;
 
 
 
@@ -137,6 +139,17 @@ ui.Glass.prototype.renderContents_ = function(response) {
   });
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('glass_styles.css');
+
+  // Wait for styles to be applied, then resize the glass element.
+  window.setTimeout(goog.bind(function() {
+    utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
+      action: constants.Actions.SET_GLASS_SIZE,
+      content: {
+        height: window.document.querySelector('fieldset').offsetHeight +
+            Math.floor(Math.random() * 18)
+      }
+    }));
+  }, this), 30);
 };
 
 

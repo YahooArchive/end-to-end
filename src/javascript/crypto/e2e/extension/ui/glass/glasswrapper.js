@@ -192,8 +192,6 @@ goog.scope(function() {
    */
   ui.ComposeGlassWrapper.prototype.installGlass = function() {
     this.targetElem_.composeGlass = this;
-    goog.style.setElementShown(document.getElementById('theAd'), false);
-    goog.style.setElementShown(document.getElementById('slot_mbrec'), false);
 
     var glassFrame = goog.dom.createElement(goog.dom.TagName.IFRAME);
     glassFrame.src = chrome.runtime.getURL('composeglass.html');

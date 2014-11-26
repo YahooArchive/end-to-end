@@ -454,6 +454,19 @@ e2ebind.installReadGlass_ = function(elem, opt_text) {
     var glassWrapper = new ui.GlassWrapper(elem, selectionBody);
     window.helper.registerDisposable(glassWrapper);
     glassWrapper.installGlass();
+
+    var resizeHandler = function(incoming) {
+      var message = /** @type {messages.proxyMessage} */ (incoming);
+      if (message.action === constants.Actions.SET_GLASS_SIZE) {
+        var height = message.content.height;
+        if (height) {
+          elem.style.height = height + 'px';
+          elem.getElementsByTagName('iframe')[0].style.height = height + 'px';
+        }
+        chrome.runtime.onMessage.removeListener(resizeHandler);
+      }
+    };
+    chrome.runtime.onMessage.addListener(resizeHandler);
   }
 };
 
@@ -478,7 +491,6 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
     var message = /** @type {messages.proxyMessage} */ (incoming);
     if (message.action === constants.Actions.GLASS_CLOSED &&
         message.content === glassWrapper.hash) {
-      console.log('e2ebind got glass closed');
       glassWrapper.dispose();
       chrome.runtime.onMessage.removeListener(closeHandler);
     }
