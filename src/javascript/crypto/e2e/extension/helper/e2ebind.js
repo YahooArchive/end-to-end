@@ -160,11 +160,20 @@ e2ebind.messageHandler_ = function(response) {
  * @private
  */
 e2ebind.clickHandler_ = function(e) {
-  var elt = e.target;
+  var elt;
+  var iconClicked;
+  if (e === null) {
+    // User is composing to a person who has a key. No click event was emitted
+    // but pretend that the lock icon was clicked.
+    elt = document.activeElement;
+    iconClicked = true;
+  } else {
+    elt = e.target;
+    iconClicked = (elt.id === constants.ElementId.E2EBIND_ICON);
+  }
 
   var initComposeGlass = function() {
     var activeElem = document.activeElement;
-    var iconClicked = (elt.id === constants.ElementId.E2EBIND_ICON);
 
     // Install the compose glass if either the lock icon was clicked or
     // if we are replying to a PGP message.
@@ -631,11 +640,18 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
     response.content = response.content || [];
     var emails = utils.text.getValidEmailAddressesFromArray(response.content,
                                                             true);
+    var anyValid = false;
     var results = [];
     goog.array.forEach(recipients, function(recipient) {
       var valid = goog.array.contains(emails, recipient);
+      if (valid) {
+        anyValid = true;
+      }
       results.push({valid: valid, recipient: recipient});
     });
+    if (anyValid) {
+      e2ebind.clickHandler_(null);
+    }
     callback(results);
   });
 };
