@@ -169,7 +169,7 @@ ui.ComposeGlass.prototype.processActiveContent_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.updateActiveContent_ =
-  function(content, recipients, subject, callback) {
+    function(content, recipients, subject, callback) {
   var response = /** @type {messages.BridgeMessageResponse} */ ({
     value: content,
     response: true,
@@ -205,11 +205,11 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
     if (goog.dom.classlist.contains(target, constants.CssClass.CANCEL)) {
       this.close();
     } else if (
-      goog.dom.classlist.contains(target, constants.CssClass.ACTION)) {
+        goog.dom.classlist.contains(target, constants.CssClass.ACTION)) {
       this.executeAction_(action, elem, origin);
     } else if (
-      // TODO(yan): make this go back to normal compose
-      goog.dom.classlist.contains(target, constants.CssClass.BACK)) {
+        // TODO(yan): make this go back to normal compose
+        goog.dom.classlist.contains(target, constants.CssClass.BACK)) {
       this.close();
     }
   }
@@ -224,17 +224,17 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
  * @private
  */
 ui.ComposeGlass.prototype.getRecipientsEmailMap_ = function(recipients) {
-    var map = {};
-    goog.array.forEach(recipients, function(recipient) {
-        var email = utils.text.extractValidEmail(recipient);
-        if (email) {
-          if (!map.hasOwnProperty(email)) {
-            map[email] = [];
-          }
-          map[email].push(recipient);
-        }
-    });
-    return map;
+  var map = {};
+  goog.array.forEach(recipients, function(recipient) {
+    var email = utils.text.extractValidEmail(recipient);
+    if (email) {
+      if (!map.hasOwnProperty(email)) {
+        map[email] = [];
+      }
+      map[email].push(recipient);
+    }
+  });
+  return map;
 };
 
 
@@ -354,15 +354,15 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
                   drafts.getDraft(origin, function(response) {
                     var draft = response;
                     utils.sendExtensionRequest(
-                      /** @type {!messages.ApiRequest} */ ({
-                      action: constants.Actions.DECRYPT_VERIFY,
-                      content: draft
-                    }), goog.bind(function(response) {
-                      var decrypted = response.content || '';
-                      console.log('got DECRYPT_VERIFY result', decrypted);
-                      textArea.value = decrypted;
-                      this.surfaceDismissButton_();
-                    }, this));
+                        /** @type {!messages.ApiRequest} */ ({
+                          action: constants.Actions.DECRYPT_VERIFY,
+                          content: draft
+                        }), goog.bind(function(response) {
+                          var decrypted = response.content || '';
+                          console.log('got DECRYPT_VERIFY result', decrypted);
+                          textArea.value = decrypted;
+                          this.surfaceDismissButton_();
+                        }, this));
                   });
                 } else {
                   drafts.clearDraft(origin);
@@ -461,7 +461,6 @@ ui.ComposeGlass.prototype.renderEncryptionPassphraseConfirmDialog_ =
   this.addChild(confirmDialog, false);
   confirmDialog.render(popupElem);
 };
-
 
 
 /**
@@ -579,6 +578,7 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
   errorDiv.textContent = '';
 };
 
+
 /**
  * Notifies user of successful operation.
  * @param {string} msg The message to display
@@ -591,6 +591,7 @@ ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
     action: 'show_notification',
     content: msg}), callback);
 };
+
 
 /**
  * Surfaces the Dismiss button in the UI.
@@ -610,6 +611,7 @@ ui.ComposeGlass.prototype.surfaceDismissButton_ = function() {
   }
 };
 
+
 /**
  * Inserts the encrypted content into the page.
  * @param {string} origin The web origin for which the PGP action is performed.
@@ -622,6 +624,7 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
   this.updateActiveContent_(
       text, recipients, subject, goog.bind(this.close, this));
 };
+
 
 /**
  * Encrypts the current draft and persists it into the web app that the user is
@@ -643,7 +646,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, evt) {
     var draft = e2e.openpgp.asciiArmor.markAsDraft(encrypted);
     if (evt.type == goog.events.EventType.CLICK) {
       this.updateActiveContent_(
-        formText.value, this.recipients, '', goog.nullFunction);
+          formText.value, this.recipients, '', goog.nullFunction);
     } else {
       drafts.saveDraft(draft, origin);
     }
@@ -661,4 +664,4 @@ ui.ComposeGlass.prototype.clearSavedDraft_ = function(origin) {
   drafts.clearDraft(origin);
 };
 
-}); // goog.scope
+});  // goog.scope

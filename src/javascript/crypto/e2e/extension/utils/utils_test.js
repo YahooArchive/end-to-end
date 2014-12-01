@@ -156,7 +156,7 @@ function testSendProxyRequest() {
         assertEquals(args, arg);
         return true;
       }
-  ));
+      ));
   mockControl.$replayAll();
   utils.sendProxyRequest(args);
   mockControl.$verifyAll();

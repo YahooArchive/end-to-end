@@ -39,6 +39,7 @@ var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
 
 
+
 /**
  * Constructor for the End-To-End extension launcher.
  * @constructor
@@ -438,7 +439,7 @@ ext.Launcher.prototype.installResponseHandler_ = function() {
  */
 ext.Launcher.prototype.removeResponseHandler_ = function() {
   chrome.webRequest.onHeadersReceived.removeListener(
-    ext.Launcher.prototype.modifyResponse_);
+      ext.Launcher.prototype.modifyResponse_);
 };
 
 });  // goog.scope
