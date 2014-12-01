@@ -229,9 +229,9 @@ function testProxyMessage() {
   stubs.set(chrome.tabs, 'sendMessage',
             mockControl.createFunctionMock('sendMessage'));
   chrome.tabs.sendMessage(new goog.testing.mockmatchers.ArgumentMatcher(
-                              function(arg) {
-                                return goog.isNumber(arg);
-                              }
+      function(arg) {
+        return goog.isNumber(arg);
+      }
                           ),
                           new goog.testing.mockmatchers.ArgumentMatcher(
                               function(arg) {

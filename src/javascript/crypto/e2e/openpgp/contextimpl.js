@@ -104,10 +104,12 @@ e2e.openpgp.ContextImpl.prototype.setKeyRingPassphrase = function(
   this.keyRing_ = new e2e.openpgp.KeyRing(passphrase, this.keyServerUrl);
 };
 
+
 /** @inheritDoc */
 e2e.openpgp.ContextImpl.prototype.unsetKeyringPassphrase = function() {
   this.keyring_ = null;
 };
+
 
 /** @inheritDoc */
 e2e.openpgp.ContextImpl.prototype.changeKeyRingPassphrase = function(

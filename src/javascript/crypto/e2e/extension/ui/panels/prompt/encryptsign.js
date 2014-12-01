@@ -278,7 +278,7 @@ promptPanels.EncryptSign.prototype.onSignerSelect_ = function() {
             keys, function(key) {
               return key.serialized;
             }
-        ));
+            ));
         var armoredKey = e2e.openpgp.asciiArmor.encode(
             'PUBLIC KEY BLOCK', allKeys);
         textArea.value = armoredKey;

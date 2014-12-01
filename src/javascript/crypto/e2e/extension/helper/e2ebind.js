@@ -569,12 +569,12 @@ e2ebind.setDraft = function(args) {
   // on the same page
   e2ebind.sendRequest(constants.e2ebind.responseActions.SET_DRAFT,
                       /** @type {messages.e2ebindDraft} */ ({
-    to: args.to || [],
-    cc: args.cc || [],
-    bcc: args.bcc || [],
-    subject: args.subject || '',
-    body: args.body || ''
-  }));
+        to: args.to || [],
+        cc: args.cc || [],
+        bcc: args.bcc || [],
+        subject: args.subject || '',
+        body: args.body || ''
+      }));
 };
 
 
