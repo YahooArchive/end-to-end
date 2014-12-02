@@ -270,6 +270,13 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         subject: subject
       });
 
+      var fromHolder = goog.dom.getElement(constants.ElementId.SIGNER_SELECT);
+      if (goog.array.contains(availableSigningKeys, from)) {
+        fromHolder.value = from;
+      } else {
+        console.warn('Expected available signing keys to contain', from);
+      }
+
       var textArea = /** @type {HTMLTextAreaElement} */
           (elem.querySelector('textarea'));
 

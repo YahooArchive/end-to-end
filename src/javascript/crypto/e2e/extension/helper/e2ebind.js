@@ -140,6 +140,7 @@ e2ebind.messageHandler_ = function(response) {
       return;
     }
 
+    console.log('got e2ebind msg from provider:', data);
     if (data.action.toUpperCase() in constants.e2ebind.requestActions) {
       e2ebind.handleProviderRequest_(/** @type {messages.e2ebindRequest} */
                                      (data));
@@ -408,6 +409,7 @@ e2ebind.handleProviderRequest_ = function(request) {
       break;
 
     case actions.SET_SIGNER:
+      // TODO: Page doesn't send message when selected signer changes.
       (function() {
         // validates and updates the signer/validity in E2E
         if (!args.signer) {
