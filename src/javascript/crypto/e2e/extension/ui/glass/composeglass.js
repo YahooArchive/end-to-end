@@ -25,7 +25,6 @@ goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
-goog.require('e2e.ext.ui.draftmanagerAsync');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolder');
 goog.require('e2e.ext.ui.templates.composeglass');
@@ -46,7 +45,6 @@ goog.require('soy');
 goog.scope(function() {
 var constants = e2e.ext.constants;
 var dialogs = e2e.ext.ui.dialogs;
-var drafts = e2e.ext.ui.draftmanagerAsync;
 var ext = e2e.ext;
 var messages = e2e.ext.messages;
 var panels = e2e.ext.ui.panels;
@@ -318,56 +316,11 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
             this.renderReply_(textArea, decrypted);
           }
         }, this));
-      } else {
-        drafts.hasDraft(origin, goog.bind(function(result) {
-          if (!result) {
-            // No draft, abort early.
-            return;
-          }
-          // Prompt user to restore draft
-          var popupElem =
-              goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
-          var dialog = new dialogs.Generic(
-              chrome.i18n.getMessage('promptEncryptSignRestoreDraftMsg'),
-              goog.bind(function(dialogResult) {
-                if (goog.isDef(dialogResult)) {
-                  // A passed object signals that the user has clicked the
-                  // 'OK' button.
-                  drafts.getDraft(origin, function(response) {
-                    var draft = response;
-                    utils.sendExtensionRequest(
-                        /** @type {!messages.ApiRequest} */ ({
-                          action: constants.Actions.DECRYPT_VERIFY,
-                          content: draft
-                        }), goog.bind(function(response) {
-                          var decrypted = response.content || '';
-                          console.log('got DECRYPT_VERIFY result', decrypted);
-                          textArea.value = decrypted;
-                          this.surfaceDismissButton_();
-                        }, this));
-                  });
-                } else {
-                  drafts.clearDraft(origin);
-                }
-
-                goog.dispose(dialog);
-              }, this),
-              dialogs.InputType.NONE,
-              '',
-              chrome.i18n.getMessage('promptEncryptSignRestoreDraftLabel'),
-              chrome.i18n.getMessage('promptEncryptSignDiscardDraftLabel'));
-          this.addChild(dialog, false);
-          dialog.render(popupElem);
-        }, this));
       }
 
       this.getHandler().listen(
           goog.dom.getElement(constants.ElementId.PASSPHRASE_ENCRYPTION_LINK),
           goog.events.EventType.CLICK, this.renderEncryptionPassphraseDialog_);
-
-      this.getHandler().listen(
-          this.getElementByClass(constants.CssClass.SAVE),
-          goog.events.EventType.CLICK, goog.partial(this.saveDraft_, origin));
 
       this.chipHolder_ = new panels.ChipHolder(
           intendedRecipients, allAvailableRecipients);
@@ -511,7 +464,6 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
       utils.sendExtensionRequest(
           request, goog.bind(function(result) {
             var encrypted = result.content || '';
-            this.clearSavedDraft_(origin);
             this.insertMessageIntoPage_(origin, encrypted);
           }, this));
       break;
@@ -600,44 +552,6 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
   var subject = this.getElement().querySelector('#subjectHolder input').value;
   this.updateActiveContent_(
       text, recipients, subject, goog.bind(this.close, this));
-};
-
-
-/**
- * Encrypts the current draft and persists it into the web app that the user is
- * interacting with.
- * @param {string} origin The web origin where the message was created.
- * @param {goog.events.Event} evt The event that triggers the saving of the
- *     draft.
- * @private
- */
-ui.ComposeGlass.prototype.saveDraft_ = function(origin, evt) {
-  var formText = this.getElement().querySelector('textarea');
-
-  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-    action: constants.Actions.ENCRYPT_SIGN,
-    content: formText.value,
-    currentUser: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
-  }), goog.bind(function(response) {
-    var encrypted = response.content || '';
-    var draft = e2e.openpgp.asciiArmor.markAsDraft(encrypted);
-    if (evt.type == goog.events.EventType.CLICK) {
-      this.updateActiveContent_(
-          formText.value, this.recipients, '', goog.nullFunction);
-    } else {
-      drafts.saveDraft(draft, origin);
-    }
-  }, this));
-};
-
-
-/**
- * Clears the saved draft and disables auto-save.
- * @param {string} origin The origin for which the drafts are to be removed.
- * @private
- */
-ui.ComposeGlass.prototype.clearSavedDraft_ = function(origin) {
-  drafts.clearDraft(origin);
 };
 
 });  // goog.scope
