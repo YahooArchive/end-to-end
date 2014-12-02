@@ -318,10 +318,6 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         }, this));
       }
 
-      this.getHandler().listen(
-          goog.dom.getElement(constants.ElementId.PASSPHRASE_ENCRYPTION_LINK),
-          goog.events.EventType.CLICK, this.renderEncryptionPassphraseDialog_);
-
       this.chipHolder_ = new panels.ChipHolder(
           intendedRecipients, allAvailableRecipients);
       this.addChild(this.chipHolder_, false);
@@ -329,67 +325,6 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
           goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
     }, this));
   }, this));
-};
-
-
-/**
- * Renders the UI elements needed for requesting a passphrase for symmetrically
- * encrypting the current message.
- * @private
- */
-ui.ComposeGlass.prototype.renderEncryptionPassphraseDialog_ = function() {
-  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
-  var passphraseDialog = new dialogs.Generic(
-      chrome.i18n.getMessage('promptEncryptionPassphraseMessage'),
-      goog.bind(function(passphrase) {
-        goog.dispose(passphraseDialog);
-        if (passphrase.length > 0) {
-          this.renderEncryptionPassphraseConfirmDialog_(passphrase);
-        }
-      }, this),
-      dialogs.InputType.SECURE_TEXT,
-      '',
-      chrome.i18n.getMessage('actionEnterPassphrase'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
-
-  this.addChild(passphraseDialog, false);
-  passphraseDialog.render(popupElem);
-};
-
-
-/**
- * Renders the UI elements needed for requesting a passphrase for symmetrically
- * encrypting the current message.
- * @param {string} passphrase The original passphrase
- * @private
- */
-ui.ComposeGlass.prototype.renderEncryptionPassphraseConfirmDialog_ =
-    function(passphrase) {
-  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
-  var confirmDialog = new dialogs.Generic(
-      chrome.i18n.getMessage('promptEncryptionPassphraseConfirmMessage'),
-      goog.bind(function(confirmedPassphrase) {
-        goog.dispose(confirmDialog);
-        if (passphrase == confirmedPassphrase) {
-          var chip = new panels.Chip(passphrase, true);
-          this.chipHolder_.addChip(chip);
-        } else {
-          var errorDialog = new dialogs.Generic(
-              chrome.i18n.getMessage('keyMgmtPassphraseMismatchLabel'),
-              function() {
-                goog.dispose(errorDialog);
-              },
-              dialogs.InputType.NONE);
-          this.addChild(errorDialog, false);
-          errorDialog.render(popupElem);
-        }
-      }, this),
-      dialogs.InputType.SECURE_TEXT,
-      '',
-      chrome.i18n.getMessage('actionEnterPassphrase'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
-  this.addChild(confirmDialog, false);
-  confirmDialog.render(popupElem);
 };
 
 
@@ -454,7 +389,6 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
 
       if (this.chipHolder_) {
         request.recipients = this.chipHolder_.getSelectedUids();
-        request.encryptPassphrases = this.chipHolder_.getProvidedPassphrases();
       }
 
       var signerCheck =
