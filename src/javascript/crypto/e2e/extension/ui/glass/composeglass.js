@@ -23,8 +23,6 @@ goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
-goog.require('e2e.ext.ui.dialogs.Generic');
-goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolder');
 goog.require('e2e.ext.ui.templates.composeglass');
@@ -44,7 +42,6 @@ goog.require('soy');
 
 goog.scope(function() {
 var constants = e2e.ext.constants;
-var dialogs = e2e.ext.ui.dialogs;
 var ext = e2e.ext;
 var messages = e2e.ext.messages;
 var panels = e2e.ext.ui.panels;
@@ -182,10 +179,7 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
   }
 
   if (target instanceof Element) {
-    if (goog.dom.classlist.contains(target, constants.CssClass.CANCEL)) {
-      this.close();
-    } else if (
-        goog.dom.classlist.contains(target, constants.CssClass.ACTION)) {
+    if (goog.dom.classlist.contains(target, constants.CssClass.ACTION)) {
       this.executeAction_(action, elem, origin);
     } else if (
         // TODO(yan): make this go back to normal compose
@@ -261,25 +255,15 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       var privateKeyResult = response.content;
       console.log('got LIST_KEYS private result', privateKeyResult);
       var availableSigningKeys = goog.object.getKeys(privateKeyResult);
-      var signInsertLabel = from ?
-          chrome.i18n.getMessage('promptEncryptSignInsertIntoSupportedLabel') :
-          chrome.i18n.getMessage('promptEncryptSignInsertLabel');
 
       soy.renderElement(elem, templates.renderEncrypt, {
-        insertCheckboxEnabled: true,
         signerCheckboxTitle: chrome.i18n.getMessage('promptSignMessageAs'),
         fromLabel: chrome.i18n.getMessage('promptFromLabel'),
         noPrivateKeysFound: chrome.i18n.getMessage('promptNoPrivateKeysFound'),
         availableSigningKeys: availableSigningKeys,
-        passphraseEncryptionLinkTitle: chrome.i18n.getMessage(
-            'promptEncryptionPassphraseLink'),
         actionButtonTitle: chrome.i18n.getMessage(
             'promptEncryptSignActionLabel'),
-        cancelButtonTitle: chrome.i18n.getMessage('actionCancelPgpAction'),
         backButtonTitle: chrome.i18n.getMessage('actionBackToMenu'),
-        saveDraftButtonTitle: chrome.i18n.getMessage(
-            'promptEncryptSignSaveDraftLabel'),
-        insertButtonTitle: signInsertLabel,
         subject: subject
       });
 
@@ -383,6 +367,7 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
       var request = /** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.ENCRYPT_SIGN,
         content: textArea.value,
+        signMessage: true,
         currentUser:
             goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
       });
@@ -391,29 +376,11 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
         request.recipients = this.chipHolder_.getSelectedUids();
       }
 
-      var signerCheck =
-          goog.dom.getElement(constants.ElementId.SIGN_MESSAGE_CHECK);
-      request.signMessage = signerCheck && signerCheck.checked;
-
       utils.sendExtensionRequest(
           request, goog.bind(function(result) {
             var encrypted = result.content || '';
             this.insertMessageIntoPage_(origin, encrypted);
           }, this));
-      break;
-    case constants.Actions.DECRYPT_VERIFY:
-      utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-        action: constants.Actions.DECRYPT_VERIFY,
-        content: textArea.value
-      }), goog.bind(function(result) {
-        var decrypted = result.content || '';
-        textArea.value = decrypted;
-        var successMessage =
-            chrome.i18n.getMessage('promptDecryptionSuccessMsg');
-        this.displaySuccess_(successMessage, goog.nullFunction);
-        this.surfaceDismissButton_();
-      }, this));
-      break;
   }
 };
 
@@ -453,25 +420,6 @@ ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: 'show_notification',
     content: msg}), callback);
-};
-
-
-/**
- * Surfaces the Dismiss button in the UI.
- * @private
- */
-ui.ComposeGlass.prototype.surfaceDismissButton_ = function() {
-  goog.array.forEach(
-      this.getElement().querySelectorAll('button.action,button.save'),
-      function(button) {
-        goog.dom.classlist.add(button, constants.CssClass.HIDDEN);
-      });
-
-  var cancelButton = this.getElementByClass(constants.CssClass.CANCEL);
-  if (cancelButton) {
-    cancelButton.textContent =
-        chrome.i18n.getMessage('promptDismissActionLabel');
-  }
 };
 
 
