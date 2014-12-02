@@ -1,3 +1,4 @@
+// jshint ignore: start
 {
   "extName": {
     "message": "End-To-End",
@@ -158,6 +159,10 @@
   "actionCancelPgpAction": {
     "message": "Cancel",
     "description": "A verb prompting the user to cancel the current PGP operation."
+  },
+  "actionBackToMenu": {
+    "message": "Back to unencrypted compose window",
+    "description": "Phrase prompting user to go back to normal compose window"
   },
   "actionOpenMenu": {
     "message": "Menu",
