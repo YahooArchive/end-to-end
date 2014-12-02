@@ -32,7 +32,6 @@ goog.require('e2e.ext.ui.templates.composeglass');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
-goog.require('goog.Timer');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
@@ -78,22 +77,11 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
   this.from = draft.from;
 
   /**
-   * A timer to automatically save drafts.
-   * TODO(user): Optimize the frequency of which auto-save triggers as it will
-   * cause additional CPU (and possibly network) utilization.
-   * @type {!goog.Timer}
-   * @private
-   */
-  this.autoSaveTimer_ = new goog.Timer(constants.AUTOSAVE_INTERVAL);
-  this.registerDisposable(this.autoSaveTimer_);
-
-  /**
    * Placeholder for calling out to preferences.js.
    * TODO: Switch preferences.js to chrome.storage.sync
    */
   this.preferences_ = {
     isActionSniffingEnabled: true,
-    isAutoSaveEnabled: true
   };
 };
 goog.inherits(ui.ComposeGlass, goog.ui.Component);
@@ -132,18 +120,12 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
  */
 ui.ComposeGlass.prototype.processActiveContent_ = function() {
   this.clearFailure_();
-  this.autoSaveTimer_.stop();
   var action = constants.Actions.ENCRYPT_SIGN;
   var content = this.selection;
   var origin = this.origin;
   var recipients = this.recipients;
   var subject = this.subject;
   var from = this.from;
-
-  this.getHandler().listen(
-      this.autoSaveTimer_,
-      goog.Timer.TICK,
-      goog.partial(this.saveDraft_, origin));
 
   var elem = goog.dom.getElement(constants.ElementId.BODY);
   var title = goog.dom.getElement(constants.ElementId.TITLE);
@@ -392,11 +374,6 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       this.addChild(this.chipHolder_, false);
       this.chipHolder_.decorate(
           goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
-
-      if (this.preferences_.isAutoSaveEnabled) {
-        this.getHandler().listenOnce(textArea, goog.events.EventType.KEYDOWN,
-            goog.bind(this.autoSaveTimer_.start, this.autoSaveTimer_));
-      }
     }, this));
   }, this));
 };
@@ -660,7 +637,6 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, evt) {
  * @private
  */
 ui.ComposeGlass.prototype.clearSavedDraft_ = function(origin) {
-  this.autoSaveTimer_.stop();
   drafts.clearDraft(origin);
 };
 
