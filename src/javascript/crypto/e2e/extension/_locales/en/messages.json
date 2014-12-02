@@ -435,5 +435,9 @@
   "composeGlassTitle": {
     "message": "Secure Compose is active!",
     "description": "Title of the pageAction when Secure Compose is active."
+  },
+  "composeGlassConfirmBack": {
+    "message": "Discard this encrypted message?",
+    "description": "Message asking user to confirm closing the compose glass"
   }
 }

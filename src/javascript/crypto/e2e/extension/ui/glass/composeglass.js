@@ -184,9 +184,10 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
     if (goog.dom.classlist.contains(target, constants.CssClass.ACTION)) {
       this.executeAction_(action, elem, origin);
     } else if (
-        // TODO(yan): make this go back to normal compose
         goog.dom.classlist.contains(target, constants.CssClass.BACK)) {
-      this.close();
+      if (window.confirm(chrome.i18n.getMessage('composeGlassConfirmBack'))) {
+        this.close();
+      }
     }
   }
 };
