@@ -160,53 +160,80 @@ e2ebind.messageHandler_ = function(response) {
  * @private
  */
 e2ebind.clickHandler_ = function(e) {
-  var elt = e.target;
-
-  if (elt.id === constants.ElementId.E2EBIND_ICON) {
-    utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-      action: constants.Actions.GET_KEYRING_UNLOCKED
-    }), goog.bind(function(response) {
-      if (response.error || !response.content) {
-        // Can't install compose glass if the keyring is locked
-        window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
-      } else {
-        // Get the compose window associated with the clicked icon
-        var composeElem = goog.dom.getAncestorByTagNameAndClass(elt,
-                                                                'div',
-                                                                'compose');
-        var draft = /** @type {messages.e2ebindDraft} */ ({});
-        draft.from = window.config.signer ? '<' + window.config.signer + '>' :
-            '';
-
-        e2ebind.hasDraft(goog.bind(function(hasDraftResult) {
-          if (hasDraftResult) {
-            e2ebind.getDraft(goog.bind(function(getDraftResult) {
-              draft.body = e2e.openpgp.asciiArmor.
-                  extractPgpBlock(getDraftResult.body);
-              draft.to = getDraftResult.to;
-              draft.cc = getDraftResult.cc;
-              draft.bcc = getDraftResult.bcc;
-              draft.subject = getDraftResult.subject;
-              e2ebind.installComposeGlass_(composeElem, draft);
-            }, this));
-          } else {
-            e2ebind.getCurrentMessage(goog.bind(function(result) {
-              var DOMelem = document.querySelector(result.elem);
-              if (result.text) {
-                draft.body = result.text;
-              } else if (DOMelem) {
-                draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
-                    goog.isDef(DOMelem.lookingGlass) ?
-                    DOMelem.lookingGlass.getOriginalContent() :
-                    DOMelem.innerText);
-              }
-              e2ebind.installComposeGlass_(composeElem, draft);
-            }, this));
-          }
-        }, this));
-      }
-    }, this));
+  var elt;
+  var iconClicked;
+  if (e === null) {
+    // User is composing to a person who has a key. No click event was emitted
+    // but pretend that the lock icon was clicked.
+    elt = document.activeElement;
+    iconClicked = true;
+  } else {
+    elt = e.target;
+    iconClicked = (elt.id === constants.ElementId.E2EBIND_ICON);
   }
+
+  var initComposeGlass = function() {
+    var activeElem = document.activeElement;
+
+    // Install the compose glass if either the lock icon was clicked or
+    // if we are replying to a PGP message.
+    if (iconClicked ||
+        (activeElem.contentEditable === 'true' &&
+         activeElem.textContent.indexOf('-----BEGIN PGP') !== -1)) {
+      elt = iconClicked ? elt : activeElem;
+      var composeElem = goog.dom.getAncestorByTagNameAndClass(elt,
+                                                              'div',
+                                                              'compose');
+      if (!composeElem || (!iconClicked && composeElem.hadAutoGlass)) {
+        // Either there is no valid compose element to install the glass in,
+        // or we already tried to auto-install the glass.
+        return;
+      }
+
+      utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+        action: constants.Actions.GET_KEYRING_UNLOCKED
+      }), goog.bind(function(response) {
+        if (response.error || !response.content) {
+          // Can't install compose glass if the keyring is locked
+          window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
+        } else {
+          // Get the compose window associated with the clicked icon
+          var draft = /** @type {messages.e2ebindDraft} */ ({});
+          draft.from = window.config.signer ? '<' + window.config.signer + '>' :
+              '';
+
+          e2ebind.hasDraft(goog.bind(function(hasDraftResult) {
+            if (hasDraftResult) {
+              e2ebind.getDraft(goog.bind(function(getDraftResult) {
+                draft.body = e2e.openpgp.asciiArmor.
+                    extractPgpBlock(getDraftResult.body);
+                draft.to = getDraftResult.to;
+                draft.cc = getDraftResult.cc;
+                draft.bcc = getDraftResult.bcc;
+                draft.subject = getDraftResult.subject;
+                e2ebind.installComposeGlass_(composeElem, draft);
+              }, this));
+            } else {
+              e2ebind.getCurrentMessage(goog.bind(function(result) {
+                var DOMelem = document.querySelector(result.elem);
+                if (result.text) {
+                  draft.body = result.text;
+                } else if (DOMelem) {
+                  draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
+                      goog.isDef(DOMelem.lookingGlass) ?
+                      DOMelem.lookingGlass.getOriginalContent() :
+                      DOMelem.innerText);
+                }
+                e2ebind.installComposeGlass_(composeElem, draft);
+              }, this));
+            }
+          }, this));
+        }
+      }, this));
+    }
+  };
+
+  window.setTimeout(initComposeGlass, 50);
 };
 
 
@@ -486,6 +513,7 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
   var glassWrapper = new ui.ComposeGlassWrapper(elem, draft, hash);
   window.helper.registerDisposable(glassWrapper);
   glassWrapper.installGlass();
+  elem.hadAutoGlass = true;
 
   var closeHandler = function(incoming) {
     var message = /** @type {messages.proxyMessage} */ (incoming);
@@ -612,11 +640,18 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
     response.content = response.content || [];
     var emails = utils.text.getValidEmailAddressesFromArray(response.content,
                                                             true);
+    var anyValid = false;
     var results = [];
     goog.array.forEach(recipients, function(recipient) {
       var valid = goog.array.contains(emails, recipient);
+      if (valid) {
+        anyValid = true;
+      }
       results.push({valid: valid, recipient: recipient});
     });
+    if (anyValid) {
+      e2ebind.clickHandler_(null);
+    }
     callback(results);
   });
 };
