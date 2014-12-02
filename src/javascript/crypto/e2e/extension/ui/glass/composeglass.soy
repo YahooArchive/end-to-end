@@ -23,11 +23,12 @@
   <html>
     <head>
       <title>{$extName}</title>
-      <link rel="stylesheet"/>
+      <link rel="stylesheet" href="composeglass_styles.css"/>
     </head>
     <body>
       <div id="{e2e.ext.constants.ElementId.HEADER}">
         <div>
+          <img src="images/yahoo/icon-32.png"></img>
           <h1 id="{e2e.ext.constants.ElementId.TITLE}"></h1>
         </div>
       </div>
@@ -65,11 +66,13 @@
   <div id="subjectHolder">
     <input type="text" placeholder="Subject:" value="{$subject}" />
   </div>
-  <textarea></textarea>
   <div>
+  <textarea></textarea>
+  </div>
+  <div>
+  <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
   <button class="{e2e.ext.constants.CssClass.BACK}">
     <img src="images/back.png" title="{$backButtonTitle}"/>
   </button>
-  <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
   </div>
 {/template}

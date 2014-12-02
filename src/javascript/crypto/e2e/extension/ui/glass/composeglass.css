@@ -32,7 +32,7 @@ input[type="password"] {
 textarea {
   border: 1px solid #acacac;
   height: 200px;
-  width: 650px;
+  width: 95%;
 }
 
 textarea:hover,
@@ -45,6 +45,32 @@ textarea:focus,
 #fromHolder:focus {
   border: 1px solid #0c0c0c;
   outline: none;
+}
+
+#pgpHead {
+  background: #f5f5f5;
+  border: solid #ebebeb;
+  border-width: 0 0 1px;
+  margin-bottom: 2px;
+  padding: 1px;
+  width: 100%;
+  z-index: 60;
+}
+
+#pgpHead > div {
+   padding: 0 3px;
+}
+
+#pgpHead h1 {
+  position: relative;
+  color: #5010b0;
+  font-size: 1.3em;
+  font-weight: normal;
+  margin-left: 2px;
+}
+
+#pgpHead img {
+  float: left;
 }
 
 #pgpBody input[type="checkbox"],
@@ -207,4 +233,3 @@ textarea:focus,
 .uid-chip img:hover {
   opacity: 1;
 }
-

@@ -98,8 +98,13 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
     extName: chrome.i18n.getMessage('extName')
   });
 
-  var styles = elem.querySelector('link');
-  styles.href = chrome.extension.getURL('composeglass_styles.css');
+  var titleText = chrome.i18n.getMessage('promptEncryptSignTitle');
+
+  var title = elem.querySelector('h1');
+  title.textContent = titleText;
+
+  var headerImg = elem.querySelector('img');
+  headerImg.title = titleText;
 
   // This tells the helper to attach the set_draft handler in e2ebind
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
@@ -123,9 +128,6 @@ ui.ComposeGlass.prototype.processActiveContent_ = function() {
   var from = this.from;
 
   var elem = goog.dom.getElement(constants.ElementId.BODY);
-  var title = goog.dom.getElement(constants.ElementId.TITLE);
-  title.textContent = chrome.i18n.getMessage('promptEncryptSignTitle');
-  goog.style.setElementShown(title, false);
 
   this.renderEncrypt_(elem, recipients, origin, subject, from, content);
 
