@@ -288,17 +288,14 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       textArea.value = content;
 
       if (sniffedAction == constants.Actions.DECRYPT_VERIFY) {
-        console.log('got decrypt_verify');
         utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
           action: constants.Actions.DECRYPT_VERIFY,
           content: content
         }), goog.bind(function(response) {
           var decrypted = response.content || '';
           if (e2e.openpgp.asciiArmor.isDraft(content)) {
-            console.log('renderEncrypt setting draft content');
             textArea.value = decrypted;
           } else {
-            console.log('renderEncrypt setting reply content');
             this.renderReply_(textArea, decrypted);
           }
         }, this));
@@ -344,7 +341,6 @@ ui.ComposeGlass.prototype.close = function() {
         elem.value = '';
       });
   goog.dispose(this);
-  console.log('compose glass sending glass_closed');
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
     action: constants.Actions.GLASS_CLOSED,
     content: this.hash
