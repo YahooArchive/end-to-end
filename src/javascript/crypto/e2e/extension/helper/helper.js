@@ -197,7 +197,8 @@ ext.Helper.prototype.setE2ebindValue_ = function(msg) {
     e2ebind.setDraft({
       to: msg.recipients,
       body: msg.value,
-      subject: msg.subject
+      subject: msg.subject,
+      from: msg.from
     });
   }
   if (msg.detach) {

@@ -143,19 +143,21 @@ ui.ComposeGlass.prototype.processActiveContent_ = function() {
  * @param {string} content The content to write inside the selected element.
  * @param {!Array.<string>} recipients The recipients of the message.
  * @param {string} subject Subject of the message
+ * @param {string} from Sender of the message
  * @param {!function(...)} callback The function to invoke once the message to
  *   update active content has been sent
  * @private
  */
 ui.ComposeGlass.prototype.updateActiveContent_ =
-    function(content, recipients, subject, callback) {
+    function(content, recipients, subject, from, callback) {
   var response = /** @type {messages.BridgeMessageResponse} */ ({
     value: content,
     response: true,
     detach: true,
     origin: this.origin,
     recipients: recipients,
-    subject: subject
+    subject: subject,
+    from: from
   });
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
     action: constants.Actions.SET_DRAFT,
@@ -438,8 +440,9 @@ ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
 ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
   var recipients = this.chipHolder_.getSelectedUids();
   var subject = this.getElement().querySelector('#subjectHolder input').value;
+  var from = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
   this.updateActiveContent_(
-      text, recipients, subject, goog.bind(this.close, this));
+      text, recipients, subject, from, goog.bind(this.close, this));
 };
 
 });  // goog.scope

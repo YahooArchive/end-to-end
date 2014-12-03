@@ -603,8 +603,22 @@ e2ebind.setDraft = function(args) {
         cc: args.cc || [],
         bcc: args.bcc || [],
         subject: args.subject || '',
-        body: args.body || ''
+        body: args.body || '',
       }));
+
+  // XXX: ymail doesn't handle setting the 'from' field when user has multiple
+  // addresses.
+  var selects = document.querySelectorAll('select#from-field');
+  if (args.from && selects.length) {
+    goog.array.forEach(selects, goog.bind(function(item) {
+      goog.array.forEach(item.options, function(option) {
+        if (utils.text.extractValidEmail(option.value) ===
+            utils.text.extractValidEmail(args.from)) {
+          item.value = option.value;
+        }
+      });
+    }, this));
+  }
 };
 
 
