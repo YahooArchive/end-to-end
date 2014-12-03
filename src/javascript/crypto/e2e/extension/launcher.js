@@ -202,7 +202,6 @@ ext.Launcher.prototype.start_ = function(passphrase) {
   }, this));
 
   this.pgpContext_.setKeyRingPassphrase(passphrase);
-  this.installResponseHandler_();
 
   // All ymail tabs need to be reloaded for the e2ebind API to work
   chrome.tabs.query({url: 'https://*.mail.yahoo.com/*'}, function(tabs) {
@@ -257,8 +256,6 @@ ext.Launcher.prototype.proxyMessage = function(incoming, sender) {
  */
 ext.Launcher.prototype.stop = function() {
   this.started_ = false;
-  // Remove HTTP response modifier
-  this.removeResponseHandler_();
   // Set the browseraction icon to red
   this.getActiveTab_(goog.bind(function(tabId) {
     this.updateYmailBrowserAction_(tabId);
@@ -406,41 +403,5 @@ ext.Launcher.prototype.showWelcomeScreen_ = function() {
   }
 };
 
-
-/**
- * Modifies HTTP responses relevant to E2E on Yahoo Mail.
- * @param {Object} details
- * @private
- */
-ext.Launcher.prototype.modifyResponse_ = function(details) {
-  details.responseHeaders.push({
-    name: 'Content-Security-Policy',
-    value: 'object-src \'none\'; frame-src chrome-extension:'
-  });
-  return {responseHeaders: details.responseHeaders};
-};
-
-
-/**
- * Installs the handler for HTTP responses to be modified by E2E on Yahoo Mail.
- * @private
- */
-ext.Launcher.prototype.installResponseHandler_ = function() {
-  chrome.webRequest.onHeadersReceived.addListener(
-      ext.Launcher.prototype.modifyResponse_,
-      /** @type {!RequestFilter} */
-      ({urls: ['https://*.mail.yahoo.com/*']}),
-      ['blocking', 'responseHeaders']);
-};
-
-
-/**
- * Removes handler for HTTP responses.
- * @private
- */
-ext.Launcher.prototype.removeResponseHandler_ = function() {
-  chrome.webRequest.onHeadersReceived.removeListener(
-      ext.Launcher.prototype.modifyResponse_);
-};
 
 });  // goog.scope
