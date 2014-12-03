@@ -228,9 +228,6 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
    * Removes compose glass
    */
 ui.ComposeGlassWrapper.prototype.removeGlass = function() {
-  goog.style.setElementShown(document.getElementById('theAd'), true);
-  goog.style.setElementShown(document.getElementById('slot_mbrec'), true);
-
   this.targetElem_.composeGlass = undefined;
   if (this.glassFrame) {
     this.glassFrame.parentNode.removeChild(this.glassFrame);

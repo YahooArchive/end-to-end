@@ -257,14 +257,17 @@ e2ebind.start = function() {
   goog.events.listen(window, goog.events.EventType.CLICK,
                      e2ebind.clickHandler_, true);
   window.addEventListener('message', goog.bind(e2ebind.messageHandler_, this));
+
+  goog.style.setElementShown(window.document.getElementById('theAd'), false);
+  goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
+                             false);
 };
 
 
 /**
  * Stops the e2ebind API
- * @private
  */
-e2ebind.stop_ = function() {
+e2ebind.stop = function() {
   window.removeEventListener('message', goog.bind(e2ebind.messageHandler_,
                                                   this));
   e2ebind.messagingTable = undefined;
@@ -273,6 +276,9 @@ e2ebind.stop_ = function() {
   window.valid = undefined;
   goog.events.unlisten(window, goog.events.EventType.CLICK,
                        e2ebind.clickHandler_);
+  goog.style.setElementShown(window.document.getElementById('theAd'), true);
+  goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
+                             true);
 };
 
 

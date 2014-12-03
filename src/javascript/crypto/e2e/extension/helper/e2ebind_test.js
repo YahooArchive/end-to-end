@@ -86,7 +86,7 @@ function setUp() {
 
 function tearDown() {
   stubs.reset();
-  e2ebind.stop_();
+  e2ebind.stop();
   window.helper = null;
   window.onmessage = null;
 }
