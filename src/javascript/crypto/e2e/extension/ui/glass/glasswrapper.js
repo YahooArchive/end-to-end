@@ -216,7 +216,6 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   this.glassFrame = glassFrame;
 
   glassFrame.addEventListener('load', goog.bind(function() {
-    console.log('compose glassFrame loaded!', glassFrame.contentWindow);
     glassFrame.contentWindow.postMessage({
       draft: this.draft,
       mode: this.mode,
@@ -229,7 +228,6 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
    * Removes compose glass
    */
 ui.ComposeGlassWrapper.prototype.removeGlass = function() {
-  console.log('Removing composeGlassWrapper');
   goog.style.setElementShown(document.getElementById('theAd'), true);
   goog.style.setElementShown(document.getElementById('slot_mbrec'), true);
 

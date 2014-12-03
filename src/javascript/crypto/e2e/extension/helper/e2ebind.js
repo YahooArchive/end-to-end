@@ -140,6 +140,7 @@ e2ebind.messageHandler_ = function(response) {
       return;
     }
 
+    console.log('got e2ebind msg from provider:', data);
     if (data.action.toUpperCase() in constants.e2ebind.requestActions) {
       e2ebind.handleProviderRequest_(/** @type {messages.e2ebindRequest} */
                                      (data));
@@ -408,6 +409,7 @@ e2ebind.handleProviderRequest_ = function(request) {
       break;
 
     case actions.SET_SIGNER:
+      // TODO: Page doesn't send message when selected signer changes.
       (function() {
         // validates and updates the signer/validity in E2E
         if (!args.signer) {
@@ -601,8 +603,22 @@ e2ebind.setDraft = function(args) {
         cc: args.cc || [],
         bcc: args.bcc || [],
         subject: args.subject || '',
-        body: args.body || ''
+        body: args.body || '',
       }));
+
+  // XXX: ymail doesn't handle setting the 'from' field when user has multiple
+  // addresses.
+  var selects = document.querySelectorAll('select#from-field');
+  if (args.from && selects.length) {
+    goog.array.forEach(selects, goog.bind(function(item) {
+      goog.array.forEach(item.options, function(option) {
+        if (utils.text.extractValidEmail(option.value) ===
+            utils.text.extractValidEmail(args.from)) {
+          item.value = option.value;
+        }
+      });
+    }, this));
+  }
 };
 
 

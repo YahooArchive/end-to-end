@@ -1,3 +1,4 @@
+// jshint ignore: start
 {
   "extName": {
     "message": "End-To-End",
@@ -28,7 +29,7 @@
     "description": "Message informing about failure in signature verification."
   },
   "promptEncryptSignTitle": {
-    "message": "Compose an End-To-End message",
+    "message": "Compose an Encrypted Message",
     "description": "A friendly title for the encrypt&sign action."
   },
   "promptEncryptSignActionLabel": {
@@ -158,6 +159,10 @@
   "actionCancelPgpAction": {
     "message": "Cancel",
     "description": "A verb prompting the user to cancel the current PGP operation."
+  },
+  "actionBackToMenu": {
+    "message": "Back to unencrypted compose window",
+    "description": "Phrase prompting user to go back to normal compose window"
   },
   "actionOpenMenu": {
     "message": "Menu",
@@ -430,5 +435,9 @@
   "composeGlassTitle": {
     "message": "Secure Compose is active!",
     "description": "Title of the pageAction when Secure Compose is active."
+  },
+  "composeGlassConfirmBack": {
+    "message": "Discard this encrypted message?",
+    "description": "Message asking user to confirm closing the compose glass"
   }
 }

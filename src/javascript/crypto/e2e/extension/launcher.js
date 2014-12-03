@@ -294,7 +294,8 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
       detach: content.detach,
       origin: content.origin,
       recipients: content.recipients,
-      subject: content.subject
+      subject: content.subject,
+      from: content.from
     });
   } else if (args.action === constants.Actions.GET_SELECTED_CONTENT) {
     return /** @type {messages.GetSelectionRequest} */ ({

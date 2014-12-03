@@ -58,6 +58,7 @@ messages.BridgeMessageRequest;
  *   detach: boolean,
  *   origin: string,
  *   subject: (string|undefined),
+ *   from: (string|undefined),
  *   recipients: !Array.<string>
  * }}
  */
