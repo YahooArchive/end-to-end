@@ -23,6 +23,8 @@ goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('e2e.ext.ui.dialogs.Generic');
+goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolder');
 goog.require('e2e.ext.ui.templates.composeglass');
@@ -70,6 +72,7 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
   this.mode = mode;
   this.hash = hash;
   this.from = draft.from;
+  this.allAvailableRecipients_ = [];
 
   /**
    * Placeholder for calling out to preferences.js.
@@ -88,6 +91,14 @@ goog.inherits(ui.ComposeGlass, goog.ui.Component);
  * @private
  */
 ui.ComposeGlass.prototype.chipHolder_ = null;
+
+
+/**
+ * Whether the user is okay with sending this message unencrypted.
+ * @type {boolean}
+ * @private
+ */
+ui.ComposeGlass.prototype.sendUnencrypted_ = false;
 
 
 /** @override */
@@ -183,7 +194,7 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
   }
 
   if (target instanceof Element) {
-    if (goog.dom.classlist.contains(target, constants.CssClass.ACTION)) {
+    if (goog.dom.classlist.contains(target, constants.CssClass.INSERT)) {
       this.executeAction_(action, elem, origin);
     } else if (
         goog.dom.classlist.contains(target, constants.CssClass.BACK)) {
@@ -196,24 +207,20 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
 
 
 /**
- * Extracts user addresses from user IDs and creates an email to user IDs map.
- * Ignores user IDs without a valid e-mail address.
+ * Extracts user addresses from user IDs and creates an array of valid emails.
  * @param  {!Array.<string>} recipients user IDs of recipients
- * @return {!Object.<string, !Array.<string>>} email to user IDs map
+ * @return {!Array.<string>}
  * @private
  */
-ui.ComposeGlass.prototype.getRecipientsEmailMap_ = function(recipients) {
-  var map = {};
+ui.ComposeGlass.prototype.getRecipientsEmails_ = function(recipients) {
+  var result = [];
   goog.array.forEach(recipients, function(recipient) {
     var email = utils.text.extractValidEmail(recipient);
     if (email) {
-      if (!map.hasOwnProperty(email)) {
-        map[email] = [];
-      }
-      map[email].push(recipient);
+      result.push(email);
     }
   });
-  return map;
+  return result;
 };
 
 
@@ -231,8 +238,6 @@ ui.ComposeGlass.prototype.getRecipientsEmailMap_ = function(recipients) {
  */
 ui.ComposeGlass.prototype.renderEncrypt_ =
     function(elem, recipients, origin, subject, from, content) {
-  var intendedRecipients = [];
-
   var sniffedAction = utils.text.getPgpAction(
       content, this.preferences_.isActionSniffingEnabled);
 
@@ -242,23 +247,14 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
     content: 'public'
   }), goog.bind(function(response) {
     var searchResult = response.content;
-    console.log('got LIST_KEYS public result', searchResult);
-    var allAvailableRecipients = goog.object.getKeys(searchResult);
-    var recipientsEmailMap = this.getRecipientsEmailMap_(
-        allAvailableRecipients);
-    goog.array.forEach(recipients, function(recipient) {
-      if (recipientsEmailMap.hasOwnProperty(recipient)) {
-        goog.array.extend(intendedRecipients,
-            recipientsEmailMap[recipient]);
-      }
-    });
+    this.allAvailableRecipients_ = this.getRecipientsEmails_(
+        goog.object.getKeys(searchResult));
 
     utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
       action: constants.Actions.LIST_KEYS,
       content: 'private'
     }), goog.bind(function(response) {
       var privateKeyResult = response.content;
-      console.log('got LIST_KEYS private result', privateKeyResult);
       var availableSigningKeys = goog.object.getKeys(privateKeyResult);
 
       soy.renderElement(elem, templates.renderEncrypt, {
@@ -284,16 +280,19 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
 
       // Show green icon in the URL bar when the secure text area is in focus
       // so page XSS attacks are less likely to compromise plaintext
-      textArea.onfocus = function() {
+      textArea.onfocus = goog.bind(function() {
         utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
           action: constants.Actions.CHANGE_PAGEACTION
         }));
-      };
-      textArea.onblur = function() {
+        if (!this.sendUnencrypted_) {
+          this.handleMissingPublicKeys_();
+        }
+      }, this);
+      textArea.onblur = goog.bind(function() {
         utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
           action: constants.Actions.RESET_PAGEACTION
         }));
-      };
+      }, this);
 
       textArea.value = content;
 
@@ -312,7 +311,7 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       }
 
       this.chipHolder_ = new panels.ChipHolder(
-          intendedRecipients, allAvailableRecipients);
+          recipients, this.allAvailableRecipients_);
       this.addChild(this.chipHolder_, false);
       this.chipHolder_.decorate(
           goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
@@ -443,6 +442,42 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
   var from = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
   this.updateActiveContent_(
       text, recipients, subject, from, goog.bind(this.close, this));
+};
+
+
+/**
+ * Pops a warning if any of the recipients does not have a public key.
+ * @private
+ */
+ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function() {
+  var recipients = this.chipHolder_.getSelectedUids();
+  var validRecipients = this.allAvailableRecipients_;
+  var invalidRecipients = [];
+  goog.array.forEach(recipients, function(recipient) {
+    if (!goog.array.contains(validRecipients, recipient)) {
+      invalidRecipients.push(recipient);
+    }
+  });
+  if (invalidRecipients.length > 0) {
+    // Show dialog asking user to remove recipients without keys
+    var message = goog.array.concat(
+        chrome.i18n.getMessage('composeGlassConfirmRecipients'),
+        invalidRecipients).join('\n');
+    var dialog = new ui.dialogs.Generic(message, goog.bind(function(result) {
+          console.log('got click with result', result);
+          goog.dispose(dialog);
+          if (typeof result !== 'undefined') {
+            // user clicked ok
+            this.chipHolder_.removeUids(invalidRecipients);
+          } else {
+            this.sendUnencrypted_ = true;
+          }
+        }, this), ui.dialogs.InputType.NONE, undefined,
+        chrome.i18n.getMessage('composeGlassRemoveRecipients'),
+        chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'));
+    this.addChild(dialog, false);
+    dialog.render(goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG));
+  }
 };
 
 });  // goog.scope
