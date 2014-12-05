@@ -191,11 +191,16 @@ panels.ChipHolder.prototype.removeUids = function(uids) {
   if (this.isLocked_) {
     return;
   }
-  this.forEachChild(goog.bind(function(chip) {
-      if (goog.array.contains(uids, chip.getValue())) {
-        this.removeChild(chip, true);
-      }
-  }, this));
+  var chipsLeft = this.getChildCount() - 1;
+  var chip;
+  // Removes chips from right to left so that the child index is invariant
+  while (chipsLeft > -1) {
+    chip = this.getChildAt(chipsLeft);
+    if (goog.array.contains(uids, chip.getValue())) {
+      this.removeChild(chip, true);
+    }
+    chipsLeft = chipsLeft - 1;
+  }
 };
 
 
