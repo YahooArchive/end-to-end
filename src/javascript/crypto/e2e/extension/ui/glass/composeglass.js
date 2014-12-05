@@ -380,7 +380,14 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
       });
 
       if (this.chipHolder_) {
-        request.recipients = this.chipHolder_.getSelectedUids();
+        var recipients = this.chipHolder_.getSelectedUids();
+        var invalidRecipients = this.getInvalidRecipients_(recipients);
+        if (invalidRecipients.length === 0) {
+          request.recipients = recipients;
+        } else if (!this.sendUnencrypted_) {
+          this.handleMissingPublicKeys_();
+          return;
+        }
       }
 
       utils.sendExtensionRequest(
@@ -450,21 +457,13 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
  * @private
  */
 ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function() {
-  var recipients = this.chipHolder_.getSelectedUids();
-  var validRecipients = this.allAvailableRecipients_;
-  var invalidRecipients = [];
-  goog.array.forEach(recipients, function(recipient) {
-    if (!goog.array.contains(validRecipients, recipient)) {
-      invalidRecipients.push(recipient);
-    }
-  });
+  var invalidRecipients = this.getInvalidRecipients_();
   if (invalidRecipients.length > 0) {
     // Show dialog asking user to remove recipients without keys
     var message = goog.array.concat(
         chrome.i18n.getMessage('composeGlassConfirmRecipients'),
         invalidRecipients).join('\n');
     var dialog = new ui.dialogs.Generic(message, goog.bind(function(result) {
-          console.log('got click with result', result);
           goog.dispose(dialog);
           if (typeof result !== 'undefined') {
             // user clicked ok
@@ -478,6 +477,26 @@ ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function() {
     this.addChild(dialog, false);
     dialog.render(goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG));
   }
+};
+
+
+/**
+ * Returns recipients for which public keys are missing.
+ * @param {!Array.<string>=} opt_recipients Optional list of
+ *   recipients to check. Otherwise gets recipients from chipholder.
+ * @return {!Array.<string>}
+ * @private
+ */
+ui.ComposeGlass.prototype.getInvalidRecipients_ = function(opt_recipients) {
+  var recipients = opt_recipients || this.chipHolder_.getSelectedUids();
+  var validRecipients = this.allAvailableRecipients_;
+  var invalidRecipients = [];
+  goog.array.forEach(recipients, function(recipient) {
+    if (!goog.array.contains(validRecipients, recipient)) {
+      invalidRecipients.push(recipient);
+    }
+  });
+  return invalidRecipients;
 };
 
 });  // goog.scope
