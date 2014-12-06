@@ -207,20 +207,23 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
 
 
 /**
- * Extracts user addresses from user IDs and creates an array of valid emails.
+ * Extracts user addresses from user IDs and creates email to user IDs map.
  * @param  {!Array.<string>} recipients user IDs of recipients
- * @return {!Array.<string>}
+ * @return {!Object.<string, !Array.<string>>}
  * @private
  */
-ui.ComposeGlass.prototype.getRecipientsEmails_ = function(recipients) {
-  var result = [];
+ui.ComposeGlass.prototype.getRecipientsEmailMap_ = function(recipients) {
+  var map = {};
   goog.array.forEach(recipients, function(recipient) {
     var email = utils.text.extractValidEmail(recipient);
     if (email) {
-      result.push(email);
+      if (!map.hasOwnProperty(email)) {
+        map[email] = [];
+      }
+      map[email].push(recipient);
     }
   });
-  return result;
+  return map;
 };
 
 
@@ -240,6 +243,7 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
     function(elem, recipients, origin, subject, from, content) {
   var sniffedAction = utils.text.getPgpAction(
       content, this.preferences_.isActionSniffingEnabled);
+  var recipientUids = [];
 
   // Pre-populate the list of recipients during an encrypt/sign action.
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
@@ -247,8 +251,18 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
     content: 'public'
   }), goog.bind(function(response) {
     var searchResult = response.content;
-    this.allAvailableRecipients_ = this.getRecipientsEmails_(
-        goog.object.getKeys(searchResult));
+    var allUids = goog.object.getKeys(searchResult);
+    var recipientsEmailMap = this.getRecipientsEmailMap_(allUids);
+    this.allAvailableRecipients_ = goog.object.getKeys(recipientsEmailMap);
+
+    goog.array.forEach(recipients, function(recipient) {
+      if (recipientsEmailMap.hasOwnProperty(recipient)) {
+        goog.array.extend(recipientUids,
+                          recipientsEmailMap[recipient]);
+      } else {
+        goog.array.extend(recipientUids, recipient);
+      }
+    });
 
     utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
       action: constants.Actions.LIST_KEYS,
@@ -310,8 +324,7 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         }, this));
       }
 
-      this.chipHolder_ = new panels.ChipHolder(
-          recipients, this.allAvailableRecipients_);
+      this.chipHolder_ = new panels.ChipHolder(recipientUids, allUids);
       this.addChild(this.chipHolder_, false);
       this.chipHolder_.decorate(
           goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
@@ -492,7 +505,8 @@ ui.ComposeGlass.prototype.getInvalidRecipients_ = function(opt_recipients) {
   var validRecipients = this.allAvailableRecipients_;
   var invalidRecipients = [];
   goog.array.forEach(recipients, function(recipient) {
-    if (!goog.array.contains(validRecipients, recipient)) {
+    if (!goog.array.contains(validRecipients,
+                             utils.text.extractValidEmail(recipient))) {
       invalidRecipients.push(recipient);
     }
   });
