@@ -64,6 +64,12 @@ function testAddChip() {
   assertEquals('5', chipHolder.getProvidedPassphrases().join(','));
 }
 
+function testRemoveUids() {
+  chipHolder.addChip('2');
+  chipHolder.addChip('3');
+  chipHolder.removeUids(['1', '3']);
+  assertArrayEquals(['2'], chipHolder.getSelectedUids());
+}
 
 function testIncreaseInputArea() {
   var originalWidth = goog.style.getSize(chipHolder.shadowInputElem_).width;

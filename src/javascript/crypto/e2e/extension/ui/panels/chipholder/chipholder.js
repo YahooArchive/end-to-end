@@ -184,6 +184,27 @@ panels.ChipHolder.prototype.addChip = function(opt_chip) {
 
 
 /**
+ * Removes chips by UID. Aborts if ChipHolder is locked.
+ * @param {!Array.<string>} uids The UIDs to remove.
+ */
+panels.ChipHolder.prototype.removeUids = function(uids) {
+  if (this.isLocked_) {
+    return;
+  }
+  var chipsLeft = this.getChildCount() - 1;
+  var chip;
+  // Removes chips from right to left so that the child index is invariant
+  while (chipsLeft > -1) {
+    chip = this.getChildAt(chipsLeft);
+    if (goog.array.contains(uids, chip.getValue())) {
+      this.removeChild(chip, true);
+    }
+    chipsLeft = chipsLeft - 1;
+  }
+};
+
+
+/**
  * Returns a list with the selected UIDs.
  * @return {!Array.<string>} A list with the selected UIDs.
  */

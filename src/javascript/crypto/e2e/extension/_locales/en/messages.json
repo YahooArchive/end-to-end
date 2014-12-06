@@ -439,5 +439,17 @@
   "composeGlassConfirmBack": {
     "message": "Discard this encrypted message?",
     "description": "Message asking user to confirm closing the compose glass"
+  },
+  "composeGlassConfirmRecipients": {
+    "message": "The following recipients are missing encryption keys! Encryption will be impossible.",
+    "description": "Message warning user that some recipients are missing keys."
+  },
+  "composeGlassRemoveRecipients": {
+    "message": "Remove these recipients.",
+    "description": "Ask user to remove recipients."
+  },
+  "composeGlassSendUnencryptedMessage": {
+    "message": "Compose unencrypted message.",
+    "description": "Ask user to send the message unencrypted."
   }
 }
