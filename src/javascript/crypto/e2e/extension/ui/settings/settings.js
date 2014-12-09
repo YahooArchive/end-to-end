@@ -131,8 +131,6 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('settings_styles.css');
 
-  this.addChild(new panels.PreferencesPanel(), true);
-
   var generateKeyPanel =
       new panels.GenerateKey(goog.bind(this.generateKey_, this));
   this.addChild(generateKeyPanel, true);
@@ -150,6 +148,30 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
   this.keyringMgmtPanel_.setKeyringEncrypted(
       this.pgpContext_.isKeyRingEncrypted());
 
+  var advancedLinkDiv = goog.dom.createElement(goog.dom.TagName.DIV);
+  var advancedLink = goog.dom.createElement(goog.dom.TagName.A);
+  advancedLink.href = '#';
+  advancedLink.textContent = chrome.i18n.getMessage('showPreferencesLink');
+  advancedLinkDiv.appendChild(advancedLink);
+  this.getContentElement().appendChild(advancedLinkDiv);
+
+  this.preferencesPanel_ = new panels.PreferencesPanel();
+  this.addChild(this.preferencesPanel_, true);
+  this.preferencesPanel_.getElement().style.display = 'none';
+
+  this.getHandler().listen(advancedLink, goog.events.EventType.CLICK,
+      goog.bind(function() {
+        var prefs = this.preferencesPanel_.getElement();
+        if (prefs.style.display === 'none') {
+          advancedLink.textContent =
+              chrome.i18n.getMessage('hidePreferencesLink');
+          prefs.style.display = 'inherit';
+        } else {
+          advancedLink.textContent =
+              chrome.i18n.getMessage('showPreferencesLink');
+          prefs.style.display = 'none';
+        }
+      }, this));
   this.getHandler().listen(
       this.getElement(), goog.events.EventType.CLICK, this.clearFailure_);
 };

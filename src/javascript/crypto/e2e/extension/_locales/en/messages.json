@@ -396,6 +396,14 @@
     "message": "Extension preferences",
     "description": "A section title, can be a sentence fragment"
   },
+  "showPreferencesLink": {
+    "message": "Show advanced preferences >>",
+    "description": "Text to show advanced prefs"
+  },
+  "hidePreferencesLink": {
+    "message": "Hide advanced preferences <<",
+    "description": "Text to hide advanced prefs"
+  },
   "preferenceWelcomeScreen": {
     "message": "Show the welcome window when the extension loads the next time.",
     "description": "A sentence prompting the user to disable the extension's welcome window."
