@@ -34,12 +34,15 @@ goog.require('e2e.ext.ui.templates');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.action');
+goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.signer.Algorithm');
 goog.require('goog.array');
 goog.require('goog.crypt');
 goog.require('goog.dom');
 goog.require('goog.events.EventType');
+goog.require('goog.string');
+goog.require('goog.structs.Map');
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -71,6 +74,9 @@ ui.Settings = function() {
    */
   this.actionExecutor_ = new e2e.ext.actions.Executor(
       goog.bind(this.displayFailure_, this));
+
+  this.privateKeyUids_ = [];
+  this.publicKeyUids_ = [];
 };
 goog.inherits(ui.Settings, goog.ui.Component);
 
@@ -122,6 +128,22 @@ ui.Settings.prototype.decorateInternal = function(elem) {
  * @private
  */
 ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
+  console.log(pgpKeys);
+  var keyMap = /**@type {!goog.structs.Map} */ (new goog.structs.Map(pgpKeys));
+  keyMap.forEach(goog.bind(function(keys, id) {
+    var email = utils.text.extractValidEmail(id);
+    if (!email) {
+      return;
+    }
+    goog.array.forEach(keys, goog.bind(function(key) {
+      if (key.key.secret) {
+        this.privateKeyUids_.push(email.toLowerCase());
+      } else {
+        this.publicKeyUids_.push(email.toLowerCase());
+      }
+    }, this));
+  }, this));
+
   var elem = this.getElement();
 
   soy.renderElement(elem, templates.settings, {
@@ -186,10 +208,19 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
  * @param {string} comments The comments to use.
  * @param {number} expDate The expiration date to use.
  * @private
- * @return {goog.async.Deferred}
+ * @return {?goog.async.Deferred}
  */
 ui.Settings.prototype.generateKey_ =
     function(panel, name, email, comments, expDate) {
+  var normalizedEmail = utils.text.extractValidEmail(email);
+  if (!normalizedEmail) {
+    alert(chrome.i18n.getMessage('invalidEmailWarning'));
+    return null;
+  } else if (goog.array.contains(this.publicKeyUids_,
+                                 normalizedEmail.toLowerCase())) {
+    alert(chrome.i18n.getMessage('duplicateKeyWarning'));
+    return null;
+  }
 
   var defaults = constants.KEY_DEFAULTS;
   return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
