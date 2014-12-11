@@ -23,6 +23,8 @@ goog.provide('e2e.ext.messages.ApiResponse');
 goog.provide('e2e.ext.messages.BridgeMessageRequest');
 goog.provide('e2e.ext.messages.BridgeMessageResponse');
 goog.provide('e2e.ext.messages.GetSelectionRequest');
+goog.provide('e2e.ext.messages.KeyserverKeyData');
+goog.provide('e2e.ext.messages.KeyserverSignedResponse');
 goog.provide('e2e.ext.messages.e2ebindDraft');
 goog.provide('e2e.ext.messages.e2ebindRequest');
 goog.provide('e2e.ext.messages.e2ebindResponse');
@@ -183,5 +185,26 @@ messages.e2ebindDraft;
  * }}
  */
 messages.proxyMessage;
+
+
+/**
+ * Defines the format for timestamped key data returned by the keyserver.
+ * @typedef {{
+ *   userid: string,
+ *   keys: <Object.<number, string>>,
+ *   timestamp: number
+ * }}
+ */
+messages.KeyserverKeyData;
+
+
+/**
+ * Defines the signed key message format returned by the keyserver.
+ * @typedef {{
+ *   data: string,
+ *   kauth_sig: string
+ * }}
+ */
+messages.KeyserverSignedResponse;
 
 });  // goog.scope
