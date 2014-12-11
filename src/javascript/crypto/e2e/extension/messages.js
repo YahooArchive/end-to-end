@@ -191,7 +191,7 @@ messages.proxyMessage;
  * Defines the format for timestamped key data returned by the keyserver.
  * @typedef {{
  *   userid: string,
- *   keys: <Object.<number, string>>,
+ *   keys: Object.<number, string>,
  *   timestamp: number
  * }}
  */
