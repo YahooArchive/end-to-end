@@ -1,11 +1,11 @@
 // jshint ignore: start
 {
   "extName": {
-    "message": "End-To-End",
+    "message": "Yahoo Mail End-To-End",
     "description": "Name of the extension."
   },
   "extDescription": {
-    "message": "Helps you to encrypt, decrypt, and digitally sign email messages within Chrome using OpenPGP.",
+    "message": "Helps you send end-to-end protected messages in Yahoo mail.",
     "description": "Description of the extension."
   },
   "promptDismissActionLabel": {
@@ -21,11 +21,11 @@
     "description": "Message informing about a successful decryption of a message."
   },
   "promptVerificationSuccessMsg": {
-    "message": "Good signature(s) from $1.",
+    "message": "Good signature(s) from $1",
     "description": "Message informing about a successful signature verification."
   },
   "promptVerificationFailureMsg": {
-    "message": "BAD signature(s) from $1!",
+    "message": "BAD signature(s) from $1",
     "description": "Message informing about failure in signature verification."
   },
   "promptEncryptSignTitle": {
@@ -42,7 +42,7 @@
   },
   "promptEncryptSignInsertIntoSupportedLabel": {
     "message": "Insert into Compose",
-    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into a supported provider."
+    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into a supported provider. NOTE: This is being used in places where the action is to create a new messsage, e.g., sharing a key."
   },
   "promptEncryptSignSaveDraftLabel": {
     "message": "Save encrypted draft",
@@ -449,7 +449,7 @@
     "description": "Text that appears at the top of a looking glass."
   },
   "composeGlassTitle": {
-    "message": "Secure Compose is active!",
+    "message": "Composing an end-to-end encrypted message",
     "description": "Title of the pageAction when Secure Compose is active."
   },
   "composeGlassConfirmBack": {
@@ -457,15 +457,15 @@
     "description": "Message asking user to confirm closing the compose glass"
   },
   "composeGlassConfirmRecipients": {
-    "message": "The following recipients are missing encryption keys! Encryption will be impossible.",
+    "message": "The message can't be encrypted because the following recipients are missing encryption keys:",
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassRemoveRecipients": {
-    "message": "Remove these recipients.",
+    "message": "Remove the recipients I don't have a key for",
     "description": "Ask user to remove recipients."
   },
   "composeGlassSendUnencryptedMessage": {
-    "message": "Compose unencrypted message.",
+    "message": "Continue to send signed but unencrypted message",
     "description": "Ask user to send the message unencrypted."
   }
 }
