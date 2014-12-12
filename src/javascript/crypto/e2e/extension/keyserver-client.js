@@ -22,11 +22,13 @@ goog.provide('e2e.ext.KeyserverClient');
 goog.provide('e2e.ext.KeyserverResponseError');
 goog.provide('e2e.ext.KeyserverAuthError');
 
+goog.require('e2e.ecc.Ecdsa');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.messages.KeyserverKeyData');
 goog.require('e2e.ext.messages.KeyserverSignedResponse');
 goog.require('e2e.openpgp.error.Error');
+goog.require('goog.crypt.base64');
 goog.require('goog.math');
 goog.require('goog.array');
 
@@ -34,6 +36,7 @@ goog.require('goog.array');
 goog.scope(function() {
 var ext = e2e.ext;
 var messages = e2e.ext.messages;
+var constants = e2e.ext.constants;
 
 
 
@@ -66,9 +69,11 @@ goog.inherits(e2e.KeyserverAuthError, e2e.openpgp.error.Error);
 /**
  * Constructor for the keyclient.
  * @type {e2e.openpgp.Context} context OpenPGP context
+ * @type {string=} opt_origin The origin of the keyserver
+ * @type {string=} opt_api API string of the keyserver
  * @constructor
  */
-ext.KeyserverClient = function(context) {
+ext.KeyserverClient = function(context, opt_origin, opt_api) {
   /**
    * The PGP context used by the extension.
    * @type {e2e.openpgp.Context}
@@ -76,8 +81,8 @@ ext.KeyserverClient = function(context) {
    */
   this.pgpContext_ = context;
 
-  this.keyserverOrigin_ = 'http://localhost.com:34555';
-  this.keyserverApiVersion_ = 'v1';
+  this.keyserverOrigin_ = opt_origin || constants.Keyserver.TESTSERVER_ORIGIN;
+  this.keyserverApiVersion_ = opt_api || constants.Keyserver.API_V1;
   this.maxFreshnessTime = 24 * 3600 * 1000;
 };
 
@@ -220,7 +225,8 @@ ext.KeyserverClient.prototype.importKeys_ = function(keyData) {
  * @param {messages.KeyserverKeyData} keyData Key data to use for importing.
  * @private
  */
-ext.KeyserverClient.prototype.cacheKeyData_ = function(keyData) {};
+ext.KeyserverClient.prototype.cacheKeyData_ = function(keyData) {
+};
 
 
 /**
@@ -228,9 +234,13 @@ ext.KeyserverClient.prototype.cacheKeyData_ = function(keyData) {};
  * @param {messages.KeyserverSignedResponse} response Response from keyserver.
  * @private
  */
-ext.KeyserverClient.prototype.verifyResponse_ = function(response) {};
+ext.KeyserverClient.prototype.verifyResponse_ = function(response) {
+  var data = response.data;
+  var sig = response.kauth_sig;
+  // sig uses deterministic ECDSA with NIST384p and SHA384
+  var kauth = {pubKey: constants.Keyserver.KAUTH_PUB};
+  var ecdsa = new e2e.ecc.Ecdsa(e2e.ecc.PrimeCurve.P_384, kauth);
+  return ecdsa.verify(data, sig);
+};
 
 }); // goog.scope
-
-
-

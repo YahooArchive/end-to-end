@@ -23,6 +23,7 @@ goog.provide('e2e.ext.constants.Actions');
 goog.provide('e2e.ext.constants.BackupCode');
 goog.provide('e2e.ext.constants.CssClass');
 goog.provide('e2e.ext.constants.ElementId');
+goog.provide('e2e.ext.constants.Keyserver');
 goog.provide('e2e.ext.constants.StorageKey');
 goog.provide('e2e.ext.constants.e2ebind.requestActions');
 goog.provide('e2e.ext.constants.e2ebind.responseActions');
@@ -272,4 +273,17 @@ e2e.ext.constants.e2ebind.requestActions = {
   VALIDATE_SIGNER: 'validate_signer',
   VALIDATE_RECIPIENTS: 'validate_recipients',
   SET_SIGNER: 'set_signer'
+};
+
+
+/**
+ * keyserver data constants
+ */
+e2e.ext.constants.Keyserver = {
+  KAUTH_PUB:
+      'MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAECDYavSwbOYF7WctSdkyF4Hum41eRkEu0' +
+      'rlqKr3+HTvAvQM+LhZokfBqYDkp7miGKzl+jFCp2kJphO7y4pGBoM4Bco6Z8zkMc' +
+      'j9ZekrJ7CTmdeiN3XJ2zZJwo+0CB5GbM',
+  TESTSERVER_ORIGIN: 'http://localhost.com:5000',
+  API_V1: 'v1'
 };
