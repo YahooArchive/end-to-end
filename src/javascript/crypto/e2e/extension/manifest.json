@@ -4,7 +4,7 @@
   "description": "__MSG_extDescription__",
   "version": "0.0.1",
   "permissions": ["activeTab", "notifications", "declarativeContent", "tabs",
-    "http://localhost:34555"],
+    "http://localhost:5000/*"],
   "optional_permissions": [],
   "background": {"scripts": ["launcher_binary.js"]},
   "options_page": "settings.html",
