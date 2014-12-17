@@ -284,6 +284,6 @@ e2e.ext.constants.Keyserver = {
       'MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAECDYavSwbOYF7WctSdkyF4Hum41eRkEu0' +
       'rlqKr3+HTvAvQM+LhZokfBqYDkp7miGKzl+jFCp2kJphO7y4pGBoM4Bco6Z8zkMc' +
       'j9ZekrJ7CTmdeiN3XJ2zZJwo+0CB5GbM',
-  TESTSERVER_ORIGIN: 'http://localhost.com:5000',
+  TESTSERVER_ORIGIN: 'http://localhost:5000',
   API_V1: 'v1'
 };

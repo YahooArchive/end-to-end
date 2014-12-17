@@ -18,17 +18,19 @@
  * @fileoverview The Yahoo E2E keyserver client component.
  */
 
-goog.provide('e2e.ext.KeyserverClient');
-goog.provide('e2e.ext.KeyserverResponseError');
-goog.provide('e2e.ext.KeyserverAuthError');
+goog.provide('e2e.ext.keyserver');
+goog.provide('e2e.ext.keyserver.Client');
+goog.provide('e2e.ext.keyserver.ResponseError');
+goog.provide('e2e.ext.keyserver.RequestError');
+goog.provide('e2e.ext.keyserver.AuthError');
 
 goog.require('e2e.ecc.Ecdsa');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.messages.KeyserverKeyData');
 goog.require('e2e.ext.messages.KeyserverSignedResponse');
-goog.require('e2e.openpgp.error.Error');
 goog.require('goog.crypt.base64');
+goog.require('goog.debug.Error');
 goog.require('goog.math');
 goog.require('goog.array');
 
@@ -44,12 +46,25 @@ var constants = e2e.ext.constants;
  * Error indicating an invalid response from the keyserver.
  * @param {*=} opt_msg The custom error message.
  * @constructor
- * @extends {e2e.openpgp.error.Error}
+ * @extends {goog.debug.Error}
  */
-e2e.KeyserverResponseError = function(opt_msg) {
+ext.keyserver.ResponseError = function(opt_msg) {
   goog.base(this, opt_msg);
 };
-goog.inherits(e2e.KeyserverResponseError, e2e.openpgp.error.Error);
+goog.inherits(ext.keyserver.ResponseError, goog.debug.Error);
+
+
+
+/**
+ * Error indicating an invalid request to the keyserver.
+ * @param {*=} opt_msg The custom error message.
+ * @constructor
+ * @extends {goog.debug.Error}
+ */
+ext.keyserver.RequestError = function(opt_msg) {
+  goog.base(this, opt_msg);
+};
+goog.inherits(ext.keyserver.RequestError, goog.debug.Error);
 
 
 
@@ -57,23 +72,23 @@ goog.inherits(e2e.KeyserverResponseError, e2e.openpgp.error.Error);
  * Error indicating invalid authorization for a request.
  * @param {*=} opt_msg The custom error message.
  * @constructor
- * @extends {e2e.openpgp.error.Error}
+ * @extends {goog.debug.Error}
  */
-e2e.KeyserverAuthError = function(opt_msg) {
+ext.keyserver.AuthError = function(opt_msg) {
   goog.base(this, opt_msg);
 };
-goog.inherits(e2e.KeyserverAuthError, e2e.openpgp.error.Error);
+goog.inherits(ext.keyserver.AuthError, goog.debug.Error);
 
 
 
 /**
  * Constructor for the keyclient.
- * @type {e2e.openpgp.Context} context OpenPGP context
- * @type {string=} opt_origin The origin of the keyserver
- * @type {string=} opt_api API string of the keyserver
+ * @param {e2e.openpgp.Context} context OpenPGP context
+ * @param {string=} opt_origin The origin of the keyserver
+ * @param {string=} opt_api API string of the keyserver
  * @constructor
  */
-ext.KeyserverClient = function(context, opt_origin, opt_api) {
+ext.keyserver.Client = function(context, opt_origin, opt_api) {
   /**
    * The PGP context used by the extension.
    * @type {e2e.openpgp.Context}
@@ -96,7 +111,7 @@ ext.KeyserverClient = function(context, opt_origin, opt_api) {
  * @param {string=} opt_params Optional POST params.
  * @private
  */
-ext.KeyserverClient.prototype.sendRequest_ = function(method, path, callback,
+ext.keyserver.Client.prototype.sendRequest_ = function(method, path, callback,
                                                       errback, opt_params) {
   var xhr = new XMLHttpRequest();
   xhr.timeout = 1000;
@@ -131,10 +146,10 @@ ext.KeyserverClient.prototype.sendRequest_ = function(method, path, callback,
  * @param {number} status The return code
  * @private
  */
-ext.KeyserverClient.prototype.handleAuthFailure_ = function(status) {
+ext.keyserver.Client.prototype.handleAuthFailure_ = function(status) {
   // redirect == YBY cookie not fresh, 401 == wrong YBY userid. treat them
   // the same for now.
-  throw new ext.KeyserverAuthError('PLease login again');
+  throw new ext.keyserver.AuthError('PLease login again');
 };
 
 
@@ -144,7 +159,7 @@ ext.KeyserverClient.prototype.handleAuthFailure_ = function(status) {
  * @param {function(*)} callback
  * @private
  */
-ext.KeyserverClient.prototype.fetchKey_ = function(userid, callback) {
+ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback) {
   this.sendRequest_('GET', userid, callback, this.handleAuthFailure_);
 };
 
@@ -154,25 +169,27 @@ ext.KeyserverClient.prototype.fetchKey_ = function(userid, callback) {
  * @param {string} userid the userid of the key
  * @param {string} key Serialized OpenPGP key to send.
  */
-ext.KeyserverClient.prototype.sendKey = function(userid, key) {
+ext.keyserver.Client.prototype.sendKey = function(userid, key) {
   // Check which device IDs already exist for this user
   this.fetchKey_(userid, goog.bind(function(response) {
     var registeredDeviceIds = [];
     var deviceId;
     var path;
-    if (response === null) {
-      return;
-    } else if (response && response.keys) {
+    if (response && response.keys) {
       // No point in validating the response, since attacker can at most
       // prevent user from registering certain device IDs.
       registeredDeviceIds = goog.object.getKeys(response.keys);
-      do {
-        deviceId = goog.math.randomInt(100000);
-      } while (goog.array.contains(registeredDeviceIds, deviceId));
-      path = [userid, deviceId].join('/');
-      this.sendRequest_('POST', path, this.afterSendKey_,
-                        this.handleAuthFailure_, key);
     }
+    if (registeredDeviceIds.length > 1000) {
+      // Too many registered device IDs. Abort.
+      throw new ext.keyserver.RequestError('Too many registered keys.');
+    }
+    do {
+      deviceId = goog.math.randomInt(100000);
+    } while (goog.array.contains(registeredDeviceIds, deviceId));
+    path = [userid, deviceId].join('/');
+    this.sendRequest_('POST', path, this.afterSendKey_,
+                       this.handleAuthFailure_, key);
   }, this));
 };
 
@@ -181,7 +198,7 @@ ext.KeyserverClient.prototype.sendKey = function(userid, key) {
  * Fetches a key and imports it into the keyring.
  * @param {string} userid the userid of the key
  */
-ext.KeyserverClient.prototype.fetchAndImportKeys = function(userid) {
+ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
   // Set freshness time to 24 hrs for now.
   var importCb = function(response) {
     var success = false;
@@ -204,7 +221,7 @@ ext.KeyserverClient.prototype.fetchAndImportKeys = function(userid) {
       }
     }
     if (!success) {
-      throw new this.KeyserverResponseError();
+      throw new ext.keyserver.ResponseError();
     }
   };
   this.fetchKey_(userid, goog.bind(importCb, this));
@@ -216,7 +233,7 @@ ext.KeyserverClient.prototype.fetchAndImportKeys = function(userid) {
  * @param {messages.KeyserverKeyData} keyData Key data to use for importing.
  * @private
  */
-ext.KeyserverClient.prototype.importKeys_ = function(keyData) {
+ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
 };
 
 
@@ -225,7 +242,7 @@ ext.KeyserverClient.prototype.importKeys_ = function(keyData) {
  * @param {messages.KeyserverKeyData} keyData Key data to use for importing.
  * @private
  */
-ext.KeyserverClient.prototype.cacheKeyData_ = function(keyData) {
+ext.keyserver.Client.prototype.cacheKeyData_ = function(keyData) {
 };
 
 
@@ -234,7 +251,7 @@ ext.KeyserverClient.prototype.cacheKeyData_ = function(keyData) {
  * @param {messages.KeyserverSignedResponse} response Response from keyserver.
  * @private
  */
-ext.KeyserverClient.prototype.verifyResponse_ = function(response) {
+ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
   var data = response.data;
   var sig = response.kauth_sig;
   // sig uses deterministic ECDSA with NIST384p and SHA384
