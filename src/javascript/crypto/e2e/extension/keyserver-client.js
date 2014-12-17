@@ -83,19 +83,11 @@ goog.inherits(ext.keyserver.AuthError, goog.debug.Error);
 
 /**
  * Constructor for the keyclient.
- * @param {e2e.openpgp.Context} context OpenPGP context
  * @param {string=} opt_origin The origin of the keyserver
  * @param {string=} opt_api API string of the keyserver
  * @constructor
  */
-ext.keyserver.Client = function(context, opt_origin, opt_api) {
-  /**
-   * The PGP context used by the extension.
-   * @type {e2e.openpgp.Context}
-   * @private
-   */
-  this.pgpContext_ = context;
-
+ext.keyserver.Client = function(opt_origin, opt_api) {
   this.keyserverOrigin_ = opt_origin || constants.Keyserver.TESTSERVER_ORIGIN;
   this.keyserverApiVersion_ = opt_api || constants.Keyserver.API_V1;
   this.maxFreshnessTime = 24 * 3600 * 1000;
@@ -168,8 +160,9 @@ ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback) {
  * Submits a key to a keyserver.
  * @param {string} userid the userid of the key
  * @param {string} key Serialized OpenPGP key to send.
+ * @param {function} callback Callback after sending key
  */
-ext.keyserver.Client.prototype.sendKey = function(userid, key) {
+ext.keyserver.Client.prototype.sendKey = function(userid, key, callback) {
   // Check which device IDs already exist for this user
   this.fetchKey_(userid, goog.bind(function(response) {
     var registeredDeviceIds = [];
@@ -191,7 +184,7 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key) {
       deviceId = goog.math.randomInt(100000);
     } while (goog.array.contains(registeredDeviceIds, deviceId));
     path = [userid, deviceId].join('/');
-    this.sendRequest_('POST', path, this.afterSendKey_,
+    this.sendRequest_('POST', path, callback,
                        this.handleAuthFailure_, key);
   }, this));
 };
@@ -214,13 +207,11 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
         // Check that the response is fresh
         if (keyData.userid === userid &&
             new Date().getTime() - keyData.timestamp < this.maxFreshnessTime) {
-          try {
-            // Import keys into the keyring
-            this.importKeys_(keyData);
-            // Save the server response for keyring pruning
-            this.cacheKeyData_(keyData);
-            success = true;
-          } catch(e) {}
+          // Import keys into the keyring
+          this.importKeys_(keyData);
+          // Save the server response for keyring pruning
+          this.cacheKeyData_(keyData);
+          success = true;
         }
       }
     }
@@ -238,6 +229,20 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
  * @private
  */
 ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
+  goog.object.forEach(keyData.keys, goog.bind(function(key) {
+    ext.utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
+      action: constants.Actions.IMPORT_KEY,
+      content: key
+    }), goog.bind(function(response) {
+      var result = response.content;
+      if (result.length && result.length > 0) {
+        ext.utils.showNotification(
+            chrome.i18n.getMessage('promptImportKeyNotificationLabel',
+                                   result.toString()), goog.nullFunction
+        );
+      }
+    }, this));
+  }, this));
 };
 
 

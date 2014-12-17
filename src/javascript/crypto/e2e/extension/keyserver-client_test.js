@@ -3,8 +3,11 @@ goog.provide('e2e.ext.KeyserverClientTest');
 
 goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.constants');
+goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.preferences');
+goog.require('goog.dom');
+goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
@@ -13,11 +16,16 @@ goog.require('goog.testing.mockmatchers');
 goog.setTestOnly();
 
 var constants = e2e.ext.constants;
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
+asyncTestCase.stepTimeout = 2000;
+
 var client;
 var mockControl = null;
 var mockmatchers = goog.testing.mockmatchers;
-var preferences = e2e.ext.ui.preferences;
 var stubs = new goog.testing.PropertyReplacer();
+var div = goog.dom.createElement('div');
+div.id = constants.ElementId.CALLBACK_DIALOG;
+var launcher = null;
 
 var TEST_SIG = '4GhezXSJ6ByB1LmnUDtDoT7TOepwFUwRPDLjhsLpTTSay5' +
     'mTHji4J1AOKr8_ppQer8jnppZs9v4aWhCOL4HkmwNCu21DhEeKC6XlyOs' +
@@ -26,9 +34,19 @@ var TEST_DATA = 'key1';
 
 
 function setUp() {
+  document.body.appendChild(div);
   window.localStorage.clear();
-  mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
+  launcher = new e2e.ext.Launcher();
+  launcher.start();
+  stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
+    callback({launcher: launcher});
+  });
+
+  stubs.replace(e2e.ext.Launcher.prototype, 'hasPassphrase', function() {
+    return true;
+  });
+  mockControl = new goog.testing.MockControl();
   client = new e2e.ext.keyserver.Client();
 }
 
@@ -41,6 +59,7 @@ function tearDown() {
 
 
 function testVerifyResponse() {
+  // Fails for now. dlg plz fix this kthx.
   var response = {kauth_sig: TEST_SIG, data: TEST_DATA};
   assertTrue(client.verifyResponse_(response));
 }
@@ -91,10 +110,26 @@ function testSendKey() {
 
 
 function testFetchAndImportKeys() {
-  var userId = 'yan@mit.edu';
+  var userId = 'adhintz@google.com';
   var sig = 'irrelevant';
   var time = new Date().getTime();
-  var keydata = {keys: {12345: 'irrelevant'},
+  var key =  // user ID of 'Drew Hintz <adhintz@google.com>'
+    '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
+    'Charset: UTF-8\n' +
+    '\n' +
+    'xv8AAABSBFP3bHYTCCqGSM49AwEHAgMECt6MVqa43Ab248CosK/cy664pkL/9XvC\n' +
+    '0O2K0O1Jh2qau7ll3Q9vssdObSwX0EaiMm4Dvegxr1z+SblWSFV4x83/AAAAH0Ry\n' +
+    'ZXcgSGludHogPGFkaGludHpAZ29vZ2xlLmNvbT7C/wAAAGYEEBMIABj/AAAABYJT\n' +
+    '92x2/wAAAAmQ8eznwfj7hkMAADA9AQCWE4jmpmA5XRN1tZduuz8QwtxGZOFurpAK\n' +
+    '6RCzKDqS8wEAx9eBxXLhKB4xm9xwPdh0+W6rbsvf58FzKjlxrkUfuxTO/wAAAFYE\n' +
+    'U/dsdhIIKoZIzj0DAQcCAwQ0M6kFa7VaVmt2PRdOUdZWrHp6CZZglTVQi1eyiXB/\n' +
+    'nnUUbH+qrreWTD7W9RxRtr0IqAYssLG5ZoWsXa5jQC3DAwEIB8L/AAAAZgQYEwgA\n' +
+    'GP8AAAAFglP3bHf/AAAACZDx7OfB+PuGQwAAkO4BALMuXsta+bCOvzSn7InOs7wA\n' +
+    '+OmDN5cv1cR/SsN5+FkLAQCmmBa/Fe76gmDd0RjvpQW7pWK2zXj3il6HYQ2NsWlI\n' +
+    'bQ==\n' +
+    '=LlKd\n' +
+    '-----END PGP PUBLIC KEY BLOCK-----';
+  var keydata = {keys: {12345: key},
                  userid: userId, timestamp: time};
 
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendRequest_',
@@ -108,15 +143,24 @@ function testFetchAndImportKeys() {
                 function(resp) {
                   return (resp.kauth_sig === sig);
                 });
-  stubs.replace(e2e.ext.keyserver.Client.prototype, 'importKeys_',
-               mockControl.createFunctionMock('importKeys'));
-  e2e.ext.keyserver.Client.prototype.importKeys_(
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'cacheKeyData_',
+               mockControl.createFunctionMock('cacheKeyData_'));
+  e2e.ext.keyserver.Client.prototype.cacheKeyData_(
     new mockmatchers.ArgumentMatcher(function(arg) {
       assertObjectEquals(keydata, arg);
       return true;
     })
   );
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest',
+                function(request, cb) {
+                  launcher.ctxApi_.executeAction_(cb, request);
+                });
   mockControl.$replayAll();
   client.fetchAndImportKeys(userId);
-  mockControl.$verifyAll();
+  asyncTestCase.waitForAsync('Waiting for key import');
+  window.setTimeout(function() {
+    assertContains(userId, document.querySelector('.key-meta').textContent);
+    mockControl.$verifyAll();
+    asyncTestCase.continueTesting();
+  });
 }
