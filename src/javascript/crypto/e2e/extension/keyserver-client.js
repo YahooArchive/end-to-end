@@ -156,7 +156,7 @@ ext.keyserver.Client.prototype.handleAuthFailure_ = function(status) {
 /**
  * Fetches a key by userid from the keyserver.
  * @param {string} userid userid to look up. ex: yan@yahoo.com
- * @param {function(*)} callback
+ * @param {function(messages.KeyserverSignedResponse)} callback
  * @private
  */
 ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback) {
@@ -175,10 +175,13 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key) {
     var registeredDeviceIds = [];
     var deviceId;
     var path;
-    if (response && response.keys) {
-      // No point in validating the response, since attacker can at most
-      // prevent user from registering certain device IDs.
-      registeredDeviceIds = goog.object.getKeys(response.keys);
+    if (response && response.data) {
+      try {
+        var keys = JSON.parse(response.data).keys;
+        // No point in validating the response, since attacker can at most
+        // prevent user from registering certain device IDs.
+        registeredDeviceIds = goog.object.getKeys(keys);
+      } catch(e) {}
     }
     if (registeredDeviceIds.length > 1000) {
       // Too many registered device IDs. Abort.
@@ -216,6 +219,7 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
             this.importKeys_(keyData);
             // Save the server response for keyring pruning
             this.cacheKeyData_(keyData);
+            success = true;
           } catch(e) {}
         }
       }

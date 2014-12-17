@@ -52,7 +52,9 @@ function testSendKey() {
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'fetchKey_',
                 function(userid, cb) {
                   if (userid === myUserid) {
-                    cb({keys: {12345: 'irrelevant'}});
+                    cb({data: JSON.stringify({keys: {12345: 'irrelevant'},
+                          userid: 'yan@mit.edu', timestamp: 0}),
+                        kauth_sig: 'irrelevant'});
                   }
                 });
   stubs.replace(goog.math, 'randomInt', function() {
@@ -84,5 +86,37 @@ function testSendKey() {
   mockControl.$replayAll();
 
   client.sendKey(myUserid, myKey);
+  mockControl.$verifyAll();
+}
+
+
+function testFetchAndImportKeys() {
+  var userId = 'yan@mit.edu';
+  var sig = 'irrelevant';
+  var time = new Date().getTime();
+  var keydata = {keys: {12345: 'irrelevant'},
+                 userid: userId, timestamp: time};
+
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendRequest_',
+                function(method, path, cb) {
+                  if (method === 'GET' && path === userId) {
+                    cb({data: JSON.stringify(keydata),
+                        kauth_sig: sig});
+                  }
+                });
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'verifyResponse_',
+                function(resp) {
+                  return (resp.kauth_sig === sig);
+                });
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'importKeys_',
+               mockControl.createFunctionMock('importKeys'));
+  e2e.ext.keyserver.Client.prototype.importKeys_(
+    new mockmatchers.ArgumentMatcher(function(arg) {
+      assertObjectEquals(keydata, arg);
+      return true;
+    })
+  );
+  mockControl.$replayAll();
+  client.fetchAndImportKeys(userId);
   mockControl.$verifyAll();
 }
