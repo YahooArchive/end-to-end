@@ -74,6 +74,7 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
   this.hash = hash;
   this.from = draft.from;
   this.allAvailableRecipients_ = [];
+  this.keyserverClient = new ext.keyserver.Client();
 
   /**
    * Placeholder for calling out to preferences.js.
@@ -136,8 +137,8 @@ ui.ComposeGlass.prototype.processActiveContent_ = function() {
   var content = this.selection;
   var origin = this.origin;
   var recipients = this.recipients;
-  var subject = this.subject;
-  var from = this.from;
+  var subject = this.subject || '';
+  var from = this.from || '';
 
   var elem = goog.dom.getElement(constants.ElementId.BODY);
 
@@ -300,7 +301,7 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
           action: constants.Actions.CHANGE_PAGEACTION
         }));
         if (!this.sendUnencrypted_) {
-          this.handleMissingPublicKeys_();
+          this.fetchKeys_(goog.bind(this.handleMissingPublicKeys_, this));
         }
       }, this);
       textArea.onblur = goog.bind(function() {
@@ -463,6 +464,22 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
   var from = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
   this.updateActiveContent_(
       text, recipients, subject, from, goog.bind(this.close, this));
+};
+
+
+/**
+ * Fetches and imports missing keys for the email recipients.
+ * @param {function(*)=} opt_callback Optional callback
+ */
+ui.ComposeGlass.prototype.fetchKeys_ = function(opt_callback) {
+  var invalidRecipients = this.getInvalidRecipients_();
+  console.log('in fetchKeys with invalid recipients', invalidRecipients);
+  goog.array.forEach(invalidRecipients, goog.bind(function(recipient) {
+    this.keyserverClient.fetchAndImportKeys(recipient);
+  }, this));
+  if (opt_callback) {
+    window.setTimeout(opt_callback, 1000);
+  }
 };
 
 
