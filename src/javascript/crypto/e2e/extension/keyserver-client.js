@@ -110,6 +110,7 @@ ext.keyserver.Client.prototype.sendRequest_ = function(method, path, callback,
   xhr.timeout = 1000;
   var url = [this.keyserverOrigin_, this.keyserverApiVersion_, path].join('/');
   xhr.open(method, url, true);
+  xhr.withCredentials = true;
   if (method === 'POST' && opt_params) {
     xhr.setRequestHeader('Content-Type', 'text/plain');
     xhr.send(opt_params);
