@@ -50,13 +50,7 @@ actions.ImportKey.prototype.execute =
         new utils.Error('Unable to import key.', 'errorUnableToImportKey'));
     return;
   }
-  ctx.importKey(
-      /** @type {!function(string, !function(string))} */
-      (request.passphraseCallback), request.content).
-      addCallback(callback).addErrback(errorCallback);
-  return;
 
-/*
   new actions.GetKeyDescription().
       execute(ctx, request, requestor, function(result) {
         if (goog.isDef(result)) {
@@ -64,11 +58,11 @@ actions.ImportKey.prototype.execute =
               constants.ElementId.CALLBACK_DIALOG);
 
           ctx.importKey(
+              /** @type {!function(string, !function(string))} */
               (request.passphraseCallback), request.content).
               addCallback(callback).addErrback(errorCallback);
         }
       }, errorCallback);
-    */
 };
 
 });  // goog.scope
