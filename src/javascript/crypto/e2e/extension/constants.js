@@ -54,6 +54,9 @@ e2e.ext.constants.Actions = {
   GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',
   LOCK_KEYRING: 'lock_keyring',
 
+  // Keyserver related actions
+  GET_AUTH_TOKEN: 'get_auth_token',
+
   // Actions needed for the glasses.
   SHOW_NOTIFICATION: 'show_notification',
   GLASS_CLOSED: 'glass_closed',

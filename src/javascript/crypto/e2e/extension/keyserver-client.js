@@ -83,11 +83,13 @@ goog.inherits(ext.keyserver.AuthError, goog.debug.Error);
 
 /**
  * Constructor for the keyclient.
+ * @param {string} location The location of the mail provider page.
  * @param {string=} opt_origin The origin of the keyserver
  * @param {string=} opt_api API string of the keyserver
  * @constructor
  */
-ext.keyserver.Client = function(opt_origin, opt_api) {
+ext.keyserver.Client = function(location, opt_origin, opt_api) {
+  this.pageLocation_ = location;
   this.keyserverOrigin_ = opt_origin || constants.Keyserver.TESTSERVER_ORIGIN;
   this.keyserverApiVersion_ = opt_api || constants.Keyserver.API_V1;
   this.maxFreshnessTime = 24 * 3600 * 1000;
@@ -110,13 +112,19 @@ ext.keyserver.Client.prototype.sendRequest_ = function(method, path, callback,
   xhr.timeout = 1000;
   var url = [this.keyserverOrigin_, this.keyserverApiVersion_, path].join('/');
   xhr.open(method, url, true);
-  xhr.withCredentials = true;
-  if (method === 'POST' && opt_params) {
-    xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.send(opt_params);
-  } else {
-    xhr.send();
-  }
+  ext.utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
+    action: constants.Actions.GET_AUTH_TOKEN,
+    content: this.pageLocation_
+  }), goog.bind(function(response) {
+    var result = response.content;
+    xhr.setRequestHeader('X-Keyshop-Token', result);
+    if (method === 'POST' && opt_params) {
+      xhr.setRequestHeader('Content-Type', 'text/plain');
+      xhr.send(opt_params);
+    } else {
+      xhr.send();
+    }
+  }, this));
   xhr.onreadystatechange = function() {
     var response;
     if (xhr.readyState === 4) {

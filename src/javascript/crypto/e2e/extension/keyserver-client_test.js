@@ -42,12 +42,19 @@ function setUp() {
   stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
     callback({launcher: launcher});
   });
+  stubs.setPath('chrome.cookies.get', function(details, cb) {
+    cb({value: 'irrelevant'});
+  });
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest',
+                function(request, cb) {
+                  launcher.ctxApi_.executeAction_(cb, request);
+                });
 
   stubs.replace(e2e.ext.Launcher.prototype, 'hasPassphrase', function() {
     return true;
   });
   mockControl = new goog.testing.MockControl();
-  client = new e2e.ext.keyserver.Client();
+  client = new e2e.ext.keyserver.Client('https://mail.yahoo.com/');
 }
 
 
@@ -151,10 +158,6 @@ function testFetchAndImportKeys() {
       return true;
     })
   );
-  stubs.replace(e2e.ext.utils, 'sendExtensionRequest',
-                function(request, cb) {
-                  launcher.ctxApi_.executeAction_(cb, request);
-                });
   mockControl.$replayAll();
   client.fetchAndImportKeys(userId);
   asyncTestCase.waitForAsync('Waiting for key import');

@@ -74,7 +74,7 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
   this.hash = hash;
   this.from = draft.from;
   this.allAvailableRecipients_ = [];
-  this.keyserverClient = new ext.keyserver.Client();
+  this.keyserverClient = new ext.keyserver.Client(origin);
 
   /**
    * Placeholder for calling out to preferences.js.

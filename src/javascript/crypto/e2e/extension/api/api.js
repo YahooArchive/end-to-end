@@ -29,6 +29,8 @@ goog.require('e2e.ext.constants.Actions');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.utils');
+goog.require('e2e.hash.Sha256');
+goog.require('goog.crypt');
 goog.require('goog.ui.Component');
 
 goog.scope(function() {
@@ -161,6 +163,15 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         active: true
       });
       callback(outgoing);
+      return;
+    case constants.Actions.GET_AUTH_TOKEN:
+      chrome.cookies.get({url: incoming.content || chrome.runtime.getURL(''),
+                          name: 'YBY'}, function(cookie) {
+        // Use the sha256 of the YBY token as the auth token
+        var hash = new e2e.hash.Sha256();
+        outgoing.content = goog.crypt.byteArrayToHex(hash.hash(cookie.value));
+        callback(outgoing);
+      });
       return;
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
