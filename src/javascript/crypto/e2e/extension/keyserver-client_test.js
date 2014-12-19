@@ -1,11 +1,11 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.KeyserverClientTest');
 
-goog.require('e2e.ext.keyserver.Client');
-goog.require('e2e.ext.constants');
+goog.require('e2e.ext');
 goog.require('e2e.ext.Launcher');
+goog.require('e2e.ext.constants');
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.testingstubs');
-goog.require('e2e.ext.ui.preferences');
 goog.require('goog.dom');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
@@ -79,8 +79,8 @@ function testSendKey() {
                 function(userid, cb) {
                   if (userid === myUserid) {
                     cb({data: JSON.stringify({keys: {12345: 'irrelevant'},
-                          userid: 'yan@mit.edu', timestamp: 0}),
-                        kauth_sig: 'irrelevant'});
+                      userid: 'yan@mit.edu', timestamp: 0}),
+                kauth_sig: 'irrelevant'});
                   }
                 });
   stubs.replace(goog.math, 'randomInt', function() {
@@ -108,7 +108,7 @@ function testSendKey() {
       new mockmatchers.ArgumentMatcher(function(arg) {
         return (arg === myKey);
       }
-  ));
+      ));
   mockControl.$replayAll();
 
   client.sendKey(myUserid, myKey);
@@ -121,29 +121,29 @@ function testFetchAndImportKeys() {
   var sig = 'irrelevant';
   var time = new Date().getTime();
   var key =  // user ID of 'Drew Hintz <adhintz@google.com>'
-    '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
-    'Charset: UTF-8\n' +
-    '\n' +
-    'xv8AAABSBFP3bHYTCCqGSM49AwEHAgMECt6MVqa43Ab248CosK/cy664pkL/9XvC\n' +
-    '0O2K0O1Jh2qau7ll3Q9vssdObSwX0EaiMm4Dvegxr1z+SblWSFV4x83/AAAAH0Ry\n' +
-    'ZXcgSGludHogPGFkaGludHpAZ29vZ2xlLmNvbT7C/wAAAGYEEBMIABj/AAAABYJT\n' +
-    '92x2/wAAAAmQ8eznwfj7hkMAADA9AQCWE4jmpmA5XRN1tZduuz8QwtxGZOFurpAK\n' +
-    '6RCzKDqS8wEAx9eBxXLhKB4xm9xwPdh0+W6rbsvf58FzKjlxrkUfuxTO/wAAAFYE\n' +
-    'U/dsdhIIKoZIzj0DAQcCAwQ0M6kFa7VaVmt2PRdOUdZWrHp6CZZglTVQi1eyiXB/\n' +
-    'nnUUbH+qrreWTD7W9RxRtr0IqAYssLG5ZoWsXa5jQC3DAwEIB8L/AAAAZgQYEwgA\n' +
-    'GP8AAAAFglP3bHf/AAAACZDx7OfB+PuGQwAAkO4BALMuXsta+bCOvzSn7InOs7wA\n' +
-    '+OmDN5cv1cR/SsN5+FkLAQCmmBa/Fe76gmDd0RjvpQW7pWK2zXj3il6HYQ2NsWlI\n' +
-    'bQ==\n' +
-    '=LlKd\n' +
-    '-----END PGP PUBLIC KEY BLOCK-----';
+      '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
+      'Charset: UTF-8\n' +
+      '\n' +
+      'xv8AAABSBFP3bHYTCCqGSM49AwEHAgMECt6MVqa43Ab248CosK/cy664pkL/9XvC\n' +
+      '0O2K0O1Jh2qau7ll3Q9vssdObSwX0EaiMm4Dvegxr1z+SblWSFV4x83/AAAAH0Ry\n' +
+      'ZXcgSGludHogPGFkaGludHpAZ29vZ2xlLmNvbT7C/wAAAGYEEBMIABj/AAAABYJT\n' +
+      '92x2/wAAAAmQ8eznwfj7hkMAADA9AQCWE4jmpmA5XRN1tZduuz8QwtxGZOFurpAK\n' +
+      '6RCzKDqS8wEAx9eBxXLhKB4xm9xwPdh0+W6rbsvf58FzKjlxrkUfuxTO/wAAAFYE\n' +
+      'U/dsdhIIKoZIzj0DAQcCAwQ0M6kFa7VaVmt2PRdOUdZWrHp6CZZglTVQi1eyiXB/\n' +
+      'nnUUbH+qrreWTD7W9RxRtr0IqAYssLG5ZoWsXa5jQC3DAwEIB8L/AAAAZgQYEwgA\n' +
+      'GP8AAAAFglP3bHf/AAAACZDx7OfB+PuGQwAAkO4BALMuXsta+bCOvzSn7InOs7wA\n' +
+      '+OmDN5cv1cR/SsN5+FkLAQCmmBa/Fe76gmDd0RjvpQW7pWK2zXj3il6HYQ2NsWlI\n' +
+      'bQ==\n' +
+      '=LlKd\n' +
+      '-----END PGP PUBLIC KEY BLOCK-----';
   var keydata = {keys: {12345: key},
-                 userid: userId, timestamp: time};
+        userid: userId, timestamp: time};
 
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendRequest_',
                 function(method, path, cb) {
                   if (method === 'GET' && path === userId) {
                     cb({data: JSON.stringify(keydata),
-                        kauth_sig: sig});
+            kauth_sig: sig});
                   }
                 });
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'verifyResponse_',
@@ -151,12 +151,12 @@ function testFetchAndImportKeys() {
                   return (resp.kauth_sig === sig);
                 });
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'cacheKeyData_',
-               mockControl.createFunctionMock('cacheKeyData_'));
+      mockControl.createFunctionMock('cacheKeyData_'));
   e2e.ext.keyserver.Client.prototype.cacheKeyData_(
-    new mockmatchers.ArgumentMatcher(function(arg) {
-      assertObjectEquals(keydata, arg);
-      return true;
-    })
+      new mockmatchers.ArgumentMatcher(function(arg) {
+        assertObjectEquals(keydata, arg);
+        return true;
+      })
   );
   mockControl.$replayAll();
   client.fetchAndImportKeys(userId);

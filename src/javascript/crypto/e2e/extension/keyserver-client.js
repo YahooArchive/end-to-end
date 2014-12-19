@@ -18,21 +18,18 @@
  * @fileoverview The Yahoo E2E keyserver client component.
  */
 
-goog.provide('e2e.ext.keyserver');
-goog.provide('e2e.ext.keyserver.Client');
-goog.provide('e2e.ext.keyserver.ResponseError');
-goog.provide('e2e.ext.keyserver.RequestError');
 goog.provide('e2e.ext.keyserver.AuthError');
+goog.provide('e2e.ext.keyserver.Client');
+goog.provide('e2e.ext.keyserver.RequestError');
+goog.provide('e2e.ext.keyserver.ResponseError');
 
-goog.require('e2e.ecc.Ecdsa');
-goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.Keyserver');
 goog.require('e2e.ext.utils');
-goog.require('e2e.ext.messages.KeyserverKeyData');
-goog.require('e2e.ext.messages.KeyserverSignedResponse');
-goog.require('goog.crypt.base64');
+goog.require('goog.array');
 goog.require('goog.debug.Error');
 goog.require('goog.math');
-goog.require('goog.array');
+goog.require('goog.object');
 
 
 goog.scope(function() {
@@ -136,7 +133,7 @@ ext.keyserver.Client.prototype.sendRequest_ = function(method, path, callback,
       } else if (method === 'GET' && xhr.status === 404) {
         // We looked up keys for a user who has none.
         callback(null);
-      } else{
+      } else {
         errback(xhr.status);
       }
     }
@@ -185,7 +182,7 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key, callback) {
         // No point in validating the response, since attacker can at most
         // prevent user from registering certain device IDs.
         registeredDeviceIds = goog.object.getKeys(keys);
-      } catch(e) {}
+      } catch (e) {}
     }
     if (registeredDeviceIds.length > 1000) {
       // Too many registered device IDs. Abort.
@@ -196,7 +193,7 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key, callback) {
     } while (goog.array.contains(registeredDeviceIds, deviceId));
     path = [userid, deviceId].join('/');
     this.sendRequest_('POST', path, callback,
-                       this.handleAuthFailure_, key);
+        this.handleAuthFailure_, key);
   }, this));
 };
 
@@ -285,4 +282,4 @@ ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
   return true;
 };
 
-}); // goog.scope
+});  // goog.scope
