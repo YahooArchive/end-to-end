@@ -24,11 +24,14 @@ goog.provide('e2e.ext.keyserver.Client');
 goog.provide('e2e.ext.keyserver.RequestError');
 goog.provide('e2e.ext.keyserver.ResponseError');
 
+goog.require('e2e.ecc.Ecdsa');
+goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.messages.KeyserverKeyData');
 goog.require('e2e.ext.messages.KeyserverSignedResponse');
 goog.require('e2e.ext.utils');
 goog.require('goog.array');
+goog.require('goog.crypt.base64');
 goog.require('goog.debug.Error');
 goog.require('goog.math');
 goog.require('goog.object');
@@ -270,15 +273,18 @@ ext.keyserver.Client.prototype.cacheKeyData_ = function(keyData) {
  * @private
  */
 ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
-  /*
   var data = response.data;
-  var sig = response.kauth_sig;
-  // sig uses deterministic ECDSA with NIST384p and SHA384
-  var kauth = {pubKey: constants.Keyserver.KAUTH_PUB};
-  var ecdsa = new e2e.ecc.Ecdsa(e2e.ecc.PrimeCurve.P_384, kauth);
-  return ecdsa.verify(data, sig);
-  */
-  return true;
+  var sig = goog.crypt.base64.decodeStringToByteArray(response.kauth_sig);
+  if (sig.length != 96) {
+    return false;
+  }
+  // sig uses ECDSA with NIST384p and SHA384
+  var ecdsa = new e2e.ecc.Ecdsa(
+      e2e.ecc.PrimeCurve.P_384,
+      {pubKey: e2e.ext.constants.Keyserver.KAUTH_PUB});
+
+  return ecdsa.verify(data, {r: sig.slice(0, 48), s: sig.slice(48, 96)});
 };
+
 
 });  // goog.scope

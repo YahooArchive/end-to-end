@@ -26,11 +26,7 @@ var div = goog.dom.createElement('div');
 div.id = constants.ElementId.CALLBACK_DIALOG;
 var launcher = null;
 
-var TEST_SIG = '4GhezXSJ6ByB1LmnUDtDoT7TOepwFUwRPDLjhsLpTTSay5' +
-    'mTHji4J1AOKr8_ppQer8jnppZs9v4aWhCOL4HkmwNCu21DhEeKC6XlyOs' +
-    'l88epik6bZnRYjeYTffxK8lQH';
-var TEST_DATA = 'key1';
-
+var TEST_RESPONSE = {kauth_sig: 'TivE3M4ANVLXOh7HDcmd3EdSAYtZmb9e15SgARi_h9b5uyawTmx_UvqHGdmE-p6sXhaC0h1hhlhKY222Ob99iZ6nDpEkUTNRQFnXBwi-8NZ6WIdHJeu3vSIU8IkZM6Hw', data: 'test'};
 
 function setUp() {
   document.body.appendChild(div);
@@ -65,9 +61,7 @@ function tearDown() {
 
 
 function testVerifyResponse() {
-  // Fails for now. dlg plz fix this kthx.
-  var response = {kauth_sig: TEST_SIG, data: TEST_DATA};
-  assertTrue(client.verifyResponse_(response));
+  assertTrue(client.verifyResponse_(TEST_RESPONSE));
 }
 
 
