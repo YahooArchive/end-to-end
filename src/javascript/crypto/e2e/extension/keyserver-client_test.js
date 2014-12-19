@@ -1,7 +1,6 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.KeyserverClientTest');
 
-goog.require('e2e.ext');
 goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.keyserver.Client');
@@ -165,5 +164,5 @@ function testFetchAndImportKeys() {
     assertContains(userId, document.querySelector('.key-meta').textContent);
     mockControl.$verifyAll();
     asyncTestCase.continueTesting();
-  });
+  }, 500);
 }

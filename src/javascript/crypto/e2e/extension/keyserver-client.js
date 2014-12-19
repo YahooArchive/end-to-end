@@ -18,13 +18,15 @@
  * @fileoverview The Yahoo E2E keyserver client component.
  */
 
+goog.provide('e2e.ext.keyserver');
 goog.provide('e2e.ext.keyserver.AuthError');
 goog.provide('e2e.ext.keyserver.Client');
 goog.provide('e2e.ext.keyserver.RequestError');
 goog.provide('e2e.ext.keyserver.ResponseError');
 
-goog.require('e2e.ext.constants.Actions');
-goog.require('e2e.ext.constants.Keyserver');
+goog.require('e2e.ext.constants');
+goog.require('e2e.ext.messages.KeyserverKeyData');
+goog.require('e2e.ext.messages.KeyserverSignedResponse');
 goog.require('e2e.ext.utils');
 goog.require('goog.array');
 goog.require('goog.debug.Error');
@@ -242,7 +244,7 @@ ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
       content: key
     }), goog.bind(function(response) {
       var result = response.content;
-      if (result.length && result.length > 0) {
+      if (result && result.length && result.length > 0) {
         ext.utils.showNotification(
             chrome.i18n.getMessage('promptImportKeyNotificationLabel',
                                    result.toString()), goog.nullFunction
