@@ -131,6 +131,7 @@ ext.keyserver.Client.prototype.sendRequest_ = function(method, path, callback,
       if (xhr.status === 200) {
         response = xhr.responseType === 'json' ? xhr.response :
             window.JSON.parse(xhr.responseText);
+        console.log('ks client got json response', response);
         callback(response);
       } else if (method === 'GET' && xhr.status === 404) {
         // We looked up keys for a user who has none.
@@ -239,13 +240,15 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
  * @private
  */
 ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
+  console.log('in importKeys with keys', keyData);
   goog.object.forEach(keyData.keys, goog.bind(function(key) {
     ext.utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
       action: constants.Actions.IMPORT_KEY,
       content: key
     }), goog.bind(function(response) {
+      console.log('in importKey cb with response', response);
       var result = response.content;
-      if (result.length && result.length > 0) {
+      if (result && result.length && result.length > 0) {
         ext.utils.showNotification(
             chrome.i18n.getMessage('promptImportKeyNotificationLabel',
                                    result.toString()), goog.nullFunction
