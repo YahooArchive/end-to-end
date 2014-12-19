@@ -478,7 +478,7 @@ ui.ComposeGlass.prototype.fetchKeys_ = function(opt_callback) {
     this.keyserverClient.fetchAndImportKeys(recipient);
   }, this));
   if (opt_callback) {
-    window.setTimeout(opt_callback, 1000);
+    window.setTimeout(goog.bind(opt_callback, this), 1000);
   }
 };
 
