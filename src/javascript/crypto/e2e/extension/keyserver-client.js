@@ -94,7 +94,7 @@ ext.keyserver.Client = function(location, opt_origin, opt_api) {
   this.pageLocation_ = location;
   this.keyserverOrigin_ = opt_origin || constants.Keyserver.TESTSERVER_ORIGIN;
   this.keyserverApiVersion_ = opt_api || constants.Keyserver.API_V1;
-  this.maxFreshnessTime = 24 * 3600 * 1000;
+  this.maxFreshnessTime = 24 * 3600;
 };
 
 
@@ -217,8 +217,9 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
         var keyData = /** @type {messages.KeyserverKeyData} */
             (window.JSON.parse(response.data));
         // Check that the response is fresh
+        var now = window.Math.ceil((new Date().getTime())/1000);
         if (keyData.userid === userid &&
-            new Date().getTime() - keyData.timestamp < this.maxFreshnessTime) {
+            now - keyData.timestamp < this.maxFreshnessTime) {
           // Import keys into the keyring
           this.importKeys_(keyData);
           // Save the server response for keyring pruning
