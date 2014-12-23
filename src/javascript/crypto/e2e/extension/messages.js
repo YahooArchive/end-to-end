@@ -23,7 +23,8 @@ goog.provide('e2e.ext.messages.ApiResponse');
 goog.provide('e2e.ext.messages.BridgeMessageRequest');
 goog.provide('e2e.ext.messages.BridgeMessageResponse');
 goog.provide('e2e.ext.messages.GetSelectionRequest');
-goog.provide('e2e.ext.messages.KeyserverKeyData');
+goog.provide('e2e.ext.messages.KeyserverKeyInput');
+goog.provide('e2e.ext.messages.KeyserverKeyOutput');
 goog.provide('e2e.ext.messages.KeyserverSignedResponse');
 goog.provide('e2e.ext.messages.e2ebindDraft');
 goog.provide('e2e.ext.messages.e2ebindRequest');
@@ -191,20 +192,32 @@ messages.proxyMessage;
  * Defines the format for timestamped key data returned by the keyserver.
  * @typedef {{
  *   userid: string,
- *   keys: Object.<number, string>,
- *   timestamp: number
+ *   keys: Object.<string, messages.KeyserverSignedResponse>,
+ *   t: number
  * }}
  */
-messages.KeyserverKeyData;
+messages.KeyserverKeyOutput;
 
 
 /**
- * Defines the signed key message format returned by the keyserver.
+ * Defines the signed key message format returned by the key signing authority.
  * @typedef {{
  *   data: string,
  *   kauth_sig: string
  * }}
  */
 messages.KeyserverSignedResponse;
+
+
+/**
+ * Format for key data that is serialized and then signed by the key authority.
+ * @typedef {{
+ *   t: number,
+ *   deviceid: string,
+ *   userid: string,
+ *   key: string
+ * }}
+ */
+messages.KeyserverKeyInput;
 
 });  // goog.scope

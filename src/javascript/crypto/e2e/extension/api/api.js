@@ -127,10 +127,13 @@ api.Api.prototype.openPort_ = function(port) {
  * @private
  */
 api.Api.prototype.executeAction_ = function(callback, req) {
-  var incoming = /** @type {!messages.ApiRequest.<(string|undefined)>} */ (req);
+  var incoming =
+      /** @type {!messages.ApiRequest.<(string|undefined|!e2e.ByteArray)>} */
+      (req);
   var outgoing = /** @type {!messages.ApiResponse} */ ({
     completedAction: incoming.action
   });
+  var content;
 
   // Ensure that only certain actions are exposed via the API.
   switch (incoming.action) {
@@ -152,8 +155,12 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       };
       break;
     case constants.Actions.SHOW_NOTIFICATION:
-      incoming.content = incoming.content || '';
-      utils.showNotification(incoming.content, function() {
+      if (typeof incoming.content === 'string') {
+        content = incoming.content;
+      } else {
+        content = '';
+      }
+      utils.showNotification(content, function() {
         callback(outgoing);
       });
       return;
@@ -165,8 +172,12 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       callback(outgoing);
       return;
     case constants.Actions.GET_AUTH_TOKEN:
-      chrome.cookies.get({url: incoming.content || chrome.runtime.getURL(''),
-                          name: 'YBY'}, function(cookie) {
+      if (typeof incoming.content === 'string') {
+        content = incoming.content;
+      } else {
+        content = chrome.runtime.getURL('');
+      }
+      chrome.cookies.get({url: content, name: 'YBY'}, function(cookie) {
         // Use the sha256 of the YBY token as the auth token
         var hash = new e2e.hash.Sha256();
         outgoing.content = goog.crypt.byteArrayToHex(hash.hash(cookie.value));

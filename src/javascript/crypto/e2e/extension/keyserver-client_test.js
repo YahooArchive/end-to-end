@@ -5,7 +5,9 @@ goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.testingstubs');
+goog.require('goog.crypt.base64');
 goog.require('goog.dom');
+goog.require('goog.object');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
@@ -67,13 +69,13 @@ function testVerifyResponse() {
 
 function testSendKey() {
   var myUserid = 'yan@mit.edu';
-  var myKey = 'foo';
+  var myKey = [1, 2, 3];
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'fetchKey_',
                 function(userid, cb) {
                   if (userid === myUserid) {
-                    cb({data: JSON.stringify({keys: {12345: 'irrelevant'},
-                      userid: 'yan@mit.edu', timestamp: 0}),
-                kauth_sig: 'irrelevant'});
+                    cb({keys: JSON.stringify({12345: {data: 'irrelevant',
+                                                      kauth_sig: 'foo'}}),
+                        userid: 'yan@mit.edu', t: 0});
                   }
                 });
   stubs.replace(goog.math, 'randomInt', function() {
@@ -99,7 +101,7 @@ function testSendKey() {
       mockControl.createFunctionMock('send'));
   XMLHttpRequest.prototype.send(
       new mockmatchers.ArgumentMatcher(function(arg) {
-        return (arg === myKey);
+        return (arg === 'AQID');
       }
       ));
   mockControl.$replayAll();
@@ -112,7 +114,7 @@ function testSendKey() {
 function testFetchAndImportKeys() {
   var userId = 'adhintz@google.com';
   var sig = 'irrelevant';
-  var time = new Date().getTime();
+  var time = (new Date().getTime())/1000;
   var key =  // user ID of 'Drew Hintz <adhintz@google.com>'
       '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
       'Charset: UTF-8\n' +
@@ -129,14 +131,21 @@ function testFetchAndImportKeys() {
       'bQ==\n' +
       '=LlKd\n' +
       '-----END PGP PUBLIC KEY BLOCK-----';
-  var keydata = {keys: {12345: key},
-        userid: userId, timestamp: time};
+  key = e2e.openpgp.asciiArmor.parse(key).data;
+  var keydata = {kauth_sig: sig,
+      data: JSON.stringify(
+          {t: time - 1,
+           deviceid: '99999',
+           userid: userId,
+           key: goog.crypt.base64.encodeByteArray(key, true)})};
 
-  stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendRequest_',
-                function(method, path, cb) {
-                  if (method === 'GET' && path === userId) {
-                    cb({data: JSON.stringify(keydata),
-            kauth_sig: sig});
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendGetRequest_',
+                function(path, cb) {
+                  if (path === userId) {
+                    cb({userid: userId,
+                        t: time,
+                        keys: {99999: keydata}
+                      });
                   }
                 });
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'verifyResponse_',
@@ -155,8 +164,11 @@ function testFetchAndImportKeys() {
   client.fetchAndImportKeys(userId);
   asyncTestCase.waitForAsync('Waiting for key import');
   window.setTimeout(function() {
-    assertContains(userId, document.querySelector('.key-meta').textContent);
-    mockControl.$verifyAll();
-    asyncTestCase.continueTesting();
+    launcher.pgpContext_.getAllKeys().addCallback(function(result) {
+      assertArrayEquals(['Drew Hintz <adhintz@google.com>'],
+                        goog.object.getKeys(result));
+      mockControl.$verifyAll();
+      asyncTestCase.continueTesting();
+    });
   }, 500);
 }
