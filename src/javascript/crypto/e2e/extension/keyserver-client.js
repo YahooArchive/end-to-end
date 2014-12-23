@@ -238,7 +238,7 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key, callback) {
     } while (goog.array.contains(registeredDeviceIds, deviceId));
     path = [userid, deviceId.toString()].join('/');
     this.sendPostRequest_(path, callback,
-        this.handleAuthFailure_, goog.crypt.base64.encodeByteArray(key, true));
+        this.handleAuthFailure_, this.safeEncode_(key));
   }, this));
 };
 
@@ -288,7 +288,7 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
  * @private
  */
 ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
-  var key = goog.crypt.base64.decodeStringToByteArray(keyData.key);
+  var key = this.safeDecode_(keyData.key);
   ext.utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.IMPORT_KEY,
     content: key
@@ -301,6 +301,30 @@ ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
       );
     }
   }, this));
+};
+
+
+
+/**
+ * Does RFC4648 URL safe base64 encoding.
+ * @param {!e2e.ByteArray} bytes
+ * @return {string}
+ * @private
+ */
+ext.keyserver.Client.prototype.safeEncode_ = function(bytes) {
+  return goog.crypt.base64.encodeByteArray(bytes, true).replace(/\./g, '=');
+};
+
+
+/**
+ * Does RFC4648 URL safe base64 decoding.
+ * @param {string} str
+ * @return {!e2e.ByteArray}
+ * @private
+ */
+ext.keyserver.Client.prototype.safeDecode_ = function(str) {
+  return goog.crypt.base64.decodeStringToByteArray(str.replace(/=/g, '.'),
+                                                   true);
 };
 
 
@@ -320,7 +344,7 @@ ext.keyserver.Client.prototype.cacheKeyData_ = function(response) {
  */
 ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
   var data = response.data;
-  var sig = goog.crypt.base64.decodeStringToByteArray(response.kauth_sig, true);
+  var sig = this.safeDecode_(response.kauth_sig);
   if (sig.length != 96) {
     return false;
   }
