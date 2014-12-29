@@ -178,9 +178,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         content = chrome.runtime.getURL('');
       }
       chrome.cookies.get({url: content, name: 'YBY'}, function(cookie) {
-        // Use the sha256 of the YBY token as the auth token
-        var hash = new e2e.hash.Sha256();
-        outgoing.content = goog.crypt.byteArrayToHex(hash.hash(cookie.value));
+        outgoing.content = cookie.value;
         callback(outgoing);
       });
       return;
