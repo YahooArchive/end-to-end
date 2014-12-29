@@ -301,7 +301,18 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
           action: constants.Actions.CHANGE_PAGEACTION
         }));
         if (!this.sendUnencrypted_) {
-          this.fetchKeys_(goog.bind(this.handleMissingPublicKeys_, this));
+          this.fetchKeys_(goog.bind(function(validRecipients,
+                                             invalidRecipients) {
+            this.handleMissingPublicKeys_(invalidRecipients);
+            if (validRecipients.length > 0) {
+              utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
+                action: constants.Actions.SHOW_NOTIFICATION,
+                content: chrome.i18n.getMessage(
+                    'promptImportKeyNotificationLabel',
+                    validRecipients.toString())
+              }));
+            }
+          }, this));
         }
       }, this);
       textArea.onblur = goog.bind(function() {
@@ -469,26 +480,38 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
 
 /**
  * Fetches and imports missing keys for the email recipients.
- * @param {function(*)=} opt_callback Optional callback
+ * @param {function(!Array.<string>, !Array.<string>)} opt_callback
  */
 ui.ComposeGlass.prototype.fetchKeys_ = function(opt_callback) {
   var invalidRecipients = this.getInvalidRecipients_();
   console.log('in fetchKeys with invalid recipients', invalidRecipients);
-  goog.array.forEach(invalidRecipients, goog.bind(function(recipient) {
-    this.keyserverClient.fetchAndImportKeys(recipient);
-  }, this));
-  if (opt_callback) {
-    window.setTimeout(goog.bind(opt_callback, this), 1000);
+  if (!opt_callback) {
+    this.keyserverClient.fetchAndImportKeys(invalidRecipients);
+  } else {
+    this.keyserverClient.fetchAndImportKeys(invalidRecipients,
+        goog.bind(function(results) {
+          var newValidRecipients = [];
+          var newInvalidRecipients = [];
+          goog.object.forEach(results, function(value, key) {
+            if (value === true) {
+              newValidRecipients.push(key);
+            } else {
+              newInvalidRecipients.push(key);
+            }
+          });
+          opt_callback(newValidRecipients, newInvalidRecipients);
+        }, this));
   }
 };
 
 
 /**
  * Pops a warning if any of the recipients does not have a public key.
+ * @param {!Array.<string>=} opt_recipients
  * @private
  */
-ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function() {
-  var invalidRecipients = this.getInvalidRecipients_();
+ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function(opt_recipients) {
+  var invalidRecipients = opt_recipients || this.getInvalidRecipients_();
   if (invalidRecipients.length > 0) {
     // Show dialog asking user to remove recipients without keys
     var message = goog.array.concat(

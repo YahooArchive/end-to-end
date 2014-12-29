@@ -132,6 +132,7 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
         response = /** @type {messages.KeyserverSignedResponse} */
             (xhr.responseType === 'json' ? xhr.response :
              window.JSON.parse(xhr.responseText));
+        console.log('got XHR response', response);
         callback(response);
       } else {
         errback(xhr.status);
@@ -172,6 +173,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
         response = /** @type {?messages.KeyserverKeyOutput} */
             (xhr.responseType === 'json' ? xhr.response :
              window.JSON.parse(xhr.responseText));
+        console.log('got XHR response', response);
         callback(response);
       } else if (xhr.status === 404) {
         // We looked up keys for a user who has none.
@@ -244,50 +246,81 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key, callback) {
 
 
 /**
- * Fetches a key and imports it into the keyring.
- * @param {string} userid the userid of the key
+ * Fetches keys and imports them into the keyring.
+ * @param {!Array.<string>} userids the userids to look up
+ * @param {function(Object.<string, boolean>)=} opt_cb callback to call when
+ *   all imports are finished or determined to be impossible
  */
-ext.keyserver.Client.prototype.fetchAndImportKeys = function(userid) {
-  // Set freshness time to 24 hrs for now.
-  var importCb = function(response) {
-    var success = false;
+ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, opt_cb) {
+  // Keep track of which uids were successfully fetched and imported
+  var importedUids = /** @type {Object.<string, boolean>} */ ({});
+  var allDone = false;
+
+  var importCb = function(userid, response) {
+    importedUids[userid] = false;
+
     if (response && response.t && response.userid === userid) {
       response = /** @type {messages.KeyserverKeyOutput} */ (response);
+
       goog.object.forEach(response.keys, goog.bind(function(value, deviceid) {
         var resp = /** @type {messages.KeyserverSignedResponse} */ (value);
+
         if (this.verifyResponse_(resp)) {
           // Response is valid and correctly signed
           var keyData = /** @type {messages.KeyserverKeyInput} */
               (window.JSON.parse(resp.data));
           // Check that the response is fresh
           var now = window.Math.ceil((new Date().getTime())/1000);
+
           if (keyData.userid === userid &&
               now - keyData.t < this.maxFreshnessTime &&
               keyData.deviceid === deviceid) {
-            success = true;
             // Import keys into the keyring
-            this.importKeys_(keyData);
+            console.log('importing key', keyData);
+            this.importKeys_(keyData, goog.bind(function(result){
+              importedUids[userid] = result;
+              finished();
+            }, this));
+
             // Save the server response for keyring pruning
             this.cacheKeyData_(resp);
-            success = true;
+          } else {
+            // Response was mismatched or not fresh
+            window.setTimeout(finished, 500);
           }
+        } else {
+          // Response was not signed correctly
+          window.setTimeout(finished, 500);
         }
       }, this));
-    }
-    if (!success) {
-      throw new ext.keyserver.ResponseError();
+    } else {
+      // Response was a 404 or malformed
+      window.setTimeout(finished, 500);
     }
   };
-  this.fetchKey_(userid, goog.bind(importCb, this));
+
+  var finished = function() {
+    // If all uids have processed, call the callback
+    if (opt_cb && !allDone &&
+        goog.object.getCount(importedUids) === userids.length) {
+      opt_cb(importedUids);
+      allDone = true;
+    }
+  };
+
+  goog.array.forEach(userids, goog.bind(function(userid) {
+    this.fetchKey_(userid, goog.bind(importCb, this, userid));
+  }, this));
 };
 
 
 /**
  * Extract keys from keydata and import them into the keyring.
  * @param {messages.KeyserverKeyInput} keyData Key data to use for importing.
+ * @param {!function(boolean)} cb Callback with the result of the import
  * @private
  */
-ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
+ext.keyserver.Client.prototype.importKeys_ = function(keyData, cb) {
   var key = this.safeDecode_(keyData.key);
   ext.utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.IMPORT_KEY,
@@ -295,10 +328,9 @@ ext.keyserver.Client.prototype.importKeys_ = function(keyData) {
   }), goog.bind(function(response) {
     var result = response.content;
     if (result && result.length && result.length > 0) {
-      ext.utils.showNotification(
-          chrome.i18n.getMessage('promptImportKeyNotificationLabel',
-                                 result.toString()), goog.nullFunction
-      );
+      cb(true);
+    } else {
+      cb(false);
     }
   }, this));
 };
