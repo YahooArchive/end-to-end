@@ -255,6 +255,7 @@ ui.Settings.prototype.sendKeys_ = function(keys) {
       if (email) {
         this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
             function(response) {
+              this.keyserverClient_.cacheKeyData(response);
               window.alert('successfully registered key: ' +
                            JSON.stringify(response));
             }, this));
