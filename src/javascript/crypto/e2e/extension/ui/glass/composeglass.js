@@ -245,7 +245,6 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
     function(elem, recipients, origin, subject, from, content) {
   var sniffedAction = utils.text.getPgpAction(
       content, this.preferences_.isActionSniffingEnabled);
-  var recipientUids = [];
 
   // Pre-populate the list of recipients during an encrypt/sign action.
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
@@ -256,15 +255,6 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
     var allUids = goog.object.getKeys(searchResult);
     var recipientsEmailMap = this.getRecipientsEmailMap_(allUids);
     this.allAvailableRecipients_ = goog.object.getKeys(recipientsEmailMap);
-
-    goog.array.forEach(recipients, function(recipient) {
-      if (recipientsEmailMap.hasOwnProperty(recipient)) {
-        goog.array.extend(recipientUids,
-                          recipientsEmailMap[recipient]);
-      } else {
-        goog.array.extend(recipientUids, recipient);
-      }
-    });
 
     utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
       action: constants.Actions.LIST_KEYS,
@@ -342,7 +332,8 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         }, this));
       }
 
-      this.chipHolder_ = new panels.ChipHolder(recipientUids, allUids);
+      this.chipHolder_ = new panels.ChipHolder(recipients,
+                                               this.allAvailableRecipients_);
       this.addChild(this.chipHolder_, false);
       this.chipHolder_.decorate(
           goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
