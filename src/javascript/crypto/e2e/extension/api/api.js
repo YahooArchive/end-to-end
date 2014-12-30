@@ -29,8 +29,6 @@ goog.require('e2e.ext.constants.Actions');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.utils');
-goog.require('e2e.hash.Sha256');
-goog.require('goog.crypt');
 goog.require('goog.ui.Component');
 
 goog.scope(function() {

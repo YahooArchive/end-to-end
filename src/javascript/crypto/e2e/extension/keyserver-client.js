@@ -163,7 +163,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
   }), goog.bind(function(response) {
     var result = response.content;
     xhr.setRequestHeader('X-Keyshop-Token', result);
-      xhr.send();
+    xhr.send();
   }, this));
 
   xhr.onreadystatechange = function() {
@@ -268,14 +268,14 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, opt_cb) {
           var keyData = /** @type {messages.KeyserverKeyInput} */
               (window.JSON.parse(resp.data));
           // Check that the response is fresh
-          var now = window.Math.ceil((new Date().getTime())/1000);
+          var now = window.Math.ceil((new Date().getTime()) / 1000);
 
           if (keyData.userid === userid &&
               now - keyData.t < this.maxFreshnessTime &&
               keyData.deviceid === deviceid) {
             // Import keys into the keyring
             console.log('importing key', keyData);
-            this.importKeys_(keyData, goog.bind(function(result){
+            this.importKeys_(keyData, goog.bind(function(result) {
               importedUids[userid] = result;
               finished();
             }, this));
@@ -335,7 +335,6 @@ ext.keyserver.Client.prototype.importKeys_ = function(keyData, cb) {
     }
   }, this));
 };
-
 
 
 /**

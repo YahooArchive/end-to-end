@@ -26,7 +26,6 @@ goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
-goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolder');
 goog.require('e2e.ext.ui.templates.composeglass');
 goog.require('e2e.ext.utils');
@@ -39,7 +38,6 @@ goog.require('goog.events.EventType');
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
-goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -81,7 +79,7 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
    * TODO: Switch preferences.js to chrome.storage.sync
    */
   this.preferences_ = {
-    isActionSniffingEnabled: true,
+    isActionSniffingEnabled: true
   };
 };
 goog.inherits(ui.ComposeGlass, goog.ui.Component);
@@ -476,7 +474,8 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
 
 /**
  * Fetches and imports missing keys for the email recipients.
- * @param {function(!Array.<string>, !Array.<string>)} opt_callback
+ * @param {function(!Array.<string>, !Array.<string>)=} opt_callback
+ * @private
  */
 ui.ComposeGlass.prototype.fetchKeys_ = function(opt_callback) {
   var invalidRecipients = this.getInvalidRecipients_();
