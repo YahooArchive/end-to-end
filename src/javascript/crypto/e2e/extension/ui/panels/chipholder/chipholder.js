@@ -305,6 +305,20 @@ panels.ChipHolder.prototype.addAndMarkChip_ = function(markChipBad) {
 
 
 /**
+ * Marks bad chips as good.
+ * @param {!Array.<string>} uids The uids of the chip to change.
+ */
+panels.ChipHolder.prototype.markGoodChips = function(uids) {
+  this.forEachChild(function(chip) {
+    if (goog.array.contains(uids, chip.getValue())) {
+      goog.dom.classlist.remove(chip.getElement(), constants.CssClass.BAD_CHIP);
+    }
+  });
+  this.allUids_.concat(uids);
+};
+
+
+/**
  * Increases the width of the input field.
  * @private
  */

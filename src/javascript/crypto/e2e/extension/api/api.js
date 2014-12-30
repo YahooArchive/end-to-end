@@ -125,10 +125,13 @@ api.Api.prototype.openPort_ = function(port) {
  * @private
  */
 api.Api.prototype.executeAction_ = function(callback, req) {
-  var incoming = /** @type {!messages.ApiRequest.<(string|undefined)>} */ (req);
+  var incoming =
+      /** @type {!messages.ApiRequest.<(string|undefined|!e2e.ByteArray)>} */
+      (req);
   var outgoing = /** @type {!messages.ApiResponse} */ ({
     completedAction: incoming.action
   });
+  var content;
 
   // Ensure that only certain actions are exposed via the API.
   switch (incoming.action) {
@@ -136,6 +139,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     case constants.Actions.DECRYPT_VERIFY:
     case constants.Actions.LIST_ALL_UIDS:
     case constants.Actions.LIST_KEYS:
+    case constants.Actions.IMPORT_KEY:
     case constants.Actions.GET_KEYRING_UNLOCKED:
       // Propagate the decryptPassphrase if needed.
       incoming.passphraseCallback = function(uid, passphraseCallback) {
@@ -149,8 +153,12 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       };
       break;
     case constants.Actions.SHOW_NOTIFICATION:
-      incoming.content = incoming.content || '';
-      utils.showNotification(incoming.content, function() {
+      if (typeof incoming.content === 'string') {
+        content = incoming.content;
+      } else {
+        content = '';
+      }
+      utils.showNotification(content, function() {
         callback(outgoing);
       });
       return;
@@ -160,6 +168,17 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         active: true
       });
       callback(outgoing);
+      return;
+    case constants.Actions.GET_AUTH_TOKEN:
+      if (typeof incoming.content === 'string') {
+        content = incoming.content;
+      } else {
+        content = chrome.runtime.getURL('');
+      }
+      chrome.cookies.get({url: content, name: 'YBY'}, function(cookie) {
+        outgoing.content = cookie.value;
+        callback(outgoing);
+      });
       return;
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
