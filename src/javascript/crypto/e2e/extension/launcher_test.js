@@ -136,9 +136,6 @@ function testStart() {
   stubs.set(launcher, 'updatePassphraseWarning_',
       mockControl.createFunctionMock('updatePassphraseWarning_'));
   launcher.updatePassphraseWarning_();
-  stubs.set(launcher, 'installResponseHandler_',
-      mockControl.createFunctionMock('installResponseHandler_'));
-  launcher.installResponseHandler_();
 
   stubs.set(launcher.ctxApi_, 'installApi',
       mockControl.createFunctionMock('installApi'));

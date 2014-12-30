@@ -60,6 +60,13 @@ function setUp() {
   });
   document.documentElement.id = 'test_id';
 
+  var ad1 = document.createElement('div');
+  var ad2 = document.createElement('div');
+  ad1.id = 'theAd';
+  ad2.id = 'slot_mbrec';
+  document.body.appendChild(ad1);
+  document.body.appendChild(ad2);
+
   // Simulate the provider listener
   window.addEventListener('message', function(msg) {
     var data = window.JSON.parse(msg.data);
@@ -120,6 +127,9 @@ function testIsStarted() {
 function testE2ebindIconClick() {
   var clickHandled = false;
 
+  stubs.replace(goog.dom, 'getAncestorByTagNameAndClass', function() {
+    return document.createElement('div');
+  });
   stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
     if (request.action === constants.Actions.GET_KEYRING_UNLOCKED) {
       cb({content: true, completedAction: request.action});
