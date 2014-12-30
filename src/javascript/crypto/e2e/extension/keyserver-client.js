@@ -257,8 +257,6 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, opt_cb) {
   var allDone = false;
 
   var importCb = function(userid, response) {
-    importedUids[userid] = false;
-
     if (response && response.t && response.userid === userid) {
       response = /** @type {messages.KeyserverKeyOutput} */ (response);
 
@@ -286,16 +284,19 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, opt_cb) {
             this.cacheKeyData_(resp);
           } else {
             // Response was mismatched or not fresh
-            window.setTimeout(finished, 500);
+            importedUids[userid] = false;
+            finished();
           }
         } else {
           // Response was not signed correctly
-          window.setTimeout(finished, 500);
+          importedUids[userid] = false;
+          finished();
         }
       }, this));
     } else {
       // Response was a 404 or malformed
-      window.setTimeout(finished, 500);
+      importedUids[userid] = false;
+      finished();
     }
   };
 
