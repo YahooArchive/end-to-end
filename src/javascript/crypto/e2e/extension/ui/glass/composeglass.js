@@ -303,6 +303,11 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         if (!this.sendUnencrypted_) {
           this.fetchKeys_(goog.bind(function(validRecipients,
                                              invalidRecipients) {
+            this.allAvailableRecipients_ =
+                this.allAvailableRecipients_.concat(validRecipients);
+            if (this.chipHolder_) {
+              this.chipHolder_.markGoodChips(validRecipients);
+            }
             this.handleMissingPublicKeys_(invalidRecipients);
             if (validRecipients.length > 0) {
               utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
