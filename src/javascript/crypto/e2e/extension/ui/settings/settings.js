@@ -25,6 +25,7 @@ goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.GenerateKey');
@@ -41,7 +42,6 @@ goog.require('goog.array');
 goog.require('goog.crypt');
 goog.require('goog.dom');
 goog.require('goog.events.EventType');
-goog.require('goog.string');
 goog.require('goog.structs.Map');
 goog.require('goog.ui.Component');
 goog.require('soy');
@@ -74,6 +74,14 @@ ui.Settings = function() {
    */
   this.actionExecutor_ = new e2e.ext.actions.Executor(
       goog.bind(this.displayFailure_, this));
+
+  /**
+   * The keyserver client.
+   * @type {!e2e.ext.keyserver.Client}
+   * @private
+   */
+  this.keyserverClient_ =
+      new e2e.ext.keyserver.Client('https://us-mg5.mail.yahoo.com');
 
   this.privateKeyUids_ = [];
   this.publicKeyUids_ = [];
@@ -227,9 +235,33 @@ ui.Settings.prototype.generateKey_ =
       defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
       defaults.subkeyLength, name, comments, email, expDate)
       .addCallback(goog.bind(function(key) {
+        // Key should be an array of exactly size 2 (one public, one private)
+        this.sendKeys_(key);
         this.renderNewKey_(key[0].uids[0]);
         panel.reset();
       }, this)).addErrback(this.displayFailure_, this);
+};
+
+
+/**
+ * Sends an OpenPGP public key(s) to the keyserver.
+ * @param {!e2e.openpgp.Keys} keys
+ * @private
+ */
+ui.Settings.prototype.sendKeys_ = function(keys) {
+  goog.array.forEach(keys, goog.bind(function(key) {
+    if (!key.key.secret) {
+      var email = utils.text.extractValidEmail(key.uids[0]);
+      if (email) {
+        this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
+            function(response) {
+              this.keyserverClient_.cacheKeyData(response);
+              window.alert('successfully registered key: ' +
+                           JSON.stringify(response));
+            }, this));
+      }
+    }
+  }, this));
 };
 
 

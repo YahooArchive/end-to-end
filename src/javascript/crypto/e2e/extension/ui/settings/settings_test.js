@@ -81,6 +81,12 @@ function setUp() {
     callback({launcher: launcher});
   });
 
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendKey',
+                function(userid, key, cb) {
+                  cb({userid: userid, key: key});
+                });
+  stubs.replace(window, 'alert', goog.nullFunction);
+
   page = new e2e.ext.ui.Settings();
   localStorage.clear();
   launcher = new e2e.ext.Launcher();
@@ -116,6 +122,7 @@ function testGenerateKey() {
   fakeGenerateKey().addCallback(function() {
     assertNotEquals(-1, document.body.textContent.indexOf(
         '<test@example.com>'));
+    assertNotNull(window.localStorage.getItem('keyserver-signed-responses'));
     testCase.continueTesting();
   });
 }

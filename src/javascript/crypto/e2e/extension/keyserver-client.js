@@ -281,7 +281,7 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, opt_cb) {
             }, this));
 
             // Save the server response for keyring pruning
-            this.cacheKeyData_(resp);
+            this.cacheKeyData(resp);
           } else {
             // Response was mismatched or not fresh
             importedUids[userid] = false;
@@ -363,9 +363,14 @@ ext.keyserver.Client.prototype.safeDecode_ = function(str) {
 /**
  * Saves keydata entry to local storage.
  * @param {messages.KeyserverSignedResponse} response Response to cache.
- * @private
  */
-ext.keyserver.Client.prototype.cacheKeyData_ = function(response) {
+ext.keyserver.Client.prototype.cacheKeyData = function(response) {
+  var responses = JSON.parse(window.localStorage.getItem(
+      constants.StorageKey.KEYSERVER_SIGNED_RESPONSES) || '[]') || [];
+  responses.push(response);
+  window.localStorage.setItem(
+      constants.StorageKey.KEYSERVER_SIGNED_RESPONSES,
+      JSON.stringify(responses));
 };
 
 

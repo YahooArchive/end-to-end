@@ -111,6 +111,13 @@ function testSendKey() {
 }
 
 
+function testCacheKeyData() {
+  client.cacheKeyData({foo: 'bar'});
+  assertArrayEquals([{foo: 'bar'}], JSON.parse(window.localStorage.getItem(
+      'keyserver-signed-responses')));
+}
+
+
 function testFetchAndImportKeys() {
   var userId = 'adhintz@google.com';
   var sig = 'irrelevant';
@@ -136,9 +143,9 @@ function testFetchAndImportKeys() {
                 function(resp) {
                   return (resp.kauth_sig === sig);
                 });
-  stubs.replace(e2e.ext.keyserver.Client.prototype, 'cacheKeyData_',
-      mockControl.createFunctionMock('cacheKeyData_'));
-  e2e.ext.keyserver.Client.prototype.cacheKeyData_(
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'cacheKeyData',
+      mockControl.createFunctionMock('cacheKeyData'));
+  e2e.ext.keyserver.Client.prototype.cacheKeyData(
       new mockmatchers.ArgumentMatcher(function(arg) {
         assertObjectEquals(keydata, arg);
         return true;
