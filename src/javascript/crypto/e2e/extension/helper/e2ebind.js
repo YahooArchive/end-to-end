@@ -245,9 +245,8 @@ e2ebind.start = function() {
   var uri = new goog.Uri(window.location.href);
   // Use the version of YMail that has the endtoend module included.
   if (utils.text.isYmailOrigin(window.location.href) &&
-      !uri.getParameterValue('endtoend')) {
-    uri.setParameterValue('endtoend', 1);
-    uri.setParameterValue('composev3', 0);
+      !uri.getParameterValue('encryptr')) {
+    uri.setParameterValue('encryptr', 1);
     window.location.href = uri.toString();
     return;
   }

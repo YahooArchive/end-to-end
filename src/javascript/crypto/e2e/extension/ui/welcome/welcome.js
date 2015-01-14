@@ -100,9 +100,7 @@ ui.Welcome.prototype.decorateInternal = function(elem) {
         text: chrome.i18n.getMessage('welcomeBasicsLine2'),
         header: true
       },
-      {iframe: {
-        src: chrome.i18n.getMessage('welcomeIframeUrl'),
-        height: '400',
+      {frame: {
         width: '100%'
       }},
       {
@@ -329,6 +327,7 @@ ui.Welcome.prototype.displayFailure_ = function(error) {
   utils.errorHandler(error);
   window.alert(errorMsg);
 };
+
 
 });  // goog.scope
 
