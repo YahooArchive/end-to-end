@@ -97,12 +97,12 @@
     "description": "A verb prompting the user to share a key."
   },
   "promptImportKeyTitle": {
-    "message": "Import an OpenPGP Key",
+    "message": "Import an End-to-End Key",
     "description": "A friendly title for the key import action."
   },
   "promptImportKeyActionLabel": {
     "message": "Import",
-    "description": "A verb prompting the user to import an OpenPGP key into End-To-End."
+    "description": "A verb prompting the user to import an End-to-End key into End-To-End."
   },
   "promptImportKeyConfirmLabel": {
     "message": "Do you want to import the following keys?",
@@ -349,11 +349,11 @@
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeBasicsLine1": {
-    "message": "This extension allows you to create encrypted messages and decrypt encrypted messages sent to you.",
+    "message": "This extension allows you to create encrypted emails and decrypt encrypted emails sent to you.",
     "description": "A sentence describing instructions."
   },
   "welcomeBasicsLine2": {
-    "message": "Here's a short demonstration how you could use the extension in GMail or Yahoo Mail:",
+    "message": "Learn how to use the extension in Yahoo Mail in 15 seconds:",
     "description": "A sentence describing a link to an instruction video or screenshot."
   },
   "welcomeBasicsLine3": {
@@ -365,19 +365,19 @@
     "description": "Link to a demonstration on how to use the extension."
   },
   "welcomeNoviceTitle": {
-    "message": "I'm new to OpenPGP",
+    "message": "I'm new to End-to-End",
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeGenKeyConfirm": {
-    "message": "You are all set. A new OpenPGP key has been created for you to use.",
-    "description": "The message to display when the user has created his/her OpenPGP key."
+    "message": "You are all set. A new End-to-End key has been created for you to use.",
+    "description": "The message to display when the user has created his/her End-to-End key."
   },
   "welcomeAdvancedTitle": {
     "message": "I want to import a keyring",
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeKeyImport": {
-    "message": "You are all set. Your OpenPGP keyring has been imported and is ready for you to use.",
+    "message": "You are all set. Your End-to-End keyring has been imported and is ready for you to use.",
     "description": "The message to display when the user has imported his/her existing keyring."
   },
   "welcomeAcceptanceButton": {
