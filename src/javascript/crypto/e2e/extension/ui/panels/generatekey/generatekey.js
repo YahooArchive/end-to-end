@@ -21,7 +21,9 @@
 goog.provide('e2e.ext.ui.panels.GenerateKey');
 
 goog.require('e2e.ext.constants.CssClass');
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
+goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
@@ -33,6 +35,7 @@ goog.scope(function() {
 var constants = e2e.ext.constants;
 var panels = e2e.ext.ui.panels;
 var templates = e2e.ext.ui.templates.panels.generatekey;
+var utils = e2e.ext.utils;
 
 
 
@@ -58,6 +61,14 @@ panels.GenerateKey = function(callback, opt_hideTitle, opt_actionBtnTitle) {
    * @private
    */
   this.callback_ = callback;
+
+  /**
+   * The keyserver client component associated with this panel.
+   * @type {!e2e.ext.keyserver.Client}
+   * @private
+   */
+  this.keyserverClient_ =
+      new e2e.ext.keyserver.Client('https://us-mg999.mail.yahoo.com');
 
   /**
    * The title for the generate key section. If empty, it will not be displayed.
@@ -141,6 +152,27 @@ panels.GenerateKey.prototype.reset = function() {
   goog.array.forEach(inputs, function(input) {
     input.value = '';
   });
+};
+
+
+/**
+ * Sends an OpenPGP public key(s) to the keyserver.
+ * @param {!e2e.openpgp.Keys} keys
+ */
+panels.GenerateKey.prototype.sendKeys = function(keys) {
+  goog.array.forEach(keys, goog.bind(function(key) {
+    if (!key.key.secret) {
+      var email = utils.text.extractValidEmail(key.uids[0]);
+      if (email) {
+        this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
+            function(response) {
+              this.keyserverClient_.cacheKeyData(response);
+              window.alert('successfully registered key: ' +
+                           JSON.stringify(response));
+            }, this));
+      }
+    }
+  }, this));
 };
 
 

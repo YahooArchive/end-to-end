@@ -191,8 +191,11 @@ ui.Welcome.prototype.closeAndDisableWelcomeScreen_ = function() {
  */
 ui.Welcome.prototype.generateKey_ =
     function(panel, name, email, comments, expDate) {
-  var welcomePage = this;
-  var anchorElem = this.genKeyForm_;
+  var normalizedEmail = utils.text.extractValidEmail(email);
+  if (!normalizedEmail) {
+    alert(chrome.i18n.getMessage('invalidEmailWarning'));
+    return null;
+  }
   var defaults = constants.KEY_DEFAULTS;
   utils.action.getContext(
       /** @type {!function(!e2e.openpgp.ContextImpl)} */ (function(pgpCtx) {
@@ -204,6 +207,7 @@ ui.Welcome.prototype.generateKey_ =
             defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
             defaults.subkeyLength, name, comments, email, expDate).
             addCallback(goog.bind(function(key) {
+              panel.sendKeys(key);
               var dialog = new dialogs.Generic(
                   chrome.i18n.getMessage('welcomeGenKeyConfirm'),
                   this.hideKeyringSetup_,
