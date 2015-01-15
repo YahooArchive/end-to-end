@@ -174,7 +174,8 @@ function testGenerateKey() {
   mockControl.$replayAll();
 
   page.decorate(document.documentElement);
-  page.generateKey_({reset: function() {}}, '', 'test@example.com', '');
+  page.generateKey_({reset: function() {}, sendKeys: function() {}},
+                    '', 'test@example.com', '');
   testCase.waitForAsync('waiting for key to be generated');
 
   window.setTimeout(function() {

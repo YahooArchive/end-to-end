@@ -68,6 +68,39 @@ function testReset() {
 }
 
 
+function testSendKeys() {
+  panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
+  stubs.replace(panel.keyserverClient_, 'sendKey',
+                function(userid, key, cb) {
+                  cb({userid: userid, key: key});
+                });
+  stubs.replace(panel.keyserverClient_, 'cacheKeyData',
+                mockControl.createFunctionMock('cache'));
+  panel.keyserverClient_.cacheKeyData(
+      new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+        assertObjectEquals({userid: 'test@example.com',
+            key: 'irrelevant'}, arg);
+        return true;
+      })
+  );
+  stubs.replace(window, 'alert', function(message) {
+    window.console.log(message);
+  });
+  mockControl.$replayAll();
+
+  var keys = [{key: {secret: false},
+      serialized: 'irrelevant',
+      uids: ['testing <test@example.com>']
+    }, {key: {secret: true},
+      serialized: 'foobar',
+      uids: ['foo@bar.com']
+    }];
+
+  panel.sendKeys(keys);
+  mockControl.$verifyAll();
+}
+
+
 function testGenerate() {
   panel = new e2e.ext.ui.panels.GenerateKey(
       mockControl.createFunctionMock('callback'));

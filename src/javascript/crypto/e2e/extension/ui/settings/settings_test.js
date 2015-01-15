@@ -28,6 +28,7 @@ goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.Settings');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.panels.KeyringMgmtFull');
+goog.require('e2e.ext.ui.panels.GenerateKey');
 goog.require('e2e.ext.ui.preferences');
 goog.require('e2e.ext.utils');
 goog.require('goog.testing.AsyncTestCase');
@@ -305,6 +306,10 @@ function testDisplayFailure() {
 
 
 function fakeGenerateKey(opt_fullname) {
-  return page.generateKey_({reset: function() {}}, opt_fullname || 'test user',
+  var panel = new e2e.ext.ui.panels.GenerateKey(goog.nullFunction);
+  return page.generateKey_({reset: function() {},
+      sendKeys: function(keys) {
+        panel.sendKeys(keys);
+      }}, opt_fullname || 'test user',
       'test@example.com', 'comment');
 }
