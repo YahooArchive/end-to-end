@@ -120,6 +120,10 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
     content: this.pageLocation_
   }), goog.bind(function(response) {
     var result = response.content;
+    if (!result) {
+      this.handleAuthFailure_(301);
+      return;
+    }
     xhr.setRequestHeader('X-Keyshop-Token', result);
     xhr.setRequestHeader('Content-Type', 'text/plain');
     xhr.send(opt_params);
@@ -132,7 +136,6 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
         response = /** @type {messages.KeyserverSignedResponse} */
             (xhr.responseType === 'json' ? xhr.response :
              window.JSON.parse(xhr.responseText));
-        console.log('got XHR response', response);
         callback(response);
       } else {
         errback(xhr.status);
@@ -173,7 +176,6 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
         response = /** @type {?messages.KeyserverKeyOutput} */
             (xhr.responseType === 'json' ? xhr.response :
              window.JSON.parse(xhr.responseText));
-        console.log('got XHR response', response);
         callback(response);
       } else if (xhr.status === 404) {
         // We looked up keys for a user who has none.

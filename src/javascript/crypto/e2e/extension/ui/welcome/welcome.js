@@ -191,7 +191,7 @@ ui.Welcome.prototype.closeAndDisableWelcomeScreen_ = function() {
  */
 ui.Welcome.prototype.generateKey_ =
     function(panel, name, email, comments, expDate) {
-  var normalizedEmail = utils.text.extractValidEmail(email);
+  var normalizedEmail = utils.text.extractValidYahooEmail(email);
   if (!normalizedEmail) {
     alert(chrome.i18n.getMessage('invalidEmailWarning'));
     return null;

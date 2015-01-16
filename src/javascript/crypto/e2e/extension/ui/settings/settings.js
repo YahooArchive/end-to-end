@@ -127,7 +127,6 @@ ui.Settings.prototype.decorateInternal = function(elem) {
  * @private
  */
 ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
-  console.log(pgpKeys);
   var keyMap = /**@type {!goog.structs.Map} */ (new goog.structs.Map(pgpKeys));
   keyMap.forEach(goog.bind(function(keys, id) {
     var email = utils.text.extractValidEmail(id);
@@ -211,12 +210,13 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
  */
 ui.Settings.prototype.generateKey_ =
     function(panel, name, email, comments, expDate) {
-  var normalizedEmail = utils.text.extractValidEmail(email);
+  var normalizedEmail = utils.text.extractValidYahooEmail(email);
   if (!normalizedEmail) {
     alert(chrome.i18n.getMessage('invalidEmailWarning'));
     return null;
-  } else if (goog.array.contains(this.publicKeyUids_,
-                                 normalizedEmail.toLowerCase())) {
+  }
+  if (goog.array.contains(this.publicKeyUids_,
+                          normalizedEmail.toLowerCase())) {
     alert(chrome.i18n.getMessage('duplicateKeyWarning'));
     return null;
   }

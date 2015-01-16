@@ -120,6 +120,24 @@ utils.extractValidEmail = function(recipient) {
 
 
 /**
+ * Extracts a valid yahoo-inc email address.
+ * @param {string} recipient "username <email> string"
+ * @return {?string} Valid email or null
+ */
+utils.extractValidYahooEmail = function(recipient) {
+  var email = utils.extractValidEmail(recipient);
+  var domain;
+  if (email) {
+    domain = email.split('@')[1];
+    if (goog.string.caseInsensitiveEquals(domain, 'yahoo-inc.com')) {
+      return email;
+    }
+  }
+  return null;
+};
+
+
+/**
  * Extracts valid email addresses out of a string with comma-separated full
  *  email labels (e.g. "John Smith" <john@example.com>, Second
  *  <second@example.org>).

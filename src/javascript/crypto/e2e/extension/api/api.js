@@ -176,7 +176,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         content = chrome.runtime.getURL('');
       }
       chrome.cookies.get({url: content, name: 'YBY'}, function(cookie) {
-        outgoing.content = cookie.value;
+        outgoing.content = cookie ? cookie.value : undefined;
         callback(outgoing);
       });
       return;

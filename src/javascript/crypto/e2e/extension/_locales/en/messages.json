@@ -249,7 +249,7 @@
     "description": "A section title indicating where the user can generate a new PGP key."
   },
   "genKeyEmailLabel": {
-    "message": "Please enter your email address so we can make your keys:\n(We won't do anything else with this email address.)",
+    "message": "Please enter your yahoo-inc email address so we can make your keys:",
     "description": "A sentence fragment prompting the user to provide his/her email address."
   },
   "genKeyPassphraseLabel": {
@@ -349,7 +349,7 @@
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeBasicsLine1": {
-    "message": "This extension allows you to create encrypted emails and decrypt encrypted emails sent to you.",
+    "message": "This extension allows you to create encrypted emails and decrypt encrypted emails sent to you in Yahoo CorpMail.",
     "description": "A sentence describing instructions."
   },
   "welcomeBasicsLine2": {
@@ -409,7 +409,7 @@
     "description": "Warning that a key already exists for the given email address"
   },
   "invalidEmailWarning": {
-    "message": "Please enter a valid email address.",
+    "message": "Please enter a valid yahoo-inc.com email address.",
     "description": "Warning that an email is not valid."
   },
   "preferenceWelcomeScreen": {

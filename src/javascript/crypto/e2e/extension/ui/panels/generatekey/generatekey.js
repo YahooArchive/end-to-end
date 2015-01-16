@@ -164,7 +164,7 @@ panels.GenerateKey.prototype.reset = function() {
 panels.GenerateKey.prototype.sendKeys = function(keys) {
   goog.array.forEach(keys, goog.bind(function(key) {
     if (!key.key.secret) {
-      var email = utils.text.extractValidEmail(key.uids[0]);
+      var email = utils.text.extractValidYahooEmail(key.uids[0]);
       if (email) {
         try {
           this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
