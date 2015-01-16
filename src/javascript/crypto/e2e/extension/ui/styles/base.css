@@ -218,3 +218,10 @@ input:focus {
   font-size: 1.2em;
   font-weight: bold;
 }
+
+.error div {
+  color: #dd4b39;
+  font-size: 1em;
+  margin-bottom: 7px;
+  text-align: center;
+}

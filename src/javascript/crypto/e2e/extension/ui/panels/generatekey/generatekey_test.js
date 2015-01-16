@@ -101,6 +101,27 @@ function testSendKeys() {
 }
 
 
+function testSendKeysFailure() {
+  panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
+  panel.render(document.body);
+  stubs.replace(panel.keyserverClient_, 'sendKey', function() {
+    panel.keyserverClient_.handleAuthFailure_(302);
+  });
+  var keys = [{key: {secret: false},
+      serialized: 'irrelevant',
+      uids: ['testing <test@example.com>']
+    }, {key: {secret: true},
+      serialized: 'foobar',
+      uids: ['foo@bar.com']
+    }];
+
+  panel.sendKeys(keys);
+  var errorDiv = panel.getElement().getElementsByClassName(
+      constants.CssClass.ERROR)[0];
+  assertContains('login', errorDiv.textContent);
+}
+
+
 function testGenerate() {
   panel = new e2e.ext.ui.panels.GenerateKey(
       mockControl.createFunctionMock('callback'));

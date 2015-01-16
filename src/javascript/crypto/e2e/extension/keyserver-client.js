@@ -194,7 +194,8 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
 ext.keyserver.Client.prototype.handleAuthFailure_ = function(status) {
   // redirect == YBY cookie not fresh, 401 == wrong YBY userid. treat them
   // the same for now.
-  throw new ext.keyserver.AuthError('PLease login again');
+  throw new ext.keyserver.AuthError('Please login to your Yahoo account ' +
+                                    'before registering a new key!');
 };
 
 

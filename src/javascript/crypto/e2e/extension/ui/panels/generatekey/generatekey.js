@@ -133,6 +133,7 @@ panels.GenerateKey.prototype.enterDocument = function() {
  * @private
  */
 panels.GenerateKey.prototype.generate_ = function() {
+  this.clearFailure_();
   var name = '';
   var email = this.getElementByClass(constants.CssClass.EMAIL).value;
   var comments = '';
@@ -148,6 +149,7 @@ panels.GenerateKey.prototype.generate_ = function() {
  * Resets the key generation form.
  */
 panels.GenerateKey.prototype.reset = function() {
+  this.clearFailure_();
   var inputs = this.getElement().querySelectorAll('input');
   goog.array.forEach(inputs, function(input) {
     input.value = '';
@@ -164,16 +166,47 @@ panels.GenerateKey.prototype.sendKeys = function(keys) {
     if (!key.key.secret) {
       var email = utils.text.extractValidEmail(key.uids[0]);
       if (email) {
-        this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
-            function(response) {
-              this.keyserverClient_.cacheKeyData(response);
-              window.alert('successfully registered key: ' +
-                           JSON.stringify(response));
-            }, this));
+        try {
+          this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
+              function(response) {
+                this.keyserverClient_.cacheKeyData(response);
+                window.alert('successfully registered key: ' +
+                             JSON.stringify(response));
+              }, this));
+        } catch(e) {
+          this.displayFailure_(e);
+        }
       }
     }
   }, this));
 };
 
+
+/**
+ * Displays error message.
+ * @param {Error} error The error to display.
+ * @private
+ */
+panels.GenerateKey.prototype.displayFailure_ = function(error) {
+  var errorDiv = this.getElement().getElementsByClassName(
+      constants.CssClass.ERROR)[0];
+  if (error) {
+    var errorMsg = goog.isDef(error.messageId) ?
+        chrome.i18n.getMessage(error.messageId) : error.message;
+    utils.errorHandler(error);
+    errorDiv.textContent = errorMsg;
+  } else {
+    errorDiv.textContent = '';
+  }
+};
+
+
+/**
+ * Clears error messages.
+ * @private
+ */
+panels.GenerateKey.prototype.clearFailure_ = function() {
+  this.displayFailure_(null);
+};
 
 });  // goog.scope
