@@ -285,27 +285,33 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
       // Show green icon in the URL bar when the secure text area is in focus
       // so page XSS attacks are less likely to compromise plaintext
       textArea.onfocus = goog.bind(function() {
+        this.clearFailure_();
         utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
           action: constants.Actions.CHANGE_PAGEACTION
         }));
         if (!this.sendUnencrypted_) {
-          this.fetchKeys_(goog.bind(function(validRecipients,
-                                             invalidRecipients) {
-            this.allAvailableRecipients_ =
-                this.allAvailableRecipients_.concat(validRecipients);
-            if (this.chipHolder_) {
-              this.chipHolder_.markGoodChips(validRecipients);
-            }
-            this.handleMissingPublicKeys_(invalidRecipients);
-            if (validRecipients.length > 0) {
-              utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-                action: constants.Actions.SHOW_NOTIFICATION,
-                content: chrome.i18n.getMessage(
-                    'promptImportKeyNotificationLabel',
-                    validRecipients.toString())
-              }));
-            }
-          }, this));
+          try {
+            this.fetchKeys_(goog.bind(function(validRecipients,
+                                               invalidRecipients) {
+              this.allAvailableRecipients_ =
+                  this.allAvailableRecipients_.concat(validRecipients);
+              if (this.chipHolder_) {
+                this.chipHolder_.markGoodChips(validRecipients);
+              }
+              this.handleMissingPublicKeys_(invalidRecipients);
+              if (validRecipients.length > 0) {
+                utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */
+                                           ({
+                  action: constants.Actions.SHOW_NOTIFICATION,
+                  content: chrome.i18n.getMessage(
+                      'promptImportKeyNotificationLabel',
+                      validRecipients.toString())
+                }));
+              }
+            }, this));
+          } catch(e) {
+            this.displayFailure_(e);
+          }
         }
       }, this);
       textArea.onblur = goog.bind(function() {

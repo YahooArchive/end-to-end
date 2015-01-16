@@ -180,7 +180,10 @@ e2e.ext.constants.CssClass = {
 
   /** Used in the welcome page */
   WELCOME_MENU_ICON: 'welcome-menu-icon',
-  WELCOME_SUBSECTION_HEADER: 'welcome-subsection-header'
+  WELCOME_SUBSECTION_HEADER: 'welcome-subsection-header',
+
+  /** Error messages **/
+  ERROR: 'error'
 };
 
 
