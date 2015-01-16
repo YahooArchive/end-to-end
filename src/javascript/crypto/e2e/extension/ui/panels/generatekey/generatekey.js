@@ -21,7 +21,7 @@
 goog.provide('e2e.ext.ui.panels.GenerateKey');
 
 goog.require('e2e.ext.constants.CssClass');
-goog.require('e2e.ext.keyserver.Client');
+goog.require('e2e.ext.keyserver');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
@@ -160,8 +160,9 @@ panels.GenerateKey.prototype.reset = function() {
 /**
  * Sends an OpenPGP public key(s) to the keyserver.
  * @param {!e2e.openpgp.Keys} keys
+ * @param {function(e2e.ext.messages.KeyserverSignedResponse)=} callback
  */
-panels.GenerateKey.prototype.sendKeys = function(keys) {
+panels.GenerateKey.prototype.sendKeys = function(keys, callback) {
   goog.array.forEach(keys, goog.bind(function(key) {
     if (!key.key.secret) {
       var email = utils.text.extractValidYahooEmail(key.uids[0]);
@@ -170,10 +171,17 @@ panels.GenerateKey.prototype.sendKeys = function(keys) {
           this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
               function(response) {
                 this.keyserverClient_.cacheKeyData(response);
+                callback(response);
                 window.alert('successfully registered key: ' +
                              JSON.stringify(response));
+              }, this), goog.bind(function() {
+                this.displayFailure_(
+                  new e2e.ext.keyserver.AuthError('Please login to your ' +
+                                                  'corpmail account before ' +
+                                                  'generating a new key!'));
               }, this));
         } catch(e) {
+          console.log('got key send failure in generate key', email);
           this.displayFailure_(e);
         }
       }

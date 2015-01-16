@@ -23,7 +23,7 @@ goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
-goog.require('e2e.ext.keyserver.Client');
+goog.require('e2e.ext.keyserver');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.ChipHolder');
@@ -480,29 +480,29 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
 
 /**
  * Fetches and imports missing keys for the email recipients.
- * @param {function(!Array.<string>, !Array.<string>)=} opt_callback
+ * @param {function(!Array.<string>, !Array.<string>)} callback
  * @private
  */
-ui.ComposeGlass.prototype.fetchKeys_ = function(opt_callback) {
+ui.ComposeGlass.prototype.fetchKeys_ = function(callback) {
   var invalidRecipients = this.getInvalidRecipients_();
   console.log('in fetchKeys with invalid recipients', invalidRecipients);
-  if (!opt_callback) {
-    this.keyserverClient.fetchAndImportKeys(invalidRecipients);
-  } else {
-    this.keyserverClient.fetchAndImportKeys(invalidRecipients,
-        goog.bind(function(results) {
-          var newValidRecipients = [];
-          var newInvalidRecipients = [];
-          goog.object.forEach(results, function(value, key) {
-            if (value === true) {
-              newValidRecipients.push(key);
-            } else {
-              newInvalidRecipients.push(key);
-            }
-          });
-          opt_callback(newValidRecipients, newInvalidRecipients);
-        }, this));
-  }
+  this.keyserverClient.fetchAndImportKeys(invalidRecipients,
+      goog.bind(function(results) {
+        var newValidRecipients = [];
+        var newInvalidRecipients = [];
+        goog.object.forEach(results, function(value, key) {
+          if (value === true) {
+            newValidRecipients.push(key);
+          } else {
+            newInvalidRecipients.push(key);
+          }
+        });
+        callback(newValidRecipients, newInvalidRecipients);
+      }, this), goog.bind(function() {
+        this.displayFailure_(
+            new e2e.ext.keyserver.AuthError('Please login to your ' +
+                                            'corpmail account!'));
+      }, this));
 };
 
 

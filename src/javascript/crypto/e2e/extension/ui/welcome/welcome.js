@@ -207,15 +207,16 @@ ui.Welcome.prototype.generateKey_ =
             defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
             defaults.subkeyLength, name, comments, email, expDate).
             addCallback(goog.bind(function(key) {
-              panel.sendKeys(key);
-              var dialog = new dialogs.Generic(
-                  chrome.i18n.getMessage('welcomeGenKeyConfirm'),
-                  this.hideKeyringSetup_,
-                  dialogs.InputType.NONE);
-              this.removeChild(this.genKeyForm_, false);
-              this.addChild(dialog, false);
-              dialog.decorate(this.genKeyForm_.getElement());
-              panel.reset();
+              panel.sendKeys(key, goog.bind(function(response) {
+                var dialog = new dialogs.Generic(
+                    chrome.i18n.getMessage('welcomeGenKeyConfirm'),
+                    this.hideKeyringSetup_,
+                    dialogs.InputType.NONE);
+                this.removeChild(this.genKeyForm_, false);
+                this.addChild(dialog, false);
+                dialog.decorate(this.genKeyForm_.getElement());
+                panel.reset();
+              }, this));
             }, this));
       }), this.displayFailure_, this);
   this.keyringMgmt_.refreshOptions(true);

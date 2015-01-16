@@ -104,7 +104,7 @@ ext.keyserver.Client = function(location, opt_origin, opt_api) {
  * @param {string} path The URL path, ex: 'foo/bar'.
  * @param {function(messages.KeyserverSignedResponse)} callback The success
  *   callback.
- * @param {function(number)} errback The errorback for non-200 codes.
+ * @param {function()} errback The errorback for non-200 codes.
  * @param {string=} opt_params Optional POST params.
  * @private
  */
@@ -121,7 +121,7 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
   }), goog.bind(function(response) {
     var result = response.content;
     if (!result) {
-      this.handleAuthFailure_(301);
+      errback();
       return;
     }
     xhr.setRequestHeader('X-Keyshop-Token', result);
@@ -138,7 +138,7 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
              window.JSON.parse(xhr.responseText));
         callback(response);
       } else {
-        errback(xhr.status);
+        errback();
       }
     }
   };
@@ -150,7 +150,7 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
  * @param {string} path The URL path, ex: 'foo/bar'.
  * @param {function(?messages.KeyserverKeyOutput)} callback
  *   The success callback.
- * @param {function(number)} errback The errorback for non-200 codes.
+ * @param {function()} errback The errorback for non-200 codes.
  * @private
  */
 ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
@@ -181,7 +181,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
         // We looked up keys for a user who has none.
         callback(null);
       } else {
-        errback(xhr.status);
+        errback();
       }
     }
   };
@@ -189,26 +189,15 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
 
 
 /**
- * Executed when a keyserver request returns non-200/404 status.
- * @param {number} status The return code
- * @private
- */
-ext.keyserver.Client.prototype.handleAuthFailure_ = function(status) {
-  // redirect == YBY cookie not fresh, 401 == wrong YBY userid. treat them
-  // the same for now.
-  throw new ext.keyserver.AuthError('Please login to your Yahoo account ' +
-                                    'before registering a new key!');
-};
-
-
-/**
  * Fetches a key by userid from the keyserver.
  * @param {string} userid userid to look up. ex: yan@yahoo.com
  * @param {function(?messages.KeyserverKeyOutput)} callback
+ * @param {function()} errback
  * @private
  */
-ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback) {
-  this.sendGetRequest_(userid, callback, this.handleAuthFailure_);
+ext.keyserver.Client.prototype.fetchKey_ =
+    function(userid, callback, errback) {
+      this.sendGetRequest_(userid, callback, errback);
 };
 
 
@@ -216,10 +205,11 @@ ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback) {
  * Submits a key to a keyserver.
  * @param {string} userid the userid of the key
  * @param {!e2e.ByteArray} key OpenPGP key to send.
- * @param {function(messages.KeyserverSignedResponse)} callback Callback after
- *   sending key
+ * @param {function(messages.KeyserverSignedResponse)} callback
+ * @param {function()} errback
  */
-ext.keyserver.Client.prototype.sendKey = function(userid, key, callback) {
+ext.keyserver.Client.prototype.sendKey = function(userid, key, callback,
+                                                  errback) {
   // Check which device IDs already exist for this user
   this.fetchKey_(userid, goog.bind(function(response) {
     var registeredDeviceIds = [];
@@ -242,22 +232,24 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key, callback) {
       deviceId = goog.math.randomInt(100000);
     } while (goog.array.contains(registeredDeviceIds, deviceId));
     path = [userid, deviceId.toString()].join('/');
-    this.sendPostRequest_(path, callback,
-        this.handleAuthFailure_, this.safeEncode_(key));
-  }, this));
+    this.sendPostRequest_(path, callback, errback, this.safeEncode_(key));
+  }, this), errback);
 };
 
 
 /**
  * Fetches keys and imports them into the keyring.
  * @param {!Array.<string>} userids the userids to look up
- * @param {function(Object.<string, boolean>)=} opt_cb callback to call when
+ * @param {function(Object.<string, boolean>)} cb callback to call when
  *   all imports are finished or determined to be impossible
+ * @param {function()=} opt_errback Optional error callback.
  */
-ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, opt_cb) {
+ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, cb,
+                                                             opt_errback) {
   // Keep track of which uids were successfully fetched and imported
   var importedUids = /** @type {Object.<string, boolean>} */ ({});
   var allDone = false;
+  var errback = opt_errback || goog.nullFunction;
 
   var importCb = function(userid, response) {
     if (response && response.t && response.userid === userid) {
@@ -305,15 +297,15 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, opt_cb) {
 
   var finished = function() {
     // If all uids have processed, call the callback
-    if (opt_cb && !allDone &&
+    if (!allDone &&
         goog.object.getCount(importedUids) === userids.length) {
-      opt_cb(importedUids);
+      cb(importedUids);
       allDone = true;
     }
   };
 
   goog.array.forEach(userids, goog.bind(function(userid) {
-    this.fetchKey_(userid, goog.bind(importCb, this, userid));
+    this.fetchKey_(userid, goog.bind(importCb, this, userid), errback);
   }, this));
 };
 

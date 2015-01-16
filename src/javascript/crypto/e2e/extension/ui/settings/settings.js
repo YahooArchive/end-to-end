@@ -227,9 +227,10 @@ ui.Settings.prototype.generateKey_ =
       defaults.subkeyLength, name, comments, email, expDate)
       .addCallback(goog.bind(function(key) {
         // Key should be an array of exactly size 2 (one public, one private)
-        panel.sendKeys(key);
-        this.renderNewKey_(key[0].uids[0]);
-        panel.reset();
+        panel.sendKeys(key, goog.bind(function(response) {
+          this.renderNewKey_(key[0].uids[0]);
+          panel.reset();
+        }, this));
       }, this)).addErrback(this.displayFailure_, this);
 };
 

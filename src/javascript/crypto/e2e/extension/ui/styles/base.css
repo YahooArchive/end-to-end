@@ -219,7 +219,7 @@ input:focus {
   font-weight: bold;
 }
 
-.error div {
+.error {
   color: #dd4b39;
   font-size: 1em;
   margin-bottom: 7px;
