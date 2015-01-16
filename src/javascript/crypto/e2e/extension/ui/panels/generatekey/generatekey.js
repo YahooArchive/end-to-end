@@ -160,9 +160,10 @@ panels.GenerateKey.prototype.reset = function() {
 /**
  * Sends an OpenPGP public key(s) to the keyserver.
  * @param {!e2e.openpgp.Keys} keys
- * @param {function(e2e.ext.messages.KeyserverSignedResponse)=} callback
+ * @param {function(e2e.ext.messages.KeyserverSignedResponse)} callback
+ * @param {e2e.openpgp.ContextImpl} ctx
  */
-panels.GenerateKey.prototype.sendKeys = function(keys, callback) {
+panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
   goog.array.forEach(keys, goog.bind(function(key) {
     if (!key.key.secret) {
       var email = utils.text.extractValidYahooEmail(key.uids[0]);
@@ -175,6 +176,11 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback) {
                 window.alert('successfully registered key: ' +
                              JSON.stringify(response));
               }, this), goog.bind(function() {
+                // The key wasn't sent to the server, so delete it for now.
+                // TODO: Separate key generation and import to keyring.
+                if (ctx !== null) {
+                  ctx.deleteKey(key.uids[0]);
+                }
                 this.displayFailure_(
                   new e2e.ext.keyserver.AuthError('Please login to your ' +
                                                   'corpmail account before ' +

@@ -82,7 +82,7 @@ goog.inherits(ui.Settings, goog.ui.Component);
 
 /**
  * The PGP context used by the extension.
- * @type {e2e.openpgp.Context}
+ * @type {e2e.openpgp.ContextImpl}
  * @private
  */
 ui.Settings.prototype.pgpContext_ = null;
@@ -230,7 +230,7 @@ ui.Settings.prototype.generateKey_ =
         panel.sendKeys(key, goog.bind(function(response) {
           this.renderNewKey_(key[0].uids[0]);
           panel.reset();
-        }, this));
+        }, this), this.pgpContext_);
       }, this)).addErrback(this.displayFailure_, this);
 };
 

@@ -216,7 +216,7 @@ ui.Welcome.prototype.generateKey_ =
                 this.addChild(dialog, false);
                 dialog.decorate(this.genKeyForm_.getElement());
                 panel.reset();
-              }, this));
+              }, this), pgpCtx);
             }, this));
       }), this.displayFailure_, this);
   this.keyringMgmt_.refreshOptions(true);
