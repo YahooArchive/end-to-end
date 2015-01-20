@@ -174,8 +174,10 @@ function testGenerateKey() {
   mockControl.$replayAll();
 
   page.decorate(document.documentElement);
-  page.generateKey_({reset: function() {}, sendKeys: function() {}},
-                    '', 'test@example.com', '');
+  page.generateKey_({reset: function() {}, sendKeys: function(key, cb) {
+                      cb();
+                    }},
+                    '', 'test@yahoo-inc.com', '');
   testCase.waitForAsync('waiting for key to be generated');
 
   window.setTimeout(function() {
@@ -191,6 +193,23 @@ function testGenerateKey() {
 
     mockControl.$verifyAll();
   }, 500);
+}
+
+
+function testGenerateBadKey() {
+  stubs.replace(window, 'alert', mockControl.createFunctionMock('alert'));
+  window.alert(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertContains('invalid', arg);
+    return true;
+  }));
+  mockControl.$replayAll();
+
+  page.decorate(document.documentElement);
+  page.generateKey_({reset: function() {}, sendKeys: function(key, cb) {
+                      cb();
+                    }},
+                    '', 'test@example.com', '');
+  mockControl.$verifyAll();
 }
 
 

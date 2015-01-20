@@ -26,6 +26,7 @@ goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.panels.GenerateKey');
 goog.require('goog.array');
 goog.require('goog.dom');
+goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
@@ -37,6 +38,7 @@ var constants = e2e.ext.constants;
 var mockControl = null;
 var panel = null;
 var stubs = new goog.testing.PropertyReplacer();
+var testCase = goog.testing.AsyncTestCase.createAndInstall();
 
 
 function setUp() {
@@ -71,14 +73,15 @@ function testReset() {
 function testSendKeys() {
   panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
   stubs.replace(panel.keyserverClient_, 'sendKey',
-                function(userid, key, cb) {
-                  cb({userid: userid, key: key});
+                function(userid, key, callback, eb) {
+                  // Return a successful key export
+                  callback({userid: userid, key: key});
                 });
   stubs.replace(panel.keyserverClient_, 'cacheKeyData',
                 mockControl.createFunctionMock('cache'));
   panel.keyserverClient_.cacheKeyData(
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-        assertObjectEquals({userid: 'test@example.com',
+        assertObjectEquals({userid: 'test@yahoo-inc.com',
             key: 'irrelevant'}, arg);
         return true;
       })
@@ -90,35 +93,55 @@ function testSendKeys() {
 
   var keys = [{key: {secret: false},
       serialized: 'irrelevant',
-      uids: ['testing <test@example.com>']
+      uids: ['testing <test@yahoo-inc.com>']
     }, {key: {secret: true},
       serialized: 'foobar',
-      uids: ['foo@bar.com']
+      uids: ['foo@yahoo-inc.com']
     }];
 
-  panel.sendKeys(keys);
-  mockControl.$verifyAll();
+  testCase.waitForAsync();
+  panel.sendKeys(keys, function() {
+    mockControl.$verifyAll();
+    testCase.continueTesting();
+  }, null);
 }
 
 
 function testSendKeysFailure() {
   panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
   panel.render(document.body);
-  stubs.replace(panel.keyserverClient_, 'sendKey', function() {
-    panel.keyserverClient_.handleAuthFailure_(302);
+  stubs.replace(panel.keyserverClient_, 'sendKey', function(userid, key, cb,
+                                                            eb) {
+    // Return an unsuccessful key export
+    eb();
   });
+
+  var ctx = {};
+  ctx.deleteKey = mockControl.createFunctionMock('deleteKey');
+  ctx.deleteKey(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertEquals('testing <test@yahoo-inc.com>', arg);
+    return true;
+  }));
+  mockControl.$replayAll();
+
   var keys = [{key: {secret: false},
       serialized: 'irrelevant',
-      uids: ['testing <test@example.com>']
+      uids: ['testing <test@yahoo-inc.com>']
     }, {key: {secret: true},
       serialized: 'foobar',
-      uids: ['foo@bar.com']
+      uids: ['foo@yahoo-inc.com']
     }];
 
-  panel.sendKeys(keys);
-  var errorDiv = panel.getElement().getElementsByClassName(
-      constants.CssClass.ERROR)[0];
-  assertContains('login', errorDiv.textContent);
+  testCase.waitForAsync();
+  panel.sendKeys(keys, goog.nullFunction, ctx);
+
+  window.setTimeout(function() {
+    var errorDiv = panel.getElement().getElementsByClassName(
+        constants.CssClass.ERROR)[0];
+    assertContains('login', errorDiv.textContent);
+    mockControl.$verifyAll();
+    testCase.continueTesting();
+  }, 100);
 }
 
 

@@ -152,7 +152,7 @@ function testFetchAndImportKeys() {
       })
   );
   mockControl.$replayAll();
-  client.fetchAndImportKeys([userId]);
+  client.fetchAndImportKeys([userId], goog.nullFunction);
   asyncTestCase.waitForAsync('Waiting for key import');
   window.setTimeout(function() {
     launcher.pgpContext_.getAllKeys().addCallback(function(result) {

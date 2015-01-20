@@ -175,7 +175,8 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
                 callback(response);
                 window.alert('successfully registered key: ' +
                              JSON.stringify(response));
-              }, this), goog.bind(function() {
+              }, this),
+              goog.bind(function() {
                 // The key wasn't sent to the server, so delete it for now.
                 // TODO: Separate key generation and import to keyring.
                 if (ctx !== null) {

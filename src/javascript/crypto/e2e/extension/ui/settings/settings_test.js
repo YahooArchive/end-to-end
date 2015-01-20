@@ -48,6 +48,7 @@ var page = null;
 var preferences = e2e.ext.ui.preferences;
 var stubs = new goog.testing.PropertyReplacer();
 var testCase = goog.testing.AsyncTestCase.createAndInstall();
+var panel = null;
 
 
 var PUBLIC_KEY_ASCII =
@@ -83,12 +84,13 @@ function setUp() {
   });
 
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendKey',
-                function(userid, key, cb) {
+                function(userid, key, cb, eb) {
                   cb({userid: userid, key: key});
                 });
   stubs.replace(window, 'alert', goog.nullFunction);
 
   page = new e2e.ext.ui.Settings();
+  panel = new e2e.ext.ui.panels.GenerateKey(fakeGenerateKey);
   localStorage.clear();
   launcher = new e2e.ext.Launcher();
   launcher.start();
@@ -122,7 +124,7 @@ function testGenerateKey() {
   testCase.waitForAsync('waiting for key to be generated');
   fakeGenerateKey().addCallback(function() {
     assertNotEquals(-1, document.body.textContent.indexOf(
-        '<test@example.com>'));
+        '<test@yahoo-inc.com>'));
     assertNotNull(window.localStorage.getItem('keyserver-signed-responses'));
     testCase.continueTesting();
   });
@@ -132,18 +134,18 @@ function testGenerateKey() {
 function testRemoveKey() {
   stubs.set(launcher.pgpContext_, 'deleteKey',
       mockControl.createFunctionMock('deleteKey'));
-  launcher.pgpContext_.deleteKey('test@example.com');
+  launcher.pgpContext_.deleteKey('test@yahoo-inc.com');
 
   stubs.replace(e2e.ext.ui.panels.KeyringMgmtFull.prototype, 'removeKey',
       mockControl.createFunctionMock('removeKey'));
-  e2e.ext.ui.panels.KeyringMgmtFull.prototype.removeKey('test@example.com');
+  e2e.ext.ui.panels.KeyringMgmtFull.prototype.removeKey('test@yahoo-inc.com');
 
   mockControl.$replayAll();
 
   page.decorate(document.documentElement);
   testCase.waitForAsync('waiting for key to be generated');
   fakeGenerateKey().addCallback(function() {
-    page.removeKey_('test@example.com');
+    page.removeKey_('test@yahoo-inc.com');
     window.setTimeout(function() {
       mockControl.$verifyAll();
       testCase.continueTesting();
@@ -164,7 +166,7 @@ function testExportKey() {
       assert('Serialized key should be >200.', xhr.responseText.length > 200);
       testCase.continueTesting();
     });
-    page.exportKey_('test user <test@example.com>');
+    page.exportKey_('test user <test@yahoo-inc.com>');
   });
 }
 
@@ -306,10 +308,9 @@ function testDisplayFailure() {
 
 
 function fakeGenerateKey(opt_fullname) {
-  var panel = new e2e.ext.ui.panels.GenerateKey(goog.nullFunction);
   return page.generateKey_({reset: function() {},
-      sendKeys: function(keys) {
-        panel.sendKeys(keys);
+      sendKeys: function(keys, cb, ctx) {
+        panel.sendKeys(keys, cb, ctx);
       }}, opt_fullname || 'test user',
-      'test@example.com', 'comment');
+      'test@yahoo-inc.com', 'comment');
 }
