@@ -93,10 +93,12 @@ ui.Prompt = function() {
     optional: true
   }, {
     value: constants.Actions.IMPORT_KEY,
-    title: chrome.i18n.getMessage('promptImportKeyTitle')
+    title: chrome.i18n.getMessage('promptImportKeyTitle'),
+    optional: true
   }, {
     value: constants.Actions.SHARE_KEY,
-    title: chrome.i18n.getMessage('promptShareKeyTitle')
+    title: chrome.i18n.getMessage('promptShareKeyTitle'),
+    optional: true
   }, {
     value: constants.Actions.CONFIGURE_EXTENSION,
     title: chrome.i18n.getMessage('actionConfigureExtension')
@@ -139,9 +141,14 @@ ui.Prompt.prototype.decorateInternal = function(elem) {
 
   utils.action.getExtensionLauncher(function(launcher) {
     this.pgpLauncher_ = launcher || this.pgpLauncher_;
+    // Don't try to guess the PGP action for now, just show the menu.
+    this.processSelectedContent_(null);
   }, this.displayFailure_, this);
+
+  /*
   utils.action.getSelectedContent(
       this.processSelectedContent_, this.displayFailure_, this);
+  */
 };
 
 
@@ -310,7 +317,7 @@ ui.Prompt.prototype.buttonClick_ = function(
  */
 ui.Prompt.prototype.renderMenu_ = function(elem, blob, opt_showReduced) {
   var contentBlob;
-  var showReduced = opt_showReduced || false;
+  var showReduced = true;  // TODO: should be opt_showReduced || false;
   if (blob instanceof panels.prompt.PanelBase) {
     contentBlob = blob.getContent();
   } else {
@@ -319,6 +326,7 @@ ui.Prompt.prototype.renderMenu_ = function(elem, blob, opt_showReduced) {
 
   var menu = new goog.ui.PopupMenu();
   goog.array.forEach(this.selectableActions_, function(action) {
+    // For now, only show a few actions out of the supported ones.
     if (showReduced && action.optional) {
       return;
     }
