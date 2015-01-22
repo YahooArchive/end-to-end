@@ -461,11 +461,11 @@
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassRemoveRecipients": {
-    "message": "Remove the recipients I don't have a key for",
+    "message": "Remove these recipients",
     "description": "Ask user to remove recipients."
   },
   "composeGlassSendUnencryptedMessage": {
-    "message": "Continue to send signed but unencrypted message",
+    "message": "Send unencrypted message",
     "description": "Ask user to send the message unencrypted."
   }
 }

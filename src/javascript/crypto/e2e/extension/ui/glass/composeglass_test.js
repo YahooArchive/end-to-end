@@ -292,6 +292,9 @@ function testEncrypt() {
   mockControl.$replayAll();
 
   composeglass.decorate(document.documentElement);
+  stubs.replace(composeglass.chipHolder_, 'getSelectedUids', function() {
+    return [USER_ID_2];
+  });
 
   var protectBtn = document.querySelector('button.insert');
   protectBtn.click();
@@ -303,6 +306,37 @@ function testEncrypt() {
   }, 100);
 }
 
+
+function testSendPlaintext() {
+  var message = 'foo';
+  stubs.replace(composeglass, 'insertMessageIntoPage_',
+                mockControl.createFunctionMock('insertMessageIntoPage_'));
+  composeglass.insertMessageIntoPage_(
+      goog.testing.mockmatchers.ignoreArgument,
+      new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+        assertEquals('foo', arg);
+        return true;
+      }));
+  mockControl.$replayAll();
+  composeglass.sendUnencrypted_ = true;
+  stubs.replace(composeglass, 'handleMissingPublicKeys_', goog.nullFunction);
+
+  composeglass.decorate(document.documentElement);
+  stubs.replace(composeglass.chipHolder_, 'getSelectedUids', function() {
+    return ['yan <yzhu@yahoo-inc.com>', 'test@c.com'];
+  });
+  var textarea = document.querySelector('textarea');
+  textarea.value = message;
+
+  var protectBtn = document.querySelector('button.insert');
+  protectBtn.click();
+
+  asyncTestCase.waitForAsync('Waiting for message to be inserted.');
+  window.setTimeout(function() {
+    mockControl.$verifyAll();
+    asyncTestCase.continueTesting();
+  }, 100);
+}
 
 function testDisplayFailure() {
   composeglass.decorate(document.documentElement);
