@@ -183,24 +183,7 @@ ext.Launcher.prototype.start = function(opt_passphrase) {
  * @private
  */
 ext.Launcher.prototype.start_ = function(passphrase) {
-  // Add listeners to change Browser Action state
-  chrome.tabs.onActivated.addListener(goog.bind(function(activeInfo) {
-    chrome.tabs.get(activeInfo.tabId, goog.bind(function(tab) {
-      if (utils.text.isYmailOrigin(tab.url)) {
-        this.updateYmailBrowserAction_(activeInfo.tabId);
-      } else {
-        this.updatePassphraseWarning_();
-      }
-    }, this));
-  }, this));
-  chrome.tabs.onUpdated.addListener(goog.bind(function(tabId, changeInfo, tab) {
-    if (utils.text.isYmailOrigin(tab.url)) {
-      this.updateYmailBrowserAction_(tabId);
-    } else {
-      this.updatePassphraseWarning_();
-    }
-  }, this));
-
+  this.updatePassphraseWarning_();
   this.pgpContext_.setKeyRingPassphrase(passphrase);
 
   // All ymail tabs need to be reloaded for the e2ebind API to work
@@ -256,15 +239,14 @@ ext.Launcher.prototype.proxyMessage = function(incoming, sender) {
  */
 ext.Launcher.prototype.stop = function() {
   this.started_ = false;
-  // Set the browseraction icon to red
-  this.getActiveTab_(goog.bind(function(tabId) {
-    this.updateYmailBrowserAction_(tabId);
-    chrome.tabs.reload(tabId);
-  }, this));
   // Unset the passphrase on the keyring
   this.pgpContext_.unsetKeyringPassphrase();
   // Remoeve the API
   this.ctxApi_.removeApi();
+  this.updatePassphraseWarning_();
+  this.getActiveTab_(goog.bind(function(tabId) {
+    chrome.tabs.reload(tabId);
+  }, this));
 };
 
 
@@ -359,35 +341,6 @@ ext.Launcher.prototype.updatePassphraseWarning_ = function() {
     chrome.browserAction.setBadgeText({text: '!'});
     chrome.browserAction.setTitle({
       title: chrome.i18n.getMessage('passphraseEmptyWarning')
-    });
-  }
-};
-
-
-/**
- * Changes the browser action state when Yahoo Mail page is active.
- * @param {number} tabId The ID of the active tab
- * @private
- */
-ext.Launcher.prototype.updateYmailBrowserAction_ = function(tabId) {
-  chrome.browserAction.setBadgeText({text: ''});
-  if (this.hasPassphrase()) {
-    chrome.browserAction.setTitle({
-      tabId: tabId,
-      title: chrome.i18n.getMessage('extName')
-    });
-    chrome.browserAction.setIcon({
-      tabId: tabId,
-      path: 'images/yahoo/icon-128.png'
-    });
-  } else {
-    chrome.browserAction.setTitle({
-      tabId: tabId,
-      title: chrome.i18n.getMessage('passphraseEmptyWarning')
-    });
-    chrome.browserAction.setIcon({
-      tabId: tabId,
-      path: 'images/yahoo/icon-128-red.png'
     });
   }
 };
