@@ -64,6 +64,8 @@ var utils = e2e.ext.utils;
 ui.ComposeGlass = function(draft, mode, origin, hash) {
   goog.base(this);
 
+  draft.cc = draft.cc || [];
+  draft.bcc = draft.bcc || [];
   this.recipients = draft.to.concat(draft.cc).concat(draft.bcc);
   this.subject = draft.subject;
   this.selection = draft.body;
@@ -394,13 +396,15 @@ ui.ComposeGlass.prototype.close = function() {
  */
 ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
   var textArea = elem.querySelector('textarea');
+  var signMessage = this.shouldSignMessage_();
+  var content = textArea.value;
   this.clearFailure_();
   switch (action) {
     case ext.constants.Actions.ENCRYPT_SIGN:
       var request = /** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.ENCRYPT_SIGN,
-        content: textArea.value,
-        signMessage: true,
+        content: content,
+        signMessage: signMessage,
         currentUser:
             goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
       });
@@ -418,10 +422,30 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
 
       utils.sendExtensionRequest(
           request, goog.bind(function(result) {
-            var encrypted = result.content || '';
+            var encrypted = result.content || content;
             this.insertMessageIntoPage_(origin, encrypted);
           }, this));
   }
+};
+
+
+/**
+ * Checks whether the message should be signed.
+ * @private
+ */
+ui.ComposeGlass.prototype.shouldSignMessage_ = function() {
+  var recipients = this.chipHolder_.getSelectedUids();
+  // If there are no recipients, don't sign the message.
+  if (recipients.length === 0) {
+    return false;
+  }
+  // Issue #26: For corpmail release, only sign if all recipients are yahoo-inc.
+  for (var i = 0; i < recipients.length; i++) {
+    if (utils.text.extractValidYahooEmail(recipients[i]) === null) {
+      return false;
+    }
+  }
+  return true;
 };
 
 
