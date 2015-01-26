@@ -414,18 +414,35 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
         var invalidRecipients = this.getInvalidRecipients_(recipients);
         if (invalidRecipients.length === 0) {
           request.recipients = recipients;
+          this.sendRequestToInsert_(request, origin);
         } else if (!this.sendUnencrypted_) {
-          this.handleMissingPublicKeys_();
-          return;
+          this.handleMissingPublicKeys_(undefined, goog.bind(function() {
+            var recipients = this.chipHolder_.getSelectedUids();
+            var invalidRecipients = this.getInvalidRecipients_(recipients);
+            if (invalidRecipients.length === 0) {
+              request.recipients = recipients;
+            }
+            this.sendRequestToInsert_(request, origin);
+          }, this));
+        } else {
+          this.sendRequestToInsert_(request, origin);
         }
       }
-
-      utils.sendExtensionRequest(
-          request, goog.bind(function(result) {
-            var encrypted = result.content || content;
-            this.insertMessageIntoPage_(origin, encrypted);
-          }, this));
   }
+};
+
+
+/**
+ * Sends the request to insert the message into the page;
+ * @param {!messages.ApiRequest} request The request to send
+ * @param {string} origin The origin of the page
+ */
+ui.ComposeGlass.prototype.sendRequestToInsert_ = function(request, origin) {
+  utils.sendExtensionRequest(
+      request, goog.bind(function(result) {
+        var encrypted = result.content || request.content;
+        this.insertMessageIntoPage_(origin, encrypted);
+      }, this));
 };
 
 
@@ -533,9 +550,11 @@ ui.ComposeGlass.prototype.fetchKeys_ = function(callback) {
 /**
  * Pops a warning if any of the recipients does not have a public key.
  * @param {!Array.<string>=} opt_recipients
+ * @param {function()=} opt_callback
  * @private
  */
-ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function(opt_recipients) {
+ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function(opt_recipients,
+                                                              opt_callback) {
   var invalidRecipients = opt_recipients || this.getInvalidRecipients_();
   if (invalidRecipients.length > 0) {
     // Show dialog asking user to remove recipients without keys
@@ -549,6 +568,9 @@ ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function(opt_recipients) {
             this.chipHolder_.removeUids(invalidRecipients);
           } else {
             this.sendUnencrypted_ = true;
+          }
+          if (opt_callback) {
+            opt_callback();
           }
         }, this), ui.dialogs.InputType.NONE, undefined,
         chrome.i18n.getMessage('composeGlassRemoveRecipients'),
