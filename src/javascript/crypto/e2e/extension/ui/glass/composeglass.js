@@ -64,6 +64,8 @@ var utils = e2e.ext.utils;
 ui.ComposeGlass = function(draft, mode, origin, hash) {
   goog.base(this);
 
+  draft.cc = draft.cc || [];
+  draft.bcc = draft.bcc || [];
   this.recipients = draft.to.concat(draft.cc).concat(draft.bcc);
   this.subject = draft.subject;
   this.selection = draft.body;
@@ -432,16 +434,18 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
  * @private
  */
 ui.ComposeGlass.prototype.shouldSignMessage_ = function() {
-  // Issue #26: For corpmail release, only sign if all recipients are yahoo-inc.
   var recipients = this.chipHolder_.getSelectedUids();
-  var shouldSign = false;
+  // If there are no recipients, don't sign the message.
+  if (recipients.length === 0) {
+    return false;
+  }
+  // Issue #26: For corpmail release, only sign if all recipients are yahoo-inc.
   for (var i = 0; i < recipients.length; i++) {
     if (utils.text.extractValidYahooEmail(recipients[i]) === null) {
-      shouldSign = false;
-      break;
+      return false;
     }
   }
-  return shouldSign;
+  return true;
 };
 
 
