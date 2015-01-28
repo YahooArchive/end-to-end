@@ -156,85 +156,78 @@ e2ebind.messageHandler_ = function(response) {
 
 
 /**
+ * Starts initializing the compose glass if either the lock icon was clicked
+ * or if at least one recipient has a PGP key.
+ * @param {Element} elt Element for the lock icon or null if one was not clicked
+ * @private
+ */
+e2ebind.initComposeGlass_ = function(elt) {
+  // If the element is null, then the icon wasn't clicked
+  var iconClicked = (elt !== null);
+  elt = elt || document.activeElement;
+
+  var composeElem = goog.dom.getAncestorByTagNameAndClass(elt,
+                                                          'div',
+                                                          'compose');
+  if (!composeElem || (!iconClicked && composeElem.hadAutoGlass)) {
+    // Either there is no valid compose element to install the glass in,
+    // or we already tried to auto-install the glass.
+    return;
+  }
+
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.GET_KEYRING_UNLOCKED
+  }), goog.bind(function(response) {
+    if (response.error || !response.content) {
+      // Can't install compose glass if the keyring is locked
+      window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
+    } else {
+      // Get the compose window associated with the clicked icon
+      var draft = /** @type {messages.e2ebindDraft} */ ({});
+      draft.from = window.config.signer ? '<' + window.config.signer + '>' :
+          '';
+
+      e2ebind.hasDraft(goog.bind(function(hasDraftResult) {
+        if (hasDraftResult) {
+          e2ebind.getDraft(goog.bind(function(getDraftResult) {
+            draft.body = e2e.openpgp.asciiArmor.
+                extractPgpBlock(getDraftResult.body);
+            draft.to = getDraftResult.to;
+            draft.cc = getDraftResult.cc;
+            draft.bcc = getDraftResult.bcc;
+            draft.subject = getDraftResult.subject;
+            e2ebind.installComposeGlass_(composeElem, draft);
+          }, this));
+        } else {
+          e2ebind.getCurrentMessage(goog.bind(function(result) {
+            var DOMelem = document.querySelector(result.elem);
+            if (result.text) {
+              draft.body = result.text;
+            } else if (DOMelem) {
+              draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
+                  goog.isDef(DOMelem.lookingGlass) ?
+                  DOMelem.lookingGlass.getOriginalContent() :
+                  DOMelem.innerText);
+            }
+            e2ebind.installComposeGlass_(composeElem, draft);
+          }, this));
+        }
+      }, this));
+    }
+  }, this));
+};
+
+
+/**
  * Custom click event handler for e2ebind page elements.
  * @param {Element} e The element that was clicked.
  * @private
  */
 e2ebind.clickHandler_ = function(e) {
-  var elt;
-  var iconClicked;
-  if (e === null) {
-    // User is composing to a person who has a key. No click event was emitted
-    // but pretend that the lock icon was clicked.
-    elt = document.activeElement;
-    iconClicked = true;
-  } else {
-    elt = e.target;
-    iconClicked = (elt.id === constants.ElementId.E2EBIND_ICON);
+  var elt = e.target;
+  if (elt.id === constants.ElementId.E2EBIND_ICON) {
+    e2ebind.initComposeGlass_(elt);
   }
-
-  var initComposeGlass = function() {
-    var activeElem = document.activeElement;
-
-    // Install the compose glass if either the lock icon was clicked or
-    // if we are replying to a PGP message.
-    if (iconClicked ||
-        (activeElem.contentEditable === 'true' &&
-         activeElem.textContent.indexOf('-----BEGIN PGP') !== -1)) {
-      elt = iconClicked ? elt : activeElem;
-      var composeElem = goog.dom.getAncestorByTagNameAndClass(elt,
-                                                              'div',
-                                                              'compose');
-      if (!composeElem || (!iconClicked && composeElem.hadAutoGlass)) {
-        // Either there is no valid compose element to install the glass in,
-        // or we already tried to auto-install the glass.
-        return;
-      }
-
-      utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-        action: constants.Actions.GET_KEYRING_UNLOCKED
-      }), goog.bind(function(response) {
-        if (response.error || !response.content) {
-          // Can't install compose glass if the keyring is locked
-          window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
-        } else {
-          // Get the compose window associated with the clicked icon
-          var draft = /** @type {messages.e2ebindDraft} */ ({});
-          draft.from = window.config.signer ? '<' + window.config.signer + '>' :
-              '';
-
-          e2ebind.hasDraft(goog.bind(function(hasDraftResult) {
-            if (hasDraftResult) {
-              e2ebind.getDraft(goog.bind(function(getDraftResult) {
-                draft.body = e2e.openpgp.asciiArmor.
-                    extractPgpBlock(getDraftResult.body);
-                draft.to = getDraftResult.to;
-                draft.cc = getDraftResult.cc;
-                draft.bcc = getDraftResult.bcc;
-                draft.subject = getDraftResult.subject;
-                e2ebind.installComposeGlass_(composeElem, draft);
-              }, this));
-            } else {
-              e2ebind.getCurrentMessage(goog.bind(function(result) {
-                var DOMelem = document.querySelector(result.elem);
-                if (result.text) {
-                  draft.body = result.text;
-                } else if (DOMelem) {
-                  draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
-                      goog.isDef(DOMelem.lookingGlass) ?
-                      DOMelem.lookingGlass.getOriginalContent() :
-                      DOMelem.innerText);
-                }
-                e2ebind.installComposeGlass_(composeElem, draft);
-              }, this));
-            }
-          }, this));
-        }
-      }, this));
-    }
-  };
-
-  window.setTimeout(initComposeGlass, 50);
 };
 
 
@@ -661,6 +654,8 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
     response.content = response.content || [];
     var emails = utils.text.getValidEmailAddressesFromArray(response.content,
                                                             true);
+    // the anyValid check should really be in the Storm, but the
+    // tictac does not include the code that sends validation requests yet.
     var anyValid = false;
     var results = [];
     goog.array.forEach(recipients, function(recipient) {
@@ -670,8 +665,9 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
       }
       results.push({valid: valid, recipient: recipient});
     });
+    // Encrypt the message automatically if any recipient has a key
     if (anyValid) {
-      e2ebind.clickHandler_(null);
+      e2ebind.initComposeGlass_(null);
     }
     callback(results);
   });
