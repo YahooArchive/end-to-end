@@ -121,6 +121,8 @@ e2e.ext.constants.ElementId = {
   WELCOME_CONTENT_ADVANCED: 'welcome-content-advanced',
   WELCOME_FOOTER: 'welcome-footer',
   WELCOME_FRAME: 'welcome-frame',
+  WELCOME_FRAME_ELEMENT: 'welcome-frame-element',
+  WELCOME_FRAME_DUMMY: 'welcome-frame-dummy',
 
   // Chrome notifications
   NOTIFICATION_SUCCESS: 'e2e-success',
