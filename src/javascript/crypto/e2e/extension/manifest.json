@@ -3,8 +3,14 @@
   "name": "__MSG_extName__",
   "description": "__MSG_extDescription__",
   "version": "0.0.1",
-  "permissions": ["activeTab", "notifications", "tabs",
-    "http://localhost:5000/*", "https://*.mail.yahoo.com/*", "cookies"],
+  "permissions": [
+    "activeTab",
+    "cookies",
+    "notifications",
+    "tabs",
+    "https://keyshop.paranoids.corp.yahoo.com:25519/*",
+    "https://*.mail.yahoo.com/*"
+  ],
   "optional_permissions": [],
   "background": {"scripts": ["launcher_binary.js"]},
   "options_page": "settings.html",
