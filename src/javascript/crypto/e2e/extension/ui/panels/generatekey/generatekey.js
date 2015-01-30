@@ -209,8 +209,13 @@ panels.GenerateKey.prototype.displayFailure_ = function(error) {
     var errorMsg = goog.isDef(error.messageId) ?
         chrome.i18n.getMessage(error.messageId) : error.message;
     utils.errorHandler(error);
-    errorDiv.textContent = errorMsg;
-  } else {
+    if (errorDiv) {
+      errorDiv.textContent = errorMsg;
+    } else {
+      // The errorDiv might be destroyed by the time displayFailure_ fires
+      window.alert('Error: ' + errorMsg);
+    }
+  } else if (errorDiv) {
     errorDiv.textContent = '';
   }
 };
