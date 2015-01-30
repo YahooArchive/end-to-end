@@ -23,6 +23,8 @@ goog.provide('e2e.ecc.Ecdsa');
 
 goog.require('e2e');
 goog.require('e2e.BigNum');
+goog.require('e2e.ecc.ByteLen');
+goog.require('e2e.ecc.JwsHeader');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.ecc.Protocol');
 goog.require('e2e.error.InvalidArgumentsError');
@@ -34,6 +36,7 @@ goog.require('e2e.random');
 goog.require('e2e.signer.signature.Signature');
 goog.require('goog.array');
 goog.require('goog.asserts');
+goog.require('goog.crypt.base64');
 
 
 
@@ -62,6 +65,7 @@ e2e.ecc.Ecdsa = function(curveName, opt_key) {
       throw new e2e.error.InvalidArgumentsError(
           'Unknown algorithm for ECDSA: ' + curveName);
   }
+  this.curveName_ = curveName;
 };
 goog.inherits(e2e.ecc.Ecdsa, e2e.ecc.Protocol);
 
@@ -90,7 +94,7 @@ e2e.ecc.Ecdsa.prototype.sign = function(message) {
   do {
     var k = this.generatePerMessageNonce_(digest);
     sig = this.signWithNonce_(digest, k);
-  } while (sig == null);
+  } while (sig === null);
   return sig;
 };
 
@@ -166,8 +170,8 @@ e2e.ecc.Ecdsa.prototype.verify = function(message, sig) {
       'Public key value should be defined.');
 
   var N = this.params.n;
-  var r = new e2e.BigNum(sig['r']);
-  var s = new e2e.BigNum(sig['s']);
+  var r = new e2e.BigNum(sig.r);
+  var s = new e2e.BigNum(sig.s);
   // r and s should be in [1, N-1].
   if (r.isGreaterOrEqual(N) ||
       r.isEqual(e2e.BigNum.ZERO) ||
@@ -195,6 +199,45 @@ e2e.ecc.Ecdsa.prototype.verify = function(message, sig) {
 
 
 /**
+ * Applies the verification algorithm to JWS and returns the
+ * verified message on success.
+ * @param {string} jws The JWS, in compact serialization, to verify.
+ * @return {Array.<number>} The verified message.
+ */
+e2e.ecc.Ecdsa.prototype.verifyJws = function(jws) {
+  goog.asserts.assertObject(this.params, 'Domain params should be defined.');
+  goog.asserts.assertObject(this.getPublicKey(),
+      'Public key value should be defined.');
+  var parts = jws.split('.');
+  if (parts.length !== 3) {
+    throw new e2e.error.InvalidArgumentsError('Too many parts to be a JWS.');
+  }
+  var header = parts[0], emsg = parts[1], esig = parts[2];
+  var dsig = goog.crypt.base64.decodeStringToByteArray(esig, true),
+      msg = goog.crypt.base64.decodeStringToByteArray(emsg, true);
+
+  var expected_header = e2e.ecc.JwsHeader[this.curveName_];
+  if (header !== expected_header) {
+    throw new e2e.error.InvalidArgumentsError('unknown JWS protected header' +
+        header);
+  }
+
+  var bytelen = e2e.ecc.ByteLen[this.curveName_];
+  if (dsig.length !== (bytelen * 2)) {
+    throw new e2e.error.InvalidArgumentsError(
+        'Length of signature is wrong for the claimed type.');
+  }
+
+  var sig = {r: dsig.slice(0, bytelen), s: dsig.slice(bytelen, bytelen * 2)};
+  if (this.verify(header + '.' + emsg, sig)) {
+    return msg;
+  } else {
+    return null;
+  }
+};
+
+
+/**
  * Generates a random number used as per-message secret in ECDSA.
  * This code includes a hash of the secret key and the message digest of the
  * message in its calculation in order to minimize the damage that could be
@@ -217,6 +260,7 @@ e2e.ecc.Ecdsa.prototype.generatePerMessageNonce_ = function(digest) {
     privateKey.unshift(0);
   }
   var privateKeyDigest = hasher.hash(privateKey);
+  var nonce;
   do {
     var randomBytes = e2e.random.getRandomBytes(nonceLength);
     var nonceBytes = [];
@@ -232,8 +276,8 @@ e2e.ecc.Ecdsa.prototype.generatePerMessageNonce_ = function(digest) {
     } while (nonceBytes.length < nonceLength);
     nonceBytes = nonceBytes.slice(0, nonceLength);
     nonceBytes[0] >>= (8 * nonceLength - N.getBitLength());
-    var nonce = new e2e.BigNum(nonceBytes);
     // nonce must be in the range [1..N-1]
+    nonce = new e2e.BigNum(nonceBytes);
   } while (nonce.isEqual(e2e.BigNum.ZERO) || nonce.compare(N) >= 0);
   return nonce;
 };
