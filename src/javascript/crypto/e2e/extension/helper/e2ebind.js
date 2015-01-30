@@ -250,9 +250,11 @@ e2ebind.start = function() {
                      e2ebind.clickHandler_, true);
   window.addEventListener('message', goog.bind(e2ebind.messageHandler_, this));
 
-  goog.style.setElementShown(window.document.getElementById('theAd'), false);
-  goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
-                             false);
+  window.addEventListener('load', function() {
+    goog.style.setElementShown(window.document.getElementById('theAd'), false);
+    goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
+                               false);
+  });
 };
 
 
@@ -268,9 +270,12 @@ e2ebind.stop = function() {
   window.valid = undefined;
   goog.events.unlisten(window, goog.events.EventType.CLICK,
                        e2ebind.clickHandler_);
-  goog.style.setElementShown(window.document.getElementById('theAd'), true);
-  goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
-                             true);
+  try {
+    goog.style.setElementShown(window.document.getElementById('theAd'), true);
+    goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
+                               true);
+  } catch (ex) {
+  }
 };
 
 
