@@ -160,7 +160,7 @@ panels.GenerateKey.prototype.reset = function() {
 /**
  * Sends an OpenPGP public key(s) to the keyserver.
  * @param {!e2e.openpgp.Keys} keys
- * @param {function(e2e.ext.messages.KeyserverSignedResponse)} callback
+ * @param {function(string)} callback
  * @param {e2e.openpgp.ContextImpl} ctx
  */
 panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
@@ -174,7 +174,7 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
                 this.keyserverClient_.cacheKeyData(response);
                 callback(response);
                 window.alert('successfully registered key: ' +
-                             JSON.stringify(response));
+                             response);
               }, this),
               goog.bind(function() {
                 // The key wasn't sent to the server, so delete it for now.
@@ -183,11 +183,10 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
                   ctx.deleteKey(key.uids[0]);
                 }
                 this.displayFailure_(
-                  new e2e.ext.keyserver.AuthError('Please login to your ' +
-                                                  'corpmail account before ' +
-                                                  'generating a new key!'));
+                    new e2e.ext.keyserver.AuthError('Please login to your ' +
+                        'corpmail account before generating a new key!'));
               }, this));
-        } catch(e) {
+        } catch (e) {
           console.log('got key send failure in generate key', email);
           this.displayFailure_(e);
         }
@@ -209,13 +208,8 @@ panels.GenerateKey.prototype.displayFailure_ = function(error) {
     var errorMsg = goog.isDef(error.messageId) ?
         chrome.i18n.getMessage(error.messageId) : error.message;
     utils.errorHandler(error);
-    if (errorDiv) {
-      errorDiv.textContent = errorMsg;
-    } else {
-      // The errorDiv might be destroyed by the time displayFailure_ fires
-      window.alert('Error: ' + errorMsg);
-    }
-  } else if (errorDiv) {
+    errorDiv.textContent = errorMsg;
+  } else {
     errorDiv.textContent = '';
   }
 };

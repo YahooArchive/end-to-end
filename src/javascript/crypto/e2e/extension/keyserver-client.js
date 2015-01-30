@@ -27,14 +27,17 @@ goog.provide('e2e.ext.keyserver.ResponseError');
 goog.require('e2e.ecc.Ecdsa');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.Keyserver');
+goog.require('e2e.ext.constants.StorageKey');
 goog.require('e2e.ext.messages.KeyserverKeyInput');
 goog.require('e2e.ext.messages.KeyserverKeyOutput');
-goog.require('e2e.ext.messages.KeyserverSignedResponse');
 goog.require('e2e.ext.utils');
+goog.require('e2e.random');
 goog.require('goog.array');
+goog.require('goog.crypt');
 goog.require('goog.crypt.base64');
 goog.require('goog.debug.Error');
-goog.require('goog.math');
 goog.require('goog.object');
 
 
@@ -72,7 +75,7 @@ goog.inherits(ext.keyserver.RequestError, goog.debug.Error);
 
 
 /**
- * Error indicating invalid authorization for a request.
+ * Error indicating authentication needed for a request.
  * @param {*=} opt_msg The custom error message.
  * @constructor
  * @extends {goog.debug.Error}
@@ -102,7 +105,7 @@ ext.keyserver.Client = function(location, opt_origin, opt_api) {
 /**
  * Friendlier wrapper around XHR POST.
  * @param {string} path The URL path, ex: 'foo/bar'.
- * @param {function(messages.KeyserverSignedResponse)} callback The success
+ * @param {function(string)} callback The success
  *   callback.
  * @param {function()} errback The errorback for non-200 codes.
  * @param {string=} opt_params Optional POST params.
@@ -133,9 +136,7 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
     var response;
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
-        response = /** @type {messages.KeyserverSignedResponse} */
-            (xhr.responseType === 'json' ? xhr.response :
-             window.JSON.parse(xhr.responseText));
+        response = /** @type {string} */ (xhr.responseText);
         callback(response);
       } else {
         errback();
@@ -164,24 +165,24 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
     action: constants.Actions.GET_AUTH_TOKEN,
     content: this.pageLocation_
   }), goog.bind(function(response) {
+    console.log(response);
     var result = response.content;
     xhr.setRequestHeader('X-Keyshop-Token', result);
     xhr.send();
   }, this));
-
+  var client = this;
   xhr.onreadystatechange = function() {
     var response;
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
-        response = /** @type {?messages.KeyserverKeyOutput} */
-            (xhr.responseType === 'json' ? xhr.response :
-             window.JSON.parse(xhr.responseText));
+        response = /** @type {messages.KeyserverKeyOutput} */ (
+            client.verifyResponse_(xhr.responseText));
         callback(response);
       } else if (xhr.status === 404) {
-        // We looked up keys for a user who has none.
+        // We looked up keys for a user not supported by the keyserver.
         callback(null);
       } else {
-        errback();
+        errback(xhr);
       }
     }
   };
@@ -195,9 +196,8 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
  * @param {function()} errback
  * @private
  */
-ext.keyserver.Client.prototype.fetchKey_ =
-    function(userid, callback, errback) {
-      this.sendGetRequest_(userid, callback, errback);
+ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback, errback) {
+  this.sendGetRequest_(userid, callback, errback);
 };
 
 
@@ -205,35 +205,20 @@ ext.keyserver.Client.prototype.fetchKey_ =
  * Submits a key to a keyserver.
  * @param {string} userid the userid of the key
  * @param {!e2e.ByteArray} key OpenPGP key to send.
- * @param {function(messages.KeyserverSignedResponse)} callback
+ * @param {function(string)} callback
  * @param {function()} errback
  */
 ext.keyserver.Client.prototype.sendKey = function(userid, key, callback,
                                                   errback) {
-  // Check which device IDs already exist for this user
-  this.fetchKey_(userid, goog.bind(function(response) {
-    var registeredDeviceIds = [];
-    var deviceId;
-    var path;
-    if (response && response.keys) {
-      response = /** @type {messages.KeyserverKeyOutput} */ (response);
-      try {
-        var keys = response.keys;
-        // No point in validating the response, since attacker can at most
-        // prevent user from registering certain device IDs.
-        registeredDeviceIds = goog.object.getKeys(keys);
-      } catch (e) {}
-    }
-    if (registeredDeviceIds.length > 1000) {
-      // Too many registered device IDs. Abort.
-      throw new ext.keyserver.RequestError('Too many registered keys.');
-    }
-    do {
-      deviceId = goog.math.randomInt(100000);
-    } while (goog.array.contains(registeredDeviceIds, deviceId));
-    path = [userid, deviceId.toString()].join('/');
-    this.sendPostRequest_(path, callback, errback, this.safeEncode_(key));
-  }, this), errback);
+  if (!window.localStorage.getItem('deviceId')) {
+    // If this is the first time sending a key, generate a unique deviceId.
+    window.localStorage.setItem('deviceId',
+        this.safeEncode_(e2e.random.getRandomBytes(15)));
+  }
+  var deviceId = window.localStorage.getItem('deviceId');
+
+  var path = [userid, deviceId].join('/');
+  this.sendPostRequest_(path, callback, errback, this.safeEncode_(key));
 };
 
 
@@ -256,34 +241,33 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, cb,
       response = /** @type {messages.KeyserverKeyOutput} */ (response);
 
       goog.object.forEach(response.keys, goog.bind(function(value, deviceid) {
-        var resp = /** @type {messages.KeyserverSignedResponse} */ (value);
+        var keyData = /** @type {messages.KeyserverKeyInput} */ (
+            this.verifyResponse_(value));
 
-        if (this.verifyResponse_(resp)) {
-          // Response is valid and correctly signed
-          var keyData = /** @type {messages.KeyserverKeyInput} */
-              (window.JSON.parse(resp.data));
-          // Check that the response is fresh
-          var now = window.Math.ceil((new Date().getTime()) / 1000);
+        if (!keyData) {
+          importedUids[userid] = false;
+          finished();
+        }
 
-          if (keyData.userid === userid &&
-              now - keyData.t < this.maxFreshnessTime &&
-              keyData.deviceid === deviceid) {
-            // Import keys into the keyring
-            console.log('importing key', keyData);
-            this.importKeys_(keyData, goog.bind(function(result) {
-              importedUids[userid] = result;
-              finished();
-            }, this));
-
-            // Save the server response for keyring pruning
-            this.cacheKeyData(resp);
-          } else {
-            // Response was mismatched or not fresh
-            importedUids[userid] = false;
+        /* TODO(dlg): re-enable once we have do mandatory rotation */
+        // Check that the response is fresh
+        /*var now = window.Math.ceil((new Date().getTime()) / 1000); */
+        // TODO(dlg): better logging (integrate with event log)
+        if (keyData.userid === userid &&
+            /*now - keyData.t < this.maxFreshnessTime &&*/
+            /*(keyData.t * 1000) < (Date.now()) &&*/
+            keyData.deviceid === deviceid) {
+          // Import keys into the keyring
+          console.log('importing key', keyData);
+          this.importKeys_(keyData, goog.bind(function(result) {
+            importedUids[userid] = result;
             finished();
-          }
+          }, this));
+
+          // Save the server response for keyring pruning
+          this.cacheKeyData(keyData);
         } else {
-          // Response was not signed correctly
+          // Response was mismatched or not fresh
           importedUids[userid] = false;
           finished();
         }
@@ -333,7 +317,7 @@ ext.keyserver.Client.prototype.importKeys_ = function(keyData, cb) {
 
 
 /**
- * Does RFC4648 URL safe base64 encoding.
+ * Does RFC4648 URL-safe base64 encoding.
  * @param {!e2e.ByteArray} bytes
  * @return {string}
  * @private
@@ -344,7 +328,7 @@ ext.keyserver.Client.prototype.safeEncode_ = function(bytes) {
 
 
 /**
- * Does RFC4648 URL safe base64 decoding.
+ * Does RFC4648 URL-safe base64 decoding.
  * @param {string} str
  * @return {!e2e.ByteArray}
  * @private
@@ -357,7 +341,7 @@ ext.keyserver.Client.prototype.safeDecode_ = function(str) {
 
 /**
  * Saves keydata entry to local storage.
- * @param {messages.KeyserverSignedResponse} response Response to cache.
+ * @param {string} response Response to cache.
  */
 ext.keyserver.Client.prototype.cacheKeyData = function(response) {
   var responses = JSON.parse(window.localStorage.getItem(
@@ -371,21 +355,21 @@ ext.keyserver.Client.prototype.cacheKeyData = function(response) {
 
 /**
  * Validates a response from the keyserver is correctly signed.
- * @param {messages.KeyserverSignedResponse} response Response from keyserver.
+ * @param {string} response Response from keyserver.
+ * @return {?(messages.KeyserverKeyInput|messages.KeyserverKeyOutput)}
  * @private
  */
 ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
-  var data = response.data;
-  var sig = this.safeDecode_(response.kauth_sig);
-  if (sig.length != 96) {
-    return false;
-  }
-  // sig uses ECDSA with NIST384p and SHA384
   var ecdsa = new e2e.ecc.Ecdsa(
       e2e.ecc.PrimeCurve.P_384,
       {pubKey: e2e.ext.constants.Keyserver.KAUTH_PUB});
-
-  return ecdsa.verify(data, {r: sig.slice(0, 48), s: sig.slice(48, 96)});
+  var verified = ecdsa.verifyJws(response);
+  if (verified) {
+    return /** @type {?(messages.KeyserverKeyInput|messages.KeyserverKeyOutput)} */ (
+        JSON.parse(goog.crypt.byteArrayToString(verified)));
+  } else {
+    return null;
+  }
 };
 
 
