@@ -96,16 +96,9 @@ ui.Welcome.prototype.decorateInternal = function(elem) {
     title: chrome.i18n.getMessage('welcomeBasicsTitle'),
     subsections: [
       {text: chrome.i18n.getMessage('welcomeBasicsLine1')},
-      {
-        text: chrome.i18n.getMessage('welcomeBasicsLine2'),
-        header: true
-      },
       {frame: {
         width: '100%'
-      }},
-      {
-        text: chrome.i18n.getMessage('welcomeBasicsLine3')
-      }
+      }}
     ]
   };
 

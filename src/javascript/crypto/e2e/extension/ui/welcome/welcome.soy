@@ -80,14 +80,18 @@
         {foreach $subsection in $sectionText.subsections}
           {if $subsection.frame}
             <div id="{e2e.ext.constants.ElementId.WELCOME_FRAME}" class="shadow">
-              <img src="images/yahoo/screenshot_4.png"
-                   width="{$subsection.frame.width}"/>
-              <img src="images/yahoo/screenshot_3.png"
-                   width="{$subsection.frame.width}"/>
-              <img src="images/yahoo/screenshot_2.png"
-                   width="{$subsection.frame.width}"/>
-              <img src="images/yahoo/screenshot_1.png"
-                   width="{$subsection.frame.width}"/>
+              <div id="{e2e.ext.constants.ElementId.WELCOME_FRAME_DUMMY}">
+              <div id="{e2e.ext.constants.ElementId.WELCOME_FRAME_ELEMENT}">
+                <img src="images/yahoo/screenshot_4.png"
+                     width="{$subsection.frame.width}"/>
+                <img src="images/yahoo/screenshot_3.png"
+                     width="{$subsection.frame.width}"/>
+                <img src="images/yahoo/screenshot_2.png"
+                     width="{$subsection.frame.width}"/>
+                <img src="images/yahoo/screenshot_1.png"
+                     width="{$subsection.frame.width}"/>
+              </div>
+              </div>
             </div>
           {else}
             <p {if $subsection.header}

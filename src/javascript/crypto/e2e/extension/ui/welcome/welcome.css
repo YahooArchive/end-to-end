@@ -145,12 +145,28 @@
  }
 }
 
-#welcome-frame img {
+#welcome-frame-element {
   position:absolute;
   left:0;
+  top:0;
+  bottom:0;
+  right:0;
+}
+
+#welcome-frame {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+}
+
+#welcome-frame-dummy {
+  padding-top:60%;
 }
 
 #welcome-frame img {
+  position:absolute;
+  left:0;
+
   -webkit-animation-name: welcomeFadeInOut;
   -webkit-animation-timing-function: ease-in-out;
   -webkit-animation-iteration-count: infinite;
