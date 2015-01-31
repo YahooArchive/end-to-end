@@ -182,7 +182,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
         // We looked up keys for a user not supported by the keyserver.
         callback(null);
       } else {
-        errback(xhr);
+        errback();
       }
     }
   };
