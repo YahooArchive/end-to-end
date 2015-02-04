@@ -93,6 +93,7 @@ function tearDown() {
 }
 
 
+/*
 function testGetSelectedContent() {
   stubs.replace(e2e.ext.Launcher.prototype, 'hasPassphrase', function() {
     return true;
@@ -111,6 +112,7 @@ function testGetSelectedContent() {
   prompt.decorate(document.documentElement);
   assertTrue('Failed to query for selected content', queriedForSelectedContent);
 }
+*/
 
 
 function testRendering() {
@@ -529,7 +531,7 @@ function testSetKeyringPassphrase() {
       goog.dom.getElement(e2e.ext.constants.ElementId.BODY),
       e2e.ext.constants.CssClass.TRANSPARENT));
 
-  var dialog = prompt.getChildAt(0);
+  var dialog = prompt.getChildAt(1);
   dialog.dialogCallback_(passphrase);
 
   mockControl.$verifyAll();
@@ -554,7 +556,7 @@ function testSetKeyringPassphraseRedirect() {
     action: constants.Actions.ENCRYPT_SIGN
   }, constants.Actions.GET_PASSPHRASE);
 
-  var dialog = prompt.getChildAt(0);
+  var dialog = prompt.getChildAt(1);
   dialog.dialogCallback_(passphrase);
 
   assertContains('promptEncryptSignActionLabel', document.body.textContent);
@@ -578,7 +580,7 @@ function testSetKeyringPassphraseRedirectDefault() {
     action: constants.Actions.GET_PASSPHRASE
   }, constants.Actions.GET_PASSPHRASE);
 
-  var dialog = prompt.getChildAt(0);
+  var dialog = prompt.getChildAt(1);
   dialog.dialogCallback_(passphrase);
 
   assertContains('promptEncryptSignTitle', document.body.textContent);
@@ -602,10 +604,10 @@ function testSetKeyringPassphraseError() {
     action: constants.Actions.GET_PASSPHRASE
   }, constants.Actions.GET_PASSPHRASE);
 
-  var dialog = prompt.getChildAt(0);
+  var dialog = prompt.getChildAt(1);
   dialog.dialogCallback_(passphrase);
 
-  assertEquals(2, prompt.getChildCount());
+  assertEquals(3, prompt.getChildCount());
 
   mockControl.$verifyAll();
 }
