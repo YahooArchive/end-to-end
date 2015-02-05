@@ -70,24 +70,16 @@ function tearDown() {
 
 
 function testVerifyResponse() {
-  console.log(client.verifyResponse_(TEST_DGIL));
-  console.log(client.verifyResponse_(TEST_NOBODY));
+  assertNotNull(client.verifyResponse_(TEST_DGIL));
+  assertNotNull(client.verifyResponse_(TEST_NOBODY));
 }
 
 
 function testSendKey() {
   var myUserid = 'yan@mit.edu';
   var myKey = [1, 2, 3];
-  stubs.replace(e2e.ext.keyserver.Client.prototype, 'fetchKey_',
-                function(userid, cb) {
-                  if (userid === myUserid) {
-                    cb({keys: JSON.stringify({12345: {data: 'irrelevant',
-                                                      kauth_sig: 'foo'}}),
-                        userid: 'yan@mit.edu', t: 0});
-                  }
-                });
-  stubs.replace(goog.math, 'randomInt', function() {
-    return 314;
+  stubs.replace(e2e.random, 'getRandomBytes', function() {
+    return [79, 159, 72, 22, 198, 17, 45, 109, 198, 123, 4, 129, 6, 188, 11];
   });
   stubs.replace(XMLHttpRequest.prototype, 'open',
       mockControl.createFunctionMock('open'));
@@ -96,8 +88,8 @@ function testSendKey() {
         assertEquals('POST', arg);
         return true;
       }), new mockmatchers.ArgumentMatcher(function(arg) {
-        assertEquals('http://keyshop.paranoids.corp.yahoo.com:25519' + 
-            '/v1/k/yan@mit.edu/314', arg);
+        assertEquals('https://keyshop.paranoids.corp.yahoo.com:25519' +
+            '/v1/k/yan@mit.edu/T59IFsYRLW3GewSBBrwL', arg);
         return true;
       }), new mockmatchers.ArgumentMatcher(function(arg) {
         assertTrue(arg);
@@ -129,37 +121,45 @@ function testCacheKeyData() {
 
 function testFetchAndImportKeys() {
   var userId = 'adhintz@google.com';
-  var sig = 'irrelevant';
   var time = (new Date().getTime())/1000;
   var rawkey = "xv8AAABSBFP3bHYTCCqGSM49AwEHAgMECt6MVqa43Ab248CosK_cy664pkL_9XvC0O2K0O1Jh2qau7ll3Q9vssdObSwX0EaiMm4Dvegxr1z-SblWSFV4x83_AAAAH0RyZXcgSGludHogPGFkaGludHpAZ29vZ2xlLmNvbT7C_wAAAGYEEBMIABj_AAAABYJT92x2_wAAAAmQ8eznwfj7hkMAADA9AQCWE4jmpmA5XRN1tZduuz8QwtxGZOFurpAK6RCzKDqS8wEAx9eBxXLhKB4xm9xwPdh0-W6rbsvf58FzKjlxrkUfuxTO_wAAAFYEU_dsdhIIKoZIzj0DAQcCAwQ0M6kFa7VaVmt2PRdOUdZWrHp6CZZglTVQi1eyiXB_nnUUbH-qrreWTD7W9RxRtr0IqAYssLG5ZoWsXa5jQC3DAwEIB8L_AAAAZgQYEwgAGP8AAAAFglP3bHf_AAAACZDx7OfB-PuGQwAAkO4BALMuXsta-bCOvzSn7InOs7wA-OmDN5cv1cR_SsN5-FkLAQCmmBa_Fe76gmDd0RjvpQW7pWK2zXj3il6HYQ2NsWlIbQ==";
-  var keydata = {kauth_sig: sig,
-      data: JSON.stringify(
-          {t: time - 1,
-           deviceid: '99999',
-           userid: userId,
-           key: rawkey})};
+  // Keyserver key input
+  var keydata = {
+      t: time - 1,
+      deviceid: '99999',
+      userid: userId,
+      key: rawkey
+  };
+  // The fake JWS signature over keydata
+  var jws = 'irrelevant';
 
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendGetRequest_',
                 function(path, cb) {
                   if (path === userId) {
+                    // Fake 200 response
                     cb({userid: userId,
                         t: time,
-                        keys: {99999: keydata}
+                        keys: {'99999': jws}
                       });
+                  } else {
+                    // Fake 404 response
+                    cb(null);
                   }
                 });
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'verifyResponse_',
                 function(resp) {
-                  return (resp.kauth_sig === sig);
+                  return (resp === jws) ? keydata : null;
                 });
+
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'cacheKeyData',
       mockControl.createFunctionMock('cacheKeyData'));
   e2e.ext.keyserver.Client.prototype.cacheKeyData(
       new mockmatchers.ArgumentMatcher(function(arg) {
-        assertObjectEquals(keydata, arg);
+        assertObjectEquals(jws, arg);
         return true;
       })
   );
+
   mockControl.$replayAll();
   client.fetchAndImportKeys([userId], goog.nullFunction);
   asyncTestCase.waitForAsync('Waiting for key import');

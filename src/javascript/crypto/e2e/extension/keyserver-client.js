@@ -170,13 +170,12 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
     xhr.setRequestHeader('X-Keyshop-Token', result);
     xhr.send();
   }, this));
-  var client = this;
-  xhr.onreadystatechange = function() {
+  xhr.onreadystatechange = goog.bind(function() {
     var response;
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
         response = /** @type {messages.KeyserverKeyOutput} */ (
-            client.verifyResponse_(xhr.responseText));
+            this.verifyResponse_(xhr.responseText));
         callback(response);
       } else if (xhr.status === 404) {
         // We looked up keys for a user not supported by the keyserver.
@@ -185,7 +184,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
         errback();
       }
     }
-  };
+  }, this);
 };
 
 
@@ -236,26 +235,20 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, cb,
   var allDone = false;
   var errback = opt_errback || goog.nullFunction;
 
+  // Called when the userid's keys have been fetched
   var importCb = function(userid, response) {
-    if (response && response.t && response.userid === userid) {
+    if (response && response.t && response.userid === userid && response.keys) {
       response = /** @type {messages.KeyserverKeyOutput} */ (response);
 
       goog.object.forEach(response.keys, goog.bind(function(value, deviceid) {
-        var keyData = /** @type {messages.KeyserverKeyInput} */ (
+        var keyData = /** @type {?messages.KeyserverKeyInput} */ (
             this.verifyResponse_(value));
 
-        if (!keyData) {
-          importedUids[userid] = false;
-          finished();
-        }
-
-        /* TODO(dlg): re-enable once we have do mandatory rotation */
-        // Check that the response is fresh
-        /*var now = window.Math.ceil((new Date().getTime()) / 1000); */
+        // TODO(dlg): re-enable freshness check once we have do mandatory
+        // rotation
+        // var now = window.Math.ceil((new Date().getTime()) / 1000);
         // TODO(dlg): better logging (integrate with event log)
-        if (keyData.userid === userid &&
-            /*now - keyData.t < this.maxFreshnessTime &&*/
-            /*(keyData.t * 1000) < (Date.now()) &&*/
+        if (keyData && keyData.userid === userid &&
             keyData.deviceid === deviceid) {
           // Import keys into the keyring
           console.log('importing key', keyData);
@@ -265,9 +258,9 @@ ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, cb,
           }, this));
 
           // Save the server response for keyring pruning
-          this.cacheKeyData(keyData);
+          this.cacheKeyData(value);
         } else {
-          // Response was mismatched or not fresh
+          // Response was incorrectly signed, mismatched or not fresh
           importedUids[userid] = false;
           finished();
         }
@@ -364,12 +357,10 @@ ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
       e2e.ecc.PrimeCurve.P_384,
       {pubKey: e2e.ext.constants.Keyserver.KAUTH_PUB});
   var verified = ecdsa.verifyJws(response);
-  if (verified) {
-    return /** @type {?(messages.KeyserverKeyInput|messages.KeyserverKeyOutput)} */ (
-        JSON.parse(goog.crypt.byteArrayToString(verified)));
-  } else {
-    return null;
-  }
+  return verified ?
+      /** @type {?(messages.KeyserverKeyInput|messages.KeyserverKeyOutput)} */ (
+          JSON.parse(goog.crypt.byteArrayToString(verified))) :
+      null;
 };
 
 
