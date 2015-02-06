@@ -66,14 +66,20 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
 
   draft.cc = draft.cc || [];
   draft.bcc = draft.bcc || [];
+  // List of raw emails of recipients
   this.recipients = draft.to.concat(draft.cc).concat(draft.bcc);
   this.subject = draft.subject;
   this.selection = draft.body;
   this.origin = origin;
   this.mode = mode;
   this.hash = hash;
+  // The email of the sender
   this.from = draft.from;
-  this.allAvailableRecipients_ = [];
+  // List of all emails with public keys
+  this.allAvailableRecipients_ = /** @type {!Array.<string>} */ ([]);
+  // Map of email to uids
+  this.recipientsEmailMap_ =
+      /** @type {!Object.<string, !Array.<string>>} */ ({});
   this.keyserverClient = new ext.keyserver.Client(origin);
 
   /**
@@ -214,7 +220,7 @@ ui.ComposeGlass.prototype.buttonClick_ = function(
  * @return {!Object.<string, !Array.<string>>}
  * @private
  */
-ui.ComposeGlass.prototype.getRecipientsEmailMap_ = function(recipients) {
+ui.ComposeGlass.prototype.getEmailMap_ = function(recipients) {
   var map = {};
   goog.array.forEach(recipients, function(recipient) {
     var email = utils.text.extractValidEmail(recipient);
@@ -251,33 +257,40 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
     action: constants.Actions.LIST_KEYS,
     content: 'public'
   }), goog.bind(function(response) {
+    // Get the list of emails with public keys for autocomplete
     var searchResult = response.content;
     var allUids = goog.object.getKeys(searchResult);
-    var recipientsEmailMap = this.getRecipientsEmailMap_(allUids);
-    this.allAvailableRecipients_ = goog.object.getKeys(recipientsEmailMap);
+    this.recipientsEmailMap_ = this.getEmailMap_(allUids);
+    this.allAvailableRecipients_ = goog.object.getKeys(
+        this.recipientsEmailMap_);
 
     utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
       action: constants.Actions.LIST_KEYS,
       content: 'private'
     }), goog.bind(function(response) {
+      // Get the list of uids with private keys for the 'from' menu
       var privateKeyResult = response.content;
-      var availableSigningKeys = goog.object.getKeys(privateKeyResult);
+      var allSigningUids = goog.object.getKeys(privateKeyResult);
 
       soy.renderElement(elem, templates.renderEncrypt, {
         signerCheckboxTitle: chrome.i18n.getMessage('promptSignMessageAs'),
         fromLabel: chrome.i18n.getMessage('promptFromLabel'),
         noPrivateKeysFound: chrome.i18n.getMessage('promptNoPrivateKeysFound'),
-        availableSigningKeys: availableSigningKeys,
+        availableSigningKeys: allSigningUids,
         actionButtonTitle: chrome.i18n.getMessage(
             'promptEncryptSignActionLabel'),
         backButtonTitle: chrome.i18n.getMessage('actionBackToMenu'),
         subject: subject
       });
 
+      // Set the 'from' field with the correct uid
       var fromHolder = goog.dom.getElement(constants.ElementId.SIGNER_SELECT);
-      if (goog.array.contains(availableSigningKeys, from)) {
-        fromHolder.value = from;
+      var senderEmailMap = this.getEmailMap_(allSigningUids);
+      if (goog.object.containsKey(senderEmailMap, from)) {
+        // Select the first UID associated with the 'from' address
+        fromHolder.value = senderEmailMap[from][0];
       } else {
+        // Stick with the default selected value
         console.warn('Expected available signing keys to contain', from);
       }
 
@@ -400,6 +413,7 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
   var content = textArea.value;
   this.clearFailure_();
   switch (action) {
+    // For now this is the only supported action. Encrypt/sign and insert.
     case ext.constants.Actions.ENCRYPT_SIGN:
       var request = /** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.ENCRYPT_SIGN,
@@ -410,17 +424,15 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
       });
 
       if (this.chipHolder_) {
-        var recipients = this.chipHolder_.getSelectedUids();
-        var invalidRecipients = this.getInvalidRecipients_(recipients);
+        var invalidRecipients = this.getInvalidRecipients_();
         if (invalidRecipients.length === 0) {
-          request.recipients = recipients;
+          request.recipients = this.getRecipientUids_();
           this.sendRequestToInsert_(request, origin);
         } else if (!this.sendUnencrypted_) {
           this.handleMissingPublicKeys_(undefined, goog.bind(function() {
-            var recipients = this.chipHolder_.getSelectedUids();
-            var invalidRecipients = this.getInvalidRecipients_(recipients);
+            var invalidRecipients = this.getInvalidRecipients_();
             if (invalidRecipients.length === 0) {
-              request.recipients = recipients;
+              request.recipients = this.getRecipientUids_();
             }
             this.sendRequestToInsert_(request, origin);
           }, this));
@@ -429,6 +441,22 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
         }
       }
   }
+};
+
+
+/**
+ * Returns the UIDs that are currently in the chipholder.
+ * @return {!Array.<string>}
+ * @private
+ */
+ui.ComposeGlass.prototype.getRecipientUids_ = function() {
+  //TODO: getSelectedUids is a misnomer here - it actually returns emails.
+  var recipientEmails = this.chipHolder_.getSelectedUids();
+  return goog.array.reduce(recipientEmails, goog.bind(function(prev, current) {
+    var uids = /** @type {(!Array.<string>|undefined)} */ (
+        this.recipientsEmailMap_[current]);
+    return uids ? prev.concat(uids) : prev;
+  }, this), []);
 };
 
 

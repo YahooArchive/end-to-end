@@ -28,6 +28,8 @@ goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.ComposeGlass');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
+goog.require('e2e.openpgp.asciiArmor');
+goog.require('e2e.openpgp.block.factory');
 /** @suppress {extraRequire} intentionally importing all signer functions */
 goog.require('e2e.signer.all');
 goog.require('goog.array');
@@ -51,12 +53,16 @@ var composeglass = null;
 var launcher = null;
 
 var stubs = new goog.testing.PropertyReplacer();
+
 var ORIGIN = 'https://us-mg5.mail.yahoo.com';
 var USER_ID_2 = 'Drew Hintz <adhintz@google.com>';
 var USER_ID = 'test 4';
+
+// The draft sent by the provider. Note that it uses email addresses, not uids.
 var draft = {body: 'plaintext message',
-    to: [USER_ID, USER_ID_2], from: USER_ID};
-var PRIVATE_KEY_ASCII =
+    to: ['test 4', 'adhintz@google.com'], from: USER_ID};
+
+var PRIVATE_KEY_ASCII = // userid of test 4
     '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
     'Version: GnuPG v1.4.11 (GNU/Linux)\n' +
     '\n' +
@@ -94,7 +100,7 @@ var PRIVATE_KEY_ASCII =
     '-----END PGP PRIVATE KEY BLOCK-----';
 
 
-var PUBLIC_KEY_ASCII =
+var PUBLIC_KEY_ASCII = // userid of test 4
     '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
     'Version: GnuPG v1.4.11 (GNU/Linux)\n' +
     '\n' +
@@ -139,6 +145,7 @@ function setUp() {
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
   var oldExtractValidEmail = e2e.ext.utils.text.extractValidEmail;
+  var oldExtractValidYahooEmail = e2e.ext.utils.text.extractValidYahooEmail;
   stubs.replace(e2e.ext.utils.text, 'extractValidEmail', function(recipient) {
     if (recipient == USER_ID) {
       return recipient;
@@ -146,6 +153,15 @@ function setUp() {
       return oldExtractValidEmail(recipient);
     }
   });
+  stubs.replace(e2e.ext.utils.text, 'extractValidYahooEmail',
+                function(recipient) {
+    if (recipient == USER_ID) {
+      return null;
+    } else {
+      return oldExtractValidYahooEmail(recipient);
+    }
+  });
+
 
   composeglass = new e2e.ext.ui.ComposeGlass(draft, 'resize', ORIGIN, 'foo');
   launcher = new e2e.ext.Launcher();
@@ -240,15 +256,16 @@ function testEncrypt() {
       goog.testing.mockmatchers.ignoreArgument,
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
         assertContains('-----BEGIN PGP MESSAGE', arg);
+        var parsed = e2e.openpgp.asciiArmor.parse(arg);
+        var block = e2e.openpgp.block.factory.parseByteArray(parsed.data,
+                                                             parsed.charset);
+        // Make sure message was encrypted to both sender and receiver
+        assertEquals(2, block.eskPackets.length);
         return true;
       }));
   mockControl.$replayAll();
 
   composeglass.decorate(document.documentElement);
-  stubs.replace(composeglass.chipHolder_, 'getSelectedUids', function() {
-    return [USER_ID_2];
-  });
-
   var protectBtn = document.querySelector('button.insert');
   protectBtn.click();
 
@@ -256,7 +273,7 @@ function testEncrypt() {
   window.setTimeout(function() {
     mockControl.$verifyAll();
     asyncTestCase.continueTesting();
-  }, 200);
+  }, 500);
 }
 
 
@@ -274,7 +291,7 @@ function testSendUnsignedPlaintext() {
 
   composeglass.sendUnencrypted_ = true;
   stubs.replace(composeglass, 'handleMissingPublicKeys_', goog.nullFunction);
-  composeglass.recipients = [USER_ID_2, 'yan@yahoo-inc.com'];
+  composeglass.recipients = ['adhintz@google.com', 'yan@yahoo-inc.com'];
 
   composeglass.decorate(document.documentElement);
 
@@ -307,7 +324,7 @@ function testSendSignedPlaintext() {
 
   composeglass.sendUnencrypted_ = true;
   stubs.replace(composeglass, 'handleMissingPublicKeys_', goog.nullFunction);
-  composeglass.recipients = ['test <test@yahoo-inc.com>', 'yan@yahoo-inc.com'];
+  composeglass.recipients = ['test@yahoo-inc.com', 'yan@yahoo-inc.com'];
 
   stubs.replace(composeglass, 'shouldSignMessage_', function() {return true;});
   composeglass.decorate(document.documentElement);
