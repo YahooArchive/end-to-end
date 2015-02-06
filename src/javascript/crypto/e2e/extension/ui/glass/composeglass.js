@@ -413,6 +413,7 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
   var content = textArea.value;
   this.clearFailure_();
   switch (action) {
+    // For now this is the only supported action. Encrypt/sign and insert.
     case ext.constants.Actions.ENCRYPT_SIGN:
       var request = /** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.ENCRYPT_SIGN,
@@ -423,18 +424,15 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
       });
 
       if (this.chipHolder_) {
-        //TODO: getSelectedUids is a misnomer - it actually returns emails.
-        var recipients = this.chipHolder_.getSelectedUids();
-        var invalidRecipients = this.getInvalidRecipients_(recipients);
+        var invalidRecipients = this.getInvalidRecipients_();
         if (invalidRecipients.length === 0) {
-          request.recipients = recipients;
+          request.recipients = this.getRecipientUids_();
           this.sendRequestToInsert_(request, origin);
         } else if (!this.sendUnencrypted_) {
           this.handleMissingPublicKeys_(undefined, goog.bind(function() {
-            var recipients = this.chipHolder_.getSelectedUids();
-            var invalidRecipients = this.getInvalidRecipients_(recipients);
+            var invalidRecipients = this.getInvalidRecipients_();
             if (invalidRecipients.length === 0) {
-              request.recipients = recipients;
+              request.recipients = this.getRecipientUids_();
             }
             this.sendRequestToInsert_(request, origin);
           }, this));
@@ -443,6 +441,22 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
         }
       }
   }
+};
+
+
+/**
+ * Returns the UIDs that are currently in the chipholder.
+ * @return {!Array.<string>}
+ * @private
+ */
+ui.ComposeGlass.prototype.getRecipientUids_ = function() {
+  //TODO: getSelectedUids is a misnomer here - it actually returns emails.
+  var recipientEmails = this.chipHolder_.getSelectedUids();
+  return goog.array.reduce(recipientEmails, goog.bind(function(prev, current) {
+    var uids = /** @type {(!Array.<string>|undefined)} */ (
+        this.recipientsEmailMap_[current]);
+    return uids ? prev.concat(uids) : prev;
+  }, this), []);
 };
 
 
