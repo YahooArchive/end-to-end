@@ -264,6 +264,8 @@ panels.ChipHolder.prototype.handleKeyEvent_ = function(evt) {
       break;
     case goog.events.KeyCodes.TAB:
     case goog.events.KeyCodes.ENTER:
+    case goog.events.KeyCodes.SPACE:
+    case goog.events.KeyCodes.COMMA:
       if (this.shadowInputElem_.value.length > 0) {
         evt.preventDefault();
         evt.stopPropagation();
