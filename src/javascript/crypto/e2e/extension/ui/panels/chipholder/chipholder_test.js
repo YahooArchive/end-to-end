@@ -58,10 +58,15 @@ function testRender() {
 
 
 function testAddChip() {
-  chipHolder.addChip('2');
-  chipHolder.addChip(new e2e.ext.ui.panels.Chip('5', true));
-  assertEquals('1,2', chipHolder.getSelectedUids().join(','));
+  var chip1 = chipHolder.addChip('2');
+  var chip2 = chipHolder.addChip('6', true);
+  var chip3 = chipHolder.addChip(new e2e.ext.ui.panels.Chip('5', true));
+  var badChip = constants.CssClass.BAD_CHIP;
+  assertEquals('1,2,6', chipHolder.getSelectedUids().join(','));
   assertEquals('5', chipHolder.getProvidedPassphrases().join(','));
+  assertFalse(goog.dom.classlist.contains(chip1.getElement(), badChip));
+  assertTrue(goog.dom.classlist.contains(chip2.getElement(), badChip));
+  assertFalse(goog.dom.classlist.contains(chip3.getElement(), badChip));
 }
 
 function testRemoveUids() {
@@ -194,4 +199,13 @@ function testLock() {
   assertEquals('1', chipHolder.getSelectedUids().join(','));
   chipHolder.getChildAt(0).remove();
   assertEquals('1', chipHolder.getSelectedUids().join(','));
+}
+
+function testMarkGoodChips() {
+  var chip1 = chipHolder.addChip('4', true);
+  var chip2 = chipHolder.addChip('5', true);
+  var badChip = constants.CssClass.BAD_CHIP;
+  chipHolder.markGoodChips(['6', '4']);
+  assertFalse(goog.dom.classlist.contains(chip1.getElement(), badChip));
+  assertTrue(goog.dom.classlist.contains(chip2.getElement(), badChip));
 }

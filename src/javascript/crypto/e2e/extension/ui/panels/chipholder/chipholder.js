@@ -120,7 +120,9 @@ panels.ChipHolder.prototype.decorateInternal = function(elem) {
 panels.ChipHolder.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  goog.array.forEach(this.selectedUids_, this.addChip, this);
+  goog.array.forEach(this.selectedUids_, function(uid) {
+                       this.addChip(uid, true);
+                     }, this);
 
   this.autoComplete_ = goog.ui.ac.createSimpleAutoComplete(
       this.allUids_, // values for the auto-complete box
@@ -156,22 +158,29 @@ panels.ChipHolder.prototype.enterDocument = function() {
  * Adds a new chip to the chip holder using the selection in the input field.
  * Aborts if ChipHolder is locked.
  * @param {panels.Chip|string=} opt_chip The chip or UID to render.
+ * @param {boolean=} opt_mark Whether to mark the chip as good/bad. Default
+ *   false.
+ * @return {panels.Chip|undefined}
  */
-panels.ChipHolder.prototype.addChip = function(opt_chip) {
+panels.ChipHolder.prototype.addChip = function(opt_chip, opt_mark) {
   if (this.isLocked_) {
     return;
   }
 
   var chip = null;
+  var markChipBad = false;
   if (opt_chip && opt_chip instanceof panels.Chip) {
     chip = /** @type {panels.Chip} */ (opt_chip);
   } else {
     var uid = goog.string.trim(typeof opt_chip == 'string' ?
         opt_chip : this.shadowInputElem_.value);
+    if (opt_mark) {
+      markChipBad = !goog.array.contains(this.allUids_, uid);
+    }
     chip = new panels.Chip(uid.replace(/,\s*$/, ''));
   }
 
-  if (chip.getValue().length == 0) {
+  if (chip.getValue().length === 0) {
     return;
   }
 
@@ -180,6 +189,11 @@ panels.ChipHolder.prototype.addChip = function(opt_chip) {
   this.shadowInputElem_.value = '';
   this.shadowInputElem_.placeholder = '';
   goog.style.setWidth(this.shadowInputElem_, 10);
+
+  if (markChipBad) {
+    goog.dom.classlist.add(chip.getElement(), constants.CssClass.BAD_CHIP);
+  }
+  return chip;
 };
 
 
@@ -297,10 +311,9 @@ panels.ChipHolder.prototype.handleKeyEvent_ = function(evt) {
  * @private
  */
 panels.ChipHolder.prototype.addAndMarkChip_ = function(markChipBad) {
-  this.addChip();
+  var chip = this.addChip();
 
-  if (markChipBad) {
-    var chip = this.getChildAt(this.getChildCount() - 1);
+  if (chip && markChipBad) {
     goog.dom.classlist.add(chip.getElement(), constants.CssClass.BAD_CHIP);
   }
 };
