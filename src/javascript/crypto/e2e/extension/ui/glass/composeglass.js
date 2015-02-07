@@ -308,12 +308,22 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
           try {
             this.fetchKeys_(goog.bind(function(validRecipients,
                                                invalidRecipients) {
-              this.allAvailableRecipients_ =
-                  this.allAvailableRecipients_.concat(validRecipients);
+              // Add the valid recipients to the lists of all avail recipients
+              goog.array.forEach(validRecipients,
+                                 goog.bind(function(recipient) {
+                // For now, keyserver entries have uid === email
+                goog.object.add(this.recipientsEmailMap_, recipient,
+                                ['<' + recipient + '>']);
+              }, this));
+              this.allAvailableRecipients_ = goog.object.getKeys(
+                  this.recipientsEmailMap_);
+              // Show them as good in the UI
               if (this.chipHolder_) {
                 this.chipHolder_.markGoodChips(validRecipients);
               }
+              // Pop up warning to remove the invalid recipients
               this.handleMissingPublicKeys_(invalidRecipients);
+              // Tell the user we've imported some keys
               if (validRecipients.length > 0) {
                 utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */
                                            ({
