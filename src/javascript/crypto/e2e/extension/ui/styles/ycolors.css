@@ -1,74 +1,55 @@
 /**
  * FUJI color definitions
+ * See http://throwncone.corp.ne1.yahoo.com:2000/app/color.html for samples
  */
 
 /* grayscale */
-@def YCOLOR_BLACK #000000;
-@def YCOLOR_DARKEST_1 #262626;
-@def YCOLOR_DARKGRAY_2 #454545;
-@def YCOLOR_WARMGRAY_3 #8b8a8a;
-@def YCOLOR_COOLGRAY_4 #888d99;
-@def YCOLOR_LIGHTGRAY_5 #e2e2e6;
-@def YCOLOR_VERYLIGHTGRAY_6 #f1f1f1;
-@def YCOLOR_LIGHTEST_7 #fbfbfb;
+@def YCOLOR_BLACK #000;
+@def YCOLOR_WHITE #fff;
+@def YCOLOR_GREY_2: #F1F1F5;
+@def YCOLOR_GREY_3: #E0E4E9;
+@def YCOLOR_GREY_6: #878C91;
+@def YCOLOR_GREY_8: #464E56;
+@def YCOLOR_GREY_10: #26282A;
 
-/* colors,starting at noon position and moving clockwise in 1/18 slices */
 @def YCOLOR_PINK_1A #f80e5d;
 @def YCOLOR_PINK_1B #e6004e;
-@def YCOLOR_PINK_1C #ba133b;
+@def YCOLOR_PINK_1C #c60646;
 
 @def YCOLOR_RED_2A #f0162f;
-@def YCOLOR_RED_2B #dd1037;
-
-@def YCOLOR_SALMON_3A #ff4d52;
-@def YCOLOR_SALMON_3B #ff0132;
+@def YCOLOR_RED_2B #dc142d; /** error red **/
 
 @def YCOLOR_ORANGE_4A #ff8b12;
 @def YCOLOR_ORANGE_4B #fd7c24;
 @def YCOLOR_ORANGE_4C #ff520d;
 
-@def YCOLOR_YELLOW_5A #f4ce2f;
-@def YCOLOR_YELLOW_5B #ffb700;
-@def YCOLOR_YELLOW_5C #ffc700;
+@def YCOLOR_YELLOW_5A #ffd333;
+@def YCOLOR_YELLOW_5B #ffc700;
+@def YCOLOR_YELLOW_5C #ffb700;
 
 @def YCOLOR_GREEN_6A #11d360;
 @def YCOLOR_GREEN_6B #1ac567;
 
-@def YCOLOR_BLUEGREEN_7A #00cd7a;
-@def YCOLOR_BLUEGREEN_7B #00ba73;
-
 @def YCOLOR_TURQUOISE_8A #30d3b6;
 @def YCOLOR_TURQUOISE_8B #00c1a5;
 
-@def YCOLOR_TEAL_9A #00a098;
-@def YCOLOR_TEAL_9B #009692;
+@def YCOLOR_BLUE_10B #0f69ff;
 
-@def YCOLOR_BLUE_10A #0f69ff;
-
-@def YCOLOR_BLUE_11A #144aff;
-@def YCOLOR_BLUE_11B #145aff;
+@def YCOLOR_BLUE_11A #145aff;
+@def YCOLOR_BLUE_11B #144aff;
 
 @def YCOLOR_BLUEVIOLET_12A #003abc;
 
-@def YCOLOR_INDIGO_13A #003b91;
-@def YCOLOR_INDIGO_13B #062142;
+@def YCOLOR_INDIGO_13B #001A5A; /** dark **/
 
 @def YCOLOR_PURPLE_14A #7300ff;
 @def YCOLOR_PURPLE_14B #5a00c8;
-@def YCOLOR_PURPLE_14C #400090;
+@def YCOLOR_PURPLE_14C #400090; /** Yahoo purple **/
 
-@def YCOLOR_DEEPPURPLE_15A #2d005a;
+@def YCOLOR_DEEPPURPLE_15A #2e0066; /** dark **/
+@def YCOLOR_DEEPPURPLE_16A #2a004e; /** dark **/
 
-@def YCOLOR_DEEPPURPLE_16A #260040;
-
-@def YCOLOR_MAGENTA_17A #be0067;
-@def YCOLOR_MAGENTA_17B #940050;
-@def YCOLOR_MAGENTA_17C #800045;
-
-@def YCOLOR_FUCHSIA_18A #cc008c;
-@def YCOLOR_FUCHSIA_18B #b3007b;
-
-/* core colors */
+@def YCOLOR_MAGENTA_17C #800045; /** dark **/
 
 /* neutrals */
 @def YCOLOR_NEUTRAL_RED #ff8189;
@@ -79,12 +60,9 @@
 
 /* Button colors */
 
-@def BTN_PRIMARY #009af8;
+@def BTN_PRIMARY #0078FF;
 @def BTN_PRIMARY_TEXT #fff;
 @def BTN_PRIMARY_HOVER #0a80e3;
-@def BTN_PRIMARY_ACTIVE #0078db;
-
-@def BTN_SECONDARY #fff;
-@def BTN_SECONDARY_TEXT #8d8e94;
-@def BTN_SECONDARY_HOVER #e2e2e6;
-@def BTN_SECONDARY_ACTIVE #c9ccd3;
+@def BTN_PRIMARY_ACTIVE #003ABC;
+@def BTN_PRIMARY_INACTIVE #E2E2E6;
+@def BTN_PRIMARY_INACTIVE_TEXT #CFCFD1;
