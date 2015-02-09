@@ -20,7 +20,7 @@
 
 
 #welcome-main > h1 {
-  color: #555;
+  color: YCOLOR_GREY_8;
   font-size: 50px;
   font-weight: 300;
   text-align: center;
@@ -55,13 +55,13 @@
 }
 
 #welcome-menu fieldset {
-  border: 1px solid #ebebeb;
+  border: 1px solid YCOLOR_GREY_4;
   height: 100%;
   padding: 16px;
 }
 
 #welcome-menu iframe {
-  border: 1px solid #ebebeb;
+  border: 1px solid YCOLOR_GREY_4;
 }
 
 #welcome-menu .email,
@@ -88,7 +88,7 @@
 #welcome-menu-advanced legend {
   text-align:center;
   border: 0;
-  color: #888;
+  color: YCOLOR_GREY_6;
   font-size: 18px;
   margin-top: 10px;
 }
