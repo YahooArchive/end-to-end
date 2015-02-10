@@ -223,7 +223,7 @@ input:focus {
 
 #errorDiv {
   color: YCOLOR_RED_2B;
-  font-size: 1.1em;
+  font-size: 1em;
   margin-bottom: 7px;
   text-align: center;
 }

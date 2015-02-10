@@ -58,10 +58,11 @@ var utils = e2e.ext.utils;
  * @param {string} mode Either scroll mode or resize mode
  * @param {string} origin The origin that requested the compose glass
  * @param {string} hash Hash to uniquely identify this compose glass instance
+ * @param {number=} opt_height Optional height of the frame
  * @constructor
  * @extends {goog.ui.Component}
  */
-ui.ComposeGlass = function(draft, mode, origin, hash) {
+ui.ComposeGlass = function(draft, mode, origin, hash, opt_height) {
   goog.base(this);
 
   draft.cc = draft.cc || [];
@@ -73,6 +74,7 @@ ui.ComposeGlass = function(draft, mode, origin, hash) {
   this.origin = origin;
   this.mode = mode;
   this.hash = hash;
+  this.height_ = opt_height;
   // The email of the sender
   this.from = draft.from;
   // List of all emails with public keys
@@ -296,6 +298,12 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
 
       var textArea = /** @type {HTMLTextAreaElement} */
           (elem.querySelector('textarea'));
+
+      if (this.height_) {
+        var newHeight = this.height_ - 235;
+        newHeight = (newHeight > 0) ? newHeight : 50;
+        goog.style.setHeight(textArea, newHeight);
+      }
 
       // Show green icon in the URL bar when the secure text area is in focus
       // so page XSS attacks are less likely to compromise plaintext

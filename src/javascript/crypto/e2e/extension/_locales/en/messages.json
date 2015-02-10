@@ -457,7 +457,7 @@
     "description": "Message asking user to confirm closing the compose glass"
   },
   "composeGlassConfirmRecipients": {
-    "message": "The message can't be encrypted because the following recipients are missing encryption keys:",
+    "message": "The following recipients are missing encryption keys:",
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassRemoveRecipients": {

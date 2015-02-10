@@ -38,7 +38,8 @@ textarea {
   border-bottom: 1px solid YCOLOR_GREY_4;
   height: 200px;
   width: 95%;
-  padding-left: 8px;
+  padding-left: 15px;
+  padding-top: 15px;
 }
 
 textarea:hover,
@@ -104,6 +105,7 @@ textarea:focus,
   border-bottom: 1px solid YCOLOR_GREY_4;
   color: YCOLOR_GREY_6;
   line-height: 24px;
+  padding-left: 10px;
 }
 
 #fromHolder > * {

@@ -37,7 +37,8 @@ var initComposeGlass = function(evt) {
   window.composeGlass = new e2e.ext.ui.ComposeGlass(data.draft,
                                                     data.mode,
                                                     evt.origin,
-                                                    data.hash);
+                                                    data.hash,
+                                                    data.height);
   window.composeGlass.decorate(document.documentElement);
 };
 window.addEventListener('message', initComposeGlass);
