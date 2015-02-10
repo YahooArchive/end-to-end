@@ -183,11 +183,11 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
                   ctx.deleteKey(key.uids[0]);
                 }
                 this.displayFailure_(
-                    new e2e.ext.keyserver.AuthError('Please login to your ' +
-                        'corpmail account before generating a new key!'));
+                    new e2e.ext.keyserver.AuthError(
+                        chrome.i18n.getMessage('keyserverSendError')));
               }, this));
         } catch (e) {
-          console.log('got key send failure in generate key', email);
+          console.error('got key send failure in generate key', email);
           this.displayFailure_(e);
         }
       }
