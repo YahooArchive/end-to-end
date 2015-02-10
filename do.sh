@@ -165,7 +165,6 @@ e2e_build_extension() {
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Welcome" --js_output_file "$BUILD_EXT_DIR/welcome_binary.js"
   echo ""
   # compile css files
-  echo "Compiling CSS files..."
   e2e_build_css
   echo "Copying extension files..."
   # copy extension files

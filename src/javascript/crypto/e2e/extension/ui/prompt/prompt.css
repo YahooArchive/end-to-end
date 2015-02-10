@@ -45,6 +45,10 @@ textarea:focus,
   outline: none;
 }
 
+#pgpBody {
+  padding: 0 8px;
+}
+
 #pgpBody input[type="checkbox"],
 #pgpBody input[type="password"] {
   margin: 8px 8px 0 0;
