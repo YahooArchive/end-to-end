@@ -83,7 +83,7 @@ utils.getPgpAction = function(content, opt_enableSniffing, opt_default) {
     return constants.Actions.USER_SPECIFIED;
   }
 
-  if (/^-----BEGIN PGP MESSAGE-----/.test(content)) {
+  if (/^-----BEGIN PGP (SIGNED )?MESSAGE-----/.test(content)) {
     return constants.Actions.DECRYPT_VERIFY;
   }
 
