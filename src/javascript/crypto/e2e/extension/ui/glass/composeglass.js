@@ -587,8 +587,8 @@ ui.ComposeGlass.prototype.fetchKeys_ = function(callback) {
         callback(newValidRecipients, newInvalidRecipients);
       }, this), goog.bind(function() {
         this.displayFailure_(
-            new e2e.ext.keyserver.AuthError('Please login to your ' +
-                                            'corpmail account!'));
+            new e2e.ext.keyserver.AuthError(
+                chrome.i18n.getMessage('keyserverFetchError')));
       }, this));
 };
 

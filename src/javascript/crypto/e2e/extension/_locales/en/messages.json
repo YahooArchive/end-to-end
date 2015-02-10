@@ -467,5 +467,11 @@
   "composeGlassSendUnencryptedMessage": {
     "message": "Send unencrypted message",
     "description": "Ask user to send the message unencrypted."
+  },
+  "keyserverFetchError": {
+    "message": "Oops, failed to fetch keys from the keyserver. Are you logged into Yahoo mail?"
+  },
+  "keyserverSendError": {
+    "message": "Oops, failed to send keys to the keyserver. Are you logged into Yahoo mail?"
   }
 }
