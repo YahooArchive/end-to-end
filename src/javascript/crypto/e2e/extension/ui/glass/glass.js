@@ -131,7 +131,12 @@ ui.Glass.prototype.decorateInternal = function(elem) {
  * @private
  */
 ui.Glass.prototype.renderContents_ = function(response) {
+  console.log('got response', response);
   var elem = this.getElement();
+  if (!response.content) {
+    // Sometimes we don't get an error field for some reason.
+    response.error = chrome.i18n.getMessage('glassCannotDecrypt');
+  }
   soy.renderElement(elem, templates.contentFrame, {
     label: chrome.i18n.getMessage('extName'),
     content: response.content || this.pgpMessage_,
@@ -139,6 +144,10 @@ ui.Glass.prototype.renderContents_ = function(response) {
   });
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('glass_styles.css');
+
+  if (!response.error) {
+    goog.dom.getElement(constants.ElementId.LOCK_ICON).style.display = 'inline';
+  }
 
   // Wait for styles to be applied, then resize the glass element.
   window.setTimeout(goog.bind(function() {

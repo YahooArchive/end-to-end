@@ -128,7 +128,11 @@ e2e.ext.constants.ElementId = {
   NOTIFICATION_SUCCESS: 'e2e-success',
 
   // e2ebind page elements
-  E2EBIND_ICON: 'endtoend'
+  E2EBIND_ICON: 'endtoend',
+
+  // glass
+  LOCK_ICON: 'lock-icon',
+  CHECK_ICON: 'check-icon'
 };
 
 
