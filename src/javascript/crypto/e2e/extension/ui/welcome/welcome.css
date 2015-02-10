@@ -20,9 +20,8 @@
 
 
 #welcome-main > h1 {
-  font-family: verdana;
-  color: #555;
-  font-size: 36px;
+  color: YCOLOR_GREY_8;
+  font-size: 50px;
   font-weight: 300;
   text-align: center;
 }
@@ -56,13 +55,13 @@
 }
 
 #welcome-menu fieldset {
-  border: 1px solid #ebebeb;
+  border: 1px solid YCOLOR_GREY_4;
   height: 100%;
   padding: 16px;
 }
 
 #welcome-menu iframe {
-  border: 1px solid #ebebeb;
+  border: 1px solid YCOLOR_GREY_4;
 }
 
 #welcome-menu .email,
@@ -87,10 +86,10 @@
 #welcome-menu-basics legend,
 #welcome-menu-novice legend,
 #welcome-menu-advanced legend {
+  text-align:center;
   border: 0;
-  color: #d14836;
-  font-size: 14px;
-  font-weight: bold;
+  color: YCOLOR_GREY_6;
+  font-size: 18px;
   margin-top: 10px;
 }
 
@@ -201,4 +200,16 @@
   -webkit-animation-delay: 0;
   -moz-animation-delay: 0;
   animation-delay: 0;
+}
+#welcome-icons img {
+  padding:20px;
+  height:150px;
+}
+#welcome-icons {
+  text-align:center;
+}
+#welcome-byline {
+  color:#666;
+  font-size:22px;
+  padding-bottom:30px;
 }

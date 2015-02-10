@@ -219,7 +219,8 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
     glassFrame.contentWindow.postMessage({
       draft: this.draft,
       mode: this.mode,
-      hash: this.hash
+      hash: this.hash,
+      height: targetSize.height
     }, chrome.runtime.getURL(''));
   }, this), false);
 };

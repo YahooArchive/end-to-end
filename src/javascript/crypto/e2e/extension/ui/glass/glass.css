@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
-#errorDiv {
-  color: #dd4b39;
-  font-size: 1em;
-  margin-bottom: 7px;
-  text-align: center;
-}
 
 body > fieldset {
+  border: 1px solid YCOLOR_PURPLE_14B;
   position: absolute;
   width: 95%;
 }
@@ -30,4 +25,8 @@ body > div {
   position: fixed;
   top: 0;
   width: 100%;
+}
+
+legend {
+  color: YCOLOR_PURPLE_14B;
 }

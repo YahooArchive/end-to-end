@@ -345,11 +345,11 @@
     "description": "A welcome message to new users."
   },
   "welcomeBasicsTitle": {
-    "message": "Tutorial",
+    "message": "Let's get started!",
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeBasicsLine1": {
-    "message": "This extension allows you to create encrypted emails and decrypt encrypted emails sent to you in Yahoo CorpMail.",
+    "message": "Send encrypted and verified messages to friends in Yahoo Mail.",
     "description": "A sentence describing instructions."
   },
   "welcomeBasicsLine2": {
@@ -457,7 +457,7 @@
     "description": "Message asking user to confirm closing the compose glass"
   },
   "composeGlassConfirmRecipients": {
-    "message": "The message can't be encrypted because the following recipients are missing encryption keys:",
+    "message": "The following recipients are missing encryption keys:",
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassRemoveRecipients": {

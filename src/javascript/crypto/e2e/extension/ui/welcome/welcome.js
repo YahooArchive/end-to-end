@@ -95,7 +95,7 @@ ui.Welcome.prototype.decorateInternal = function(elem) {
   var basicsSection = {
     title: chrome.i18n.getMessage('welcomeBasicsTitle'),
     subsections: [
-      {text: chrome.i18n.getMessage('welcomeBasicsLine1')},
+      {text: ''},
       {frame: {
         width: '100%'
       }}
@@ -123,6 +123,8 @@ ui.Welcome.prototype.decorateInternal = function(elem) {
 
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('welcome_styles.css');
+  goog.dom.getElement('welcome-byline').textContent =
+      chrome.i18n.getMessage('welcomeBasicsLine1');
 
   this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.LIST_KEYS,
