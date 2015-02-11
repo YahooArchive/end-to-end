@@ -43,8 +43,7 @@ dgil@yahoo-inc.com.
 
 See [docs](docs) for current documentation. In addition:
 * The keyserver Github repo is [here](https://git.corp.yahoo.com/dgil/keyshop-minimal).
-* There are some out-of-date [keyserver API
-  docs](https://git.corp.yahoo.com/dgil/e2e-ks-stub).
+* There are some slightly out-of-date mail frontend integration docs at [yo/maile2e](http://yo/maile2e).
 
 ## Acknowledgements
 
