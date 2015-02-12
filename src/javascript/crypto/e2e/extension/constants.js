@@ -213,7 +213,7 @@ e2e.ext.constants.StorageKey = {
  * The number of millis to keep Chrome notifications visible.
  * @const
  */
-e2e.ext.constants.NOTIFICATIONS_DELAY = 10 * 1000;
+e2e.ext.constants.NOTIFICATIONS_DELAY = 3 * 1000;
 
 
 /**

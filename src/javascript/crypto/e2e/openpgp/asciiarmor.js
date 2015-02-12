@@ -196,6 +196,18 @@ e2e.openpgp.asciiArmor.isClearSign = function(text) {
 
 
 /**
+ * Checks if the message is a PGP encrypted message format
+ * @param {string} text
+ * @return {!boolean}
+ */
+e2e.openpgp.asciiArmor.isEncrypted = function(text) {
+  var startMessage = text.indexOf('-----BEGIN PGP MESSAGE-----');
+  var endMessage = text.indexOf('-----END PGP MESSAGE-----');
+  return Boolean(startMessage !== -1 && endMessage > startMessage);
+};
+
+
+/**
  * Dash-Escapes Text as described in RFC4880 7.1.
  * @param {string} plaintext The plaintext that has already been through
  *     e2e.openpgp.asciiArmor.convertNewlines().

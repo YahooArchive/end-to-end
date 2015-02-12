@@ -55,26 +55,14 @@ actions.DecryptVerify.prototype.execute =
         e2e.byteArrayToStringAsync(
             result.decrypt.data, result.decrypt.options.charset).
             addCallback(/** @param {string} decrypted */ function(decrypted) {
-              var successMsgs = [
-                chrome.i18n.getMessage('promptDecryptionSuccessMsg')
-              ];
-
               if (goog.isDef(result.verify)) {
-                if (result.verify.failure.length > 0) {
+                if (result.verify.failure.length > 0 ||
+                    result.verify.success.length === 0) {
                   errorCallback(new Error(chrome.i18n.getMessage(
-                      'promptVerificationFailureMsg',
-                      utils.action.extractUserIds(result.verify.failure))));
-                }
-
-                if (result.verify.success.length > 0) {
-                  successMsgs.push(chrome.i18n.getMessage(
-                      'promptVerificationSuccessMsg',
-                      utils.action.extractUserIds(result.verify.success)));
+                      'promptVerificationFailureMsg') +
+                      utils.action.extractUserIds(result.verify.failure)));
                 }
               }
-
-              utils.showNotification(
-                  successMsgs.join('\n\n'), goog.nullFunction);
               callback(decrypted);
             });
       }).

@@ -33,7 +33,7 @@ body > div {
 }
 
 legend img {
-  display: none;
+  display: inline;
   height: 25px;
   padding-left: 5px;
 }
