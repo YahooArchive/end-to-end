@@ -157,7 +157,7 @@ e2ebind.messageHandler_ = function(response) {
 
 /**
  * Starts initializing the compose glass if either the lock icon was clicked
- * or if at least one recipient has a PGP key.
+ * or if at least one recipient has a PGP key or the message is a PGP message.
  * @param {Element} elt Element for the lock icon or null if one was not clicked
  * @private
  */
@@ -408,7 +408,8 @@ e2ebind.handleProviderRequest_ = function(request) {
       break;
 
     case actions.INSTALL_COMPOSE_GLASS:
-      // TODO: Support compose glass in YMail
+      // TODO: YMail should send the draft element instead of null!
+      e2ebind.initComposeGlass_(args.elem);
       break;
 
     case actions.SET_SIGNER:
