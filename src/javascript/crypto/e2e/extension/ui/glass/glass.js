@@ -144,8 +144,9 @@ ui.Glass.prototype.renderContents_ = function(response) {
   var decrypted = true; // was the message encrypted and then decrypted?
   var verified = true; // was the message signed and then verified?
 
-  if (!response.content) {
-    // If the response has no content, always show an undecryptable error.
+  if (!response.content && !response.error) {
+    // If the response has no content, show an undecryptable error if
+    // the error message is missing for some reason.
     response.error = chrome.i18n.getMessage('glassCannotDecrypt');
   }
 
@@ -159,7 +160,7 @@ ui.Glass.prototype.renderContents_ = function(response) {
     verified = false;
   }
 
-  // If the pgp message wasn's encrypted, don't show the decrypted icon.
+  // If the pgp message wasn't encrypted in the first place, it wasn't decrypted
   if (!e2e.openpgp.asciiArmor.isEncrypted(this.pgpMessage_)) {
     decrypted = false;
     // If it wasn't encrypted or clear signed, it can't have been verified
@@ -167,6 +168,7 @@ ui.Glass.prototype.renderContents_ = function(response) {
       verified = false;
     }
   }
+  var styles;
 
   if (!this.rendered_) {
     soy.renderElement(elem, templates.contentFrame, {
@@ -174,23 +176,31 @@ ui.Glass.prototype.renderContents_ = function(response) {
       content: response.content || this.pgpMessage_,
       error: response.error
     });
-    var styles = elem.querySelector('link');
+    styles = elem.querySelector('link');
     styles.href = chrome.runtime.getURL('glass_styles.css');
 
-    // Wait for styles to be applied, then resize the glass element.
-    window.setTimeout(goog.bind(function() {
-      utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
-        action: constants.Actions.SET_GLASS_SIZE,
-        content: {
-          height: window.document.querySelector('fieldset').offsetHeight +
-              Math.floor(Math.random() * 18)
-        }
-      }));
-    }, this), 30);
-
+    this.resizeGlass_();
     this.rendered_ = true;
   } else if (response.content) {
-    goog.dom.getElement('content').textContent = response.content;
+    var previousError = goog.dom.getElement(
+        constants.ElementId.ERROR_DIV).textContent || undefined;
+    if (previousError === chrome.i18n.getMessage('glassCannotDecrypt')) {
+      // Since the response content is now the decrypted message, we can
+      // get rid of the undecryptable error message. This happens because
+      // the decryptVerify API *might* send two messages if a verification
+      // error is encountered (one with the error, and one with the decrypted
+      // content).
+      previousError = undefined;
+    }
+    soy.renderElement(elem, templates.contentFrame, {
+      label: chrome.i18n.getMessage('extName'),
+      content: response.content,
+      error: previousError
+    });
+    styles = elem.querySelector('link');
+    styles.href = chrome.runtime.getURL('glass_styles.css');
+
+    this.resizeGlass_();
   } else if (response.error) {
     goog.dom.getElement(constants.ElementId.ERROR_DIV).textContent =
         response.error;
@@ -202,6 +212,23 @@ ui.Glass.prototype.renderContents_ = function(response) {
   if (!verified) {
     goog.dom.getElement(constants.ElementId.CHECK_ICON).style.display = 'none';
   }
+};
+
+
+/**
+ * Waits for stylesheet to be applied, then resizes the glass.
+ * @private
+ */
+ui.Glass.prototype.resizeGlass_ = function() {
+  window.setTimeout(goog.bind(function() {
+    utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
+      action: constants.Actions.SET_GLASS_SIZE,
+      content: {
+        height: window.document.querySelector('fieldset').offsetHeight +
+            Math.floor(Math.random() * 18)
+      }
+    }));
+  }, this), 50);
 };
 
 

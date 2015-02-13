@@ -154,3 +154,9 @@ function testIsYmailOrigin() {
     assertFalse(utils.isYmailOrigin(uri));
   });
 }
+
+
+function testNormalizeWhitespace() {
+  var text = ['this ', '  is ', 'some text ', ''].join('\n');
+  assertEquals('this\nis\nsome text\n', utils.normalizeWhitespace(text));
+}

@@ -138,7 +138,7 @@ function testSendKeysFailure() {
   window.setTimeout(function() {
     var errorDiv = panel.getElement().getElementsByClassName(
         constants.CssClass.ERROR)[0];
-    assertContains('login', errorDiv.textContent);
+    assertEquals('keyserverSendError', errorDiv.textContent);
     mockControl.$verifyAll();
     testCase.continueTesting();
   }, 100);

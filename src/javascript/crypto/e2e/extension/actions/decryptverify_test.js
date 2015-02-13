@@ -127,6 +127,7 @@ function testExecute() {
   var plaintext = 'some secret message.';
 
   var errorCallback = mockControl.createFunctionMock('errorCallback');
+  var fail = errorCallback;
   var callback = mockControl.createFunctionMock('callback');
   callback(plaintext);
 
@@ -139,7 +140,7 @@ function testExecute() {
       mockControl.createFunctionMock('showNotification'));
   e2e.ext.utils.showNotification(
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-        assertContains('promptDecryptionSuccessMsg', arg);
+        assertContains('promptVerificationSuccessMsg', arg);
         assertContains(USER_ID, arg);
         return true;
       }), goog.nullFunction);

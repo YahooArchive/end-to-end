@@ -428,7 +428,7 @@ ui.ComposeGlass.prototype.close = function() {
 ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
   var textArea = elem.querySelector('textarea');
   var signMessage = this.shouldSignMessage_();
-  var content = textArea.value;
+  var content = utils.text.normalizeWhitespace(textArea.value);
   this.clearFailure_();
   switch (action) {
     // For now this is the only supported action. Encrypt/sign and insert.

@@ -203,4 +203,17 @@ utils.isGmailOrigin = function(uri) {
   return (googUri.getScheme() === 'https' &&
           googUri.getDomain() === 'mail.google.com');
 };
+
+
+/**
+ * Normalizes whitespace formatting in user input text.
+ * @param {string} text
+ * @return {string}
+ */
+utils.normalizeWhitespace = function(text) {
+  var lines = text.split('\n');
+  return goog.array.map(lines, function(line) {
+    return line.trim();
+  }).join('\n');
+};
 });  // goog.scope
