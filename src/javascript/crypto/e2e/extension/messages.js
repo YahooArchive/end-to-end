@@ -181,7 +181,7 @@ messages.e2ebindDraft;
  * @typedef {{
  *   proxy: (boolean|undefined),
  *   action: e2e.ext.constants.Actions,
- *   content: (Object|string|undefined)
+ *   content: (Object|string|Array.<string>|undefined)
  * }}
  */
 messages.proxyMessage;

@@ -68,7 +68,7 @@ panels.GenerateKey = function(callback, opt_hideTitle, opt_actionBtnTitle) {
    * @private
    */
   this.keyserverClient_ =
-      new e2e.ext.keyserver.Client('https://us-mg999.mail.yahoo.com');
+      new e2e.ext.keyserver.Client(constants.Keyserver.DEFAULT_LOCATION);
 
   /**
    * The title for the generate key section. If empty, it will not be displayed.

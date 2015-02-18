@@ -27,6 +27,7 @@ goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.constants.e2ebind.responseActions');
+goog.require('e2e.ext.keyserver');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
@@ -37,6 +38,7 @@ goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
+goog.require('goog.object');
 goog.require('goog.string');
 
 
@@ -246,6 +248,9 @@ e2ebind.start = function() {
 
   e2ebind.messagingTable = new e2ebind.MessagingTable_();
 
+  e2ebind.keyserverClient_ = new e2e.ext.keyserver.Client(
+      window.location.origin);
+
   goog.events.listen(window, goog.events.EventType.CLICK,
                      e2ebind.clickHandler_, true);
   window.addEventListener('message', goog.bind(e2ebind.messageHandler_, this));
@@ -266,6 +271,7 @@ e2ebind.stop = function() {
                                                   this));
   e2ebind.messagingTable = undefined;
   e2ebind.started_ = false;
+  e2ebind.keyserverClient_ = undefined;
   window.config = {};
   window.valid = undefined;
   goog.events.unlisten(window, goog.events.EventType.CLICK,
@@ -455,7 +461,11 @@ e2ebind.handleProviderRequest_ = function(request) {
               !window.valid) {
             return;
           }
-          e2ebind.validateRecipients_(args.recipients, function(results) {
+          e2ebind.validateRecipients_(args.recipients, function(response) {
+            var results = [];
+            goog.object.forEach(response, function(valid, recipient) {
+              results.push({recipient: recipient, valid: valid});
+            });
             e2ebind.sendResponse_({results: results}, request, true);
           });
         } catch (ex) {
@@ -647,35 +657,51 @@ e2ebind.validateSigner_ = function(signer, callback) {
 
 
 /**
-* Validates whether we have a public key for these recipients.
+* Validates whether we have a public key for these recipients or if one
+* is available on the keyserver.
 * @param {Array.<string>} recipients The recipients we are checking
-* @param {!function(!Array)} callback Callback to call with the result.
+* @param {!function(!Object.<string, boolean>)} callback Callback to call with
+*   the result.
 * @private
 */
 e2ebind.validateRecipients_ = function(recipients, callback) {
+  // Check if the recipient is already in the keyring
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.LIST_ALL_UIDS,
     content: 'public'
   }), function(response) {
     response.content = response.content || [];
+    var invalidRecipients = /** @type {!Array.<string>} */ ([]);
+    var validity = /** @type {!Object.<string, boolean>} */ ({});
+
+    // Convert UIDs to emails since the keyserver and ymail use emails
     var emails = utils.text.getValidEmailAddressesFromArray(response.content,
                                                             true);
-    // the anyValid check should really be in the Storm, but the
-    // tictac does not include the code that sends validation requests yet.
-    var anyValid = false;
-    var results = [];
     goog.array.forEach(recipients, function(recipient) {
       var valid = goog.array.contains(emails, recipient);
-      if (valid) {
-        anyValid = true;
+      if (!valid) {
+        invalidRecipients.push(recipient);
       }
-      results.push({valid: valid, recipient: recipient});
+      validity[recipient] = valid;
     });
-    // Encrypt the message automatically if any recipient has a key
-    if (anyValid) {
-      e2ebind.initComposeGlass_(null);
+
+    if (invalidRecipients.length === 0 || !e2ebind.keyserverClient_) {
+      // If all recipients are already in the keyring, do the callback
+      callback(validity);
+    } else {
+      // Otherwise try to fetch the missing recipients from the keyserver
+      e2ebind.keyserverClient_.fetchAndImportKeys(invalidRecipients,
+                                                  function(results) {
+        if (results) {
+          goog.object.forEach(results, function(valid, recipient) {
+            goog.object.set(validity, recipient, valid);
+          });
+        }
+        callback(validity);
+      }, function() {
+        callback(validity);
+      });
     }
-    callback(results);
   });
 };
 
