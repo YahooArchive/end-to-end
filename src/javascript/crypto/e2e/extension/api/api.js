@@ -209,7 +209,8 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     outgoing.content = resp;
     callback(outgoing);
   }, function(error) {
-    outgoing.error = chrome.i18n.getMessage(error.messageId);
+    outgoing.error = error.messageId ? chrome.i18n.getMessage(error.messageId) :
+        error.message;
     callback(outgoing);
   });
 };

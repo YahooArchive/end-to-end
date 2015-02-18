@@ -25,7 +25,7 @@
     "description": "Message informing about a successful signature verification."
   },
   "promptVerificationFailureMsg": {
-    "message": "BAD signature(s) from $1",
+    "message": "BAD signature(s) from ",
     "description": "Message informing about failure in signature verification."
   },
   "promptEncryptSignTitle": {
@@ -129,7 +129,7 @@
     "description": "An error message indicating that the user must unlock their KeyRing."
   },
   "glassCannotDecrypt": {
-    "message": "Unable to decrypt contents.",
+    "message": "Unable to decrypt or verify contents. Is the keyring unlocked?",
     "description": "A generic error message indicating that something went wrong while reading messages inline."
   },
   "actionUserSpecified": {

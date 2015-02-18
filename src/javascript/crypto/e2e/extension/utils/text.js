@@ -83,7 +83,7 @@ utils.getPgpAction = function(content, opt_enableSniffing, opt_default) {
     return constants.Actions.USER_SPECIFIED;
   }
 
-  if (/^-----BEGIN PGP MESSAGE-----/.test(content)) {
+  if (/^-----BEGIN PGP (SIGNED )?MESSAGE-----/.test(content)) {
     return constants.Actions.DECRYPT_VERIFY;
   }
 
@@ -202,5 +202,18 @@ utils.isGmailOrigin = function(uri) {
   var googUri = new goog.Uri(uri);
   return (googUri.getScheme() === 'https' &&
           googUri.getDomain() === 'mail.google.com');
+};
+
+
+/**
+ * Normalizes whitespace formatting in user input text.
+ * @param {string} text
+ * @return {string}
+ */
+utils.normalizeWhitespace = function(text) {
+  var lines = text.split('\n');
+  return goog.array.map(lines, function(line) {
+    return line.trim();
+  }).join('\n');
 };
 });  // goog.scope

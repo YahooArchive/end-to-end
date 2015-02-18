@@ -121,7 +121,7 @@ goog.inherits(utils.Error, Error);
 utils.showNotification = function(msg, callback) {
   chrome.notifications.create(constants.ElementId.NOTIFICATION_SUCCESS, {
     type: 'basic',
-    iconUrl: '/images/icon-48.png',
+    iconUrl: '/images/yahoo/icon-48.png',
     title: chrome.i18n.getMessage('extName'),
     message: msg
   }, function() {

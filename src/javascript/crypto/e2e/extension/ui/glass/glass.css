@@ -14,7 +14,6 @@
 */
 
 body > fieldset {
-  border: 1px solid YCOLOR_PURPLE_14B;
   position: absolute;
   width: 95%;
 }
@@ -27,6 +26,14 @@ body > div {
   width: 100%;
 }
 
-legend {
-  color: YCOLOR_PURPLE_14B;
+#legend-text {
+  position: relative;
+  bottom: 5px;
+  font-weight: bold;
+}
+
+legend img {
+  display: inline;
+  height: 25px;
+  padding-left: 5px;
 }
