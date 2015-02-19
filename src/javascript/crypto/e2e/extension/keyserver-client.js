@@ -165,7 +165,6 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
     action: constants.Actions.GET_AUTH_TOKEN,
     content: this.pageLocation_
   }), goog.bind(function(response) {
-    console.log(response);
     var result = response.content;
     xhr.setRequestHeader('X-Keyshop-Token', result);
     xhr.send();

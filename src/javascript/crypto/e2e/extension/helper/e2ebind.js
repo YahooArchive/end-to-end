@@ -27,6 +27,7 @@ goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.constants.e2ebind.responseActions');
+goog.require('e2e.ext.keyserver');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
@@ -37,6 +38,7 @@ goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
+goog.require('goog.object');
 goog.require('goog.string');
 
 
@@ -226,7 +228,53 @@ e2ebind.initComposeGlass_ = function(elt) {
 e2ebind.clickHandler_ = function(e) {
   var elt = e.target;
   if (elt.id === constants.ElementId.E2EBIND_ICON) {
+    // The encryptr icon was clicked; initiate the compose glass
     e2ebind.initComposeGlass_(elt);
+  } else {
+    // Sometimes the focus event gets overriden by yahoo mail, so call it here
+    e2ebind.focusHandler_(e);
+  }
+};
+
+
+e2ebind.focusHandler_ = function(e) {
+  var elt = e.target;
+  if (goog.dom.getAncestorByTagNameAndClass(elt,
+                                            'div',
+                                            'compose-message')) {
+    // The user focused on the email body editor. If all the recipients have
+    // keys, initiate the compose glass
+    try {
+      e2ebind.getDraft(goog.bind(function(draft) {
+        draft.to = draft.to || [];
+        draft.cc  = draft.cc || [];
+        draft.bcc = draft.bcc || [];
+        var recipients = draft.to.concat(draft.cc).concat(draft.bcc);
+
+        utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+          action: constants.Actions.LIST_ALL_UIDS,
+          content: 'public'
+        }), function(response) {
+          response.content = response.content || [];
+          var invalidRecipients = /** @type {!Array.<string>} */ ([]);
+
+          var emails = utils.text.getValidEmailAddressesFromArray(
+              response.content, true);
+          goog.array.forEach(recipients, function(recipient) {
+            var valid = goog.array.contains(emails, recipient);
+            if (!valid) {
+              invalidRecipients.push(recipient);
+            }
+          });
+
+          if (invalidRecipients.length === 0) {
+            e2ebind.initComposeGlass_(null);
+          }
+        });
+      }, this));
+    } catch (ex) {
+      console.error(ex);
+    }
   }
 };
 
@@ -244,10 +292,23 @@ e2ebind.start = function() {
     return;
   }
 
+  // Initialize the message-passing hash table between e2e and the provider
   e2ebind.messagingTable = new e2ebind.MessagingTable_();
 
+  // Initialize the client for the keyserver
+  e2ebind.keyserverClient_ = new e2e.ext.keyserver.Client(
+      window.location.origin);
+
+  // Register the click handler
   goog.events.listen(window, goog.events.EventType.CLICK,
                      e2ebind.clickHandler_, true);
+
+  // Register handler for when the compose area is focused
+  goog.events.listen(window, goog.events.EventType.FOCUS,
+                     e2ebind.focusHandler_, true);
+
+
+  // Register the handler for messages from the provider
   window.addEventListener('message', goog.bind(e2ebind.messageHandler_, this));
 
   window.addEventListener('load', function() {
@@ -265,6 +326,7 @@ e2ebind.stop = function() {
   window.removeEventListener('message', goog.bind(e2ebind.messageHandler_,
                                                   this));
   e2ebind.messagingTable = undefined;
+  e2ebind.keyserverClient_ = undefined;
   e2ebind.started_ = false;
   window.config = {};
   window.valid = undefined;
@@ -455,7 +517,12 @@ e2ebind.handleProviderRequest_ = function(request) {
               !window.valid) {
             return;
           }
-          e2ebind.validateRecipients_(args.recipients, function(results) {
+          e2ebind.validateRecipients_(args.recipients, function(response) {
+            // response is a map of email to validity
+            var results = [];
+            goog.object.forEach(response, function(valid, recipient) {
+              results.push({recipient: recipient, valid: valid});
+            });
             e2ebind.sendResponse_({results: results}, request, true);
           });
         } catch (ex) {
@@ -647,35 +714,53 @@ e2ebind.validateSigner_ = function(signer, callback) {
 
 
 /**
-* Validates whether we have a public key for these recipients.
+* Validates whether we have a public key for these recipients or if one
+* is available on the keyserver.
 * @param {Array.<string>} recipients The recipients we are checking
-* @param {!function(!Array)} callback Callback to call with the result.
+* @param {!function(!Object.<string, boolean>)} callback Callback to call with
+*   the result.
 * @private
 */
 e2ebind.validateRecipients_ = function(recipients, callback) {
+  // Check if the recipient is already in the keyring
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.LIST_ALL_UIDS,
     content: 'public'
   }), function(response) {
     response.content = response.content || [];
+    var invalidRecipients = /** @type {!Array.<string>} */ ([]);
+    var validity = /** @type {!Object.<string, boolean>} */ ({});
+
+    // Convert UIDs to emails since the keyserver and ymail use emails
     var emails = utils.text.getValidEmailAddressesFromArray(response.content,
                                                             true);
-    // the anyValid check should really be in the Storm, but the
-    // tictac does not include the code that sends validation requests yet.
-    var anyValid = false;
-    var results = [];
     goog.array.forEach(recipients, function(recipient) {
       var valid = goog.array.contains(emails, recipient);
-      if (valid) {
-        anyValid = true;
+      if (!valid) {
+        invalidRecipients.push(recipient);
       }
-      results.push({valid: valid, recipient: recipient});
+      validity[recipient] = valid;
     });
-    // Encrypt the message automatically if any recipient has a key
-    if (anyValid) {
-      e2ebind.initComposeGlass_(null);
+
+    if (invalidRecipients.length === 0 || !e2ebind.keyserverClient_) {
+      // If all recipients are already in the keyring or the ks client is
+      // unavailable, do the callback
+      callback(validity);
+    } else {
+      // Otherwise try to fetch the missing recipients from the keyserver
+      e2ebind.keyserverClient_.fetchAndImportKeys(invalidRecipients,
+                                                  function(results) {
+        if (results) {
+          goog.object.forEach(results, function(valid, recipient) {
+            goog.object.set(validity, recipient, valid);
+          });
+        }
+        callback(validity);
+      }, function() {
+        callback(validity);
+        console.error('Error fetching keys in e2ebind');
+      });
     }
-    callback(results);
   });
 };
 
