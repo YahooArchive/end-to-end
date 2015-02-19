@@ -301,7 +301,7 @@
     "description": "The label to describe who is the author of the message."
   },
   "promptSubjectLabel": {
-    "message": "Subject:",
+    "message": "WARNING: Message subject is NOT encrypted!",
     "description": "The label to describe the subject of the message."
   },
   "promptNoPrivateKeysFound": {

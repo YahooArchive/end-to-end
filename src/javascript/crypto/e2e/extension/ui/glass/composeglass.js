@@ -282,7 +282,8 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         actionButtonTitle: chrome.i18n.getMessage(
             'promptEncryptSignActionLabel'),
         backButtonTitle: chrome.i18n.getMessage('actionBackToMenu'),
-        subject: subject
+        subject: subject,
+        subjectLabel: chrome.i18n.getMessage('promptSubjectLabel')
       });
 
       // Set the 'from' field with the correct uid
