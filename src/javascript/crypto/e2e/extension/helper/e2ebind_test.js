@@ -25,7 +25,9 @@ goog.require('e2e.ext.Helper');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.e2ebind');
+goog.require('e2e.ext.keyserver');
 goog.require('e2e.ext.testingstubs');
+goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
@@ -151,6 +153,55 @@ function testE2ebindIconClick() {
     assertTrue(clickHandled);
     asyncTestCase.continueTesting();
   }, 500);
+}
+
+
+function testAutoInstallGlass() {
+  var div1 = document.createElement('div');
+  div1.className = 'compose-message';
+  var div2 = document.createElement('textarea');
+  document.body.appendChild(div1);
+  div1.appendChild(div2);
+
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
+    var response = {};
+    response.completedAction = request.action;
+    if (request.action === constants.Actions.LIST_ALL_UIDS &&
+        request.content === 'public') {
+      response.content = ['yzhu@yahoo-inc.com'];
+    } else if (request.action === constants.Actions.GET_KEYRING_UNLOCKED) {
+      response.content = true;
+    }
+    cb(response);
+  });
+
+
+  stubs.replace(e2ebind, 'getDraft',
+                mockControl.createFunctionMock('getDraft'));
+  e2ebind.getDraft(new goog.testing.mockmatchers.ArgumentMatcher(
+      function(arg) {
+        arg({to: ['yzhu@yahoo-inc.com'], body: 'foobar', cc: [], bcc: []});
+        return true;
+      }
+  ));
+
+  stubs.replace(e2ebind, 'initComposeGlass_',
+                mockControl.createFunctionMock('initComposeGlass_'));
+  e2ebind.initComposeGlass_(new goog.testing.mockmatchers.ArgumentMatcher(
+      function(arg) {
+        assertEquals(null, arg);
+        return true;
+      }));
+
+  mockControl.$replayAll();
+  e2ebind.start();
+  div2.focus();
+
+  asyncTestCase.waitForAsync('Waiting for glass to be installed');
+  window.setTimeout(function() {
+    mockControl.$verifyAll();
+    asyncTestCase.continueTesting();
+  }, 200);
 }
 
 
@@ -330,6 +381,8 @@ function testProviderRequestToValidateSigner() {
 
 function testProviderRequestToValidateRecipients() {
   e2ebind.started_ = true;
+  e2ebind.keyserverClient_ =
+      new e2e.ext.keyserver.Client('https://foo.mail.yahoo.com');
   window.valid = true;
 
   stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
@@ -343,6 +396,14 @@ function testProviderRequestToValidateRecipients() {
     cb(response);
   });
   stubs.replace(e2ebind, 'sendResponse_', mockControl.createFunctionMock());
+  stubs.replace(e2ebind.keyserverClient_, 'fetchAndImportKeys',
+                function(emails, cb) {
+                  var result = {};
+                  goog.array.forEach(emails, function(email) {
+                    result[email] = (email === 'yan@yahoo.com');
+                  });
+                  cb(result);
+                });
 
   var successArg = new goog.testing.mockmatchers.ArgumentMatcher(
       function(arg) {
@@ -354,7 +415,8 @@ function testProviderRequestToValidateRecipients() {
         assertArrayEquals(arg.results,
                           [{valid: false, recipient: 'test@example.com'},
                            {valid: false, recipient: 't2@example.com'},
-                           {valid: true, recipient: 'cc@example.com'}]);
+                           {valid: true, recipient: 'cc@example.com'},
+                           {valid: true, recipient: 'yan@yahoo.com'}]);
         return true;
       });
   e2ebind.sendResponse_(resultsArg, goog.testing.mockmatchers.ignoreArgument,
@@ -363,7 +425,7 @@ function testProviderRequestToValidateRecipients() {
 
   e2ebind.handleProviderRequest_({
     action: actions.VALIDATE_RECIPIENTS,
-    args: {recipients: RECIPIENTS}
+    args: {recipients: RECIPIENTS.concat(['yan@yahoo.com'])}
   });
   mockControl.$verifyAll();
 }
