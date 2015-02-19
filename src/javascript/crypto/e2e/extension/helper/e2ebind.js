@@ -332,6 +332,8 @@ e2ebind.stop = function() {
   window.valid = undefined;
   goog.events.unlisten(window, goog.events.EventType.CLICK,
                        e2ebind.clickHandler_);
+  goog.events.unlisten(window, goog.events.EventType.FOCUS,
+                       e2ebind.focusHandler_);
   try {
     goog.style.setElementShown(window.document.getElementById('theAd'), true);
     goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
