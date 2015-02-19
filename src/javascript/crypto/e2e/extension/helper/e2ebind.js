@@ -168,9 +168,8 @@ e2ebind.initComposeGlass_ = function(elt) {
   var iconClicked = (elt !== null);
   elt = elt || document.activeElement;
 
-  var composeElem = goog.dom.getAncestorByTagNameAndClass(elt,
-                                                          'div',
-                                                          'compose');
+  var composeElem = goog.dom.getAncestorByTagNameAndClass(elt, 'div',
+      constants.CssClass.COMPOSE_CONTAINER);
   if (!composeElem || (!iconClicked && composeElem.hadAutoGlass)) {
     // Either there is no valid compose element to install the glass in,
     // or we already tried to auto-install the glass.
@@ -241,7 +240,7 @@ e2ebind.focusHandler_ = function(e) {
   var elt = e.target;
   if (goog.dom.getAncestorByTagNameAndClass(elt,
                                             'div',
-                                            'compose-message')) {
+                                            constants.CssClass.COMPOSE_BODY)) {
     // The user focused on the email body editor. If all the recipients have
     // keys, initiate the compose glass
     try {
@@ -691,6 +690,48 @@ e2ebind.setDraft = function(args) {
         }
       });
     }, this));
+
+    var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
+    if (!textElem) {
+      console.error('No text element found for e2ebind');
+      return;
+    }
+
+    // Add a link to toggle encrypted text visibility as a sibling element
+    var showEncryptedLink =
+        goog.dom.getElement(constants.ElementId.E2EBIND_SHOW_ENCRYPTED_LINK);
+    if (!showEncryptedLink) {
+      showEncryptedLink = document.createElement('a');
+      showEncryptedLink.href = '#';
+      showEncryptedLink.id = constants.ElementId.E2EBIND_SHOW_ENCRYPTED_LINK;
+      showEncryptedLink.style.color = '#878C91'; // FUJI grey 6
+      showEncryptedLink.style['line-height'] = '50px';
+      goog.dom.insertSiblingBefore(showEncryptedLink, textElem);
+    }
+
+
+    // Change the "show ..." link depending on whether encrypted or signed
+    var hideMessage = chrome.i18n.getMessage('e2ebindHideEncrypted');
+    var showMessage = chrome.i18n.getMessage('e2ebindShowEncrypted');
+    if (e2e.openpgp.asciiArmor.isClearSign(args.body)) {
+      hideMessage = chrome.i18n.getMessage('e2ebindHideSigned');
+      showMessage = chrome.i18n.getMessage('e2ebindShowSigned');
+    }
+
+    // Hide the encrypted blob by default
+    goog.style.setElementShown(textElem, false);
+    showEncryptedLink.textContent = showMessage;
+
+    // Toggle message display when the "show ..." link is clicked
+    showEncryptedLink.onclick = function() {
+      if (goog.style.isElementShown(textElem)) {
+        goog.style.setElementShown(textElem, false);
+        showEncryptedLink.textContent = showMessage;
+      } else {
+        goog.style.setElementShown(textElem, true);
+        showEncryptedLink.textContent = hideMessage;
+      }
+    };
   }
 };
 
