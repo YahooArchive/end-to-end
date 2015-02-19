@@ -33,6 +33,11 @@ var initComposeGlass = function(evt) {
   if (!data.draft || !data.mode || !data.hash) {
     return;
   }
+  if (data.draft.subject === 'Encrypted Message') {
+    // This is a placeholder subject from Encryptr. let's ignore it for now to
+    // make the unencrypted subject warning visible by default.
+    data.draft.subject = '';
+  }
   /** @type {!e2e.ext.ui.ComposeGlass} */
   window.composeGlass = new e2e.ext.ui.ComposeGlass(data.draft,
                                                     data.mode,
