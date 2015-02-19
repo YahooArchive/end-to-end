@@ -49,6 +49,7 @@
  * @param backButtonTitle The title for the back button.
  * @param actionButtonTitle The title of the prompt button.
  * @param subject The value of the subject field.
+ * @param subjectLabel The label for the subject field
  */
 {template .renderEncrypt}
   <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}">
@@ -64,7 +65,7 @@
   </div>
   <div id="{e2e.ext.constants.ElementId.CHIP_HOLDER}"></div>
   <div id="subjectHolder">
-    <input type="text" placeholder="Subject:" value="{$subject}" />
+    <input type="text" placeholder="{$subjectLabel}" value="{$subject}" />
   </div>
   <div>
     <textarea></textarea>
