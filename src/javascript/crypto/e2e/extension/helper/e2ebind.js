@@ -272,7 +272,9 @@ e2ebind.focusHandler_ = function(e) {
           }
         });
       }, this));
-    } catch (ex) {}
+    } catch (ex) {
+      console.error(ex);
+    }
   }
 };
 
@@ -516,6 +518,7 @@ e2ebind.handleProviderRequest_ = function(request) {
             return;
           }
           e2ebind.validateRecipients_(args.recipients, function(response) {
+            // response is a map of email to validity
             var results = [];
             goog.object.forEach(response, function(valid, recipient) {
               results.push({recipient: recipient, valid: valid});
@@ -740,7 +743,8 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
     });
 
     if (invalidRecipients.length === 0 || !e2ebind.keyserverClient_) {
-      // If all recipients are already in the keyring, do the callback
+      // If all recipients are already in the keyring or the ks client is
+      // unavailable, do the callback
       callback(validity);
     } else {
       // Otherwise try to fetch the missing recipients from the keyserver
@@ -754,6 +758,7 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
         callback(validity);
       }, function() {
         callback(validity);
+        console.error('Error fetching keys in e2ebind');
       });
     }
   });
