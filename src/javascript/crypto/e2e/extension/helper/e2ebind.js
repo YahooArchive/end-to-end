@@ -228,7 +228,51 @@ e2ebind.initComposeGlass_ = function(elt) {
 e2ebind.clickHandler_ = function(e) {
   var elt = e.target;
   if (elt.id === constants.ElementId.E2EBIND_ICON) {
+    // The encryptr icon was clicked; initiate the compose glass
     e2ebind.initComposeGlass_(elt);
+  } else {
+    // Sometimes the focus event gets overriden by yahoo mail, so call it here
+    e2ebind.focusHandler_(e);
+  }
+};
+
+
+e2ebind.focusHandler_ = function(e) {
+  var elt = e.target;
+  if (goog.dom.getAncestorByTagNameAndClass(elt,
+                                            'div',
+                                            'compose-message')) {
+    // The user focused on the email body editor. If all the recipients have
+    // keys, initiate the compose glass
+    try {
+      e2ebind.getDraft(goog.bind(function(draft) {
+        draft.to = draft.to || [];
+        draft.cc  = draft.cc || [];
+        draft.bcc = draft.bcc || [];
+        var recipients = draft.to.concat(draft.cc).concat(draft.bcc);
+
+        utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+          action: constants.Actions.LIST_ALL_UIDS,
+          content: 'public'
+        }), function(response) {
+          response.content = response.content || [];
+          var invalidRecipients = /** @type {!Array.<string>} */ ([]);
+
+          var emails = utils.text.getValidEmailAddressesFromArray(
+              response.content, true);
+          goog.array.forEach(recipients, function(recipient) {
+            var valid = goog.array.contains(emails, recipient);
+            if (!valid) {
+              invalidRecipients.push(recipient);
+            }
+          });
+
+          if (invalidRecipients.length === 0) {
+            e2ebind.initComposeGlass_(null);
+          }
+        });
+      }, this));
+    } catch (ex) {}
   }
 };
 
@@ -246,13 +290,23 @@ e2ebind.start = function() {
     return;
   }
 
+  // Initialize the message-passing hash table between e2e and the provider
   e2ebind.messagingTable = new e2ebind.MessagingTable_();
 
+  // Initialize the client for the keyserver
   e2ebind.keyserverClient_ = new e2e.ext.keyserver.Client(
       window.location.origin);
 
+  // Register the click handler
   goog.events.listen(window, goog.events.EventType.CLICK,
                      e2ebind.clickHandler_, true);
+
+  // Register handler for when the compose area is focused
+  goog.events.listen(window, goog.events.EventType.FOCUS,
+                     e2ebind.focusHandler_, true);
+
+
+  // Register the handler for messages from the provider
   window.addEventListener('message', goog.bind(e2ebind.messageHandler_, this));
 
   window.addEventListener('load', function() {
@@ -270,8 +324,8 @@ e2ebind.stop = function() {
   window.removeEventListener('message', goog.bind(e2ebind.messageHandler_,
                                                   this));
   e2ebind.messagingTable = undefined;
-  e2ebind.started_ = false;
   e2ebind.keyserverClient_ = undefined;
+  e2ebind.started_ = false;
   window.config = {};
   window.valid = undefined;
   goog.events.unlisten(window, goog.events.EventType.CLICK,

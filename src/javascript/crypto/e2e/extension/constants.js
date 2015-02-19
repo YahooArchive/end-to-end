@@ -53,7 +53,6 @@ e2e.ext.constants.Actions = {
   LIST_ALL_UIDS: 'list_all_uids',
   GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',
   LOCK_KEYRING: 'lock_keyring',
-  FETCH_IMPORT_KEYS: 'fetch_import_keys',
 
   // Keyserver related actions
   GET_AUTH_TOKEN: 'get_auth_token',
