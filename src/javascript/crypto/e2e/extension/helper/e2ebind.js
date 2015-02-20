@@ -704,6 +704,19 @@ e2ebind.setDraft = function(args) {
       return;
     }
 
+    // Change the "show ..." link depending on whether encrypted or signed
+    var hideMessage;
+    var showMessage;
+    if (e2e.openpgp.asciiArmor.isClearSign(args.body)) {
+      hideMessage = chrome.i18n.getMessage('e2ebindHideSigned');
+      showMessage = chrome.i18n.getMessage('e2ebindShowSigned');
+    } else if (e2e.openpgp.asciiArmor.isEncrypted(args.body)) {
+      hideMessage = chrome.i18n.getMessage('e2ebindHideEncrypted');
+      showMessage = chrome.i18n.getMessage('e2ebindShowEncrypted');
+    } else {
+      return;
+    }
+
     // Add a link to toggle encrypted text visibility as a sibling element
     var showEncryptedLink =
         goog.dom.getElement(constants.ElementId.E2EBIND_SHOW_ENCRYPTED_LINK);
@@ -714,15 +727,6 @@ e2ebind.setDraft = function(args) {
       showEncryptedLink.style.color = '#878C91'; // FUJI grey 6
       showEncryptedLink.style['line-height'] = '50px';
       goog.dom.insertSiblingBefore(showEncryptedLink, textElem);
-    }
-
-
-    // Change the "show ..." link depending on whether encrypted or signed
-    var hideMessage = chrome.i18n.getMessage('e2ebindHideEncrypted');
-    var showMessage = chrome.i18n.getMessage('e2ebindShowEncrypted');
-    if (e2e.openpgp.asciiArmor.isClearSign(args.body)) {
-      hideMessage = chrome.i18n.getMessage('e2ebindHideSigned');
-      showMessage = chrome.i18n.getMessage('e2ebindShowSigned');
     }
 
     // Hide the encrypted blob by default
