@@ -183,6 +183,12 @@ e2ebind.initComposeGlass_ = function(elt) {
       // Can't install compose glass if the keyring is locked
       window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
     } else {
+      // We have to unhide the PGP blob so that text shows up in compose glass
+      var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
+      if (textElem) {
+        goog.style.setElementShown(textElem, true);
+      }
+
       // Get the compose window associated with the clicked icon
       var draft = /** @type {messages.e2ebindDraft} */ ({});
       draft.from = window.config.signer ? '<' + window.config.signer + '>' :
@@ -333,6 +339,7 @@ e2ebind.stop = function() {
                        e2ebind.clickHandler_);
   goog.events.unlisten(window, goog.events.EventType.FOCUS,
                        e2ebind.focusHandler_);
+
   try {
     goog.style.setElementShown(window.document.getElementById('theAd'), true);
     goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
