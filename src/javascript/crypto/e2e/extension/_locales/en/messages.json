@@ -473,5 +473,17 @@
   },
   "keyserverSendError": {
     "message": "Oops, failed to send keys to the keyserver. Are you logged into Yahoo mail?"
+  },
+  "e2ebindShowEncrypted": {
+    "message": "> Show encrypted message"
+  },
+  "e2ebindHideEncrypted": {
+    "message": "< Hide encrypted message"
+  },
+  "e2ebindShowSigned": {
+    "message": "> Show signed message"
+  },
+  "e2ebindHideSigned": {
+    "message": "< Hide signed message"
   }
 }

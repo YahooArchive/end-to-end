@@ -129,6 +129,8 @@ e2e.ext.constants.ElementId = {
 
   // e2ebind page elements
   E2EBIND_ICON: 'endtoend',
+  E2EBIND_TEXT: 'rtetext',
+  E2EBIND_SHOW_ENCRYPTED_LINK: 'show-encrypted-link',
 
   // glass
   LOCK_ICON: 'lock-icon',
@@ -189,7 +191,11 @@ e2e.ext.constants.CssClass = {
   WELCOME_SUBSECTION_HEADER: 'welcome-subsection-header',
 
   /** Error messages **/
-  ERROR: 'error'
+  ERROR: 'error',
+
+  /** e2ebind page classes **/
+  COMPOSE_CONTAINER: 'compose',
+  COMPOSE_BODY: 'compose-message'
 };
 
 
