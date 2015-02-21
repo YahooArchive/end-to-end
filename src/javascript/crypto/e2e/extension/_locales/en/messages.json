@@ -204,6 +204,9 @@
     "message": "Restore from backup code",
     "description": "A sentence prompting the user to restore the keyring's ECC seed"
   },
+  "keyMgmtBackupKeyringWarning": {
+    "message": "Write down this code in a place where others can't find it."
+  },
   "keyMgmtRestoreKeyringEmailLabel": {
     "message": "Email",
     "description": "A word prompting the user for their email."
