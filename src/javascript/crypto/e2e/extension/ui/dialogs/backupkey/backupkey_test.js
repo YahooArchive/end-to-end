@@ -48,7 +48,7 @@ function setUp() {
           return {
             getKeyringBackupData: function() {
               return e2e.async.Result.toResult({
-                seed: [1, 2, 3, 4, 5],
+                seed: [1, 2, 3, 4, 5, 6],
                 count: 2,
                 timestamp: new Date(0)
               });
@@ -87,7 +87,16 @@ function testGetKeyCode() {
   asyncTestCase.waitForAsync('Waiting for dialog to be populated with key');
   dialog.getBackupCode_().addCallback(function(code) {
     assertEquals(code, goog.crypt.base64.encodeByteArray(
-        [1, 1, 2, 3, 4, 5]));
+        [1, 1, 2, 3, 4, 5, 6]));
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testGetBackupPhrase() {
+  asyncTestCase.waitForAsync('Waiting for dialog to be populated with key');
+  dialog.getBackupPhrase_().addCallback(function(phrase) {
+    assertEquals('admit aliquot anatomize', phrase);
     asyncTestCase.continueTesting();
   });
 }
