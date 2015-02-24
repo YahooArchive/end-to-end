@@ -29,6 +29,7 @@ goog.require('e2e.ext.ui.templates.dialogs.backupkey');
 goog.require('e2e.ext.PhraseGenerator');
 goog.require('goog.array');
 goog.require('goog.crypt.base64');
+goog.require('goog.style');
 goog.require('soy');
 
 goog.scope(function() {
@@ -63,9 +64,10 @@ dialogs.BackupKey.prototype.decorateInternal = function(elem) {
   this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
     soy.renderElement(this.getContentElement(), templates.backupKey, {
       key: phrase,
-      caseSensitiveText: chrome.i18n.getMessage('keyMgmtBackupKeyringWarning')
+      warningText: chrome.i18n.getMessage('keyMgmtBackupKeyringWarning')
     });
   }, this));
+  goog.style.setElementShown(this.getElement().querySelector('button'), false);
 };
 
 

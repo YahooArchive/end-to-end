@@ -240,7 +240,16 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           goog.partial(
               this.showKeyringMgmtForm_,
               constants.ElementId.KEYRING_OPTIONS_DIV));
-
+      // Hide overlays when user clicks outside them
+      window.document.addEventListener('click', goog.bind(function(e) {
+        if (e.target.nodeName === 'BUTTON') {
+          return;
+        }
+        var overlays = goog.dom.getElementsByClass('overlayDialog');
+        goog.array.forEach(overlays, function(elem) {
+          goog.style.setElementShown(elem, false);
+        });
+      }, this));
 };
 
 
