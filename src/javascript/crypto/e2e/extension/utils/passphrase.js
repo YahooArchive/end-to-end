@@ -26,7 +26,7 @@ goog.require('e2e.ext.utils.wordlist');
 goog.require('goog.string');
 
 
-e2e.ext.utils.passphrase.MAX_INDEX = 65535; // 256*256 - 1
+e2e.ext.utils.passphrase.MAX_INDEX = 65535; // 2^16 - 1
 
 e2e.ext.utils.passphrase.KEYPAIR_COUNT = 1; // # of keypairs per ECC seed
 
@@ -37,26 +37,27 @@ e2e.ext.utils.passphrase.KEYPAIR_COUNT = 1; // # of keypairs per ECC seed
  * @return {string}
  */
 e2e.ext.utils.passphrase.bytesToPhrase = function(bytes) {
-  var doubleBytes = [];
   var words = [];
 
   // Only handle even-length byte arrays for now
   if (bytes.length % 2 === 1) {
-    return '';
+    throw new e2e.error.InvalidArgumentsError('Invalid bytes');
   }
 
-  // Convert byte pair into a number between 0 and 256^2 inclusive
-  // Ex:  [1, 2, 3, 0] -> [258, 768]
+  // Convert byte pair into a number between 0 and 256^2 to index into the
+  // wordlist. Ex:  1, 2 -> 258
   goog.array.forEach(bytes, function(elem, index, arr) {
     var next = arr[index + 1];
     if (index % 2 === 0) {
-      doubleBytes.push(elem * 256 + next);
+      var wordIndex = elem * 256 + next;
+      var word = e2e.ext.wordlist[wordIndex];
+      if (!word) {
+        // Should never happen
+        throw new e2e.error.InvalidArgumentsError('Invalid bytes');
+      } else {
+        words.push(word);
+      }
     }
-  });
-
-  // Use each doublebyte as an index into the word list
-  goog.array.forEach(doubleBytes, function(elem) {
-    words.push(e2e.ext.wordlist[elem]);
   });
 
   return words.join(' ');
@@ -72,24 +73,19 @@ e2e.ext.utils.passphrase.phraseToBytes = function(phrase) {
   // The first byte is always the number of keypairs generated with the seed
   var bytes = [e2e.ext.utils.passphrase.KEYPAIR_COUNT];
 
-  var doubleBytes = [];
-  phrase = goog.string.normalizeSpaces(phrase.toLowerCase());
+  phrase = goog.string.normalizeSpaces(phrase.toLowerCase().trim());
   var words = phrase.split(' ');
 
-  // Convert each word to a doublebyte using its index in the wordlist
   goog.array.forEach(words, function(word) {
+    // Convert each word to a doublebyte using its index in the wordlist
     var index = goog.array.binarySearch(e2e.ext.wordlist, word);
     if (index < 0 || index > e2e.ext.utils.passphrase.MAX_INDEX) {
       throw new e2e.error.InvalidArgumentsError('Invalid phrase.');
     } else {
-      doubleBytes.push(index);
+      // Convert each doublebyte into a byte
+      bytes.push(window.Math.floor(index / 256));
+      bytes.push(index % 256);
     }
-  });
-
-  // Convert each byte pair into a byte
-  goog.array.forEach(doubleBytes, function(elem) {
-    bytes.push(window.Math.floor(elem / 256));
-    bytes.push(elem % 256);
   });
 
   return bytes;

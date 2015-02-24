@@ -22,8 +22,10 @@
 goog.provide('e2e.ext.actions.RestoreKeyringDataTest');
 
 goog.require('e2e.error.InvalidArgumentsError');
+goog.require('e2e.ext.actions.GetKeyringBackupData');
 goog.require('e2e.ext.actions.RestoreKeyringData');
 goog.require('e2e.ext.constants');
+goog.require('e2e.ext.utils.passphrase');
 goog.require('goog.crypt.base64');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
@@ -34,12 +36,11 @@ goog.setTestOnly();
 
 var stubs = new goog.testing.PropertyReplacer();
 var constants = e2e.ext.constants;
+var utils = e2e.ext.utils;
 var ui = null;
 
 function setUp() {
-  mockControl = new goog.testing.MockControl();
-
-  stubs.setPath('e2e.openpgp.KeyRing.ECC_SEED_SIZE', 5);
+  stubs.setPath('e2e.openpgp.KeyRing.ECC_SEED_SIZE', 6);
 
   ui = new goog.ui.Component();
   ui.render(document.body);
@@ -48,7 +49,6 @@ function setUp() {
 
 function tearDown() {
   stubs.reset();
-  mockControl.$tearDown();
 
   ui = null;
 }
@@ -57,33 +57,19 @@ function tearDown() {
 function testRestoreData() {
   var ctx = {
     restoreKeyring: function(d) {
-      assertArrayEquals(d.seed, [1, 2, 3, 4, 5]);
-      assertEquals(d.count, 6);
+      assertArrayEquals(d.seed, [0, 0, 98, 157, 255, 255]);
+      assertEquals(d.count, 2);
     }
   };
 
   new e2e.ext.actions.RestoreKeyringData().execute(ctx, {
     action: constants.Actions.RESTORE_KEYRING_DATA,
     content: {
-      data: goog.crypt.base64.encodeByteArray([3, 1, 2, 3, 4, 5]),
+      data: 'a hello zoomed',
       email: 'Ryan Chan <rcc@google.com>'
     }
-  }, ui, goog.partial(assertEquals, 'Ryan Chan <rcc@google.com>'));
-}
-
-
-function testInvalidVersion() {
-  new e2e.ext.actions.RestoreKeyringData().execute({}, {
-    action: constants.Actions.RESTORE_KEYRING_DATA,
-    content: {
-      data: goog.crypt.base64.encodeByteArray([0x80 | 3, 1, 2, 3, 4, 5]),
-      email: 'Ryan Chan <rcc@google.com>'
-    }
-  }, ui, function() {
-    assert('Invalid version bit not detected', false);
-  }, function(err) {
-    assertTrue(err instanceof e2e.error.InvalidArgumentsError);
-    assertEquals(err.message, 'Invalid version bit');
+  }, ui, goog.partial(assertEquals, 'Ryan Chan <rcc@google.com>'), function(e) {
+    console.error(e);
   });
 }
 
@@ -92,7 +78,7 @@ function testInvalidRestoreSize() {
   new e2e.ext.actions.RestoreKeyringData().execute({}, {
     action: constants.Actions.RESTORE_KEYRING_DATA,
     content: {
-      data: goog.crypt.base64.encodeByteArray([3, 1, 2, 3, 4, 5, 6]),
+      data: utils.passphrase.bytesToPhrase([1, 2, 3, 4, 5, 6, 7, 8]),
       email: 'Ryan Chan <rcc@google.com>'
     }
   }, ui, function() {
@@ -100,5 +86,33 @@ function testInvalidRestoreSize() {
   }, function(err) {
     assertTrue(err instanceof e2e.error.InvalidArgumentsError);
     assertEquals(err.message, 'Backup data has invalid length');
+  });
+}
+
+
+function testBackupThenRestore() {
+  var ctx = {
+    restoreKeyring: function(d) {
+      assertArrayEquals(d.seed, [1, 2, 3, 4, 5, 6]);
+      assertEquals(d.count, 2);
+    }
+  };
+
+  stubs.replace(e2e.ext.actions.GetKeyringBackupData.prototype, 'execute',
+                function(ctx, request, requestor, cb) {
+    cb({seed: [1, 2, 3, 4, 5, 6]});
+  });
+
+  new e2e.ext.actions.GetKeyringBackupData().execute(ctx, {
+    action: constants.Actions.GET_KEYRING_BACKUP_DATA
+  }, ui, function(data) {
+    var phrase = utils.passphrase.bytesToPhrase(data.seed);
+    new e2e.ext.actions.RestoreKeyringData().execute(ctx, {
+      action: constants.Actions.RESTORE_KEYRING_DATA,
+      content: {
+        data: phrase,
+        email: 'yan@mit.edu'
+      }
+    }, ui, goog.partial(assertEquals, 'yan@mit.edu'));
   });
 }
