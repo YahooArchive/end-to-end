@@ -1,4 +1,4 @@
-goog.provide('e2e.ext.wordlist');
+goog.provide('e2e.ext.utils.wordlist');
 
 e2e.ext.wordlist = ['a',
 'aah',
