@@ -61,7 +61,6 @@ dialogs.RestoreKey.prototype.createDom = function() {
 /** @override */
 dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
-  this.setTitle(chrome.i18n.getMessage('keyMgmtRestoreKeyringLabel'));
   soy.renderElement(this.getContentElement(), templates.restoreKey, {
     emailLabel: chrome.i18n.getMessage('keyMgmtRestoreKeyringEmailLabel'),
     backupCodeLabel:
@@ -81,12 +80,10 @@ dialogs.RestoreKey.prototype.enterDocument = function() {
 /**
  * Parses the user input into a base64 encoded string.
  * @private
- * @return {string} The base 64 encoded backup code.
+ * @return {string} The backup code.
  */
 dialogs.RestoreKey.prototype.getInputValue_ = function() {
-  var inputs = goog.array.toArray(
-      goog.dom.getElementsByClass('keyring-restore-input'));
-  return inputs.reduce(function(a, e) { return a + e.value; }, '');
+  return this.getElementByClass(constants.CssClass.KEYRING_RESTORE_INPUT).value;
 };
 
 

@@ -82,26 +82,11 @@
       <input type="text" class="{e2e.ext.constants.CssClass.KEYRING_RESTORE_EMAIL}">
     </label>
   </div>
-
-  <div class="{e2e.ext.constants.CssClass.KEYRING_BACKUP_WINDOW}">
-    {call .grid}
-      {param opt_caption: $backupCodeLabel /}
-      {param content kind="html"}
-        {let $dimension: e2e.ext.constants.BackupCode /}
-        {let $length: $dimension.ROWS * $dimension.COLS /}
-        {let $celllength: ceiling(e2e.ext.constants.BACKUP_CODE_LENGTH / $length) /}
-        {for $i in range($length)}
-          {call .gridCell}
-            {param length: $length /}
-            {param i: $i /}
-            {param content kind="html"}
-              <input type="text" maxlength="{$celllength}"{sp}
-                  class="{e2e.ext.constants.CssClass.KEYRING_RESTORE_INPUT}">
-            {/param}
-          {/call}
-        {/for}
-      {/param}
-    {/call}
-    <span>&nbsp;</span>
+  <div>
+    <label>
+      <div>{$backupCodeLabel}</div>
+      <input type="text" class="{e2e.ext.constants.CssClass.KEYRING_RESTORE_INPUT}">
+    </label>
   </div>
+  <span>&nbsp;</span>
 {/template}

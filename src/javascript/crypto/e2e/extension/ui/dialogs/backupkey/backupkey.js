@@ -60,7 +60,6 @@ dialogs.BackupKey.prototype.createDom = function() {
 /** @override */
 dialogs.BackupKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
-  this.setTitle(chrome.i18n.getMessage('keyMgmtBackupKeyringLabel'));
   this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
     soy.renderElement(this.getContentElement(), templates.backupKey, {
       key: phrase,
