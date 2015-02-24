@@ -16,19 +16,19 @@
 
 
 /**
- * @fileoverview Converts bytes to a random phrase and vice versa.
+ * @fileoverview Utils for working with word-based passphrases.
  */
 
-goog.provide('e2e.ext.PhraseGenerator');
+goog.provide('e2e.ext.utils.passphrase');
 
 goog.require('e2e.error.InvalidArgumentsError');
-goog.require('e2e.ext.wordlist');
+goog.require('e2e.ext.utils.wordlist');
 goog.require('goog.string');
 
 
-e2e.ext.PhraseGenerator.MAX_INDEX = 65535; // 256*256 - 1
+e2e.ext.utils.passphrase.MAX_INDEX = 65535; // 256*256 - 1
 
-e2e.ext.PhraseGenerator.KEYPAIR_COUNT = 1; // # of keypairs per ECC seed
+e2e.ext.utils.passphrase.KEYPAIR_COUNT = 1; // # of keypairs per ECC seed
 
 /**
  * Converts a byte array to a phrase. Each word in the wordlist has ~2 bytes of
@@ -36,7 +36,7 @@ e2e.ext.PhraseGenerator.KEYPAIR_COUNT = 1; // # of keypairs per ECC seed
  * @param {!e2e.ByteArray} bytes The bytes to convert
  * @return {string}
  */
-e2e.ext.PhraseGenerator.bytesToPhrase = function(bytes) {
+e2e.ext.utils.passphrase.bytesToPhrase = function(bytes) {
   var doubleBytes = [];
   var words = [];
 
@@ -68,9 +68,9 @@ e2e.ext.PhraseGenerator.bytesToPhrase = function(bytes) {
  * @param {string} phrase
  * @return {!e2e.ByteArray}
  */
-e2e.ext.PhraseGenerator.phraseToBytes = function(phrase) {
+e2e.ext.utils.passphrase.phraseToBytes = function(phrase) {
   // The first byte is always the number of keypairs generated with the seed
-  var bytes = [e2e.ext.PhraseGenerator.KEYPAIR_COUNT];
+  var bytes = [e2e.ext.utils.passphrase.KEYPAIR_COUNT];
 
   var doubleBytes = [];
   phrase = goog.string.normalizeSpaces(phrase.toLowerCase());
@@ -79,7 +79,7 @@ e2e.ext.PhraseGenerator.phraseToBytes = function(phrase) {
   // Convert each word to a doublebyte using its index in the wordlist
   goog.array.forEach(words, function(word) {
     var index = goog.array.binarySearch(e2e.ext.wordlist, word);
-    if (index < 0 || index > e2e.ext.PhraseGenerator.MAX_INDEX) {
+    if (index < 0 || index > e2e.ext.utils.passphrase.MAX_INDEX) {
       throw new e2e.error.InvalidArgumentsError('Invalid phrase.');
     } else {
       doubleBytes.push(index);

@@ -26,7 +26,7 @@ goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.ui.dialogs.Overlay');
 goog.require('e2e.ext.ui.templates.dialogs.backupkey');
-goog.require('e2e.ext.PhraseGenerator');
+goog.require('e2e.ext.utils.passphrase');
 goog.require('goog.array');
 goog.require('goog.crypt.base64');
 goog.require('goog.style');
@@ -103,7 +103,7 @@ dialogs.BackupKey.prototype.getBackupPhrase_ = function() {
     action: constants.Actions.GET_KEYRING_BACKUP_DATA
   }), this, /** @param {e2e.openpgp.KeyringBackupInfo} data */ function(data) {
     // For now we only allow one keypair per ECC seed, so data.count is fixed
-    result.callback(e2e.ext.PhraseGenerator.bytesToPhrase(data.seed));
+    result.callback(e2e.ext.utils.passphrase.bytesToPhrase(data.seed));
   });
   return result;
 };
