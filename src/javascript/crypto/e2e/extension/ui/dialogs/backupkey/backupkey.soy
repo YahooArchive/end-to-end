@@ -59,12 +59,12 @@
 /**
  * Displays the serialized backup data to the user.
  * @param key The key to be displayed.
- * @param caseSensitiveText Reminder text that codes are case sensitive.
+ * @param warningText Reminder text that codes need to be kept safe.
  */
 {template .backupKey}
   <div class="{e2e.ext.constants.CssClass.KEYRING_BACKUP_WINDOW}">
+    <span>{$warningText}</span>
     <div>{$key}</div>
-    <span>{$caseSensitiveText}</span>
   </div>
 {/template}
 
@@ -79,14 +79,18 @@
   <div>
     <label>
       <div>{$emailLabel}</div>
+      <div>
       <input type="text" class="{e2e.ext.constants.CssClass.KEYRING_RESTORE_EMAIL}">
+      <div>
     </label>
   </div>
   <div>
     <label>
       <div>{$backupCodeLabel}</div>
+      <div>
       <input type="text" class="{e2e.ext.constants.CssClass.KEYRING_RESTORE_INPUT}">
+      </div>
     </label>
   </div>
-  <span>&nbsp;</span>
+  <span class="error">&nbsp;</span>
 {/template}

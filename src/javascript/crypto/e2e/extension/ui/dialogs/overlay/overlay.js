@@ -72,6 +72,10 @@ dialogs.Overlay.prototype.enterDocument = function() {
   this.getHandler().listen(
       this.getBackgroundElement(), goog.events.EventType.CLICK,
       goog.partial(this.setVisible, false));
+  this.getElement().addEventListener('click', function(e) {
+    console.log('overlay got clicked');
+    e.stopPropagation();
+  });
 };
 
 });  // goog.scope
