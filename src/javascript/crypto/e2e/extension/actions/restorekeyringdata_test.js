@@ -65,7 +65,7 @@ function testRestoreData() {
   new e2e.ext.actions.RestoreKeyringData().execute(ctx, {
     action: constants.Actions.RESTORE_KEYRING_DATA,
     content: {
-      data: 'a hello zoomed',
+      data: 'a hello zoomed 1',
       email: 'Ryan Chan <rcc@google.com>'
     }
   }, ui, goog.partial(assertEquals, 'Ryan Chan <rcc@google.com>'), function(e) {
@@ -74,11 +74,27 @@ function testRestoreData() {
 }
 
 
+function testInvalidVersion() {
+  new e2e.ext.actions.RestoreKeyringData().execute({}, {
+    action: constants.Actions.RESTORE_KEYRING_DATA,
+    content: {
+      data: 'a a a 128',
+      email: 'Ryan Chan <rcc@google.com>'
+    }
+  }, ui, function() {
+    assert('Invalid restore size not detected', false);
+  }, function(err) {
+    assertTrue(err instanceof e2e.error.InvalidArgumentsError);
+    assertEquals(err.message, 'Invalid version bit');
+  });
+}
+
+
 function testInvalidRestoreSize() {
   new e2e.ext.actions.RestoreKeyringData().execute({}, {
     action: constants.Actions.RESTORE_KEYRING_DATA,
     content: {
-      data: utils.passphrase.bytesToPhrase([1, 2, 3, 4, 5, 6, 7, 8]),
+      data: utils.passphrase.bytesToPhrase([1, 2, 3, 4, 5, 6, 7, 8]) + ' 1',
       email: 'Ryan Chan <rcc@google.com>'
     }
   }, ui, function() {
@@ -94,19 +110,19 @@ function testBackupThenRestore() {
   var ctx = {
     restoreKeyring: function(d) {
       assertArrayEquals(d.seed, [1, 2, 3, 4, 5, 6]);
-      assertEquals(d.count, 2);
+      assertEquals(d.count, 4);
     }
   };
 
   stubs.replace(e2e.ext.actions.GetKeyringBackupData.prototype, 'execute',
                 function(ctx, request, requestor, cb) {
-    cb({seed: [1, 2, 3, 4, 5, 6]});
+    cb({seed: [1, 2, 3, 4, 5, 6], count: 4});
   });
 
   new e2e.ext.actions.GetKeyringBackupData().execute(ctx, {
     action: constants.Actions.GET_KEYRING_BACKUP_DATA
   }, ui, function(data) {
-    var phrase = utils.passphrase.bytesToPhrase(data.seed);
+    var phrase = [utils.passphrase.bytesToPhrase(data.seed), data.count/2].join(' ');
     new e2e.ext.actions.RestoreKeyringData().execute(ctx, {
       action: constants.Actions.RESTORE_KEYRING_DATA,
       content: {

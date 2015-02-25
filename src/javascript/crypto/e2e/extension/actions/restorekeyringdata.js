@@ -45,7 +45,6 @@ actions.RestoreKeyringData.prototype.execute =
     function(ctx, request, requestor, callback, errorCallback) {
   var data = e2e.ext.utils.passphrase.phraseToBytes(request.content.data);
 
-  // This will never happen because phraseToBytes fixes the version bit at 1
   if (data[0] & 0x80) {
     errorCallback(new e2e.error.InvalidArgumentsError('Invalid version bit'));
     return;

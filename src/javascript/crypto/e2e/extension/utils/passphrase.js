@@ -28,8 +28,6 @@ goog.require('goog.string');
 
 e2e.ext.utils.passphrase.MAX_INDEX = 65535; // 2^16 - 1
 
-e2e.ext.utils.passphrase.KEYPAIR_COUNT = 1; // # of keypairs per ECC seed
-
 /**
  * Converts a byte array to a phrase. Each word in the wordlist has ~2 bytes of
  * entropy so the length of the phrase is roughly half the bytearray length.
@@ -70,11 +68,17 @@ e2e.ext.utils.passphrase.bytesToPhrase = function(bytes) {
  * @return {!e2e.ByteArray}
  */
 e2e.ext.utils.passphrase.phraseToBytes = function(phrase) {
-  // The first byte is always the number of keypairs generated with the seed
-  var bytes = [e2e.ext.utils.passphrase.KEYPAIR_COUNT];
-
   phrase = goog.string.normalizeSpaces(phrase.toLowerCase().trim());
   var words = phrase.split(' ');
+
+  // The last word should be the seed count
+  var count = window.parseInt(words.pop(), 10);
+  if (!count) {
+    throw new e2e.error.InvalidArgumentsError('Invalid phrase.');
+  }
+
+  // Set the seed count as the first byte of the result
+  var bytes = [count];
 
   goog.array.forEach(words, function(word) {
     // Convert each word to a doublebyte using its index in the wordlist
