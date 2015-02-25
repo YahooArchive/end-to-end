@@ -59,9 +59,9 @@ function testBytesToPhrase() {
 
 function testPhraseToBytes() {
   var phrase =
-      'a  biodegrading ballot goatskin crenate wriggliest depressor zoomED  \n';
+      'a  biodegrading ballot goatskin crenate wriggliest depressor zoomED 120 \n';
   var bytes =
-      [1, 0, 0, 17, 212, 12, 140, 90, 247, 46, 83, 254, 60, 54, 169, 255, 255];
+      [120, 0, 0, 17, 212, 12, 140, 90, 247, 46, 83, 254, 60, 54, 169, 255, 255];
   assertArrayEquals(bytes, utils.passphrase.phraseToBytes(phrase));
   var invalidPhrase = 'word dfafklfje jkadfjkje irrelevant';
   assertThrows('Invalid phrase should throw exception', goog.partial(

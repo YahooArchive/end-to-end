@@ -96,7 +96,7 @@ function testGetKeyCode() {
 function testGetBackupPhrase() {
   asyncTestCase.waitForAsync('Waiting for dialog to be populated with key');
   dialog.getBackupPhrase_().addCallback(function(phrase) {
-    assertEquals('admit aliquot anatomize', phrase);
+    assertEquals('admit aliquot anatomize 1', phrase);
     asyncTestCase.continueTesting();
   });
 }

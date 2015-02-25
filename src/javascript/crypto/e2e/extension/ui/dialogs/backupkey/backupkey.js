@@ -102,8 +102,9 @@ dialogs.BackupKey.prototype.getBackupPhrase_ = function() {
   new e2e.ext.actions.Executor().execute(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.GET_KEYRING_BACKUP_DATA
   }), this, /** @param {e2e.openpgp.KeyringBackupInfo} data */ function(data) {
-    // For now we only allow one keypair per ECC seed, so data.count is fixed
-    result.callback(e2e.ext.utils.passphrase.bytesToPhrase(data.seed));
+    // Passphrase is a string of N words followed by the count
+    result.callback([e2e.ext.utils.passphrase.bytesToPhrase(data.seed),
+                     data.count / 2 & 0x7F].join(' '));
   });
   return result;
 };
