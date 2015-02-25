@@ -64,12 +64,6 @@ panels.PreferencesPanel.prototype.decorateInternal = function(elem) {
 
   var prefs = [
     {
-      name: constants.StorageKey.ENABLE_WELCOME_SCREEN,
-      description: chrome.i18n.getMessage('preferenceWelcomeScreen'),
-      setterCallback: preferences.setWelcomePageEnabled,
-      isSet: preferences.isWelcomePageEnabled()
-    },
-    {
       name: constants.StorageKey.ENABLE_ACTION_SNIFFING,
       description: chrome.i18n.getMessage('preferenceActionSniffing'),
       setterCallback: preferences.setActionSniffingEnabled,

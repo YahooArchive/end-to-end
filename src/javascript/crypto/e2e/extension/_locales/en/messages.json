@@ -213,7 +213,7 @@
     "description": "A word prompting the user for their backup code."
   },
   "keyMgmtChangePassphraseLabel": {
-    "message": "Change the keyring's passphrase",
+    "message": "Set keyring passphrase",
     "description": "A sentence prompting the user to change the passphrase of the existing PGP keyring."
   },
   "keyMgmtAddPassphraseLabel": {
@@ -265,7 +265,7 @@
     "description": "A page title indicating to the user that the current page will allow her to modify the extension's settings."
   },
   "settingsKeyringLockedError": {
-    "message": "Please unlock the KeyRing or set an initial KeyRing passphrase before using the Options page.",
+    "message": "Please unlock the keyring or set an initial keyring passphrase before using the Options page.",
     "description": "An error message indicating that the user must unlock their KeyRing and/or choose an initial passphrase for the KeyRing before using the Options page."
   },
   "promptRecipientsPlaceholder": {
@@ -373,12 +373,15 @@
     "description": "The message to display when the user has created his/her End-to-End key."
   },
   "welcomeAdvancedTitle": {
-    "message": "I want to import a keyring",
+    "message": "Use my existing End-to-End keys",
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeKeyImport": {
     "message": "You are all set. Your End-to-End keyring has been imported and is ready for you to use.",
     "description": "The message to display when the user has imported his/her existing keyring."
+  },
+  "welcomeKeyRestore": {
+    "message": "You're all set. The keys for $1 have been restored."
   },
   "welcomeAcceptanceButton": {
     "message": "Done",
