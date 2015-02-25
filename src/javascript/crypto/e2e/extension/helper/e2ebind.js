@@ -191,7 +191,7 @@ e2ebind.initComposeGlass_ = function(elt) {
 
       // Get the compose window associated with the clicked icon
       var draft = /** @type {messages.e2ebindDraft} */ ({});
-      draft.from = window.config.signer ? '<' + window.config.signer + '>' :
+      draft.from = window.config.signer ? window.config.signer :
           '';
 
       e2ebind.hasDraft(goog.bind(function(hasDraftResult) {
