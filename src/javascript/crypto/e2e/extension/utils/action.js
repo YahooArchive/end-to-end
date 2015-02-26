@@ -142,7 +142,7 @@ utils.updateSelectedContent = function(content, recipients, origin,
 
 /**
  * Tries to guess the user's ymail address.
- * @param {!function(?string|undefined)} callback
+ * @param {!function((string|undefined|null))} callback
  */
 utils.getUserYmailAddress = function(callback) {
   var email;
@@ -150,7 +150,7 @@ utils.getUserYmailAddress = function(callback) {
     // If this is called in the context of a ymail page, get the email from
     // NeoConfig
     if (text.isYmailOrigin(window.location.href)  &&
-        window.NeoConfig &&
+        typeof window.NeoConfig === 'object' &&
         window.NeoConfig.emailAddress) {
       email = text.extractValidYahooEmail(window.NeoConfig.emailAddress);
       callback(email);
@@ -166,7 +166,7 @@ utils.getUserYmailAddress = function(callback) {
 
 /**
  * Tries to get an email address from the YBY cookie.
- * @param {!function(?string|undefined)} callback
+ * @param {!function((string|undefined|null))} callback
  * @private
  */
 utils.getAddressFromYBY_ = function(callback) {
@@ -176,12 +176,13 @@ utils.getAddressFromYBY_ = function(callback) {
       action: constants.Actions.GET_AUTH_TOKEN,
       content: constants.Keyserver.DEFAULT_LOCATION
     }), function(response) {
+      response = /** @type {!messages.ApiResponse} */ (response);
       var yby = response.content;
       var params;
       var param;
       var i;
 
-      if (yby) {
+      if (typeof yby === 'string') {
         // Extract userid out of the YBY cookie
         params = goog.string.urlDecode(yby).split('&');
         for (i = 0; i < params.length; i++) {

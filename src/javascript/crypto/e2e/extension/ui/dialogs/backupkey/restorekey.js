@@ -25,6 +25,7 @@ goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.dialogs.Overlay');
 goog.require('e2e.ext.ui.templates.dialogs.backupkey');
+goog.require('e2e.ext.utils.action');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.ui.Dialog');
@@ -35,6 +36,7 @@ var constants = e2e.ext.constants;
 var dialogs = e2e.ext.ui.dialogs;
 var messages = e2e.ext.messages;
 var templates = e2e.ext.ui.templates.dialogs.backupkey;
+var utils = e2e.ext.utils;
 
 
 
@@ -67,6 +69,14 @@ dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
     backupCodeLabel:
         chrome.i18n.getMessage('keyMgmtRestoreKeyringBackupCodeLabel')
   });
+
+  utils.action.getUserYmailAddress(goog.bind(function(email) {
+    var input =
+      this.getElementByClass(constants.CssClass.KEYRING_RESTORE_EMAIL);
+    if (input) {
+      input.value = email || '';
+    }
+  }, this));
 };
 
 

@@ -23,6 +23,7 @@ goog.provide('e2e.ext.ui.panels.GenerateKey');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.keyserver');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
+goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
 goog.require('goog.events.EventType');
@@ -106,6 +107,14 @@ panels.GenerateKey.prototype.decorateInternal = function(elem) {
     commentsLabel: chrome.i18n.getMessage('genKeyCommentsLabel'),
     actionButtonTitle: this.actionButtonTitle_
   });
+
+  // Prefill the input with the user's email if possible
+  utils.action.getUserYmailAddress(goog.bind(function(email) {
+    var input = this.getElementByClass(constants.CssClass.EMAIL);
+    if (input) {
+      input.value = email || '';
+    }
+  }, this));
 };
 
 
