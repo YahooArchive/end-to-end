@@ -218,8 +218,9 @@ e2e.ecc.Ecdsa.prototype.verifyJws = function(jws) {
 
   var expected_header = e2e.ecc.JwsHeader[this.curveName_];
   if (header !== expected_header) {
-    throw new e2e.error.InvalidArgumentsError('unknown JWS protected header' +
-        header);
+    throw new e2e.error.InvalidArgumentsError(
+        'unexpected JWS protected header for curve' +
+        this.curveName_ + ':' + header);
   }
 
   var bytelen = e2e.ecc.ByteLen[this.curveName_];

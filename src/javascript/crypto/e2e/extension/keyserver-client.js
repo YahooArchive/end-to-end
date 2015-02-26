@@ -376,7 +376,7 @@ ext.keyserver.Client.prototype.cacheKeyData = function(response) {
  */
 ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
   var ecdsa = new e2e.ecc.Ecdsa(
-      e2e.ecc.PrimeCurve.P_384,
+      e2e.ecc.PrimeCurve.P_256,
       {pubKey: e2e.ext.constants.Keyserver.KAUTH_PUB});
   var verified = ecdsa.verifyJws(response);
   return verified ?
