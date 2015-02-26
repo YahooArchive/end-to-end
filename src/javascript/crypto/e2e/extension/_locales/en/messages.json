@@ -477,6 +477,9 @@
   "keyserverSendError": {
     "message": "Oops, failed to send keys to the keyserver. Are you logged into Yahoo mail?"
   },
+  "keyserverResponseError": {
+    "message": "Invalid response from keyserver. Please try again later."
+  },
   "e2ebindShowEncrypted": {
     "message": "> Show encrypted message"
   },

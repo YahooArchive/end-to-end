@@ -85,6 +85,7 @@ function setUp() {
 
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendKey',
                 function(userid, key, cb, eb) {
+                  this.cacheKeyData('foo');
                   cb({userid: userid, key: key});
                 });
   stubs.replace(window, 'alert', goog.nullFunction);

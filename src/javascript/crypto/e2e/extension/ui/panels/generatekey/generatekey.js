@@ -171,20 +171,21 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
         try {
           this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
               function(response) {
-                this.keyserverClient_.cacheKeyData(response);
+                // Key was successfully registered, and response is valid
+                console.log('in key success callback');
                 callback(response);
                 window.alert('successfully registered key: ' +
                              response);
               }, this),
-              goog.bind(function() {
-                // The key wasn't sent to the server, so delete it for now.
+              goog.bind(function(err) {
+                console.log('in key failure callback');
+                // The key wasn't sent to the server or the server signature
+                // was invalid, so delete it for now.
                 // TODO: Separate key generation and import to keyring.
                 if (ctx !== null) {
                   ctx.deleteKey(key.uids[0]);
                 }
-                this.displayFailure_(
-                    new e2e.ext.keyserver.AuthError(
-                        chrome.i18n.getMessage('keyserverSendError')));
+                this.displayFailure_(err);
               }, this));
         } catch (e) {
           console.error('got key send failure in generate key', email);
