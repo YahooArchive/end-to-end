@@ -75,14 +75,14 @@ function testSendKeys() {
   stubs.replace(panel.keyserverClient_, 'sendKey',
                 function(userid, key, callback, eb) {
                   // Return a successful key export
-                  callback({userid: userid, key: key});
+                  panel.keyserverClient_.cacheKeyData('foo');
+                  callback('foo');
                 });
   stubs.replace(panel.keyserverClient_, 'cacheKeyData',
                 mockControl.createFunctionMock('cache'));
   panel.keyserverClient_.cacheKeyData(
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-        assertObjectEquals({userid: 'test@yahoo-inc.com',
-            key: 'irrelevant'}, arg);
+        assertObjectEquals('foo', arg);
         return true;
       })
   );
@@ -100,7 +100,8 @@ function testSendKeys() {
     }];
 
   testCase.waitForAsync();
-  panel.sendKeys(keys, function() {
+  panel.sendKeys(keys, function(arg) {
+    assertEquals('foo', arg);
     mockControl.$verifyAll();
     testCase.continueTesting();
   }, null);
@@ -113,7 +114,7 @@ function testSendKeysFailure() {
   stubs.replace(panel.keyserverClient_, 'sendKey', function(userid, key, cb,
                                                             eb) {
     // Return an unsuccessful key export
-    eb();
+    eb(new Error('foo'));
   });
 
   var ctx = {};
@@ -138,7 +139,7 @@ function testSendKeysFailure() {
   window.setTimeout(function() {
     var errorDiv = panel.getElement().getElementsByClassName(
         constants.CssClass.ERROR)[0];
-    assertEquals('keyserverSendError', errorDiv.textContent);
+    assertEquals('foo', errorDiv.textContent);
     mockControl.$verifyAll();
     testCase.continueTesting();
   }, 100);

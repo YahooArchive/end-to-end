@@ -200,11 +200,11 @@ ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback, errback) {
 
 
 /**
- * Submits a key to a keyserver.
+ * Submits a key to a keyserver and validates the response.
  * @param {string} userid the userid of the key
  * @param {!e2e.ByteArray} key OpenPGP key to send.
  * @param {function(string)} callback
- * @param {function()} errback
+ * @param {function(Error)} errback
  */
 ext.keyserver.Client.prototype.sendKey = function(userid, key, callback,
                                                   errback) {
@@ -216,7 +216,30 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key, callback,
   var deviceId = window.localStorage.getItem('deviceId');
 
   var path = [userid, deviceId].join('/');
-  this.sendPostRequest_(path, callback, errback, this.safeEncode_(key));
+  this.sendPostRequest_(
+      path,
+      goog.bind(function(response) {
+        var verified;
+        try {
+          verified = this.verifyResponse_(response);
+        } catch (e) {
+          errback(e);
+          return;
+        }
+        if (verified) {
+          console.log('verified your response');
+          callback(response);
+          this.cacheKeyData(response);
+        } else {
+          console.log('did not verify your response');
+          errback(new ext.keyserver.ResponseError(chrome.i18n.getMessage(
+              'keyserverResponseError')));
+        }
+      }, this),
+      goog.partial(errback, new ext.keyserver.AuthError(
+          chrome.i18n.getMessage('keyserverSendError'))),
+      this.safeEncode_(key)
+  );
 };
 
 
