@@ -139,7 +139,6 @@ ui.Glass.prototype.decorateInternal = function(elem) {
  * @private
  */
 ui.Glass.prototype.renderContents_ = function(response) {
-  console.log('got response', response);
   var elem = this.getElement();
   var decrypted = true; // was the message encrypted and then decrypted?
   var verified = true; // was the message signed and then verified?

@@ -23,9 +23,12 @@ goog.provide('e2e.ext.utils.actionTest');
 
 goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.testingstubs');
+goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
+goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.factory');
+goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
@@ -37,6 +40,9 @@ var launcher = null;
 var mockControl = null;
 var stubs = new goog.testing.PropertyReplacer();
 var utils = e2e.ext.utils.action;
+var text = e2e.ext.utils.text;
+var baseUtils = e2e.ext.utils;
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
 
 var PUBLIC_KEY_ASCII =
     '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
@@ -137,4 +143,34 @@ function testUpdateSelectedContent() {
       goog.nullFunction, subject);
   callbackArg.arg();
   mockControl.$verifyAll();
+}
+
+function testGetUserYmailAddressFromPage() {
+  var expected = 'yzhu@yahoo-inc.com';
+  window.NeoConfig = {
+    emailAddress: 'yzhu@yahoo-inc.com'
+  };
+
+  stubs.set(text, 'isYmailOrigin', function() {return true;});
+
+  asyncTestCase.waitForAsync('Waiting to get email address from page');
+  utils.getUserYmailAddress(function(result) {
+    assertEquals(expected, result);
+    asyncTestCase.continueTesting();
+  });
+}
+
+function testGetUserYmailAddressFromYBY() {
+  var expected = 'yzhu@yahoo-inc.com';
+  var yby = 'YBY=id%3D191667%26userid%3Dyzhu%26sign%3DcuOdZs0KD5RqOSLD3dkcU2VOe1iI5SRUPeLMLconUee7sQgZbhIlzf_QcKfgjBPotPbulptg7ttSpbdN9r.BcX4yN5bHarLv2kDhiiebqpzO4rdjaqAquhYX8agd_AfQWCnrmhgl4AbQus4THTj04TujJQ2QnMhhUZxQv.n5rco-%26time%3D1424902979%26expires%3D600%26ip%3D209.131.50.54%26roles%3D%7C1.IE%7C10097.M%7C10197.B%7C121.U%7C13.V%7C20.U%7C3.I%7C4.E%7C50.U%7C6951.I%7C6982.I%7C7181.I%7C7741.U%7C8031.B%7C8165.E%7C9026.T%7C9108.R%7C%5BProperty%7CViewers%5D%7Cdomain.yahoo.com%7Cip2.10.75.141.127%7C;';
+
+ stubs.set(baseUtils, 'sendExtensionRequest', function(request, cb) {
+   cb({content: yby});
+ });
+
+  asyncTestCase.waitForAsync('Waiting to get email address from YBY');
+  utils.getUserYmailAddress(function(result) {
+    assertEquals(expected, result);
+    asyncTestCase.continueTesting();
+  });
 }
