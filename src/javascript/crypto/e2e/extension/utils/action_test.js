@@ -23,9 +23,12 @@ goog.provide('e2e.ext.utils.actionTest');
 
 goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.testingstubs');
+goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
+goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.factory');
+goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
@@ -37,6 +40,9 @@ var launcher = null;
 var mockControl = null;
 var stubs = new goog.testing.PropertyReplacer();
 var utils = e2e.ext.utils.action;
+var text = e2e.ext.utils.text;
+var baseUtils = e2e.ext.utils;
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
 
 var PUBLIC_KEY_ASCII =
     '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
@@ -137,4 +143,34 @@ function testUpdateSelectedContent() {
       goog.nullFunction, subject);
   callbackArg.arg();
   mockControl.$verifyAll();
+}
+
+function testGetUserYmailAddressFromPage() {
+  var expected = 'yzhu@yahoo-inc.com';
+  window.NeoConfig = {
+    emailAddress: 'yzhu@yahoo-inc.com'
+  };
+
+  stubs.set(text, 'isYmailOrigin', function() {return true;});
+
+  asyncTestCase.waitForAsync('Waiting to get email address from page');
+  utils.getUserYmailAddress(function(result) {
+    assertEquals(expected, result);
+    asyncTestCase.continueTesting();
+  });
+}
+
+function testGetUserYmailAddressFromYBY() {
+  var expected = 'yzhu@yahoo-inc.com';
+  var yby = 'YBY=id%3Dfoo%26userid%3Dyzhu%26sign%3Dbar%7Cip0.0.0.0%7C;';
+
+ stubs.set(baseUtils, 'sendExtensionRequest', function(request, cb) {
+   cb({content: yby});
+ });
+
+  asyncTestCase.waitForAsync('Waiting to get email address from YBY');
+  utils.getUserYmailAddress(function(result) {
+    assertEquals(expected, result);
+    asyncTestCase.continueTesting();
+  });
 }
