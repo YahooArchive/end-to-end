@@ -58,6 +58,7 @@
   border: 1px solid YCOLOR_GREY_4;
   height: 100%;
   padding: 16px;
+  margin-bottom: 10px;
 }
 
 #welcome-menu iframe {

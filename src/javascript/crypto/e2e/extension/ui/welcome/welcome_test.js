@@ -155,20 +155,6 @@ function testRenderNonEmptyKeyring() {
 }
 
 
-function testClose() {
-  stubs.replace(window, 'close', mockControl.createFunctionMock('close'));
-  window.close();
-  mockControl.$replayAll();
-
-  page.decorate(document.documentElement);
-  page.closeAndDisableWelcomeScreen_();
-
-  assertFalse(
-      'Failed to disable welcome screen', preferences.isWelcomePageEnabled());
-  mockControl.$verifyAll();
-}
-
-
 function testGenerateKey() {
   stubs.replace(window, 'alert', mockControl.createFunctionMock('alert'));
   mockControl.$replayAll();

@@ -21,11 +21,18 @@
 
 goog.provide('e2e.ext.utils.action');
 
+goog.require('e2e.ext.constants');
+goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
+goog.require('goog.string');
 
 goog.scope(function() {
+var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
 var utils = e2e.ext.utils.action;
+var text = e2e.ext.utils.text;
+var baseUtils = e2e.ext.utils;
 
 
 /**
@@ -130,6 +137,69 @@ utils.updateSelectedContent = function(content, recipients, origin,
     launcher.updateSelectedContent(content, recipients, origin,
         expectMoreUpdates, goog.bind(callback, scope), opt_subject);
   }, errorCallback, opt_scope);
+};
+
+
+/**
+ * Tries to guess the user's ymail address.
+ * @param {!function((string|undefined|null))} callback
+ */
+utils.getUserYmailAddress = function(callback) {
+  var email;
+  try {
+    // If this is called in the context of a ymail page, get the email from
+    // NeoConfig
+    if (text.isYmailOrigin(window.location.href)  &&
+        typeof window.NeoConfig === 'object' &&
+        window.NeoConfig.emailAddress) {
+      email = text.extractValidYahooEmail(window.NeoConfig.emailAddress);
+      callback(email);
+    } else {
+      utils.getAddressFromYBY_(callback);
+    }
+  } catch (ex) {
+    console.warn('Error getting ymail address from page', ex);
+    utils.getAddressFromYBY_(callback);
+  }
+};
+
+
+/**
+ * Tries to get an email address from the YBY cookie.
+ * @param {!function((string|undefined|null))} callback
+ * @private
+ */
+utils.getAddressFromYBY_ = function(callback) {
+  var email;
+  try {
+    baseUtils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
+      action: constants.Actions.GET_AUTH_TOKEN,
+      content: constants.Keyserver.DEFAULT_LOCATION
+    }), function(response) {
+      response = /** @type {!messages.ApiResponse} */ (response);
+      var yby = response.content;
+      var params;
+      var param;
+      var i;
+
+      if (typeof yby === 'string') {
+        // Extract userid out of the YBY cookie
+        params = goog.string.urlDecode(yby).split('&');
+        for (i = 0; i < params.length; i++) {
+          param = params[i].split('=');
+          if (param[0] === 'userid') {
+            // TODO: This may be at a different yahoo domain!
+            email = [param[1], 'yahoo-inc.com'].join('@');
+            break;
+          }
+        }
+      }
+      callback(email);
+    });
+  } catch (e) {
+    console.warn('Error getting ymail address from YBY', e);
+    callback(email);
+  }
 };
 
 });  // goog.scope

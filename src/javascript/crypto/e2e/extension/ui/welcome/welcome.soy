@@ -21,8 +21,6 @@
  * @param basicsSection The basics section.
  * @param noviceSection The novice section.
  * @param advancedSection The advanced section.
- * @param preferenceLabel The label to apply to the welcome page preference checkbox.
- * @param actionButtonTitle The title of the submit button.
  */
 {template .welcome}
 <html>
@@ -54,13 +52,6 @@
           {param headerId: e2e.ext.constants.ElementId.WELCOME_MENU_BASICS /}
           {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_BASICS /}
         {/call}
-      </div>
-      <div class="{e2e.ext.constants.CssClass.PREFERENCE_DIV}">
-        <input type="checkbox" action="{e2e.ext.constants.StorageKey.ENABLE_WELCOME_SCREEN}" />
-        <div>{$preferenceLabel}</div>
-      </div>
-      <div id="{e2e.ext.constants.ElementId.WELCOME_FOOTER}">
-        <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
       </div>
       <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
     </div>

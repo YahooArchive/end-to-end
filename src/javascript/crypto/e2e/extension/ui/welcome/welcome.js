@@ -30,7 +30,6 @@ goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.GenerateKey');
 goog.require('e2e.ext.ui.panels.KeyringMgmtMini');
-goog.require('e2e.ext.ui.preferences');
 goog.require('e2e.ext.ui.templates.welcome');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
@@ -47,7 +46,6 @@ var ui = e2e.ext.ui;
 var constants = e2e.ext.constants;
 var dialogs = e2e.ext.ui.dialogs;
 var messages = e2e.ext.messages;
-var preferences = ui.preferences;
 var templates = ui.templates.welcome;
 var utils = e2e.ext.utils;
 
@@ -117,8 +115,6 @@ ui.Welcome.prototype.decorateInternal = function(elem) {
     basicsSection: basicsSection,
     noviceSection: noviceSection,
     advancedSection: advancedSection,
-    preferenceLabel: chrome.i18n.getMessage('preferenceWelcomeScreen'),
-    actionButtonTitle: chrome.i18n.getMessage('welcomeAcceptanceButton')
   });
 
   var styles = elem.querySelector('link');
@@ -143,34 +139,13 @@ ui.Welcome.prototype.decorateInternal = function(elem) {
       this.keyringMgmt_ = new ui.panels.KeyringMgmtMini(
           goog.nullFunction,
           goog.bind(this.importKeyring_, this),
-          goog.bind(this.updateKeyringPassphrase_, this));
+          goog.bind(this.updateKeyringPassphrase_, this),
+          goog.bind(this.afterRestoreKeyring_, this));
       this.addChild(this.keyringMgmt_, false);
       this.keyringMgmt_.render(
           goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
     }
   }, this), goog.nullFunction);
-};
-
-
-/** @override */
-ui.Welcome.prototype.enterDocument = function() {
-  goog.base(this, 'enterDocument');
-
-  var footer = goog.dom.getElement(constants.ElementId.WELCOME_FOOTER);
-  this.getHandler().listen(
-      goog.dom.getElementByClass(constants.CssClass.ACTION, footer),
-      goog.events.EventType.CLICK, this.closeAndDisableWelcomeScreen_);
-};
-
-
-/**
- * Closes and disables the welcome page.
- * @private
- */
-ui.Welcome.prototype.closeAndDisableWelcomeScreen_ = function() {
-  var checkbox = this.getElement().querySelector('input');
-  preferences.setWelcomePageEnabled(checkbox.checked);
-  window.close();
 };
 
 
@@ -194,9 +169,11 @@ ui.Welcome.prototype.generateKey_ =
   var defaults = constants.KEY_DEFAULTS;
   utils.action.getContext(
       /** @type {!function(!e2e.openpgp.ContextImpl)} */ (function(pgpCtx) {
+        /*
         if (pgpCtx.isKeyRingEncrypted()) {
           window.alert(chrome.i18n.getMessage('settingsKeyringLockedError'));
         }
+        */
 
         pgpCtx.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
             defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
@@ -313,6 +290,22 @@ ui.Welcome.prototype.hideKeyringSetup_ = function() {
   goog.array.forEach(elements, function(elem) {
     elem.parentElement.removeChild(elem);
   });
+};
+
+
+/**
+ * Called after a keyring is successfully restored from a backup code.
+ * @private
+ */
+ui.Welcome.prototype.afterRestoreKeyring_ = function(uid) {
+  // TODO: Show a more informative notification here
+  var dialog = new dialogs.Generic(
+      chrome.i18n.getMessage('welcomeKeyRestore', uid),
+      this.hideKeyringSetup_,
+      dialogs.InputType.NONE);
+  this.removeChild(this.keyringMgmt_, false);
+  this.addChild(dialog, false);
+  dialog.decorate(this.keyringMgmt_.getElement());
 };
 
 

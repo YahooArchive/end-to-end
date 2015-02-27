@@ -353,6 +353,7 @@ ext.Launcher.prototype.updatePassphraseWarning_ = function() {
 ext.Launcher.prototype.showWelcomeScreen_ = function() {
   if (preferences.isWelcomePageEnabled()) {
     window.open('welcome.html');
+    preferences.setWelcomePageEnabled(false);
   }
 };
 
