@@ -16,19 +16,6 @@ Then:
 
 ## Installation instructions
 
-### Install the keyserver self-signed certificate
-
-1. Save the [certificate](keyshop-ca.pem).
-2. Go to chrome://settings/ in Chrome >> "Show advanced settings"
-3. Click on "Manage certificates" under "HTTPS/SSL"
-3. Load the saved certificate. (On OS X Yosemite, go to File >> "Import Items")
-
-Or visit https://keyshop.paranoids.corp.yahoo.com:25519 and click through the
-warning to trust the cert temporarily. Note that you have to do this every
-time Chrome restarts, or else you won't be able to fetch or send PGP keys.
-
-### Load the extension
-
 Go to chrome://extensions, check the "developer mode" checkbox, click on "Load
 unpacked extension" and selected `file:///path/to/this/repo/build/extension`.
 
