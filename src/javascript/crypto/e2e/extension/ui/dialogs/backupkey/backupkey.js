@@ -26,8 +26,10 @@ goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.ui.dialogs.Overlay');
 goog.require('e2e.ext.ui.templates.dialogs.backupkey');
+goog.require('e2e.ext.utils.passphrase');
 goog.require('goog.array');
 goog.require('goog.crypt.base64');
+goog.require('goog.style');
 goog.require('soy');
 
 goog.scope(function() {
@@ -59,14 +61,13 @@ dialogs.BackupKey.prototype.createDom = function() {
 /** @override */
 dialogs.BackupKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
-  this.setTitle(chrome.i18n.getMessage('keyMgmtBackupKeyringLabel'));
-  this.getBackupCode_().addCallback(goog.bind(function(key) {
+  this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
     soy.renderElement(this.getContentElement(), templates.backupKey, {
-      key: key,
-      caseSensitiveText:
-          chrome.i18n.getMessage('keyMgmtBackupKeyringCaseSensitive')
+      key: phrase,
+      warningText: chrome.i18n.getMessage('keyMgmtBackupKeyringWarning')
     });
   }, this));
+  goog.style.setElementShown(this.getElement().querySelector('button'), false);
 };
 
 
@@ -89,4 +90,23 @@ dialogs.BackupKey.prototype.getBackupCode_ = function() {
   });
   return result;
 };
+
+
+/**
+ * Returns the backup code to display in the UI as a series of words.
+ * @private
+ * @return {e2e.async.Result.<string>} Words to display
+ */
+dialogs.BackupKey.prototype.getBackupPhrase_ = function() {
+  var result = new e2e.async.Result();
+  new e2e.ext.actions.Executor().execute(/** @type {!messages.ApiRequest} */ ({
+    action: constants.Actions.GET_KEYRING_BACKUP_DATA
+  }), this, /** @param {e2e.openpgp.KeyringBackupInfo} data */ function(data) {
+    // Passphrase is a string of N words followed by the count
+    result.callback([e2e.ext.utils.passphrase.bytesToPhrase(data.seed),
+                     data.count / 2 & 0x7F].join(' '));
+  });
+  return result;
+};
+
 });  // goog.scope

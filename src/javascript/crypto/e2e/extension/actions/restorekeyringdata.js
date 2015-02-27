@@ -22,6 +22,7 @@ goog.provide('e2e.ext.actions.RestoreKeyringData');
 
 goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.actions.Action');
+goog.require('e2e.ext.utils.passphrase');
 goog.require('e2e.openpgp.KeyRing');
 goog.require('goog.crypt.base64');
 
@@ -42,7 +43,7 @@ actions.RestoreKeyringData = function() {};
 /* TODO(rcc): Remove email when we can use keyserver for lookups. */
 actions.RestoreKeyringData.prototype.execute =
     function(ctx, request, requestor, callback, errorCallback) {
-  var data = goog.crypt.base64.decodeStringToByteArray(request.content.data);
+  var data = e2e.ext.utils.passphrase.phraseToBytes(request.content.data);
 
   if (data[0] & 0x80) {
     errorCallback(new e2e.error.InvalidArgumentsError('Invalid version bit'));
