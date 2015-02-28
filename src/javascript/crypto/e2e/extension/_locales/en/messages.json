@@ -496,5 +496,8 @@
   },
   "e2ebindHideSigned": {
     "message": "< Hide signed message"
+  },
+  "setupIntroText": {
+    "message": "Do you want to generate new encryption keys? Only select 'no' if you've used End to End before."
   }
 }

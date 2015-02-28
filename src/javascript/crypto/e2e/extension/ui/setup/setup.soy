@@ -18,9 +18,10 @@
 /**
  * The base layout for the welcome page.
  * @param headerText The header of the page.
- * @param basicsSection The basics section.
- * @param noviceSection The novice section.
- * @param advancedSection The advanced section.
+ * @param introSection The first section to show
+ * @param basicsSection The tutorial section.
+ * @param noviceSection The section for first-time users.
+ * @param advancedSection The section for previous end-to-end users.
  */
 {template .setup}
 <html>
@@ -38,6 +39,10 @@
       <button id="setup-button">Click to get started</button>
       </div>
       <div id="{e2e.ext.constants.ElementId.WELCOME_MENU}">
+        {call .welcomeSection}
+          {param sectionText: $introSection /}
+          {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_INTRO /}
+        {/call}
         {call .welcomeSection}
           {param sectionText: $noviceSection /}
           {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_NOVICE /}

@@ -113,8 +113,15 @@ ui.Setup.prototype.decorateInternal = function(elem) {
     id: 'restore-key'
   };
 
+  var introSection = {
+    title: 'Generate keys?',
+    subsections: [],
+    id: 'intro'
+  };
+
   soy.renderElement(elem, templates.setup, {
     headerText: chrome.i18n.getMessage('welcomeHeader'),
+    introSection: introSection,
     basicsSection: basicsSection,
     noviceSection: noviceSection,
     advancedSection: advancedSection,
@@ -125,34 +132,39 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   goog.dom.getElement('welcome-byline').textContent =
       chrome.i18n.getMessage('welcomeBasicsLine1');
 
-  this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
-    action: constants.Actions.LIST_KEYS,
-    content: 'private'
-  }), this, goog.bind(function(keys) {
-    if (!goog.object.isEmpty(keys)) {
-      this.hideKeyringSetup_();
-    } else {
-      this.genKeyForm_ = new ui.panels.GenerateKey(
-          goog.bind(this.generateKey_, this), true);
-      this.addChild(this.genKeyForm_, false);
-      this.genKeyForm_.render(
-          goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_NOVICE));
+  // Render the "have you set up end to end before?" form
+  var introDialog =
+      new dialogs.Generic(chrome.i18n.getMessage('setupIntroText'),
+                          goog.bind(function(result) {
+                            console.log('got result', result);
+                          }, this),
+                          dialogs.InputType.NONE, undefined,
+                          'Yes', 'No');
+  this.addChild(introDialog, false);
+  introDialog.render(goog.dom.getElement(
+      constants.ElementId.WELCOME_CONTENT_INTRO));
 
-      // TODO: Add callback for keyring restore.
-      this.keyringMgmt_ = new ui.panels.KeyringMgmtMini(
-          goog.nullFunction,
-          goog.bind(this.importKeyring_, this),
-          goog.bind(this.updateKeyringPassphrase_, this),
-          goog.bind(this.afterRestoreKeyring_, this));
-      this.addChild(this.keyringMgmt_, false);
-      this.keyringMgmt_.render(
-          goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
-    }
-  }, this), goog.nullFunction);
+  // Render the genkey form
+  this.genKeyForm_ = new ui.panels.GenerateKey(
+      goog.bind(this.generateKey_, this), true);
+  this.addChild(this.genKeyForm_, false);
+  this.genKeyForm_.render(
+      goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_NOVICE));
 
+  // Render the restore key form
+  this.keyringMgmt_ = new ui.panels.KeyringMgmtMini(
+      goog.nullFunction,
+      goog.bind(this.importKeyring_, this),
+      goog.bind(this.updateKeyringPassphrase_, this),
+      goog.bind(this.afterRestoreKeyring_, this));
+  this.addChild(this.keyringMgmt_, false);
+  this.keyringMgmt_.render(
+      goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
+
+  // Start the setup wizard when the big button is clicked
   goog.dom.getElement('setup-button').onclick = goog.bind(function() {
     goog.style.setElementShown(goog.dom.getElement('setup-button'), false);
-    this.showPage_('generate-key');
+    this.showPage_('intro');
   }, this);
 };
 
