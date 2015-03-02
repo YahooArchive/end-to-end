@@ -3,7 +3,7 @@
 	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
 <style type="text/css">
 	.yahoo-check-fg{fill:#d3ccbd;}
-	.yahoo-check-bg{fill:#2d005a;}
+	.yahoo-check-bg{fill:#000;}
 </style>
 <rect class="yahoo-check-bg" width="100" height="100"/>
 <polygon class="yahoo-check-fg" points="82.7024231,26.2951508 40.0493126,68.945137 21.649704,50.5426559 19.3110867,52.8817329 

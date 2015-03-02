@@ -3,7 +3,7 @@
 	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
 <style type="text/css">
 	.yahoo-lock-fg{fill:#d3ccbd;}
-	.yahoo-lock-bg{fill:#2d005a;}
+	.yahoo-lock-bg{fill:#000;}
 </style>
 <g>
 	<rect class="yahoo-lock-bg" width="100" height="100"/>
