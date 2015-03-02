@@ -58,6 +58,6 @@ function testRender() {
     elem.click();
   });
 
-  assertTrue(preferences.isWelcomePageEnabled());
+  assertFalse(preferences.isWelcomePageEnabled());
   assertTrue(preferences.isActionSniffingEnabled());
 }

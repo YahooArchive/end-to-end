@@ -57,7 +57,7 @@ function tearDown() {
 function testRestoreData() {
   var ctx = {
     restoreKeyring: function(d) {
-      assertArrayEquals(d.seed, [0, 0, 98, 157, 255, 255]);
+      assertArrayEquals(d.seed, [0, 0, 98, 150, 255, 226]);
       assertEquals(d.count, 2);
     }
   };

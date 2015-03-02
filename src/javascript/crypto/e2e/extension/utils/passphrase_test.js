@@ -49,7 +49,7 @@ function testBytesToPhrase() {
   var evenBytes =
       [0, 0, 17, 212, 12, 140, 90, 247, 46, 83, 254, 60, 54, 169, 255, 255];
   var phrase =
-      'a biodegrading ballot goatskin crenate wriggliest depressor zoomed';
+      'a bioengineering balloted gobbledegook creneled writhing depriving zyzzyva';
   assertEquals(phrase, utils.passphrase.bytesToPhrase(evenBytes));
   var oddBytes = [1, 2, 3];
   assertThrows('Odd byte array should throw exception',
@@ -59,7 +59,7 @@ function testBytesToPhrase() {
 
 function testPhraseToBytes() {
   var phrase =
-      'a  biodegrading ballot goatskin crenate wriggliest depressor zoomED 120 \n';
+      'a  bioengineering balloted gobbledegook creneled writhing depriving zyzzyVA 120 \n';
   var bytes =
       [120, 0, 0, 17, 212, 12, 140, 90, 247, 46, 83, 254, 60, 54, 169, 255, 255];
   assertArrayEquals(bytes, utils.passphrase.phraseToBytes(phrase));
