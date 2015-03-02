@@ -478,10 +478,10 @@
     "description": "Ask user to send the message unencrypted."
   },
   "keyserverFetchError": {
-    "message": "Oops, failed to fetch keys from the keyserver. Are you logged into Yahoo mail?"
+    "message": "Oops, failed to fetch keys from the keyserver. Are you on the corp network and logged into Bouncer?"
   },
   "keyserverSendError": {
-    "message": "Oops, failed to send keys to the keyserver. Are you logged into Yahoo mail?"
+    "message": "Oops, failed to send keys to the keyserver. Are you on the corp network and logged into Bouncer?"
   },
   "keyserverResponseError": {
     "message": "Invalid response from keyserver. Please try again later."
