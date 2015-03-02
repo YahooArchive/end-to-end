@@ -23,6 +23,7 @@ CKSUM_CMD="cksum" # chosen because it's available on most Linux/OS X installatio
 BUILD_DIR="build"
 BUILD_TPL_DIR="$BUILD_DIR/templates"
 cd ${0%/*}
+PKG_VERSION=`git rev-parse HEAD`
 
 e2e_assert_dependencies() {
   # Check if required binaries are present.
@@ -247,6 +248,12 @@ e2e_build() {
   fi
 }
 
+e2e_zip() {
+  cd build
+  zip -r "../pkg/extension_$PKG_VERSION" extension
+  cd ..
+}
+
 RETVAL=0
 
 CMD=$1
@@ -289,8 +296,11 @@ case "$CMD" in
   deps)
     e2e_generate_deps;
     ;;
+  zip)
+    e2e_zip;
+    ;;
   *)
-    echo "Usage: $0 {build_extension|build_extension_debug|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint}"
+    echo "Usage: $0 {build_extension|build_extension_debug|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip}"
     RETVAL=1
 esac
 
