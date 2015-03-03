@@ -153,6 +153,9 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.KEYRING_EXPORT),
         constants.CssClass.HIDDEN);
+    goog.dom.classlist.add(
+        this.getElementByClass(constants.CssClass.KEYRING_PASSPHRASE_CHANGE),
+        constants.CssClass.HIDDEN);
   }
 
   this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({

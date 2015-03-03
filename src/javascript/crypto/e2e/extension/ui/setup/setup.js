@@ -26,6 +26,7 @@ goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('e2e.ext.ui.dialogs.BackupKey');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.GenerateKey');
@@ -90,7 +91,7 @@ ui.Setup.prototype.keyringMgmt_ = null;
 ui.Setup.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
-  var basicsSection = {
+  var tutorialSection = {
     title: chrome.i18n.getMessage('welcomeBasicsTitle'),
     subsections: [
       {text: ''},
@@ -114,17 +115,31 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   };
 
   var introSection = {
-    title: 'Generate keys?',
+    title: 'Generate keys',
     subsections: [],
     id: 'intro'
+  };
+
+  var backupSection = {
+    title: 'Your key backup code',
+    subsections: [],
+    id: 'backup-key'
+  };
+
+  var passphraseSection = {
+    title: 'Set a passphrase',
+    subsections: [],
+    id: 'set-passphrase'
   };
 
   soy.renderElement(elem, templates.setup, {
     headerText: chrome.i18n.getMessage('welcomeHeader'),
     introSection: introSection,
-    basicsSection: basicsSection,
+    tutorialSection: tutorialSection,
     noviceSection: noviceSection,
     advancedSection: advancedSection,
+    backupSection: backupSection,
+    passphraseSection: passphraseSection
   });
 
   var styles = elem.querySelector('link');
@@ -132,26 +147,58 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   goog.dom.getElement('welcome-byline').textContent =
       chrome.i18n.getMessage('welcomeBasicsLine1');
 
-  // Render the "have you set up end to end before?" form
+  // Start the setup wizard when the big button is clicked
+  goog.dom.getElement('setup-button').onclick = goog.bind(function() {
+    goog.style.setElementShown(goog.dom.getElement('setup-button'), false);
+    this.showPage_('intro');
+  }, this);
+
+  // Render the "do you want to generate keys?" page
   var introDialog =
       new dialogs.Generic(chrome.i18n.getMessage('setupIntroText'),
                           goog.bind(function(result) {
-                            console.log('got result', result);
+                            if (typeof result === 'undefined') {
+                              // User clicked "no"
+                              this.showPage_('restore-key');
+                            } else {
+                              // Default action: generate a new key
+                              this.showPage_('generate-key');
+                            }
                           }, this),
                           dialogs.InputType.NONE, undefined,
-                          'Yes', 'No');
+                          chrome.i18n.getMessage('setupIntroYes'),
+                          chrome.i18n.getMessage('setupIntroNo'),
+                          'setup-intro-content',
+                          chrome.i18n.getMessage('setupIntroHint'));
   this.addChild(introDialog, false);
   introDialog.render(goog.dom.getElement(
       constants.ElementId.WELCOME_CONTENT_INTRO));
 
-  // Render the genkey form
+  // Render the "keep your backup code safe" page
+  this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
+    var backupDialog =
+        new dialogs.Generic(chrome.i18n.getMessage('setupBackupText'),
+                            goog.bind(function(result) {
+                              this.showPage_('set-passphrase');
+                            }, this),
+                            dialogs.InputType.NONE, undefined,
+                            chrome.i18n.getMessage('setupBackupDone'), '',
+                            'setup-backup-content', phrase);
+    this.addChild(backupDialog, false);
+    backupDialog.render(goog.dom.getElement(
+        constants.ElementId.WELCOME_CONTENT_BACKUP));
+  }, this));
+
+  // Render the "set a keyring passphrase" page
+
+  // Render the genkey page
   this.genKeyForm_ = new ui.panels.GenerateKey(
       goog.bind(this.generateKey_, this), true);
   this.addChild(this.genKeyForm_, false);
   this.genKeyForm_.render(
       goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_NOVICE));
 
-  // Render the restore key form
+  // Render the restore key page
   this.keyringMgmt_ = new ui.panels.KeyringMgmtMini(
       goog.nullFunction,
       goog.bind(this.importKeyring_, this),
@@ -160,12 +207,6 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   this.addChild(this.keyringMgmt_, false);
   this.keyringMgmt_.render(
       goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
-
-  // Start the setup wizard when the big button is clicked
-  goog.dom.getElement('setup-button').onclick = goog.bind(function() {
-    goog.style.setElementShown(goog.dom.getElement('setup-button'), false);
-    this.showPage_('intro');
-  }, this);
 };
 
 
@@ -207,16 +248,9 @@ ui.Setup.prototype.generateKey_ =
             defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
             defaults.subkeyLength, name, comments, email, expDate).
             addCallback(goog.bind(function(key) {
-              panel.sendKeys(key, goog.bind(function(response) {
-                var dialog = new dialogs.Generic(
-                    chrome.i18n.getMessage('welcomeGenKeyConfirm'),
-                    this.hideKeyringSetup_,
-                    dialogs.InputType.NONE);
-                this.removeChild(this.genKeyForm_, false);
-                this.addChild(dialog, false);
-                dialog.decorate(this.genKeyForm_.getElement());
-                panel.reset();
-              }, this), pgpCtx);
+              //panel.sendKeys(key, goog.bind(function(response) {
+                this.showPage_('backup-key');
+              // }, this), pgpCtx);
             }, this));
       }), this.displayFailure_, this);
   this.keyringMgmt_.refreshOptions(true);
@@ -349,6 +383,23 @@ ui.Setup.prototype.displayFailure_ = function(error) {
   window.alert(errorMsg);
 };
 
+
+/**
+ * Returns the backup code to display in the UI as a series of words.
+ * @private
+ * @return {e2e.async.Result.<string>} Words to display
+ */
+ui.Setup.prototype.getBackupPhrase_ = function() {
+  var result = new e2e.async.Result();
+  new e2e.ext.actions.Executor().execute(/** @type {!messages.ApiRequest} */ ({
+    action: constants.Actions.GET_KEYRING_BACKUP_DATA
+  }), this, /** @param {e2e.openpgp.KeyringBackupInfo} data */ function(data) {
+    // Passphrase is a string of N words followed by the count
+    result.callback([e2e.ext.utils.passphrase.bytesToPhrase(data.seed),
+                     data.count / 2 & 0x7F].join(' '));
+  });
+  return result;
+};
 
 });  // goog.scope
 

@@ -209,3 +209,14 @@ input:focus {
   margin-bottom: 7px;
   text-align: center;
 }
+
+#setup-backup-content {
+  font-size: 1.2em;
+  font-weight: bold;
+  padding: 20px;
+  color: red;
+}
+
+#setup-intro-content {
+  font-weight: bold;
+}

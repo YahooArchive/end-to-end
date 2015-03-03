@@ -58,11 +58,13 @@ var templates = e2e.ext.ui.templates.dialogs.generic;
  *     button. Defaults to "OK".
  * @param {string=} opt_cancelButtonTitle Optional. The title for the cancel
  *     button. Defaults to "Cancel".
+ * @param {string=} opt_contentId Optional id for the content div
+ * @param {string=} opt_content Optional content for the content div
  * @constructor
  * @extends {goog.ui.Component}
  */
 dialogs.Generic = function(message, callback, inputType, opt_placeholder,
-    opt_actionButtonTitle, opt_cancelButtonTitle) {
+    opt_actionButtonTitle, opt_cancelButtonTitle, opt_contentId, opt_content) {
   goog.base(this);
 
   /**
@@ -108,6 +110,20 @@ dialogs.Generic = function(message, callback, inputType, opt_placeholder,
    * @private
    */
   this.cancelButtonTitle_ = opt_cancelButtonTitle || '';
+
+  /**
+   * Optional ID for a content element.
+   * @type {string}
+   * @private
+   */
+  this.contentId_ = opt_contentId || '';
+
+  /**
+   * Optional content to render in the dialog.
+   * @type {string}
+   * @private
+   */
+  this.content_ = opt_content || '';
 };
 goog.inherits(dialogs.Generic, goog.ui.Component);
 
@@ -143,7 +159,9 @@ dialogs.Generic.prototype.decorateInternal = function(elem) {
     inputFieldType: this.inputType_,
     inputPlaceholder: this.placeholder_,
     actionButtonTitle: this.actionButtonTitle_,
-    cancelButtonTitle: this.cancelButtonTitle_
+    cancelButtonTitle: this.cancelButtonTitle_,
+    contentId: this.contentId_,
+    content: this.content_
   });
 
   this.inputElem_ = this.getElementByClass(constants.CssClass.DIALOG_INPUT);

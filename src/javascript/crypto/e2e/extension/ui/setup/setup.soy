@@ -19,9 +19,11 @@
  * The base layout for the welcome page.
  * @param headerText The header of the page.
  * @param introSection The first section to show
- * @param basicsSection The tutorial section.
+ * @param tutorialSection The tutorial section.
  * @param noviceSection The section for first-time users.
  * @param advancedSection The section for previous end-to-end users.
+ * @param backupSection Prompt to backup keys
+ * @param passphraseSection Prompt to set a passphrase
  */
 {template .setup}
 <html>
@@ -52,8 +54,16 @@
           {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_ADVANCED /}
         {/call}
         {call .welcomeSection}
-          {param sectionText: $basicsSection /}
-          {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_BASICS /}
+          {param sectionText: $tutorialSection /}
+          {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_TUTORIAL /}
+        {/call}
+        {call .welcomeSection}
+          {param sectionText: $backupSection /}
+          {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_BACKUP /}
+        {/call}
+        {call .welcomeSection}
+          {param sectionText: $passphraseSection /}
+          {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_PASSPHRASE /}
         {/call}
       </div>
       <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>

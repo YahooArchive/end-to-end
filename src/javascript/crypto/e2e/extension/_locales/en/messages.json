@@ -498,6 +498,24 @@
     "message": "< Hide signed message"
   },
   "setupIntroText": {
-    "message": "Do you want to generate new encryption keys? Only select 'no' if you've used End to End before."
+    "message": "Do you want to generate new encryption keys?"
+  },
+  "setupIntroHint": {
+    "message": "Select 'yes' unless you've used End to End before and want to restore your old keys."
+  },
+  "setupIntroYes": {
+    "message": "Yes"
+  },
+  "setupIntroNo": {
+    "message": "No"
+  },
+  "setupBackupText": {
+    "message": "Please copy down this backup code in a safe place. You can use it to restore your encryption keys if you ever delete them accidentally."
+  },
+  "setupBackupDone": {
+    "message": "I've copied my backup code"
+  },
+  "setupPassphraseText": {
+    "message": "[Optional] If you're concerned about an attacker accessing your computer, you can pick a keyring passphrase. This will make your encryption keys inaccessible when you select 'lock keyring' from the End to End menu. Make sure you don't forget your passphrase!"
   }
 }

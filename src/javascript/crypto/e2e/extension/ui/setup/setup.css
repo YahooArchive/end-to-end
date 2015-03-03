@@ -208,6 +208,7 @@ body {
   padding-bottom:30px;
 }
 .setup-page {
+  font-size:16px;
   display:none;
 }
 #setup-button {

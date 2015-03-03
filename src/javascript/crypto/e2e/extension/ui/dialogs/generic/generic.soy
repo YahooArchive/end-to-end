@@ -21,6 +21,8 @@
  * @param inputPlaceholder A placeholder to display when asking for the passphrase.
  * @param actionButtonTitle The title of the prompt button.
  * @param cancelButtonTitle The title of the cancel button.
+ * @param contentId
+ * @param content
  */
 {template .dialog}
   {if $message}
@@ -29,6 +31,9 @@
   {if $inputFieldType}
     <input type="{$inputFieldType}" class="{e2e.ext.constants.CssClass.DIALOG_INPUT}"
            placeholder="{$inputPlaceholder}" autofocus>
+  {/if}
+  {if length($content) > 0}
+    <div id="{$contentId}">{$content}</div>
   {/if}
   <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
   {if length($cancelButtonTitle) > 0}
