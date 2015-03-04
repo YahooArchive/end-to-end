@@ -516,6 +516,12 @@
     "message": "I've copied my backup code"
   },
   "setupPassphraseText": {
-    "message": "[Optional] If you're concerned about an attacker accessing your computer, you can pick a keyring passphrase. This will make your encryption keys inaccessible when you select 'lock keyring' from the End to End menu. Make sure you don't forget your passphrase!"
+    "message": "Set a passphrase on your encryption keys for extra protection. Make sure you don't forget it!"
+  },
+  "setupRestoreText": {
+    "message": "How would you like to restore your keys?"
+  },
+  "setupSkip": {
+    "message": "Skip"
   }
 }

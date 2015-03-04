@@ -183,6 +183,7 @@ e2e.ext.constants.CssClass = {
   KEYRING_IMPORT: 'keyring-import',
   KEYRING_EXPORT: 'keyring-export',
   KEYRING_BACKUP: 'keyring-backup',
+  KEYRING_CANCEL: 'keyring-cancel',
   KEYRING_BACKUP_WINDOW: 'keyring-backup-window',
   KEYRING_RESTORE: 'keyring-restore',
   KEYRING_RESTORE_INPUT: 'keyring-restore-input',

@@ -190,6 +190,15 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   }, this));
 
   // Render the "set a keyring passphrase" page
+  var passphraseDialog = new ui.panels.KeyringMgmtMini(
+    goog.nullFunction, goog.nullFunction,
+    this.updateKeyringPassphrase_, goog.nullFunction,
+    goog.bind(this.showPage_, this, 'tutorial'),
+    chrome.i18n.getMessage('setupPassphraseText'),
+    chrome.i18n.getMessage('setupSkip'));
+  this.addChild(passphraseDialog, false);
+  passphraseDialog.render(goog.dom.getElement(
+      constants.ElementId.WELCOME_CONTENT_PASSPHRASE));
 
   // Render the genkey page
   this.genKeyForm_ = new ui.panels.GenerateKey(
@@ -202,8 +211,10 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   this.keyringMgmt_ = new ui.panels.KeyringMgmtMini(
       goog.nullFunction,
       goog.bind(this.importKeyring_, this),
-      goog.bind(this.updateKeyringPassphrase_, this),
-      goog.bind(this.afterRestoreKeyring_, this));
+      goog.nullFunction,
+      goog.bind(this.afterRestoreKeyring_, this),
+      goog.bind(this.showPage_, this, 'intro'),
+      chrome.i18n.getMessage('setupRestoreText'));
   this.addChild(this.keyringMgmt_, false);
   this.keyringMgmt_.render(
       goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
@@ -218,7 +229,7 @@ ui.Setup.prototype.decorateInternal = function(elem) {
 ui.Setup.prototype.showPage_ = function(id) {
   var pages = this.getElementsByClass('setup-page');
   goog.array.forEach(pages, function(page) {
-      page.style.display = 'none';
+    page.style.display = 'none';
   });
   goog.dom.getElement(id).style.display = 'block';
 };

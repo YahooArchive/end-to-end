@@ -88,8 +88,11 @@
  * @param passphraseChangeActionButtonTitle The title for the passphrase change submit button.
  * @param passphraseConfirmActionButtonTitle The title for the passphrase confirm submit button.
  * @param passphraseChangeCancelButtonTitle The title for the passphrase change cancel button.
+ * @param content content to show at the top of the panel.
+ * @param cancelLabel Label for the 'cancel' button
  */
 {template .manageKeyring}
+  <div>{$content}</div>
   <div id="{e2e.ext.constants.ElementId.KEYRING_IMPORT_DIV}"
        class="{e2e.ext.constants.CssClass.HIDDEN}">
     <input type="file" class="{e2e.ext.constants.CssClass.ACTION}"/>
@@ -128,5 +131,7 @@
                    {e2e.ext.constants.CssClass.CANCEL}">{$changePassphraseLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_BACKUP}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$backupKeyringLabel}</button>
+    <button class="{e2e.ext.constants.CssClass.KEYRING_CANCEL}{sp}
+                   {e2e.ext.constants.CssClass.CANCEL}">{$cancelLabel}</button>
   </div>
 {/template}
