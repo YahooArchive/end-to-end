@@ -226,11 +226,11 @@
     "description": "A sentence prompting the user to change the passphrase of the existing PGP keyring."
   },
   "keyMgmtChangePassphrasePlaceholder": {
-    "message": "Enter a new passphrase for the existing keyring.",
+    "message": "Enter a new passphrase.",
     "description": "A sentence prompting the user to enter a new passphrase for the existing PGP keyring."
   },
   "keyMgmtConfirmPassphrasePlaceholder": {
-    "message": "Confirm the new passphrase for the existing keyring.",
+    "message": "Confirm the new passphrase.",
     "description": "A sentence prompting the user to confirm the new passphrase for the existing PGP keyring."
   },
   "keyMgmtPassphraseMismatchLabel": {
