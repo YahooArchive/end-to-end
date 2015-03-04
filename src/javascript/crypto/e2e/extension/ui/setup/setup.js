@@ -218,16 +218,24 @@ ui.Setup.prototype.decorateInternal = function(elem) {
       goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_NOVICE));
 
   // Render the restore key page
-  this.keyringMgmt_ = new ui.panels.KeyringMgmtMini(
-      goog.nullFunction,
-      goog.bind(this.importKeyring_, this),
-      goog.nullFunction,
-      goog.bind(this.afterRestoreKeyring_, this),
-      goog.bind(this.showPage_, this, constants.ElementId.SETUP_INTRO),
-      chrome.i18n.getMessage('setupRestoreText'));
-  this.addChild(this.keyringMgmt_, false);
-  this.keyringMgmt_.render(
-      goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
+  this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
+    action: constants.Actions.LIST_KEYS,
+    content: 'private'
+  }), this, goog.bind(function(keys) {
+    var restoreCallback = goog.object.isEmpty(keys) ?
+        goog.bind(this.afterRestoreKeyring_, this) :
+        goog.nullFunction;
+    this.keyringMgmt_ = new ui.panels.KeyringMgmtMini(
+        goog.nullFunction,
+        goog.bind(this.importKeyring_, this),
+        goog.nullFunction,
+        restoreCallback,
+        goog.bind(this.showPage_, this, constants.ElementId.SETUP_INTRO),
+        chrome.i18n.getMessage('setupRestoreText'));
+    this.addChild(this.keyringMgmt_, false);
+    this.keyringMgmt_.render(
+        goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
+  }, this));
 };
 
 

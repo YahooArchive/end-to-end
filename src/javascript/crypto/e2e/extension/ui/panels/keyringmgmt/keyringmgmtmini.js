@@ -213,7 +213,7 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
   if (refreshOptions) {
     this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
       action: constants.Actions.LIST_KEYS,
-      content: 'public'
+      content: 'private'
     }), this, goog.bind(function(keys) {
       this.refreshOptions(!goog.object.isEmpty(keys));
     }, this));
