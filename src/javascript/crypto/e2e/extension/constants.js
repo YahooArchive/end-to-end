@@ -128,6 +128,15 @@ e2e.ext.constants.ElementId = {
   WELCOME_FRAME_ELEMENT: 'welcome-frame-element',
   WELCOME_FRAME_DUMMY: 'welcome-frame-dummy',
 
+  // Setup page
+  SETUP_BUTTON: 'setup-button',
+  SETUP_GENERATE_KEY: 'setup-generate-key',
+  SETUP_RESTORE_KEY: 'setup-restore-key',
+  SETUP_BACKUP_KEY: 'setup-backup-key',
+  SETUP_PASSPHRASE: 'setup-passphrase',
+  SETUP_INTRO: 'setup-intro',
+  SETUP_TUTORIAL: 'setup-tutorial',
+
   // Chrome notifications
   NOTIFICATION_SUCCESS: 'e2e-success',
 
@@ -200,7 +209,10 @@ e2e.ext.constants.CssClass = {
 
   /** e2ebind page classes **/
   COMPOSE_CONTAINER: 'compose',
-  COMPOSE_BODY: 'compose-message'
+  COMPOSE_BODY: 'compose-message',
+
+  /* setup page */
+  SETUP_PAGE: 'setup-page'
 };
 
 

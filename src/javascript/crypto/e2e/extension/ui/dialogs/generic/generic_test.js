@@ -71,3 +71,19 @@ function testKeyboardShortcutHandler() {
   assertTrue('Failed to register shortcut',
       dialog.keyboardHandler_.isShortcutRegistered(goog.events.KeyCodes.ENTER));
 }
+
+function testSetContent() {
+  dialog = new e2e.ext.ui.dialogs.Generic(
+      'message',
+      function() {},
+      e2e.ext.ui.dialogs.InputType.SECURE_TEXT,
+      'placeholder', 'ok', 'cancel', 'foo', 'some content');
+
+  var parent = new goog.ui.Component();
+  parent.render(document.body);
+  parent.addChild(dialog, true);
+
+  assertEquals(document.getElementById('foo').textContent, 'some content');
+  dialog.setContent('some new content');
+  assertEquals(document.getElementById('foo').textContent, 'some new content');
+}

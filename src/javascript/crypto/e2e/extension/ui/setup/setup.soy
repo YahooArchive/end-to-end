@@ -38,7 +38,7 @@
       <img src="images/yahoo/lock-icon.svg" />
       <img src="images/yahoo/check-icon.svg" />
       <div id="welcome-byline"></div>
-      <button id="setup-button">Click to get started</button>
+      <button id="{e2e.ext.constants.ElementId.SETUP_BUTTON}">Click to get started</button>
       </div>
       <div id="{e2e.ext.constants.ElementId.WELCOME_MENU}">
         {call .welcomeSection}
@@ -79,7 +79,7 @@
  * @param contentId The HTML ID of the section content.
  */
 {template .welcomeSection}
-  <div class="setup-page" id="{$sectionText.id}">
+  <div class="{e2e.ext.constants.CssClass.SETUP_PAGE}" id="{$sectionText.id}">
     <fieldset>
       <legend>
         {$sectionText.title}

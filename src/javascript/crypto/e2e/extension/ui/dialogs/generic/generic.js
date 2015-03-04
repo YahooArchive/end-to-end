@@ -242,5 +242,15 @@ dialogs.Generic.prototype.invokeCallback = function(sendBlank) {
 };
 
 
+/**
+ * Sets the content of the dialog.
+ * @param {string} content
+ */
+dialogs.Generic.prototype.setContent = function(content) {
+  if (this.contentId_) {
+    goog.dom.getElement(this.contentId_).textContent = content;
+  }
+};
+
 });  // goog.scope
 

@@ -87,6 +87,14 @@ ui.Setup.prototype.genKeyForm_ = null;
 ui.Setup.prototype.keyringMgmt_ = null;
 
 
+/**
+ * A dialog that shows the backup code.
+ * @type {ui.dialogs.Generic}
+ * @private
+ */
+ui.Setup.prototype.backupDialog_ = null;
+
+
 /** @override */
 ui.Setup.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
@@ -99,37 +107,37 @@ ui.Setup.prototype.decorateInternal = function(elem) {
         width: '100%'
       }}
     ],
-    id: 'tutorial'
+    id: constants.ElementId.SETUP_TUTORIAL
   };
 
   var noviceSection = {
     title: chrome.i18n.getMessage('welcomeNoviceTitle'),
     subsections: [],
-    id: 'generate-key'
+    id: constants.ElementId.SETUP_GENERATE_KEY
   };
 
   var advancedSection = {
     title: chrome.i18n.getMessage('welcomeAdvancedTitle'),
     subsections: [],
-    id: 'restore-key'
+    id: constants.ElementId.SETUP_RESTORE_KEY
   };
 
   var introSection = {
     title: 'Generate keys',
     subsections: [],
-    id: 'intro'
+    id: constants.ElementId.SETUP_INTRO
   };
 
   var backupSection = {
     title: 'Your key backup code',
     subsections: [],
-    id: 'backup-key'
+    id: constants.ElementId.SETUP_BACKUP_KEY
   };
 
   var passphraseSection = {
     title: 'Set a passphrase',
     subsections: [],
-    id: 'set-passphrase'
+    id: constants.ElementId.SETUP_PASSPHRASE
   };
 
   soy.renderElement(elem, templates.setup, {
@@ -148,9 +156,10 @@ ui.Setup.prototype.decorateInternal = function(elem) {
       chrome.i18n.getMessage('welcomeBasicsLine1');
 
   // Start the setup wizard when the big button is clicked
-  goog.dom.getElement('setup-button').onclick = goog.bind(function() {
-    goog.style.setElementShown(goog.dom.getElement('setup-button'), false);
-    this.showPage_('intro');
+  var button = goog.dom.getElement(constants.ElementId.SETUP_BUTTON);
+  button.onclick = goog.bind(function() {
+    goog.style.setElementShown(button, false);
+    this.showPage_(constants.ElementId.SETUP_INTRO);
   }, this);
 
   // Render the "do you want to generate keys?" page
@@ -159,10 +168,12 @@ ui.Setup.prototype.decorateInternal = function(elem) {
                           goog.bind(function(result) {
                             if (typeof result === 'undefined') {
                               // User clicked "no"
-                              this.showPage_('restore-key');
+                              this.showPage_(
+                                  constants.ElementId.SETUP_RESTORE_KEY);
                             } else {
                               // Default action: generate a new key
-                              this.showPage_('generate-key');
+                              this.showPage_(
+                                  constants.ElementId.SETUP_GENERATE_KEY);
                             }
                           }, this),
                           dialogs.InputType.NONE, undefined,
@@ -174,26 +185,25 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   introDialog.render(goog.dom.getElement(
       constants.ElementId.WELCOME_CONTENT_INTRO));
 
-  // Render the "keep your backup code safe" page
-  this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
-    var backupDialog =
-        new dialogs.Generic(chrome.i18n.getMessage('setupBackupText'),
-                            goog.bind(function(result) {
-                              this.showPage_('set-passphrase');
-                            }, this),
-                            dialogs.InputType.NONE, undefined,
-                            chrome.i18n.getMessage('setupBackupDone'), '',
-                            'setup-backup-content', phrase);
-    this.addChild(backupDialog, false);
-    backupDialog.render(goog.dom.getElement(
-        constants.ElementId.WELCOME_CONTENT_BACKUP));
-  }, this));
+  // Render the "keep your backup code safe" page, but get the code lazily.
+  this.backupDialog_ =
+      new dialogs.Generic(chrome.i18n.getMessage('setupBackupText'),
+                          goog.bind(function(result) {
+                            this.showPage_(
+                                constants.ElementId.SETUP_PASSPHRASE);
+                          }, this),
+                          dialogs.InputType.NONE, undefined,
+                          chrome.i18n.getMessage('setupBackupDone'), '',
+                          'setup-backup-content');
+  this.addChild(this.backupDialog_, false);
+  this.backupDialog_.render(goog.dom.getElement(
+      constants.ElementId.WELCOME_CONTENT_BACKUP));
 
   // Render the "set a keyring passphrase" page
   var passphraseDialog = new ui.panels.KeyringMgmtMini(
     goog.nullFunction, goog.nullFunction,
     goog.bind(this.updateKeyringPassphrase_, this), goog.nullFunction,
-    goog.bind(this.showPage_, this, 'tutorial'),
+    goog.bind(this.showPage_, this, constants.ElementId.SETUP_TUTORIAL),
     chrome.i18n.getMessage('setupPassphraseText'),
     chrome.i18n.getMessage('setupSkip'));
   this.addChild(passphraseDialog, false);
@@ -213,7 +223,7 @@ ui.Setup.prototype.decorateInternal = function(elem) {
       goog.bind(this.importKeyring_, this),
       goog.nullFunction,
       goog.bind(this.afterRestoreKeyring_, this),
-      goog.bind(this.showPage_, this, 'intro'),
+      goog.bind(this.showPage_, this, constants.ElementId.SETUP_INTRO),
       chrome.i18n.getMessage('setupRestoreText'));
   this.addChild(this.keyringMgmt_, false);
   this.keyringMgmt_.render(
@@ -227,7 +237,7 @@ ui.Setup.prototype.decorateInternal = function(elem) {
  * @private
  */
 ui.Setup.prototype.showPage_ = function(id) {
-  var pages = this.getElementsByClass('setup-page');
+  var pages = this.getElementsByClass(constants.CssClass.SETUP_PAGE);
   goog.array.forEach(pages, function(page) {
     page.style.display = 'none';
   });
@@ -253,16 +263,20 @@ ui.Setup.prototype.generateKey_ =
     return null;
   }
   var defaults = constants.KEY_DEFAULTS;
-  utils.action.getContext(
-      /** @type {!function(!e2e.openpgp.ContextImpl)} */ (function(pgpCtx) {
+  utils.action.getContext(/** @type {!function(!e2e.openpgp.ContextImpl)} */
+      (function(pgpCtx) {
         pgpCtx.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
             defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
             defaults.subkeyLength, name, comments, email, expDate).
             addCallback(goog.bind(function(key) {
               //panel.sendKeys(key, goog.bind(function(response) {
-              // For some reason this shows the previous backup code, not
-              // the current one?
-              this.showPage_('backup-key');
+              // Refresh the backup phrase to include the key we just made
+              this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
+                console.log('setting content', this);
+                console.log(this.backupDialog_);
+                this.backupDialog_.setContent(phrase);
+                this.showPage_(constants.ElementId.SETUP_BACKUP_KEY);
+              }, this));
               // }, this), pgpCtx);
             }, this));
       }), this.displayFailure_, this);
@@ -283,7 +297,7 @@ ui.Setup.prototype.importKeyring_ = function(file) {
     }), this, goog.bind(function(res) {
       var dialog = new dialogs.Generic(
           chrome.i18n.getMessage('welcomeKeyImport'),
-          goog.bind(this.showPage_, this, 'set-passphrase'),
+          goog.bind(this.showPage_, this, constants.ElementId.SETUP_PASSPHRASE),
           dialogs.InputType.NONE);
       this.removeChild(this.keyringMgmt_, false);
       this.addChild(dialog, false);
@@ -299,11 +313,11 @@ ui.Setup.prototype.importKeyring_ = function(file) {
  * @private
  */
 ui.Setup.prototype.updateKeyringPassphrase_ = function(passphrase) {
-  utils.action.getContext(function(pgpCtx) {
+  utils.action.getContext(goog.bind(function(pgpCtx) {
         pgpCtx = /** @type {!e2e.openpgp.ContextImpl} */ (pgpCtx);
         pgpCtx.changeKeyRingPassphrase(passphrase);
-      }, this.displayFailure_, this);
-  this.showPage_('tutorial');
+        this.showPage_(constants.ElementId.SETUP_TUTORIAL);
+      }, this), this.displayFailure_, this);
 };
 
 
@@ -342,7 +356,7 @@ ui.Setup.prototype.afterRestoreKeyring_ = function(uid) {
   // TODO: Show a more informative notification here
   var dialog = new dialogs.Generic(
       chrome.i18n.getMessage('welcomeKeyRestore', uid),
-      goog.bind(this.showPage_, this, 'set-passphrase'),
+      goog.bind(this.showPage_, this, constants.ElementId.SETUP_PASSPHRASE),
       dialogs.InputType.NONE);
   this.removeChild(this.keyringMgmt_, false);
   this.addChild(dialog, false);
