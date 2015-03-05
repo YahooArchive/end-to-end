@@ -188,7 +188,7 @@
     "description": "A sentence prompting the user to import an existing PGP keyring."
   },
   "keyMgmtExportKeyringLabel": {
-    "message": "Export local keyring",
+    "message": "Backup keys to file",
     "description": "A sentence prompting the user to export the existing PGP keyring."
   },
   "keyMgmtBackupKeyringLabel": {
