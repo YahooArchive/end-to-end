@@ -100,7 +100,8 @@ function testRenderWithoutExport() {
 
 function testEmptyExport() {
   panel = new e2e.ext.ui.panels.KeyringMgmtMini(
-      goog.abstractMethod, goog.abstractMethod, goog.abstractMethod);
+      goog.abstractMethod, goog.abstractMethod, goog.abstractMethod,
+      goog.abstractMethod);
   panel.render(document.body);
 
   asyncTestCase.waitForAsync('Waiting for button to be disabled');
@@ -117,7 +118,8 @@ function testEmptyExport() {
 function testNonEmptyExport() {
   keys = {'test@example.com': []};
   panel = new e2e.ext.ui.panels.KeyringMgmtMini(
-      goog.abstractMethod, goog.abstractMethod, goog.abstractMethod);
+      goog.abstractMethod, goog.abstractMethod, goog.abstractMethod,
+      goog.abstractMethod);
   panel.render(document.body);
 
   asyncTestCase.waitForAsync('Waiting for button to stay enabled');
@@ -134,16 +136,17 @@ function testNonEmptyExport() {
 function testImportKeyring() {
   var filename = 'temp.asc';
   var importedFile = false;
+  stubs.replace(HTMLDivElement.prototype, 'querySelector', function(selector) {
+    return (selector === 'input') ? {files: [filename]} :
+        goog.dom.createElement('div');
+  });
+
   panel = new e2e.ext.ui.panels.KeyringMgmtMini(
       goog.abstractMethod, function(file) {
         assertEquals(file, filename);
         importedFile = true;
-      }, goog.abstractMethod);
+      }, goog.abstractMethod, goog.abstractMethod, goog.abstractMethod);
   panel.render(document.body);
-
-  stubs.replace(HTMLDivElement.prototype, 'querySelector', function() {
-    return {files: [filename]};
-  });
 
   panel.importKeyring_();
   assertTrue(importedFile);
@@ -267,4 +270,15 @@ function testBackupWindow() {
   assertFalse(called);
   backupButton.dispatchEvent(new Event(goog.events.EventType.CLICK));
   assertTrue(called);
+}
+
+
+function testContent() {
+  panel = new e2e.ext.ui.panels.KeyringMgmtMini(goog.nullFunction,
+      goog.nullFunction, goog.nullFunction, goog.nullFunction,
+      goog.abstractMethod, 'foo', 'blah');
+  panel.render(document.body);
+
+  assertEquals(1, document.body.textContent.indexOf('foo'));
+  assertTrue(goog.string.endsWith(document.body.textContent, 'blah'));
 }
