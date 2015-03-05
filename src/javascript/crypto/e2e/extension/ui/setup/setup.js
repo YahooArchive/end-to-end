@@ -102,7 +102,7 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   var tutorialSection = {
     title: chrome.i18n.getMessage('welcomeBasicsTitle'),
     subsections: [
-      {text: ''},
+      {text: chrome.i18n.getMessage('setupTutorialText')},
       {frame: {
         width: '100%'
       }}
@@ -110,8 +110,23 @@ ui.Setup.prototype.decorateInternal = function(elem) {
     id: constants.ElementId.SETUP_TUTORIAL
   };
 
+  var passphraseTutorialSection = {
+    title: chrome.i18n.getMessage('setupPassphraseTutorialTitle'),
+    subsections: [
+      {text: chrome.i18n.getMessage('setupPassphraseTutorialText')},
+      {img: {
+        src: 'images/yahoo/screenshot_lock_keyring.png'
+      }},
+      {button: {
+        text: chrome.i18n.getMessage('setupPassphraseTutorialButtonText'),
+        id: constants.ElementId.SETUP_TUTORIAL_BUTTON
+      }}
+    ],
+    id: constants.ElementId.SETUP_PASSPHRASE_TUTORIAL
+  };
+
   var noviceSection = {
-    title: chrome.i18n.getMessage('welcomeNoviceTitle'),
+    title: chrome.i18n.getMessage('setupNoviceTitle'),
     subsections: [],
     id: constants.ElementId.SETUP_GENERATE_KEY
   };
@@ -123,19 +138,19 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   };
 
   var introSection = {
-    title: 'Generate keys',
+    title: chrome.i18n.getMessage('setupKeygenTitle'),
     subsections: [],
     id: constants.ElementId.SETUP_INTRO
   };
 
   var backupSection = {
-    title: 'Your key backup code',
+    title: chrome.i18n.getMessage('setupBackupTitle'),
     subsections: [],
     id: constants.ElementId.SETUP_BACKUP_KEY
   };
 
   var passphraseSection = {
-    title: 'Set a passphrase',
+    title: chrome.i18n.getMessage('setupPassphraseTitle'),
     subsections: [],
     id: constants.ElementId.SETUP_PASSPHRASE
   };
@@ -147,20 +162,14 @@ ui.Setup.prototype.decorateInternal = function(elem) {
     noviceSection: noviceSection,
     advancedSection: advancedSection,
     backupSection: backupSection,
-    passphraseSection: passphraseSection
+    passphraseSection: passphraseSection,
+    passphraseTutorialSection: passphraseTutorialSection
   });
 
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('setup_styles.css');
   goog.dom.getElement('welcome-byline').textContent =
       chrome.i18n.getMessage('welcomeBasicsLine1');
-
-  // Start the setup wizard when the big button is clicked
-  var button = goog.dom.getElement(constants.ElementId.SETUP_BUTTON);
-  button.onclick = goog.bind(function() {
-    goog.style.setElementShown(button, false);
-    this.showPage_(constants.ElementId.SETUP_INTRO);
-  }, this);
 
   // Render the "do you want to generate keys?" page
   var introDialog =
@@ -220,7 +229,7 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   // Render the restore key page
   this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.LIST_KEYS,
-    content: 'private'
+    content: 'public'
   }), this, goog.bind(function(keys) {
     var restoreCallback = goog.object.isEmpty(keys) ?
         goog.bind(this.afterRestoreKeyring_, this) :
@@ -236,6 +245,26 @@ ui.Setup.prototype.decorateInternal = function(elem) {
     this.keyringMgmt_.render(
         goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_ADVANCED));
   }, this));
+};
+
+
+/** @override */
+ui.Setup.prototype.enterDocument = function() {
+  goog.base(this, 'enterDocument');
+
+  var button = goog.dom.getElement(constants.ElementId.SETUP_BUTTON);
+  this.getHandler().
+    listen(
+        button,
+        goog.events.EventType.CLICK,
+        goog.bind(function() {
+          goog.style.setElementShown(button, false);
+          this.showPage_(constants.ElementId.SETUP_INTRO);
+        }, this)).
+    listen(
+        goog.dom.getElement(constants.ElementId.SETUP_TUTORIAL_BUTTON),
+        goog.events.EventType.CLICK,
+        goog.bind(this.showPage_, this, constants.ElementId.SETUP_TUTORIAL));
 };
 
 
@@ -324,7 +353,7 @@ ui.Setup.prototype.updateKeyringPassphrase_ = function(passphrase) {
   utils.action.getContext(goog.bind(function(pgpCtx) {
         pgpCtx = /** @type {!e2e.openpgp.ContextImpl} */ (pgpCtx);
         pgpCtx.changeKeyRingPassphrase(passphrase);
-        this.showPage_(constants.ElementId.SETUP_TUTORIAL);
+        this.showPage_(constants.ElementId.SETUP_PASSPHRASE_TUTORIAL);
       }, this), this.displayFailure_, this);
 };
 

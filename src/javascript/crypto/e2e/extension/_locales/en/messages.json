@@ -350,8 +350,7 @@
     "description": "A welcome message to new users."
   },
   "welcomeBasicsTitle": {
-    "message": "Let's get started!",
-    "description": "A section title, can be a sentence fragment"
+    "message": "You're all set!"
   },
   "welcomeBasicsLine1": {
     "message": "Send encrypted and verified messages to friends in Yahoo Mail.",
@@ -516,12 +515,36 @@
     "message": "I've copied my backup code"
   },
   "setupPassphraseText": {
-    "message": "Set a passphrase on your encryption keys for extra protection. Make sure you don't forget it!"
+    "message": "You can set a passphrase on your encryption keys for extra security. Make sure you don't forget it!"
   },
   "setupRestoreText": {
     "message": "How would you like to restore your keys?"
   },
   "setupSkip": {
-    "message": "Skip"
+    "message": "Don't use a passphrase"
+  },
+  "setupBackupTitle": {
+    "message": "Save your backup code"
+  },
+  "setupKeygenTitle": {
+    "message": "Set up encryption keys"
+  },
+  "setupPassphraseTitle": {
+    "message": "Set a passphrase"
+  },
+  "setupPassphraseTutorialTitle": {
+    "message": "Locking your keyring"
+  },
+  "setupPassphraseTutorialText": {
+    "message": "Click 'Lock keyring' in the End to End menu to make your encryption keys inaccessible to others who can access your computer. You'll need your passphrase to unlock the keyring after locking it."
+  },
+  "setupPassphraseTutorialButtonText": {
+    "message": "Got it!"
+  },
+  "setupTutorialText": {
+    "message": "Here's a short demo of End-to-End in action."
+  },
+  "setupNoviceTitle": {
+    "message": "Generate new encryption keys"
   }
 }

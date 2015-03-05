@@ -123,6 +123,7 @@ e2e.ext.constants.ElementId = {
   WELCOME_CONTENT_INTRO: 'welcome-content-intro',
   WELCOME_CONTENT_BACKUP: 'welcome-content-backup',
   WELCOME_CONTENT_PASSPHRASE: 'welcome-content-passphrase',
+  WELCOME_CONTENT_PASSPHRASE_TUTORIAL: 'welcome-content-passphrase-tutorial',
   WELCOME_FOOTER: 'welcome-footer',
   WELCOME_FRAME: 'welcome-frame',
   WELCOME_FRAME_ELEMENT: 'welcome-frame-element',
@@ -136,6 +137,8 @@ e2e.ext.constants.ElementId = {
   SETUP_PASSPHRASE: 'setup-passphrase',
   SETUP_INTRO: 'setup-intro',
   SETUP_TUTORIAL: 'setup-tutorial',
+  SETUP_PASSPHRASE_TUTORIAL: 'setup-passphrase-tutorial',
+  SETUP_TUTORIAL_BUTTON: 'setup-tutorial-button',
 
   // Chrome notifications
   NOTIFICATION_SUCCESS: 'e2e-success',

@@ -24,6 +24,7 @@
  * @param advancedSection The section for previous end-to-end users.
  * @param backupSection Prompt to backup keys
  * @param passphraseSection Prompt to set a passphrase
+ * @param passphraseTutorialSection The passphrase tutorial section
  */
 {template .setup}
 <html>
@@ -65,6 +66,10 @@
           {param sectionText: $passphraseSection /}
           {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_PASSPHRASE /}
         {/call}
+        {call .welcomeSection}
+          {param sectionText: $passphraseTutorialSection /}
+          {param contentId: e2e.ext.constants.ElementId.WELCOME_CONTENT_PASSPHRASE_TUTORIAL /}
+        {/call}
       </div>
       <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
     </div>
@@ -101,10 +106,14 @@
               </div>
               </div>
             </div>
+          {elseif $subsection.img}
+            <img src="{$subsection.img.src}"/>
+          {elseif $subsection.button}
+            <div>
+            <button id="{$subsection.button.id}">{$subsection.button.text}</button>
+            </div>
           {else}
-            <p {if $subsection.header}
-                 class="{e2e.ext.constants.CssClass.WELCOME_SUBSECTION_HEADER}"
-               {/if}>
+            <p>
                {$subsection.text}
             </p>
           {/if}
