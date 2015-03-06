@@ -1,6 +1,6 @@
 goog.provide('e2e.ext.utils.wordlist');
 
-e2e.ext.wordlist = ['a',
+e2e.ext.utils.wordlist = ['a',
 'aah',
 'aardvark',
 'aardwolf',

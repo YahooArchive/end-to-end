@@ -174,7 +174,7 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
     passphraseConfirmActionButtonTitle:
         chrome.i18n.getMessage('keyMgmtConfirmPassphraseActionLabel'),
     content: this.content_,
-    cancelLabel: this.cancelLabel_ 
+    cancelLabel: this.cancelLabel_
   });
 
   var refreshOptions = true;

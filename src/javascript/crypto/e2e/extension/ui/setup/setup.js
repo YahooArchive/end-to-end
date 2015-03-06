@@ -20,13 +20,13 @@
 
 goog.provide('e2e.ext.ui.Setup');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.cipher.Algorithm');
 goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
-goog.require('e2e.ext.ui.dialogs.BackupKey');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.GenerateKey');
@@ -34,11 +34,14 @@ goog.require('e2e.ext.ui.panels.KeyringMgmtMini');
 goog.require('e2e.ext.ui.templates.setup');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
+goog.require('e2e.ext.utils.passphrase');
+goog.require('e2e.ext.utils.text');
 goog.require('e2e.signer.Algorithm');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events.EventType');
 goog.require('goog.object');
+goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -387,6 +390,7 @@ ui.Setup.prototype.renderPassphraseCallback_ = function(uid, callback) {
 
 /**
  * Called after a keyring is successfully restored from a backup code.
+ * @param {string} uid The UID of the PGP key
  * @private
  */
 ui.Setup.prototype.afterRestoreKeyring_ = function(uid) {

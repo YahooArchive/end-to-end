@@ -19,7 +19,7 @@
  */
 
 /** @suppress {extraProvide} */
-goog.provide('e2e.ext.ui.WelcomeTest');
+goog.provide('e2e.ext.ui.SetupTest');
 
 goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.actions.GetKeyDescription');

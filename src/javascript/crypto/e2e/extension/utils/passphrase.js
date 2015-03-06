@@ -23,10 +23,15 @@ goog.provide('e2e.ext.utils.passphrase');
 
 goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.utils.wordlist');
+goog.require('goog.array');
 goog.require('goog.string');
 
 
+/**
+ * @type {number}
+ */
 e2e.ext.utils.passphrase.MAX_INDEX = 65535; // 2^16 - 1
+
 
 /**
  * Converts a byte array to a phrase. Each word in the wordlist has ~2 bytes of
@@ -48,7 +53,7 @@ e2e.ext.utils.passphrase.bytesToPhrase = function(bytes) {
     var next = arr[index + 1];
     if (index % 2 === 0) {
       var wordIndex = elem * 256 + next;
-      var word = e2e.ext.wordlist[wordIndex];
+      var word = e2e.ext.utils.wordlist[wordIndex];
       if (!word) {
         // Should never happen
         throw new e2e.error.InvalidArgumentsError('Invalid bytes');
@@ -82,7 +87,7 @@ e2e.ext.utils.passphrase.phraseToBytes = function(phrase) {
 
   goog.array.forEach(words, function(word) {
     // Convert each word to a doublebyte using its index in the wordlist
-    var index = goog.array.binarySearch(e2e.ext.wordlist, word);
+    var index = goog.array.binarySearch(e2e.ext.utils.wordlist, word);
     if (index < 0 || index > e2e.ext.utils.passphrase.MAX_INDEX) {
       throw new e2e.error.InvalidArgumentsError('Invalid phrase.');
     } else {

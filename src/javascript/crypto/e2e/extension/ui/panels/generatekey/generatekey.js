@@ -20,9 +20,10 @@
 
 goog.provide('e2e.ext.ui.panels.GenerateKey');
 
-goog.require('e2e.ext.constants.CssClass');
-goog.require('e2e.ext.keyserver');
+goog.require('e2e.ext.constants');
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
+goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
