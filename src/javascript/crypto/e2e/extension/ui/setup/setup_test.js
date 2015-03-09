@@ -15,111 +15,64 @@
  */
 
 /**
- * @fileoverview Tests for the welcome page.
+ * @fileoverview Tests for the setup page.
  */
 
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.ui.SetupTest');
 
 goog.require('e2e.ext.Launcher');
-goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
-goog.require('e2e.ext.ui.Welcome');
-goog.require('e2e.ext.ui.dialogs.Generic');
-goog.require('e2e.ext.ui.preferences');
-goog.require('e2e.ext.utils');
-goog.require('goog.dom');
+goog.require('e2e.ext.ui.panels.KeyringMgmtMini');
+goog.require('e2e.ext.ui.Setup');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
-goog.require('goog.testing.mockmatchers.SaveArgument');
 goog.setTestOnly();
 
 var constants = e2e.ext.constants;
+var panels = e2e.ext.ui.panels;
 var launcher = null;
 var mockControl = null;
 var page = null;
-var preferences = e2e.ext.ui.preferences;
 var stubs = new goog.testing.PropertyReplacer();
 var testCase = goog.testing.AsyncTestCase.createAndInstall();
 
-var PRIVATE_KEY_ASCII =
-    '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
-    'Version: GnuPG v1.4.11 (GNU/Linux)\n' +
-    '\n' +
-    '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\n' +
-    '1KwNtVw=\n' +
-    '=wHzz\n' +
-    '-----END PGP PRIVATE KEY BLOCK-----';
-
-var PUBLIC_KEY_ASCII =
-    '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
-    'Version: GnuPG v1.4.11 (GNU/Linux)\n' +
-    '\n' +
-    'mI0EUcy6DgEEAJb0T7gQlfKQWmR0dLUrueRMVy8UemcmxsdIH30/HqJvqO6xU0lK\n' +
-    'NaFtaVxBdenAMpEooi1EcTi/bOKfz36FY/FARTiXv1LXuLzFJdPyjTYjh7tw+uOP\n' +
-    'UlLJCTZikgrnM07txTUiVVEetOa+unyKn17EX0PlSpAbGZedyO0nGwXzABEBAAG0\n' +
-    'BnRlc3QgNIi4BBMBAgAiBQJRzLoOAhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIX\n' +
-    'gAAKCRAG/5ysCS2oCL2SA/9EV9j3T/TM3VRD0NvNySHodcxCP1BF0zm/M84I/WHQ\n' +
-    'sGKmHStfCqqEGruB8E6NHQMJwNp1TzcswuxE0wiTJiXKe3w3+GZhPHdW5zcgiMKK\n' +
-    'YLn80Tk6fUMx1zVZtXlSBYCN5Op/axjQRyb+fGnXOhmboqQodYaWS7qhJWQJilH6\n' +
-    'iriNBFHMug4BBADDTMshHtyYhLmWC7793FlOFl5tkcEfdFKJRm30k/9yky4cuz//\n' +
-    'Xe4uXM72SaTI1Dfi6UIz5ZuFTxw3bnAXav+SV4Q4dZo0hb4jU8YaQfDL4TsRp7uO\n' +
-    '6iqxd8nlsh9JnBKE6Fk/CW5FoMZZ3/yEm3pq924Uv2AZlO6dafgXecyqNQARAQAB\n' +
-    'iJ8EGAECAAkFAlHMug4CGwwACgkQBv+crAktqAhENwQAkMY/nds36KgzwfMPpxtB\n' +
-    'aq8GbrUqY1r8lBl6a/bi8qeOuEgQmIxM2OpVPtL04c1c1hLflPCi1SQUlCIh3DkE\n' +
-    'GQIcy0/wxUZdCvZK0mF5nZSq6tez3CwqbeOA4nBOLwbxho50VqxBpR4qypYrB2ip\n' +
-    'ykxlwiqudEe0sE2b1KwNtVw=\n' +
-    '=nHBL\n' +
-    '-----END PGP PUBLIC KEY BLOCK-----';
-
+var PUBLIC_KEY_ASCII = ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+'Charset: UTF-8',
+'',
+'xv8AAABSBAAAAAATCCqGSM49AwEHAgMES1pZWXzDJ6KuifGWGevDXVkOBa3EKEWp',
+'g3YJd19BLLqE1MWIxTDf1WTDWk3wUB12EhFd8+JJlWSWjjIs7Wswuc3/AAAAEDx0',
+'ZXN0QHlhaG9vLmNvbT7C/wAAAI0EEBMIAD//AAAABYJU1Akm/wAAAAKLCf8AAAAJ',
+'kP2DcLsRCyVE/wAAAAWVCAkKC/8AAAADlgEC/wAAAAKbA/8AAAACngEAAPsQAQDN',
+'P13mfGKy4VeAn1XBPCXsb6a3on8to79weltl74iXiwD/e6dVB19ZnoevA8/hFMQD',
+'2tzCsQoej/DCtVdnsZgK5HbO/wAAAFYEAAAAABIIKoZIzj0DAQcCAwQXmzc0537b',
+'BA6NL5Ceqgh7QmCnKCVZV0IvvK3zzddpWnTOJhs4etrlDrXzbvTCDIz6oqEGvgDO',
+'Rgy21aXu/GZ/AwEIB8L/AAAAbQQYEwgAH/8AAAAFglTUCSb/AAAACZD9g3C7EQsl',
+'RP8AAAACmwwAABtgAP0WuM3nw/U/mzS6ccSr29J8d3C8W1HjUrmtSInG9kAY8QD/',
+'XDI3oj1PnelBgEM0OpgkQExVHPNBgC0wQhN1q7jIM8Q=',
+'=DnTP',
+'-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
 function setUp() {
   mockControl = new goog.testing.MockControl();
-  e2e.ext.testingstubs.initStubs(stubs);
 
+  // Hack to make test not crash chrome. No idea why this works.
+  window.chrome = {};
+
+  e2e.ext.testingstubs.initStubs(stubs);
   localStorage.clear();
-  preferences.setWelcomePageEnabled(false);
 
   launcher = new e2e.ext.Launcher();
   stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
     callback({launcher: launcher});
   });
   launcher.start();
-  e2e.ext.ui.Welcome.IMAGE_PATH_ = '';
-  page = new e2e.ext.ui.Welcome();
+  page = new e2e.ext.ui.Setup();
 }
 
 
@@ -130,57 +83,105 @@ function tearDown() {
 }
 
 
-function testRenderEmptyKeyring() {
+function testRender() {
   page.decorate(document.documentElement);
-
-  assertContains('Failed to render welcome page',
-      'welcomeHeader', document.body.textContent);
-  assertNotNull(goog.dom.getElement(constants.ElementId.WELCOME_MENU_NOVICE));
-  assertNotNull(goog.dom.getElement(constants.ElementId.WELCOME_MENU_ADVANCED));
+  goog.array.forEach(
+    ['SETUP_TUTORIAL', 'SETUP_TUTORIAL_BUTTON', 'SETUP_PASSPHRASE_TUTORIAL',
+     'SETUP_GENERATE_KEY', 'SETUP_RESTORE_KEY', 'SETUP_INTRO',
+     'SETUP_BACKUP_KEY', 'SETUP_PASSPHRASE', 'WELCOME_CONTENT_INTRO',
+     'WELCOME_CONTENT_BACKUP', 'WELCOME_CONTENT_NOVICE',
+     'WELCOME_CONTENT_ADVANCED', 'WELCOME_CONTENT_PASSPHRASE', 'SETUP_BUTTON',
+     'CALLBACK_DIALOG'], function(elem) {
+      assertNotNull(goog.dom.getElement(constants.ElementId[elem]));
+     });
 }
 
-
-function testRenderNonEmptyKeyring() {
-  populatePgpKeys();
-  page.decorate(document.documentElement);
-
-  testCase.waitForAsync('waiting for page to render');
-  window.setTimeout(function() {
-    assertContains('Failed to render welcome page',
-        'welcomeHeader', document.body.textContent);
-    assertNull(goog.dom.getElement(constants.ElementId.WELCOME_MENU_NOVICE));
-    assertNull(goog.dom.getElement(constants.ElementId.WELCOME_MENU_ADVANCED));
-    testCase.continueTesting();
-  }, 500);
-}
-
-
-function testGenerateKey() {
-  stubs.replace(window, 'alert', mockControl.createFunctionMock('alert'));
+function testIntroDefault() {
+  stubs.replace(page, 'showPage_', mockControl.createFunctionMock('showPage'));
+  page.showPage_(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertEquals('setup-generate-key', arg);
+    return true;
+  }));
   mockControl.$replayAll();
 
   page.decorate(document.documentElement);
-  page.generateKey_({reset: function() {}, sendKeys: function(key, cb) {
-                      cb();
-                    }},
-                    '', 'test@yahoo-inc.com', '');
+  goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_INTRO).querySelector(
+    'button.action').click();
+  mockControl.$verifyAll();
+}
+
+function testIntroRestore() {
+  stubs.replace(page, 'showPage_', mockControl.createFunctionMock('showPage'));
+  page.showPage_(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertEquals('setup-restore-key', arg);
+    return true;
+  }));
+  mockControl.$replayAll();
+
+  page.decorate(document.documentElement);
+  goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_INTRO).querySelector(
+    'button.cancel').click();
+  mockControl.$verifyAll();
+}
+
+function testRestoreKey() {
+  stubs.replace(panels.KeyringMgmtMini.prototype, 'showRestoreWindow_',
+                function() {
+    page.keyringMgmt_.restoreKeyringCallback_('yan@mit.edu');
+  });
+
+  stubs.replace(page, 'afterRestoreKeyring_',
+                mockControl.createFunctionMock('afterRestoreKeyring'));
+  page.afterRestoreKeyring_(new goog.testing.mockmatchers.ArgumentMatcher(
+      function(arg) {
+        assertEquals('yan@mit.edu', arg);
+        return true;
+  }));
+
+  mockControl.$replayAll();
+
+  page.decorate(document.documentElement);
+  page.keyringMgmt_.getElement().
+      querySelector('button.keyring-restore').click();
+  mockControl.$verifyAll();
+}
+
+function testCancelRestore() {
+  stubs.replace(e2e.ext.ui.Setup.prototype,
+                'showPage_', mockControl.createFunctionMock('showPage'));
+  page.showPage_(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertEquals('setup-intro', arg);
+    return true;
+  }));
+  mockControl.$replayAll();
+
+  page.decorate(document.documentElement);
+  page.keyringMgmt_.getElement().
+      querySelector('.keyring-cancel').click();
+  mockControl.$verifyAll();
+}
+
+function testGenerateKey() {
+  stubs.replace(window, 'alert', goog.nullFunction);
+  stubs.replace(page, 'showPage_', mockControl.createFunctionMock('showPage'));
+  page.showPage_(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertEquals('setup-backup-key', arg);
+    return true;
+  }));
+  mockControl.$replayAll();
+
+  page.decorate(document.documentElement);
+  goog.dom.getElement('welcome-content-novice').querySelector('input').value =
+      'test@yahoo.com';
+  goog.dom.getElement('welcome-content-novice').querySelector('button').click();
+
   testCase.waitForAsync('waiting for key to be generated');
 
   window.setTimeout(function() {
-    testCase.continueTesting();
-    assertContains('welcomeGenKeyConfirm', document.body.textContent);
-    for (var childIdx = 0; childIdx < page.getChildCount(); childIdx++) {
-      var child = page.getChildAt(childIdx);
-      if (child instanceof e2e.ext.ui.dialogs.Generic) {
-        child.dialogCallback_();
-      }
-    }
-    assertNotContains('welcomeGenKeyConfirm', document.body.textContent);
-
     mockControl.$verifyAll();
+    testCase.continueTesting();
   }, 500);
 }
-
 
 function testGenerateBadKey() {
   stubs.replace(window, 'alert', mockControl.createFunctionMock('alert'));
@@ -191,13 +192,45 @@ function testGenerateBadKey() {
   mockControl.$replayAll();
 
   page.decorate(document.documentElement);
-  page.generateKey_({reset: function() {}, sendKeys: function(key, cb) {
-                      cb();
-                    }},
-                    '', 'test@example.com', '');
+  goog.dom.getElement('welcome-content-novice').querySelector('input').value =
+      'test@foo.com';
+  goog.dom.getElement('welcome-content-novice').querySelector('button').click();
+
+  testCase.waitForAsync('waiting for key to be generated');
+
+  window.setTimeout(function() {
+    mockControl.$verifyAll();
+    testCase.continueTesting();
+  }, 500);
+}
+
+function testShowBackup() {
+  stubs.replace(page, 'showPage_', mockControl.createFunctionMock('showPage'));
+  page.showPage_(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertEquals('setup-passphrase', arg);
+    return true;
+  }));
+  mockControl.$replayAll();
+
+  page.decorate(document.documentElement);
+  goog.dom.getElement('setup-backup-key').querySelector('button').click();
   mockControl.$verifyAll();
 }
 
+function testShowPassphraseTutorial() {
+  stubs.replace(page, 'showPage_', mockControl.createFunctionMock('showPage'));
+  page.showPage_(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+    assertEquals('setup-tutorial', arg);
+    return true;
+  }));
+  mockControl.$replayAll();
+
+  page.decorate(document.documentElement);
+
+  goog.dom.getElement('setup-passphrase').querySelector(
+    'button.keyring-cancel').click();
+  mockControl.$verifyAll();
+}
 
 function testImportKeyring() {
   stubs.replace(e2e.ext.utils, 'readFile',
@@ -237,7 +270,6 @@ function testImportKeyring() {
         child.dialogCallback_();
       }
     }
-    assertNotContains('welcomeKeyImport', document.body.textContent);
     mockControl.$verifyAll();
     testCase.continueTesting();
   }, 500);
@@ -245,7 +277,6 @@ function testImportKeyring() {
 
 
 function testUpdateKeyringPassphrase() {
-  page.decorate(document.documentElement);
   stubs.set(launcher.pgpContext_, 'changeKeyRingPassphrase',
       mockControl.createFunctionMock('changeKeyRingPassphrase'));
   launcher.pgpContext_.changeKeyRingPassphrase('testPass');
@@ -254,18 +285,15 @@ function testUpdateKeyringPassphrase() {
       launcher.pgpContext_, 'isKeyRingEncrypted', function() {return true;});
 
   mockControl.$replayAll();
+  page.decorate(document.documentElement);
   page.updateKeyringPassphrase_('testPass');
 
-  assertContains(
-      'keyMgmtChangePassphraseSuccessMsg', document.body.textContent);
   for (var childIdx = 0; childIdx < page.getChildCount(); childIdx++) {
     var child = page.getChildAt(childIdx);
     if (child instanceof e2e.ext.ui.dialogs.Generic) {
       child.dialogCallback_();
     }
   }
-  assertNotContains(
-      'keyMgmtChangePassphraseSuccessMsg', document.body.textContent);
 
   mockControl.$verifyAll();
 }
@@ -282,8 +310,8 @@ function testRenderPassphraseCallback() {
   callback(passphrase);
 
   mockControl.$replayAll();
-
   page.decorate(document.documentElement);
+
   page.renderPassphraseCallback_('test_uid', callback);
 
   assertContains('test_uid', document.body.textContent);
@@ -297,15 +325,3 @@ function testRenderPassphraseCallback() {
 
   mockControl.$verifyAll();
 }
-
-
-function populatePgpKeys() {
-  var ctx = launcher.getContext();
-  ctx.importKey(function(uid, callback) {
-    console.debug(arguments);
-    callback('test');
-  }, PRIVATE_KEY_ASCII);
-
-  ctx.importKey(function() {}, PUBLIC_KEY_ASCII);
-}
-
