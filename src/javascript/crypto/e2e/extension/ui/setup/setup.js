@@ -315,15 +315,13 @@ ui.Setup.prototype.generateKey_ =
             defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
             defaults.subkeyLength, name, comments, email, expDate).
             addCallback(goog.bind(function(key) {
-              //panel.sendKeys(key, goog.bind(function(response) {
-              // Refresh the backup phrase to include the key we just made
-              this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
-                console.log('setting content', this);
-                console.log(this.backupDialog_);
-                this.backupDialog_.setContent(phrase);
-                this.showPage_(constants.ElementId.SETUP_BACKUP_KEY);
-              }, this));
-              // }, this), pgpCtx);
+              panel.sendKeys(key, goog.bind(function(response) {
+                // Refresh the backup phrase to include the key we just made
+                this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
+                  this.backupDialog_.setContent(phrase);
+                  this.showPage_(constants.ElementId.SETUP_BACKUP_KEY);
+                }, this));
+              }, this), pgpCtx);
             }, this));
       }), this.displayFailure_, this);
 };

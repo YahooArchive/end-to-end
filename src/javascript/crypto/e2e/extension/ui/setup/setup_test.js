@@ -24,6 +24,7 @@ goog.provide('e2e.ext.ui.SetupTest');
 goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
+goog.require('e2e.ext.ui.panels.GenerateKey');
 goog.require('e2e.ext.ui.panels.KeyringMgmtMini');
 goog.require('e2e.ext.ui.Setup');
 goog.require('goog.testing.AsyncTestCase');
@@ -163,6 +164,10 @@ function testCancelRestore() {
 
 function testGenerateKey() {
   stubs.replace(window, 'alert', goog.nullFunction);
+  stubs.replace(panels.GenerateKey.prototype, 'sendKeys', function(keys, cb) {
+    assertEquals('<test@yahoo.com>', keys[0].uids[0]);
+    cb();
+  });
   stubs.replace(page, 'showPage_', mockControl.createFunctionMock('showPage'));
   page.showPage_(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
     assertEquals('setup-backup-key', arg);
