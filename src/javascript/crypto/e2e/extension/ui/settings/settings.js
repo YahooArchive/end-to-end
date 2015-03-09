@@ -217,6 +217,7 @@ ui.Settings.prototype.generateKey_ =
   }
   if (goog.array.contains(this.publicKeyUids_,
                           normalizedEmail.toLowerCase())) {
+    // TODO: Rebuild this.publicKeyUids_ before this is called.
     alert(chrome.i18n.getMessage('duplicateKeyWarning'));
     return null;
   }
