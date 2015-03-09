@@ -260,7 +260,7 @@ e2ebind.focusHandler_ = function(e) {
     try {
       e2ebind.getDraft(goog.bind(function(draft) {
         draft.to = draft.to || [];
-        draft.cc  = draft.cc || [];
+        draft.cc = draft.cc || [];
         draft.bcc = draft.bcc || [];
         var recipients = draft.to.concat(draft.cc).concat(draft.bcc);
 
@@ -328,6 +328,22 @@ e2ebind.start = function() {
     goog.style.setElementShown(window.document.getElementById('theAd'), false);
     goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
                                false);
+  });
+
+  // Refresh the keyring.
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.LIST_ALL_UIDS,
+    content: 'public'
+  }), function(response) {
+    response.content = response.content || [];
+
+    // Convert UIDs to emails since the keyserver and ymail use emails
+    var emails = utils.text.getValidEmailAddressesFromArray(response.content,
+                                                            true);
+    e2ebind.keyserverClient_.fetchAndImportKeys(emails, function(results) {
+      console.log('refreshing keys:\n');
+      console.dir(results);
+    });
   });
 };
 
@@ -829,16 +845,16 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
       // Otherwise try to fetch the missing recipients from the keyserver
       e2ebind.keyserverClient_.fetchAndImportKeys(invalidRecipients,
                                                   function(results) {
-        if (results) {
-          goog.object.forEach(results, function(valid, recipient) {
-            goog.object.set(validity, recipient, valid);
+            if (results) {
+              goog.object.forEach(results, function(valid, recipient) {
+                goog.object.set(validity, recipient, valid);
+              });
+            }
+            callback(validity);
+          }, function() {
+            callback(validity);
+            console.error('Error fetching keys in e2ebind');
           });
-        }
-        callback(validity);
-      }, function() {
-        callback(validity);
-        console.error('Error fetching keys in e2ebind');
-      });
     }
   });
 };
