@@ -215,7 +215,9 @@ ui.Setup.prototype.decorateInternal = function(elem) {
   var passphraseDialog = new ui.panels.KeyringMgmtMini(
     goog.nullFunction, goog.nullFunction,
     goog.bind(this.updateKeyringPassphrase_, this), goog.nullFunction,
-    goog.bind(this.showPage_, this, constants.ElementId.SETUP_TUTORIAL),
+    goog.bind(function() {
+      this.showPage_(constants.ElementId.SETUP_TUTORIAL);
+    }, this),
     chrome.i18n.getMessage('setupPassphraseText'),
     chrome.i18n.getMessage('setupSkip'));
   this.addChild(passphraseDialog, false);
@@ -242,7 +244,9 @@ ui.Setup.prototype.decorateInternal = function(elem) {
         goog.bind(this.importKeyring_, this),
         goog.nullFunction,
         restoreCallback,
-        goog.bind(this.showPage_, this, constants.ElementId.SETUP_INTRO),
+        goog.bind(function() {
+          this.showPage_(constants.ElementId.SETUP_INTRO);
+        }, this),
         chrome.i18n.getMessage('setupRestoreText'));
     this.addChild(this.keyringMgmt_, false);
     this.keyringMgmt_.render(
@@ -267,7 +271,9 @@ ui.Setup.prototype.enterDocument = function() {
     listen(
         goog.dom.getElement(constants.ElementId.SETUP_TUTORIAL_BUTTON),
         goog.events.EventType.CLICK,
-        goog.bind(this.showPage_, this, constants.ElementId.SETUP_TUTORIAL));
+        goog.bind(function() {
+          this.showPage_(constants.ElementId.SETUP_TUTORIAL);
+        }, this));
 };
 
 
@@ -337,7 +343,9 @@ ui.Setup.prototype.importKeyring_ = function(file) {
     }), this, goog.bind(function(res) {
       var dialog = new dialogs.Generic(
           chrome.i18n.getMessage('welcomeKeyImport'),
-          goog.bind(this.showPage_, this, constants.ElementId.SETUP_PASSPHRASE),
+          goog.bind(function() {
+            this.showPage_(constants.ElementId.SETUP_PASSPHRASE);
+          }, this),
           dialogs.InputType.NONE);
       this.removeChild(this.keyringMgmt_, false);
       this.addChild(dialog, false);
@@ -397,7 +405,9 @@ ui.Setup.prototype.afterRestoreKeyring_ = function(uid) {
   // TODO: Show a more informative notification here
   var dialog = new dialogs.Generic(
       chrome.i18n.getMessage('welcomeKeyRestore', uid),
-      goog.bind(this.showPage_, this, constants.ElementId.SETUP_PASSPHRASE),
+      goog.bind(function() {
+        this.showPage_(constants.ElementId.SETUP_PASSPHRASE);
+      }, this),
       dialogs.InputType.NONE);
   this.removeChild(this.keyringMgmt_, false);
   this.addChild(dialog, false);
