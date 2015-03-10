@@ -718,6 +718,7 @@ e2ebind.setDraft = function(args) {
       });
     }, this));
 
+    /*
     var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
     if (!textElem) {
       console.error('No text element found for e2ebind');
@@ -763,6 +764,7 @@ e2ebind.setDraft = function(args) {
         showEncryptedLink.textContent = hideMessage;
       }
     };
+    */
   }
 };
 
