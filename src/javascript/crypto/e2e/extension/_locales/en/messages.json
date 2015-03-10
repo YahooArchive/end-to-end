@@ -28,7 +28,7 @@
     "description": "Message informing about failure in signature verification."
   },
   "promptEncryptSignTitle": {
-    "message": "Compose an Encrypted Message",
+    "message": "Compose a Protected Message",
     "description": "A friendly title for the encrypt&sign action."
   },
   "promptEncryptSignActionLabel": {
