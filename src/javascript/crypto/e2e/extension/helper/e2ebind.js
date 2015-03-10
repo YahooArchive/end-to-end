@@ -174,7 +174,6 @@ e2ebind.initComposeGlass_ = function(elt) {
   // If the element is null, then the icon wasn't clicked
   var iconClicked = (elt !== null);
   elt = elt || document.activeElement;
-  console.log('in initcomposeglass with elt', elt);
 
   e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(elt, 'div',
       constants.CssClass.COMPOSE_CONTAINER);
@@ -182,7 +181,6 @@ e2ebind.initComposeGlass_ = function(elt) {
       (!iconClicked && e2ebind.activeComposeElem_.hadAutoGlass)) {
     // Either there is no valid compose element to install the glass in,
     // or we already tried to auto-install the glass.
-    console.log('no active compose element');
     return;
   }
 
@@ -698,7 +696,6 @@ e2ebind.setDraft = function(args) {
         if (e2ebind.activeComposeElem_ === null) {
           console.warn('No active compose element for e2ebind');
         } else {
-          console.log('got setdraft response', response);
           e2ebind.activeComposeElem_.querySelector(
               '[data-action=send]').click();
         }
