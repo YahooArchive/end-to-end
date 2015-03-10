@@ -264,7 +264,7 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
       content: args.content,
       action: args.action
     });
-  } else if (args.action === constants.Actions.SET_DRAFT) {
+  } else if (args.action === constants.Actions.SET_AND_SEND_DRAFT) {
     var content = args.content;
     return /** @type {messages.BridgeMessageResponse} */ ({
       value: content.value,

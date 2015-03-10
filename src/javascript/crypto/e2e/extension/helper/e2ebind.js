@@ -158,6 +158,13 @@ e2ebind.messageHandler_ = function(response) {
 
 
 /**
+ * The active compose element.
+ * @type {Element}
+ */
+e2ebind.activeComposeElem_ = null;
+
+
+/**
  * Starts initializing the compose glass if either the lock icon was clicked
  * or if at least one recipient has a PGP key or the message is a PGP message.
  * @param {Element} elt Element for the lock icon or null if one was not clicked
@@ -167,12 +174,15 @@ e2ebind.initComposeGlass_ = function(elt) {
   // If the element is null, then the icon wasn't clicked
   var iconClicked = (elt !== null);
   elt = elt || document.activeElement;
+  console.log('in initcomposeglass with elt', elt);
 
-  var composeElem = goog.dom.getAncestorByTagNameAndClass(elt, 'div',
+  e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(elt, 'div',
       constants.CssClass.COMPOSE_CONTAINER);
-  if (!composeElem || (!iconClicked && composeElem.hadAutoGlass)) {
+  if (!e2ebind.activeComposeElem_ ||
+      (!iconClicked && e2ebind.activeComposeElem_.hadAutoGlass)) {
     // Either there is no valid compose element to install the glass in,
     // or we already tried to auto-install the glass.
+    console.log('no active compose element');
     return;
   }
 
@@ -203,7 +213,7 @@ e2ebind.initComposeGlass_ = function(elt) {
             draft.cc = getDraftResult.cc;
             draft.bcc = getDraftResult.bcc;
             draft.subject = getDraftResult.subject;
-            e2ebind.installComposeGlass_(composeElem, draft);
+            e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
           }, this));
         } else {
           e2ebind.getCurrentMessage(goog.bind(function(result) {
@@ -216,7 +226,7 @@ e2ebind.initComposeGlass_ = function(elt) {
                   DOMelem.lookingGlass.getOriginalContent() :
                   DOMelem.innerText);
             }
-            e2ebind.installComposeGlass_(composeElem, draft);
+            e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
           }, this));
         }
       }, this));
@@ -676,6 +686,7 @@ e2ebind.hasDraft = function(callback) {
 e2ebind.setDraft = function(args) {
   // TODO(yan): Doesn't work when multiple provider compose windows are open
   // on the same page
+  // TODO(yan): handle SET_AND_SEND_DRAFT as an e2ebind responseAction
   e2ebind.sendRequest(constants.e2ebind.responseActions.SET_DRAFT,
                       /** @type {messages.e2ebindDraft} */ ({
         to: args.to || [],
@@ -683,7 +694,16 @@ e2ebind.setDraft = function(args) {
         bcc: args.bcc || [],
         subject: args.subject || '',
         body: args.body || '',
-      }));
+      }), function(response) {
+        if (e2ebind.activeComposeElem_ === null) {
+          console.warn('No active compose element for e2ebind');
+        } else {
+          console.log('got setdraft response', response);
+          e2ebind.activeComposeElem_.querySelector(
+              '[data-action=send]').click();
+        }
+      }
+  );
 
   // XXX: ymail doesn't handle setting the 'from' field when user has multiple
   // addresses.

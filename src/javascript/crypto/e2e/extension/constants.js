@@ -61,6 +61,7 @@ e2e.ext.constants.Actions = {
   SHOW_NOTIFICATION: 'show_notification',
   GLASS_CLOSED: 'glass_closed',
   SET_DRAFT: 'set_draft',
+  SET_AND_SEND_DRAFT: 'set_and_send_draft',
   GET_SELECTED_CONTENT: 'get_selected_content',
   OPEN_OPTIONS: 'open_options',
   CHANGE_PAGEACTION: 'change_pageaction',
@@ -298,6 +299,7 @@ e2e.ext.constants.e2ebind.responseActions = {
   HAS_DRAFT: 'has_draft',
   GET_DRAFT: 'get_draft',
   SET_DRAFT: 'set_draft',
+  SET_AND_SEND_DRAFT: 'set_and_send_draft',
   GET_CURRENT_MESSAGE: 'get_current_message'
 };
 

@@ -159,36 +159,6 @@ ui.ComposeGlass.prototype.processActiveContent_ = function() {
 
 
 /**
- * Sets the provided content into the currently active page.
- * Note: This function might not work while debugging the extension.
- * @param {string} content The content to write inside the selected element.
- * @param {!Array.<string>} recipients The recipients of the message.
- * @param {string} subject Subject of the message
- * @param {string} from Sender of the message
- * @param {!function(...)} callback The function to invoke once the message to
- *   update active content has been sent
- * @private
- */
-ui.ComposeGlass.prototype.updateActiveContent_ =
-    function(content, recipients, subject, from, callback) {
-  var response = /** @type {messages.BridgeMessageResponse} */ ({
-    value: content,
-    response: true,
-    detach: true,
-    origin: this.origin,
-    recipients: recipients,
-    subject: subject,
-    from: from
-  });
-  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
-    action: constants.Actions.SET_DRAFT,
-    content: response
-  }));
-  callback();
-};
-
-
-/**
  * @param {constants.Actions} action
  * @param {string} origin
  * @param {Event} event
@@ -480,7 +450,7 @@ ui.ComposeGlass.prototype.getRecipientUids_ = function() {
 
 
 /**
- * Sends the request to insert the message into the page;
+ * Sends the request to encrypt the message, then inserts and sends the result
  * @param {!messages.ApiRequest} request The request to send
  * @param {string} origin The origin of the page
  */
@@ -552,7 +522,7 @@ ui.ComposeGlass.prototype.displaySuccess_ = function(msg, callback) {
 
 
 /**
- * Inserts the encrypted content into the page.
+ * Inserts the encrypted content into the page and sends it.
  * @param {string} origin The web origin for which the PGP action is performed.
  * @param {string} text The encrypted text to insert into the page.
  * @private
@@ -561,8 +531,22 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin, text) {
   var recipients = this.chipHolder_.getSelectedUids();
   var subject = this.getElement().querySelector('#subjectHolder input').value;
   var from = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
-  this.updateActiveContent_(
-      text, recipients, subject, from, goog.bind(this.close, this));
+
+  var response = /** @type {messages.BridgeMessageResponse} */ ({
+    value: text,
+    response: true,
+    detach: true,
+    origin: this.origin,
+    recipients: recipients,
+    subject: subject,
+    from: from
+  });
+
+  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
+    action: constants.Actions.SET_AND_SEND_DRAFT,
+    content: response
+  }));
+  this.close();
 };
 
 
