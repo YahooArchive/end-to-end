@@ -127,6 +127,10 @@ button.back > img {
   width: 540px;
 }
 
+#callbackDialog {
+  pointer-events: auto;
+}
+
 .overlayDialog .modal-dialog-title {
   background: inherit;
 }
@@ -219,4 +223,8 @@ input:focus {
 
 #setup-intro-content {
   font-weight: bold;
+}
+
+.unclickable {
+  pointer-events: none;
 }

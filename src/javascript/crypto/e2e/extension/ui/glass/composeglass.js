@@ -594,6 +594,8 @@ ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function(opt_recipients,
         invalidRecipients).join('\n');
     var dialog = new ui.dialogs.Generic(message, goog.bind(function(result) {
           goog.dispose(dialog);
+          goog.dom.classlist.remove(this.getElement(),
+                                    constants.CssClass.UNCLICKABLE);
           if (typeof result !== 'undefined') {
             // user clicked ok
             this.chipHolder_.removeUids(invalidRecipients);
@@ -608,6 +610,10 @@ ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function(opt_recipients,
         chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'));
     this.addChild(dialog, false);
     dialog.render(goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG));
+
+    // Set the background element to be unclickable.
+    goog.dom.classlist.add(this.getElement(),
+                           constants.CssClass.UNCLICKABLE);
   }
 };
 
