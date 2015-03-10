@@ -211,18 +211,28 @@ function testRender() {
 
 function testRenderWithMissingRecipient() {
   populatePgpKeys();
-  stubs.replace(composeglass, 'fetchKeys_', function(cb) {
-    cb([], ['adhintz@google.com']);
-  });
+  stubs.replace(composeglass, 'fetchKeys_',
+                mockControl.createFunctionMock('insertMessageIntoPage_'));
+  composeglass.fetchKeys_(new goog.testing.mockmatchers.ArgumentMatcher(
+      function(arg) {
+        arg([], ['adhintz@google.com']);
+        return true;
+  }));
+  mockControl.$replayAll();
+
   composeglass.decorate(document.documentElement);
   asyncTestCase.waitForAsync('Waiting for keys to be imported');
   var textarea = document.querySelector('textarea');
   window.setTimeout(function() {
     textarea.focus();
+
+    document.querySelector('button.insert').click();
+
     assertArrayEquals(['test 4'],
                       composeglass.allAvailableRecipients_);
     var dialog = goog.dom.getElement('callbackDialog');
     assertContains('adhintz@google.com', dialog.textContent);
+    mockControl.$verifyAll();
     asyncTestCase.continueTesting();
   }, 200);
 }
@@ -287,10 +297,17 @@ function testSendUnsignedPlaintext() {
         assertEquals('foo', arg);
         return true;
       }));
+  stubs.replace(composeglass, 'handleMissingPublicKeys_',
+                mockControl.createFunctionMock('handleMissingPublicKeys_'));
+  composeglass.handleMissingPublicKeys_(
+    goog.testing.mockmatchers.ignoreArgument,
+    new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+      arg();
+      return true;
+    })
+  );
   mockControl.$replayAll();
 
-  composeglass.sendUnencrypted_ = true;
-  stubs.replace(composeglass, 'handleMissingPublicKeys_', goog.nullFunction);
   composeglass.recipients = ['adhintz@google.com', 'yan@yahoo-inc.com'];
 
   composeglass.decorate(document.documentElement);
@@ -320,10 +337,18 @@ function testSendSignedPlaintext() {
         assertContains('-----BEGIN PGP SIGNED MESSAGE', arg);
         return true;
       }));
+
+  stubs.replace(composeglass, 'handleMissingPublicKeys_',
+                mockControl.createFunctionMock('handleMissingPublicKeys_'));
+  composeglass.handleMissingPublicKeys_(
+    goog.testing.mockmatchers.ignoreArgument,
+    new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+      arg();
+      return true;
+    })
+  );
   mockControl.$replayAll();
 
-  composeglass.sendUnencrypted_ = true;
-  stubs.replace(composeglass, 'handleMissingPublicKeys_', goog.nullFunction);
   composeglass.recipients = ['test@yahoo-inc.com', 'yan@yahoo-inc.com'];
 
   stubs.replace(composeglass, 'shouldSignMessage_', function() {return true;});

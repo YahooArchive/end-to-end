@@ -103,14 +103,6 @@ goog.inherits(ui.ComposeGlass, goog.ui.Component);
 ui.ComposeGlass.prototype.chipHolder_ = null;
 
 
-/**
- * Whether the user is okay with sending this message unencrypted.
- * @type {boolean}
- * @private
- */
-ui.ComposeGlass.prototype.sendUnencrypted_ = false;
-
-
 /** @override */
 ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
@@ -276,48 +268,49 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         goog.style.setHeight(textArea, newHeight);
       }
 
-      // Show green icon in the URL bar when the secure text area is in focus
-      // so page XSS attacks are less likely to compromise plaintext
       textArea.onfocus = goog.bind(function() {
         this.clearFailure_();
+
+        // Show green icon in the URL bar when the secure text area is in focus
+        // so page XSS attacks are less likely to compromise plaintext
         utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
           action: constants.Actions.CHANGE_PAGEACTION
         }));
-        if (!this.sendUnencrypted_) {
-          try {
-            this.fetchKeys_(goog.bind(function(validRecipients,
-                                               invalidRecipients) {
-              // Add the valid recipients to the lists of all avail recipients
-              goog.array.forEach(validRecipients,
-                                 goog.bind(function(recipient) {
-                // For now, keyserver entries have uid === email
-                goog.object.add(this.recipientsEmailMap_, recipient,
-                                ['<' + recipient + '>']);
-              }, this));
-              this.allAvailableRecipients_ = goog.object.getKeys(
-                  this.recipientsEmailMap_);
-              // Show them as good in the UI
-              if (this.chipHolder_) {
-                this.chipHolder_.markGoodChips(validRecipients);
-              }
-              // Pop up warning to remove the invalid recipients
-              this.handleMissingPublicKeys_(invalidRecipients);
-              // Tell the user we've imported some keys
-              if (validRecipients.length > 0) {
-                utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */
-                                           ({
-                  action: constants.Actions.SHOW_NOTIFICATION,
-                  content: chrome.i18n.getMessage(
-                      'promptImportKeyNotificationLabel',
-                      validRecipients.toString())
-                }));
-              }
+
+        try {
+          this.fetchKeys_(goog.bind(function(validRecipients,
+                                             invalidRecipients) {
+            // Add the valid recipients to the lists of all avail recipients
+            goog.array.forEach(validRecipients,
+                               goog.bind(function(recipient) {
+              // For now, keyserver entries have uid === email
+              goog.object.add(this.recipientsEmailMap_, recipient,
+                              ['<' + recipient + '>']);
             }, this));
-          } catch(e) {
-            this.displayFailure_(e);
-          }
+            this.allAvailableRecipients_ = goog.object.getKeys(
+                this.recipientsEmailMap_);
+
+            // Show them as good in the UI
+            if (this.chipHolder_) {
+              this.chipHolder_.markGoodChips(validRecipients);
+            }
+
+            // Tell the user we've imported some keys
+            if (validRecipients.length > 0) {
+              utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */
+                                         ({
+                action: constants.Actions.SHOW_NOTIFICATION,
+                content: chrome.i18n.getMessage(
+                    'promptImportKeyNotificationLabel',
+                    validRecipients.toString())
+              }));
+            }
+          }, this));
+        } catch(e) {
+          this.displayFailure_(e);
         }
       }, this);
+
       textArea.onblur = goog.bind(function() {
         utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
           action: constants.Actions.RESET_PAGEACTION
@@ -415,9 +408,11 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
       if (this.chipHolder_) {
         var invalidRecipients = this.getInvalidRecipients_();
         if (invalidRecipients.length === 0) {
+          // All recipients valid, so we can just send the message.
           request.recipients = this.getRecipientUids_();
           this.sendRequestToInsert_(request, origin);
-        } else if (!this.sendUnencrypted_) {
+        } else {
+          // Otherwise ask to remove invalid recipients or send unencrypted msg
           this.handleMissingPublicKeys_(undefined, goog.bind(function() {
             var invalidRecipients = this.getInvalidRecipients_();
             if (invalidRecipients.length === 0) {
@@ -425,8 +420,6 @@ ui.ComposeGlass.prototype.executeAction_ = function(action, elem, origin) {
             }
             this.sendRequestToInsert_(request, origin);
           }, this));
-        } else {
-          this.sendRequestToInsert_(request, origin);
         }
       }
   }
@@ -597,17 +590,16 @@ ui.ComposeGlass.prototype.handleMissingPublicKeys_ = function(opt_recipients,
           goog.dom.classlist.remove(this.getElement(),
                                     constants.CssClass.UNCLICKABLE);
           if (typeof result !== 'undefined') {
-            // user clicked ok
+            // user clicked ok to remove missing recipients
             this.chipHolder_.removeUids(invalidRecipients);
-          } else {
-            this.sendUnencrypted_ = true;
-          }
-          if (opt_callback) {
+          } else if (opt_callback) {
+            // User clicked 'send unencrypted message'
             opt_callback();
           }
         }, this), ui.dialogs.InputType.NONE, undefined,
         chrome.i18n.getMessage('composeGlassRemoveRecipients'),
         chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'));
+
     this.addChild(dialog, false);
     dialog.render(goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG));
 
