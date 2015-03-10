@@ -696,6 +696,7 @@ e2ebind.setDraft = function(args) {
         if (e2ebind.activeComposeElem_ === null) {
           console.warn('No active compose element for e2ebind');
         } else {
+          // Send the message by clicking the "send" button in ymail
           e2ebind.activeComposeElem_.querySelector(
               '[data-action=send]').click();
         }
@@ -714,55 +715,60 @@ e2ebind.setDraft = function(args) {
         }
       });
     }, this));
-
-    /*
-    var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
-    if (!textElem) {
-      console.error('No text element found for e2ebind');
-      return;
-    }
-
-    // Change the "show ..." link depending on whether encrypted or signed
-    var hideMessage;
-    var showMessage;
-    if (e2e.openpgp.asciiArmor.isClearSign(args.body)) {
-      hideMessage = chrome.i18n.getMessage('e2ebindHideSigned');
-      showMessage = chrome.i18n.getMessage('e2ebindShowSigned');
-    } else if (e2e.openpgp.asciiArmor.isEncrypted(args.body)) {
-      hideMessage = chrome.i18n.getMessage('e2ebindHideEncrypted');
-      showMessage = chrome.i18n.getMessage('e2ebindShowEncrypted');
-    } else {
-      return;
-    }
-
-    // Add a link to toggle encrypted text visibility as a sibling element
-    var showEncryptedLink =
-        goog.dom.getElement(constants.ElementId.E2EBIND_SHOW_ENCRYPTED_LINK);
-    if (!showEncryptedLink) {
-      showEncryptedLink = document.createElement('a');
-      showEncryptedLink.href = '#';
-      showEncryptedLink.id = constants.ElementId.E2EBIND_SHOW_ENCRYPTED_LINK;
-      showEncryptedLink.style.color = '#878C91'; // FUJI grey 6
-      showEncryptedLink.style['line-height'] = '50px';
-      goog.dom.insertSiblingBefore(showEncryptedLink, textElem);
-    }
-
-    // Hide the encrypted blob by default
-    goog.style.setElementShown(textElem, false);
-    showEncryptedLink.textContent = showMessage;
-
-    // Toggle message display when the "show ..." link is clicked
-    showEncryptedLink.onclick = function() {
-      if (goog.style.isElementShown(textElem)) {
-        goog.style.setElementShown(textElem, false);
-        showEncryptedLink.textContent = showMessage;
-      } else {
-        goog.style.setElementShown(textElem, true);
-        showEncryptedLink.textContent = hideMessage;
-      }
-    };
-    */
   }
+};
+
+
+/**
+ * Replaces encrypted/signed blob with an "Show encrypted/signed message" link.
+ * @param {string} blob The encrypted/signed message
+ */
+e2ebind.hideBlob_ = function(blob) {
+  var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
+  if (!textElem) {
+    console.warn('No text element found for e2ebind');
+    return;
+  }
+
+  // Change the "show ..." link depending on whether encrypted or signed
+  var hideMessage;
+  var showMessage;
+  if (e2e.openpgp.asciiArmor.isClearSign(blob)) {
+    hideMessage = chrome.i18n.getMessage('e2ebindHideSigned');
+    showMessage = chrome.i18n.getMessage('e2ebindShowSigned');
+  } else if (e2e.openpgp.asciiArmor.isEncrypted(blob)) {
+    hideMessage = chrome.i18n.getMessage('e2ebindHideEncrypted');
+    showMessage = chrome.i18n.getMessage('e2ebindShowEncrypted');
+  } else {
+    return;
+  }
+
+  // Add a link to toggle encrypted text visibility as a sibling element
+  var showEncryptedLink =
+      goog.dom.getElement(constants.ElementId.E2EBIND_SHOW_ENCRYPTED_LINK);
+  if (!showEncryptedLink) {
+    showEncryptedLink = document.createElement('a');
+    showEncryptedLink.href = '#';
+    showEncryptedLink.id = constants.ElementId.E2EBIND_SHOW_ENCRYPTED_LINK;
+    showEncryptedLink.style.color = '#878C91'; // FUJI grey 6
+    showEncryptedLink.style['line-height'] = '50px';
+    goog.dom.insertSiblingBefore(showEncryptedLink, textElem);
+  }
+
+  // Hide the encrypted blob by default
+  goog.style.setElementShown(textElem, false);
+  showEncryptedLink.textContent = showMessage;
+
+  // Toggle message display when the "show ..." link is clicked
+  showEncryptedLink.onclick = function() {
+    if (goog.style.isElementShown(textElem)) {
+      goog.style.setElementShown(textElem, false);
+      showEncryptedLink.textContent = showMessage;
+    } else {
+      goog.style.setElementShown(textElem, true);
+      showEncryptedLink.textContent = hideMessage;
+    }
+  };
 };
 
 

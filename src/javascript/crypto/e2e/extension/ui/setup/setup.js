@@ -321,13 +321,7 @@ ui.Setup.prototype.generateKey_ =
                   this.backupDialog_.setContent(phrase);
                   this.showPage_(constants.ElementId.SETUP_BACKUP_KEY);
                   // Reload any open ymail pages so it has the new key.
-                  console.log('setting tab');
-                  chrome.tabs.query({url: 'https://*.mail.yahoo.com/*'},
-                                    function(tabs) {
-                                      goog.array.forEach(tabs, function(tab) {
-                                        chrome.tabs.reload(tab.id);
-                                      });
-                                    });
+                  utils.action.refreshYmail();
                 }, this));
               }, this), pgpCtx);
             }, this));

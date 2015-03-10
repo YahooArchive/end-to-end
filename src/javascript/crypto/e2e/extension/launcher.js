@@ -25,6 +25,7 @@ goog.provide('e2e.ext.Launcher');
 goog.require('e2e.ext.api.Api');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.ui.preferences');
+goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.Context');
 goog.require('e2e.openpgp.ContextImpl');
@@ -186,11 +187,7 @@ ext.Launcher.prototype.start_ = function(passphrase) {
   this.pgpContext_.setKeyRingPassphrase(passphrase);
 
   // All ymail tabs need to be reloaded for the e2ebind API to work
-  chrome.tabs.query({url: 'https://*.mail.yahoo.com/*'}, function(tabs) {
-    goog.array.forEach(tabs, function(tab) {
-      chrome.tabs.reload(tab.id);
-    });
-  });
+  utils.action.refreshYmail();
 
   if (goog.global.chrome &&
       goog.global.chrome.runtime &&

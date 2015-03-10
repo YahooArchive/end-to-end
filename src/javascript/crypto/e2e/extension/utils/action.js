@@ -202,4 +202,16 @@ utils.getAddressFromYBY_ = function(callback) {
   }
 };
 
+
+/**
+ * Refreshes active ymail tabs so e2ebind is reloaded.
+ */
+utils.refreshYmail = function() {
+  chrome.tabs.query({url: 'https://*.mail.yahoo.com/*'}, function(tabs) {
+    goog.array.forEach(tabs, function(tab) {
+      chrome.tabs.reload(tab.id);
+    });
+  });
+};
+
 });  // goog.scope

@@ -502,6 +502,5 @@ function testSetDraft() {
 
   e2ebind.start();
 
-  asyncTestCase.waitForAsync('waiting for setDraft');
   e2ebind.setDraft(draft);
 }
