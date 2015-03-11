@@ -337,19 +337,8 @@ e2ebind.start = function() {
   });
 
   // Refresh the keyring.
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-    action: constants.Actions.LIST_ALL_UIDS,
-    content: 'public'
-  }), function(response) {
-    response.content = response.content || [];
-
-    // Convert UIDs to emails since the keyserver and ymail use emails
-    var emails = utils.text.getValidEmailAddressesFromArray(response.content,
-                                                            true);
-    e2ebind.keyserverClient_.fetchAndImportKeys(emails, function(results) {
-      console.log('refreshing keys:\n');
-      console.dir(results);
-    });
+  e2ebind.keyserverClient_.refreshKeyring(function(results) {
+    console.log('refreshed keys', results);
   });
 };
 
@@ -858,9 +847,9 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
               });
             }
             callback(validity);
-          }, function() {
+          }, function(status) {
             callback(validity);
-            console.error('Error fetching keys in e2ebind');
+            console.error('Error fetching keys in e2ebind', status);
           });
     }
   });

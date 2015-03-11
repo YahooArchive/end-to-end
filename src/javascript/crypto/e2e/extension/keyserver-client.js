@@ -151,7 +151,7 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
  * @param {string} path The URL path, ex: 'foo/bar'.
  * @param {function(?messages.KeyserverKeyOutput)} callback
  *   The success callback.
- * @param {function()} errback The errorback for non-200 codes.
+ * @param {function(*)} errback The errorback for non-200 codes.
  * @private
  */
 ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
@@ -180,7 +180,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
         // We looked up keys for a user not supported by the keyserver.
         callback(null);
       } else {
-        errback();
+        errback(JSON.stringify({path: path, status: xhr.status}));
       }
     }
   }, this);
@@ -191,7 +191,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
  * Fetches a key by userid from the keyserver.
  * @param {string} userid userid to look up. ex: yan@yahoo.com
  * @param {function(?messages.KeyserverKeyOutput)} callback
- * @param {function()} errback
+ * @param {function(*)} errback
  * @private
  */
 ext.keyserver.Client.prototype.fetchKey_ = function(userid, callback, errback) {
@@ -248,7 +248,7 @@ ext.keyserver.Client.prototype.sendKey = function(userid, key, callback,
  * @param {!Array.<string>} userids the userids to look up
  * @param {function(Object.<string, boolean>)} cb callback to call when
  *   all imports are finished or determined to be impossible
- * @param {function()=} opt_errback Optional error callback.
+ * @param {function(*)=} opt_errback Optional error callback.
  */
 ext.keyserver.Client.prototype.fetchAndImportKeys = function(userids, cb,
                                                              opt_errback) {
@@ -385,5 +385,29 @@ ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
       null;
 };
 
+
+/**
+ * Refreshes keys in the keyring from the keyserver. Does not delete old keys.
+ * @param {function(Object.<string, boolean>)} cb callback to call when
+ *   all imports are finished or determined to be impossible
+ */
+ext.keyserver.Client.prototype.refreshKeyring = function(cb) {
+  // Refresh the keyring.
+  ext.utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.LIST_ALL_UIDS,
+    content: 'public'
+  }), goog.bind(function(response) {
+    response.content = response.content || [];
+
+    // Convert UIDs to emails since the keyserver and ymail use emails
+    var emails = ext.utils.text.getValidEmailAddressesFromArray(
+        response.content, true);
+    goog.array.removeDuplicates(emails);
+
+    this.fetchAndImportKeys(emails, cb, function(status) {
+      console.warn('Error refreshing keys', status);
+    });
+  }, this));
+};
 
 });  // goog.scope
