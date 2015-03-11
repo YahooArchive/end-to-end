@@ -160,6 +160,7 @@ e2ebind.messageHandler_ = function(response) {
 /**
  * The active compose element.
  * @type {Element}
+ * @private
  */
 e2ebind.activeComposeElem_ = null;
 
@@ -250,6 +251,11 @@ e2ebind.clickHandler_ = function(e) {
 };
 
 
+/**
+ * On focus event handler.
+ * @param {Element} e The element that was focused
+ * @private
+ */
 e2ebind.focusHandler_ = function(e) {
   var elt = e.target;
   if (goog.dom.getAncestorByTagNameAndClass(elt,
@@ -707,7 +713,7 @@ e2ebind.setDraft = function(args) {
         cc: args.cc || [],
         bcc: args.bcc || [],
         subject: args.subject || '',
-        body: args.body || '',
+        body: args.body || ''
       }), function(response) {
         if (e2ebind.activeComposeElem_ === null) {
           console.warn('No active compose element for e2ebind');
@@ -738,6 +744,7 @@ e2ebind.setDraft = function(args) {
 /**
  * Replaces encrypted/signed blob with an "Show encrypted/signed message" link.
  * @param {string} blob The encrypted/signed message
+ * @private
  */
 e2ebind.hideBlob_ = function(blob) {
   var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
