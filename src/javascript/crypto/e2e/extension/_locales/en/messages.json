@@ -546,5 +546,8 @@
   },
   "setupNoviceTitle": {
     "message": "Generate new encryption keys"
+  },
+  "sendKeySuccess": {
+    "message": "Successfully registered key!"
   }
 }

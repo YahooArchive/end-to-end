@@ -182,13 +182,11 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
           this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
               function(response) {
                 // Key was successfully registered, and response is valid
-                console.log('in key success callback');
+                utils.action.refreshYmail();
                 callback(response);
-                window.alert('successfully registered key: ' +
-                             response);
+                window.alert(chrome.i18n.getMessage('sendKeySuccess'));
               }, this),
               goog.bind(function(err) {
-                console.log('in key failure callback');
                 // The key wasn't sent to the server or the server signature
                 // was invalid, so delete it for now.
                 // TODO: Separate key generation and import to keyring.

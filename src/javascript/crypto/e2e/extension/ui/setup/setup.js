@@ -320,8 +320,6 @@ ui.Setup.prototype.generateKey_ =
                 this.getBackupPhrase_().addCallback(goog.bind(function(phrase) {
                   this.backupDialog_.setContent(phrase);
                   this.showPage_(constants.ElementId.SETUP_BACKUP_KEY);
-                  // Reload any open ymail pages so it has the new key.
-                  utils.action.refreshYmail();
                 }, this));
               }, this), pgpCtx);
             }, this));
