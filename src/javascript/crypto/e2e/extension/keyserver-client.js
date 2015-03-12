@@ -33,6 +33,7 @@ goog.require('e2e.ext.constants.StorageKey');
 goog.require('e2e.ext.messages.KeyserverKeyInput');
 goog.require('e2e.ext.messages.KeyserverKeyOutput');
 goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.text');
 goog.require('e2e.random');
 goog.require('goog.array');
 goog.require('goog.crypt');
