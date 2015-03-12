@@ -82,6 +82,11 @@ function setUp() {
   stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
     callback({launcher: launcher});
   });
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(req, cb) {
+    if (req.action === constants.Actions.LIST_ALL_UIDS) {
+      cb({content: ['blah <yyy@yahoo-inc.com>']});
+    }
+  });
 
   stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendKey',
                 function(userid, key, cb, eb) {
@@ -123,14 +128,26 @@ function testRendering() {
 function testGenerateKey() {
   page.decorate(document.documentElement);
   testCase.waitForAsync('waiting for key to be generated');
-  fakeGenerateKey().addCallback(function() {
+  fakeGenerateKey();
+  window.setTimeout(function() {
     assertNotEquals(-1, document.body.textContent.indexOf(
         '<test@yahoo-inc.com>'));
     assertNotNull(window.localStorage.getItem('keyserver-signed-responses'));
     testCase.continueTesting();
-  });
+  }, 100);
 }
 
+function testGenerateKeyFail() {
+  page.decorate(document.documentElement);
+  fakeGenerateKey('yyy@yahoo-inc.com');
+  testCase.waitForAsync('waiting for key to be not generated');
+  window.setTimeout(function() {
+    launcher.pgpContext_.getAllKeys(true).addCallback(function(keys) {
+      assertObjectEquals({}, keys);
+      testCase.continueTesting();
+    });
+  }, 100);
+}
 
 function testRemoveKey() {
   stubs.set(launcher.pgpContext_, 'deleteKey',
@@ -145,20 +162,22 @@ function testRemoveKey() {
 
   page.decorate(document.documentElement);
   testCase.waitForAsync('waiting for key to be generated');
-  fakeGenerateKey().addCallback(function() {
+  fakeGenerateKey();
+  window.setTimeout(function() {
     page.removeKey_('test@yahoo-inc.com');
     window.setTimeout(function() {
       mockControl.$verifyAll();
       testCase.continueTesting();
-    }, 500);
-  });
+    }, 100);
+  }, 100);
 }
 
 
 function testExportKey() {
   page.decorate(document.documentElement);
   testCase.waitForAsync('waiting for key to be exported');
-  fakeGenerateKey().addCallback(function() {
+  fakeGenerateKey();
+  window.setTimeout(function() {
     stubs.replace(HTMLElement.prototype, 'click', function() {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', this.href, false);
@@ -168,7 +187,7 @@ function testExportKey() {
       testCase.continueTesting();
     });
     page.exportKey_('test user <test@yahoo-inc.com>');
-  });
+  }, 100);
 }
 
 function testImportKeyringAscii() {
@@ -233,7 +252,7 @@ function importKeyring(keyringContents, userName) {
     mockControl.$verifyAll();
     assertContains(userName, document.body.textContent);
     testCase.continueTesting();
-  }, 500);
+  }, 100);
 
 }
 
@@ -250,9 +269,8 @@ function testExportKeyring() {
   testCase.waitForAsync('waiting for keyring to be exported');
   window.setTimeout(function() {
     testCase.continueTesting();
-    // TODO(adhintz) Fix this test and enable this assert.
-    // assertTrue('Failed to export keyring', downloadedFile);
-  }, 500);
+    assertTrue('Failed to export keyring', downloadedFile);
+  }, 100);
 }
 
 
@@ -308,10 +326,10 @@ function testDisplayFailure() {
 }
 
 
-function fakeGenerateKey(opt_fullname) {
-  return page.generateKey_({reset: function() {},
+function fakeGenerateKey(opt_email) {
+  page.generateKey_({reset: function() {},
       sendKeys: function(keys, cb, ctx) {
         panel.sendKeys(keys, cb, ctx);
-      }}, opt_fullname || 'test user',
-      'test@yahoo-inc.com', 'comment');
+      }}, 'test user',
+      opt_email || 'test@yahoo-inc.com', 'comment');
 }
