@@ -74,8 +74,6 @@ ui.Settings = function() {
   this.actionExecutor_ = new e2e.ext.actions.Executor(
       goog.bind(this.displayFailure_, this));
 
-  this.privateKeyUids_ = [];
-  this.publicKeyUids_ = [];
 };
 goog.inherits(ui.Settings, goog.ui.Component);
 
@@ -127,21 +125,6 @@ ui.Settings.prototype.decorateInternal = function(elem) {
  * @private
  */
 ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
-  var keyMap = /**@type {!goog.structs.Map} */ (new goog.structs.Map(pgpKeys));
-  keyMap.forEach(goog.bind(function(keys, id) {
-    var email = utils.text.extractValidEmail(id);
-    if (!email) {
-      return;
-    }
-    goog.array.forEach(keys, goog.bind(function(key) {
-      if (key.key.secret) {
-        this.privateKeyUids_.push(email.toLowerCase());
-      } else {
-        this.publicKeyUids_.push(email.toLowerCase());
-      }
-    }, this));
-  }, this));
-
   var elem = this.getElement();
 
   soy.renderElement(elem, templates.settings, {
@@ -198,6 +181,25 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
 
 
 /**
+ * Gets lists of email addresses for keys in the keyring.
+ * @param {string} type 'public' or 'private'
+ * @param {!function(Array.<string>)} callback
+ * @private
+ */
+ui.Settings.prototype.getEmails_ = function(type, callback) {
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.LIST_ALL_UIDS,
+    content: type
+  }), function(response) {
+    response.content = response.content || [];
+    var emails = utils.text.getValidEmailAddressesFromArray(response.content,
+                                                            true);
+    callback(emails);
+  });
+};
+
+
+/**
  * Generates a new PGP key using the information that is provided by the user.
  * @param {panels.GenerateKey} panel The panel where the user has provided the
  *     information for the new key.
@@ -206,7 +208,6 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
  * @param {string} comments The comments to use.
  * @param {number} expDate The expiration date to use.
  * @private
- * @return {?goog.async.Deferred}
  */
 ui.Settings.prototype.generateKey_ =
     function(panel, name, email, comments, expDate) {
@@ -215,24 +216,26 @@ ui.Settings.prototype.generateKey_ =
     alert(chrome.i18n.getMessage('invalidEmailWarning'));
     return null;
   }
-  if (goog.array.contains(this.publicKeyUids_,
-                          normalizedEmail.toLowerCase())) {
-    // TODO: Rebuild this.publicKeyUids_ before this is called.
-    alert(chrome.i18n.getMessage('duplicateKeyWarning'));
-    return null;
-  }
 
-  var defaults = constants.KEY_DEFAULTS;
-  return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
-      defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
-      defaults.subkeyLength, name, comments, email, expDate)
-      .addCallback(goog.bind(function(key) {
-        // Key should be an array of exactly size 2 (one public, one private)
-        panel.sendKeys(key, goog.bind(function(response) {
-          this.renderNewKey_(key[0].uids[0]);
-          panel.reset();
-        }, this), this.pgpContext_);
-      }, this)).addErrback(this.displayFailure_, this);
+  this.getEmails_('private', goog.bind(function(emails) {
+    if (goog.array.contains(emails,
+                            normalizedEmail.toLowerCase())) {
+      alert(chrome.i18n.getMessage('duplicateKeyWarning'));
+      return null;
+    }
+
+    var defaults = constants.KEY_DEFAULTS;
+    return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
+        defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
+        defaults.subkeyLength, name, comments, email, expDate)
+        .addCallback(goog.bind(function(key) {
+          // Key should be an array of exactly size 2 (one public, one private)
+          panel.sendKeys(key, goog.bind(function(response) {
+            this.renderNewKey_(key[0].uids[0]);
+            panel.reset();
+          }, this), this.pgpContext_);
+        }, this)).addErrback(this.displayFailure_, this);
+  }, this));
 };
 
 
