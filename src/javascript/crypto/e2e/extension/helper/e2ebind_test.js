@@ -57,8 +57,22 @@ function setUp() {
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
 
+  stubs.replace(e2e.ext.keyserver.Client.prototype, 'fetchAndImportKeys',
+                function(emails, cb) {
+                  var result = {};
+                  goog.array.forEach(emails, function(email) {
+                    result[email] = (email === 'yan@yahoo.com');
+                  });
+                  cb(result);
+                });
+
   stubs.setPath('chrome.runtime.getURL', function(filename) {
     return './' + filename;
+  });
+  stubs.setPath('chrome.runtime.connect', function() {
+    return {postMessage: goog.nullFunction,
+        onMessage: {addListener: goog.nullFunction},
+        onDisconnect: {addListener: goog.nullFunction}};
   });
   document.documentElement.id = 'test_id';
 
@@ -396,14 +410,6 @@ function testProviderRequestToValidateRecipients() {
     cb(response);
   });
   stubs.replace(e2ebind, 'sendResponse_', mockControl.createFunctionMock());
-  stubs.replace(e2ebind.keyserverClient_, 'fetchAndImportKeys',
-                function(emails, cb) {
-                  var result = {};
-                  goog.array.forEach(emails, function(email) {
-                    result[email] = (email === 'yan@yahoo.com');
-                  });
-                  cb(result);
-                });
 
   var successArg = new goog.testing.mockmatchers.ArgumentMatcher(
       function(arg) {
