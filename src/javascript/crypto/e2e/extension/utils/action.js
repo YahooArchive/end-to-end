@@ -182,6 +182,7 @@ utils.getAddressFromYBY_ = function(callback) {
   if (!chrome.cookies || !chrome.cookies.get) {
     // Someone tried to call this from a content script. Abort.
     callback(email);
+    return;
   }
 
   chrome.cookies.get({url: constants.Keyserver.DEFAULT_LOCATION,
