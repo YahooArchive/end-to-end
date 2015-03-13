@@ -6,7 +6,16 @@ A fork of Google's [End-to-End](https://github.com/google/end-to-end) for Yahoo 
 
 ### Install prerequisites
 
-Prerequisites, Homebrew:
+End-to-End depends on the following:
+* bash
+* git
+* curl
+* unzip
+* ant
+* JDK 1.7
+* Python
+
+On OSX with Homebrew:
 
     brew install ant git
 
@@ -43,9 +52,14 @@ unpacked extension" and selected `file:///path/to/this/repo/build/extension`.
 
 ## Development
 
-You can ask questions in the #e2e IRC channel or email yzhu@yahoo-inc.com for
-extension-related issues. For keyserver related issues, contact
-dgil@yahoo-inc.com.
+We use Github's built-in issue tracker for tracking issues. The general
+End-to-End mailing list is
+[e2e-discuss](https://groups.google.com/forum/#!forum/e2e-discuss). Please put
+[YAHOO] at the start of the subject line if your email is specifically about
+this project.
+
+We generally ask that you follow Google's [End-to-End Contributing
+Guidelines](https://github.com/google/end-to-end/blob/master/CONTRIBUTING.md) for submitting to this repo.
 
 ## Docs
 
