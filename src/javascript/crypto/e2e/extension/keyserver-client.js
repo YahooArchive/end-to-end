@@ -119,19 +119,8 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
   var url = [this.keyserverOrigin_, this.keyserverApiVersion_, path].join('/');
   xhr.open('POST', url, true);
 
-  ext.utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-    action: constants.Actions.GET_AUTH_TOKEN,
-    content: this.pageLocation_
-  }), goog.bind(function(response) {
-    var result = response.content || '';
-    if (!result && constants.Keyserver.AUTH_ENABLED) {
-      errback();
-      return;
-    }
-    xhr.setRequestHeader('X-Keyshop-Token', result);
-    xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.send(opt_params);
-  }, this));
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.send(opt_params);
 
   xhr.onreadystatechange = function() {
     var response;
@@ -161,15 +150,8 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
   xhr.timeout = 1000;
   var url = [this.keyserverOrigin_, this.keyserverApiVersion_, path].join('/');
   xhr.open('GET', url, true);
+  xhr.send();
 
-  ext.utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-    action: constants.Actions.GET_AUTH_TOKEN,
-    content: this.pageLocation_
-  }), goog.bind(function(response) {
-    var result = response.content || '';
-    xhr.setRequestHeader('X-Keyshop-Token', result);
-    xhr.send();
-  }, this));
   xhr.onreadystatechange = goog.bind(function() {
     var response;
     if (xhr.readyState === 4) {

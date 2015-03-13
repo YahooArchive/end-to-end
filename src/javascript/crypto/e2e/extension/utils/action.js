@@ -141,7 +141,8 @@ utils.updateSelectedContent = function(content, recipients, origin,
 
 
 /**
- * Tries to guess the user's ymail address.
+ * Tries to guess the user's ymail address. Will not work from a content script
+ * due to potential security issues with exposing YBY.
  * @param {!function((string|undefined|null))} callback
  */
 utils.getUserYmailAddress = function(callback) {
@@ -159,7 +160,12 @@ utils.getUserYmailAddress = function(callback) {
     }
   } catch (ex) {
     console.warn('Error getting ymail address from page', ex);
-    utils.getAddressFromYBY_(callback);
+    try {
+      utils.getAddressFromYBY_(callback);
+    } catch (e) {
+      console.warn('Error getting ymail address from YBY', e);
+      callback(undefined);
+    }
   }
 };
 
@@ -172,35 +178,35 @@ utils.getUserYmailAddress = function(callback) {
  */
 utils.getAddressFromYBY_ = function(callback) {
   var email;
-  try {
-    baseUtils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-      action: constants.Actions.GET_AUTH_TOKEN,
-      content: constants.Keyserver.DEFAULT_LOCATION
-    }), function(response) {
-      response = /** @type {!messages.ApiResponse} */ (response);
-      var yby = response.content;
-      var params;
-      var param;
-      var i;
 
-      if (typeof yby === 'string') {
-        // Extract userid out of the YBY cookie
-        params = goog.string.urlDecode(yby).split('&');
-        for (i = 0; i < params.length; i++) {
-          param = params[i].split('=');
-          if (param[0] === 'userid') {
-            // TODO: This may be at a different yahoo domain!
-            email = [param[1], 'yahoo-inc.com'].join('@');
-            break;
-          }
-        }
-      }
-      callback(email);
-    });
-  } catch (e) {
-    console.warn('Error getting ymail address from YBY', e);
+  if (!chrome.cookies || !chrome.cookies.get) {
+    // Someone tried to call this from a content script. Abort.
     callback(email);
   }
+
+  chrome.cookies.get({url: constants.Keyserver.DEFAULT_LOCATION,
+                      name: constants.Keyserver.AUTH_COOKIE},
+                     function(cookie) {
+    var params;
+    var param;
+    var i;
+    var yby = cookie ? cookie.value : undefined;
+
+    if (typeof yby === 'string') {
+      // Extract userid out of the YBY cookie
+      params = goog.string.urlDecode(yby).split('&');
+      for (i = 0; i < params.length; i++) {
+        param = params[i].split('=');
+        if (param[0] === 'userid') {
+          // TODO: This may be at a different yahoo domain!
+          email = [param[1], 'yahoo-inc.com'].join('@');
+          break;
+        }
+      }
+    }
+
+    callback(email);
+  });
 };
 
 

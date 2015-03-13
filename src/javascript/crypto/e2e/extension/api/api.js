@@ -170,22 +170,6 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       });
       callback(outgoing);
       return;
-    case constants.Actions.GET_AUTH_TOKEN:
-      if (constants.Keyserver.AUTH_ENABLED === false) {
-        callback(outgoing);
-        return;
-      }
-      if (typeof incoming.content === 'string') {
-        content = incoming.content;
-      } else {
-        content = chrome.runtime.getURL('');
-      }
-      chrome.cookies.get({url: content, name: constants.Keyserver.AUTH_COOKIE},
-                         function(cookie) {
-        outgoing.content = cookie ? cookie.value : undefined;
-        callback(outgoing);
-      });
-      return;
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
       callback(outgoing);
