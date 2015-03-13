@@ -123,8 +123,8 @@ ext.keyserver.Client.prototype.sendPostRequest_ =
     action: constants.Actions.GET_AUTH_TOKEN,
     content: this.pageLocation_
   }), goog.bind(function(response) {
-    var result = response.content;
-    if (!result) {
+    var result = response.content || '';
+    if (!result && constants.Keyserver.AUTH_ENABLED) {
       errback();
       return;
     }
@@ -166,7 +166,7 @@ ext.keyserver.Client.prototype.sendGetRequest_ = function(path, callback,
     action: constants.Actions.GET_AUTH_TOKEN,
     content: this.pageLocation_
   }), goog.bind(function(response) {
-    var result = response.content;
+    var result = response.content || '';
     xhr.setRequestHeader('X-Keyshop-Token', result);
     xhr.send();
   }, this));

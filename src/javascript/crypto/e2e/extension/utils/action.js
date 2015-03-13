@@ -165,7 +165,8 @@ utils.getUserYmailAddress = function(callback) {
 
 
 /**
- * Tries to get an email address from the YBY cookie.
+ * Tries to get an email address from the YBY cookie. Only useful for yahoo-inc
+ * users right now. Sorry open source.
  * @param {!function((string|undefined|null))} callback
  * @private
  */

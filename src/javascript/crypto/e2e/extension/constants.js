@@ -28,6 +28,7 @@ goog.provide('e2e.ext.constants.StorageKey');
 goog.provide('e2e.ext.constants.e2ebind.requestActions');
 goog.provide('e2e.ext.constants.e2ebind.responseActions');
 
+goog.require('e2e.ext.config');
 
 /**
  * The actions that the End-To-End extension can perform.
@@ -325,9 +326,10 @@ e2e.ext.constants.e2ebind.requestActions = {
  */
 e2e.ext.constants.Keyserver = {
   //TODO(dlg): separate Kauth key from Keyserver response key
-  KAUTH_PUB: [4, 22, 240, 7, 228, 205, 195, 228, 101, 20, 52, 102, 64, 156, 187, 161, 103, 116, 56, 53, 184, 217, 167, 145, 0, 5, 253, 110, 141, 68, 125, 174, 234, 121, 214, 32, 3, 202, 137, 43, 233, 216, 49, 180, 106, 116, 245, 46, 53, 217, 249, 182, 122, 3, 164, 143, 107, 61, 144, 80, 103, 238, 192, 110, 54],
-  KSERVER_PUB: [4, 22, 240, 7, 228, 205, 195, 228, 101, 20, 52, 102, 64, 156, 187, 161, 103, 116, 56, 53, 184, 217, 167, 145, 0, 5, 253, 110, 141, 68, 125, 174, 234, 121, 214, 32, 3, 202, 137, 43, 233, 216, 49, 180, 106, 116, 245, 46, 53, 217, 249, 182, 122, 3, 164, 143, 107, 61, 144, 80, 103, 238, 192, 110, 54],
-  TESTSERVER_ORIGIN: 'https://keyshop.paranoids.corp.yahoo.com:25519',
+  KAUTH_PUB: e2e.ext.config.KAUTH_PUB,
+  TESTSERVER_ORIGIN: e2e.ext.config.TESTSERVER_ORIGIN,
   API_V1: 'v1/k',
-  DEFAULT_LOCATION: 'https://us-mg5.mail.yahoo.com'
+  DEFAULT_LOCATION: e2e.ext.config.AUTH_DEFAULT_ORIGIN,
+  AUTH_COOKIE: e2e.ext.config.AUTH_COOKIE,
+  AUTH_ENABLED: e2e.ext.config.AUTH_ENABLED
 };

@@ -26,6 +26,7 @@ goog.provide('e2e.ext.api.Api');
 goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.api.RequestThrottle');
 goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.Keyserver');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.utils');
@@ -170,12 +171,17 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       callback(outgoing);
       return;
     case constants.Actions.GET_AUTH_TOKEN:
+      if (constants.Keyserver.AUTH_ENABLED === false) {
+        callback(outgoing);
+        return;
+      }
       if (typeof incoming.content === 'string') {
         content = incoming.content;
       } else {
         content = chrome.runtime.getURL('');
       }
-      chrome.cookies.get({url: content, name: 'YBY'}, function(cookie) {
+      chrome.cookies.get({url: content, name: constants.Keyserver.AUTH_COOKIE},
+                         function(cookie) {
         outgoing.content = cookie ? cookie.value : undefined;
         callback(outgoing);
       });
