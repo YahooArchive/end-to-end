@@ -164,8 +164,8 @@ function testGetUserYmailAddressFromYBY() {
   var expected = 'yzhu@yahoo-inc.com';
   var yby = 'YBY=id%3Dfoo%26userid%3Dyzhu%26sign%3Dbar%7Cip0.0.0.0%7C;';
 
- stubs.set(baseUtils, 'sendExtensionRequest', function(request, cb) {
-   cb({content: yby});
+ stubs.setPath('chrome.cookies.get', function(request, cb) {
+   cb({value: yby});
  });
 
   asyncTestCase.waitForAsync('Waiting to get email address from YBY');
