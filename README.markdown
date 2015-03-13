@@ -68,17 +68,23 @@ See [docs](docs) for current documentation.
 ## Acknowledgements
 
 The committers would like to thank the following current and former Yahoo employees for their help with this project:
+* Doug DePerry
 * Juan Garay
 * Marty Garvin
 * Jackie Goldberg
 * Christopher Harrell
+* Stuart Larsen
 * Jonathan Pierce
 * Payman Mohassel
 * Binu Ramakrishnan
+* Chris Rolhf
 * Markandey Singh
 * Alex Stamos
 * Regina Wallace-Jones
 * Albert Yu
 
-We would also like to thank the [folks at google](CONTRIBUTORS) for starting
-this project.
+We would also like to thank the [folks at google](CONTRIBUTORS) for starting this project.
+
+## Licensing
+
+Code licensed under the Apache Version 2.0 license. See LICENSE file for terms.
