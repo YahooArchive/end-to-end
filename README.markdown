@@ -28,8 +28,7 @@ Or, MacPorts:
 The extension requires a keyserver implementing [this API](docs/keyserver.md)
 to fetch keys for other users.
 
-We do not currently provide a keyserver. So you'll need to run your own for
-now. (We will provide a vagrantfile or node package for this soon.)
+We do not currently provide a publicly-exposed keyserver. So you'll need to run your own for now. (We will provide an open source vagrantfile or node package for this soon.)
 
 Once that's done:
 
@@ -81,6 +80,7 @@ The committers would like to thank the following current and former Yahoo employ
 * Markandey Singh
 * Alex Stamos
 * Regina Wallace-Jones
+* Gil Yehuda
 * Albert Yu
 
 We would also like to thank the [folks at google](CONTRIBUTORS) for starting this project.
