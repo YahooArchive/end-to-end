@@ -1,6 +1,10 @@
 End-To-End
 ==========
 
+[This is the original ABOUT page from https://github.com/google/end-to-end. It
+does not necessarily apply to the Yahoo version but is included here for
+informational purposes.]
+
 End-To-End is a Chrome extension that helps you encrypt, decrypt, digital sign, and verify signed messages within the browser using OpenPGP.
 
 This is the source code for the alpha release of the End-To-End Chrome extension. It's built upon a newly developed, JavaScript-based crypto library. End-To-End implements the OpenPGP standard, IETF RFC 4880, enabling key generation, encryption, decryption, digital signature, and signature verification. We’re releasing this code to enable community review; it is not yet ready for general use.
