@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-Repository for build-related tools for End-To-End.
-
 
 Requirements:
 ============
-This repository holds bash scripts and Grunt tasks that facilitate building
-Google End-To-End. Building End-To-End should be fairly easy on any Linux/OSX system, however OS X users need to install JDK 1.7 from Oracle (http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html). Windows build environment is not supported.
+Building End-To-End should be fairly easy on any Linux/OSX system, however OS X users need to install JDK 1.7 from Oracle (http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html). Windows build environment is not supported.
 
 To build End-To-End, the following requirements must be met:
  - bash
@@ -36,24 +33,16 @@ Every task can be run from do.sh Bash script:
   $ ./do.sh
   Usage: ./do.sh {build_extension|build_library|build_templates|clean|check_deps|install_deps|testserver}
 
-Setup
-  $ git clone https://code.google.com/p/end-to-end.build/
-  [...]
-  $ cd end-to-end.build/
-  $ ./do.sh install_deps
-  Installing build dependencies...
-  ...
-
 Building the End-To-End extension
   $ ./do.sh build_extension
   All dependencies met.
   Building End-To-End extension to build/extension
   [...]
   $ ls build/extension/
-  _locales    gmonkeystub.js    manifest.json   settings.html   welcome_binary.js
-  glass.html    helper_binary.js  prompt.html   settings_binary.js  welcome_styles.css
-  glass_binary.js   images      prompt_binary.js  settings_styles.css
-  glass_styles.css  launcher_binary.js  prompt_styles.css welcome.html
+  _locales                glass.html              helper_binary.js        prompt.html             settings_binary.js      setup_styles.css
+  composeglass.html       glass_binary.js         images                  prompt_binary.js        settings_styles.css
+  composeglass_binary.js  glass_styles.css        launcher_binary.js      prompt_styles.css       setup.html
+  composeglass_styles.css gmonkeystub.js          manifest.json           settings.html           setup_binary.js
 
 Building the library only:
   $ ./do.sh build_library
@@ -74,5 +63,5 @@ Starting the test server:
 
 Grunt
 =====
-For convenience, Gruntfile has been included to allow running the same tasks with Grunt (http://gruntjs.com/). Grunt andNode.js are not required to build End
+For convenience, Gruntfile has been included to allow running the same tasks with Grunt (http://gruntjs.com/). Grunt and Node.js are not required to build End
 -To-End though.
