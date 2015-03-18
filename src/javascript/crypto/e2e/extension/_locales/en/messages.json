@@ -254,7 +254,7 @@
     "description": "A section title indicating where the user can generate a new PGP key."
   },
   "genKeyEmailLabel": {
-    "message": "Please enter your yahoo-inc email address so we can make your keys:",
+    "message": "Please enter your Yahoo email address so we can make your keys:",
     "description": "A sentence fragment prompting the user to provide his/her email address."
   },
   "genKeyPassphraseLabel": {
@@ -416,7 +416,7 @@
     "description": "Warning that a key already exists for the given email address"
   },
   "invalidEmailWarning": {
-    "message": "Please enter a valid yahoo-inc.com email address.",
+    "message": "Please enter a valid Yahoo email address.",
     "description": "Warning that an email is not valid."
   },
   "preferenceWelcomeScreen": {
@@ -476,10 +476,10 @@
     "description": "Ask user to send the message unencrypted."
   },
   "keyserverFetchError": {
-    "message": "Oops, failed to fetch keys from the keyserver. Are you on the corp network and logged into Bouncer?"
+    "message": "Oops, failed to fetch keys from the keyserver."
   },
   "keyserverSendError": {
-    "message": "Oops, failed to send keys to the keyserver. Are you on the corp network and logged into Bouncer?"
+    "message": "Oops, failed to send keys to the keyserver."
   },
   "keyserverResponseError": {
     "message": "Invalid response from keyserver. Please try again later."
