@@ -144,7 +144,7 @@ textarea:focus,
   border: 0;
   display: inline-block;
   overflow: hidden;
-  padding: 0;
+  padding: 1px;
   padding-left: 8px;
 }
 
