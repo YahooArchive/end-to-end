@@ -62,7 +62,7 @@ End-to-End mailing list is
 this project.
 
 We generally ask that you follow Google's [End-to-End Contributing
-Guidelines](https://github.com/google/end-to-end/blob/master/CONTRIBUTING.md) for submitting to this repo.
+Guidelines](docs/CONTRIBUTING.md) for submitting to this repo.
 
 ## Docs
 
