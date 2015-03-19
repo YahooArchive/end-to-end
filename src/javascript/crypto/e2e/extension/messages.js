@@ -104,7 +104,7 @@ messages.ApiRequest.prototype.encryptPassphrases;
 messages.ApiRequest.prototype.decryptPassphrase;
 
 
-/** @type {!function(string, function(string))|undefined} */
+/** @type {!function(string): !e2e.async.Result<string>|undefined} */
 messages.ApiRequest.prototype.passphraseCallback;
 
 
@@ -125,9 +125,7 @@ messages.ApiRequest.prototype.action;
  * @typedef {{
  *   content: (boolean|string|Object|undefined),
  *   completedAction: e2e.ext.constants.Actions,
- *   selectedUid: (string|undefined),
- *   error: (string|undefined),
- *   retry: (boolean|undefined)
+ *   error: (string | undefined)
  * }}
  */
 messages.ApiResponse;
