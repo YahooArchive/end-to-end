@@ -22,6 +22,7 @@
 goog.provide('e2e.ext.actions.EncryptSignTest');
 
 goog.require('e2e');
+goog.require('e2e.async.Result');
 goog.require('e2e.ext.actions.EncryptSign');
 goog.require('e2e.ext.constants');
 goog.require('e2e.openpgp.ContextImpl');
@@ -116,6 +117,10 @@ var PUBLIC_KEY_ASCII_2 =  // user ID of 'Drew Hintz <adhintz@google.com>'
     '=LlKd\n' +
     '-----END PGP PUBLIC KEY BLOCK-----';
 
+var TEST_PWD_CALLBACK = function(uid) {
+  return e2e.async.Result.toResult('test');
+};
+
 function setUp() {
   window.localStorage.clear();
   mockControl = new goog.testing.MockControl();
@@ -133,9 +138,6 @@ function testEncrypt() {
   var pgpContext = new e2e.openpgp.ContextImpl();
   pgpContext.setKeyRingPassphrase(''); // No passphrase.
 
-  var pwdCallback = function(uid, callback) {
-    callback('test');
-  };
   var plaintext = 'some secret message.';
   var errorCallback = mockControl.createFunctionMock('errorCallback');
   var action = new e2e.ext.actions.EncryptSign();
@@ -143,21 +145,22 @@ function testEncrypt() {
   mockControl.$replayAll();
 
   testCase.waitForAsync('Importing private key.');
-  pgpContext.importKey(pwdCallback, PRIVATE_KEY_ASCII).addCallback(function() {
-    testCase.waitForAsync('Importing public key.');
-    pgpContext.importKey(pwdCallback, PUBLIC_KEY_ASCII_2).
-        addCallback(function() {
-          action.execute(pgpContext, {
-            content: plaintext,
-            recipients: [USER_ID_2],
-            currentUser: USER_ID
-          }, null, function(encryptedText) {
-            assertContains('-----BEGIN PGP MESSAGE-----', encryptedText);
-            mockControl.$verifyAll();
-            testCase.continueTesting();
-          }, errorCallback);
-        }).addErrback(fail);
-  }).addErrback(fail);
+  pgpContext.importKey(TEST_PWD_CALLBACK, PRIVATE_KEY_ASCII).addCallback(
+      function() {
+        testCase.waitForAsync('Importing public key.');
+        pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII_2).
+            addCallback(function() {
+              action.execute(pgpContext, {
+                content: plaintext,
+                recipients: [USER_ID_2],
+                currentUser: USER_ID
+              }, null, function(encryptedText) {
+                assertContains('-----BEGIN PGP MESSAGE-----', encryptedText);
+                mockControl.$verifyAll();
+                testCase.continueTesting();
+              }, errorCallback);
+            }).addErrback(fail);
+      }).addErrback(fail);
 }
 
 
@@ -165,9 +168,6 @@ function testEncryptForSigner() {
   var pgpContext = new e2e.openpgp.ContextImpl();
   pgpContext.setKeyRingPassphrase(''); // No passphrase.
 
-  var pwdCallback = function(uid, callback) {
-    callback('test');
-  };
   var plaintext = 'some secret message.';
   var errorCallback = mockControl.createFunctionMock('errorCallback');
   var action = new e2e.ext.actions.EncryptSign();
@@ -175,34 +175,39 @@ function testEncryptForSigner() {
   mockControl.$replayAll();
 
   testCase.waitForAsync('Importing private key.');
-  pgpContext.importKey(pwdCallback, PRIVATE_KEY_ASCII).addCallback(function() {
-    testCase.waitForAsync('Importing public key 1.');
-    pgpContext.importKey(pwdCallback, PUBLIC_KEY_ASCII).addCallback(function() {
-      testCase.waitForAsync('Importing public key 2.');
-      pgpContext.importKey(pwdCallback, PUBLIC_KEY_ASCII_2).
-          addCallback(function() {
-            testCase.waitForAsync('Encrypting message.');
-            action.execute(pgpContext, {
-              content: plaintext,
-              recipients: [USER_ID_2],
-              currentUser: USER_ID
-            }, null, function(encryptedText) {
-              testCase.waitForAsync('Decrypting message.');
-              pgpContext.verifyDecrypt(pwdCallback, encryptedText).
-                  addCallback(function(result) {
-                    testCase.waitForAsync('Decoding decrypted message.');
-                    e2e.byteArrayToStringAsync(
-                        result.decrypt.data, result.decrypt.options.charset).
-                        addCallback(function(decryptedText) {
-                          assertEquals(plaintext, decryptedText);
-                          mockControl.$verifyAll();
-                          testCase.continueTesting();
-                        }).addErrback(fail);
+  pgpContext.importKey(TEST_PWD_CALLBACK, PRIVATE_KEY_ASCII).addCallback(
+      function() {
+        testCase.waitForAsync('Importing public key 1.');
+        pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII).addCallback(
+            function() {
+              testCase.waitForAsync('Importing public key 2.');
+              pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII_2).
+                  addCallback(function() {
+                    testCase.waitForAsync('Encrypting message.');
+                    action.execute(pgpContext, {
+                      content: plaintext,
+                      recipients: [USER_ID_2],
+                      currentUser: USER_ID
+                    }, null, function(encryptedText) {
+                      testCase.waitForAsync('Decrypting message.');
+                      pgpContext.verifyDecrypt(TEST_PWD_CALLBACK,
+                          encryptedText).
+                          addCallback(function(result) {
+                            testCase.waitForAsync(
+                            'Decoding decrypted message.');
+                            e2e.byteArrayToStringAsync(
+                            result.decrypt.data,
+                            result.decrypt.options.charset).
+                            addCallback(function(decryptedText) {
+                              assertEquals(plaintext, decryptedText);
+                              mockControl.$verifyAll();
+                              testCase.continueTesting();
+                            }).addErrback(fail);
+                          }).addErrback(fail);
+                    }, errorCallback);
                   }).addErrback(fail);
-            }, errorCallback);
-          }).addErrback(fail);
-    }).addErrback(fail);
-  }).addErrback(fail);
+            }).addErrback(fail);
+      }).addErrback(fail);
 }
 
 
@@ -212,8 +217,8 @@ function testEncryptToPassphrase() {
 
   var passphrase = 'a passphrase';
 
-  var pwdCallback = function(uid, callback) {
-    callback(passphrase);
+  var pwdCallback = function(uid) {
+    return e2e.async.Result.toResult(passphrase);
   };
   var plaintext = 'some secret message.';
   var errorCallback = mockControl.createFunctionMock('errorCallback');
@@ -246,9 +251,6 @@ function testSignOnly() {
   var pgpContext = new e2e.openpgp.ContextImpl();
   pgpContext.setKeyRingPassphrase(''); // No passphrase.
 
-  var pwdCallback = function(uid, callback) {
-    callback('test');
-  };
   var plaintext = 'some secret message.';
   var errorCallback = mockControl.createFunctionMock('errorCallback');
   var action = new e2e.ext.actions.EncryptSign();
@@ -256,21 +258,23 @@ function testSignOnly() {
   mockControl.$replayAll();
 
   testCase.waitForAsync('Importing private key.');
-  pgpContext.importKey(pwdCallback, PRIVATE_KEY_ASCII).addCallback(function() {
-    testCase.waitForAsync('Importing public key.');
-    pgpContext.importKey(pwdCallback, PUBLIC_KEY_ASCII).
-        addCallback(function() {
-          action.execute(pgpContext, {
-            content: plaintext,
-            currentUser: USER_ID,
-            signMessage: true
-          }, null, function(signedText) {
-            assertContains('-----BEGIN PGP SIGNED MESSAGE-----', signedText);
-            assertContains('-----BEGIN PGP SIGNATURE-----', signedText);
-            assertContains(plaintext, signedText);
-            mockControl.$verifyAll();
-            testCase.continueTesting();
-          }, errorCallback);
-        }).addErrback(fail);
-  }).addErrback(fail);
+  pgpContext.importKey(TEST_PWD_CALLBACK, PRIVATE_KEY_ASCII).addCallback(
+      function() {
+        testCase.waitForAsync('Importing public key.');
+        pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII).
+            addCallback(function() {
+              action.execute(pgpContext, {
+                content: plaintext,
+                currentUser: USER_ID,
+                signMessage: true
+              }, null, function(signedText) {
+                assertContains('-----BEGIN PGP SIGNED MESSAGE-----',
+                    signedText);
+                assertContains('-----BEGIN PGP SIGNATURE-----', signedText);
+                assertContains(plaintext, signedText);
+                mockControl.$verifyAll();
+                testCase.continueTesting();
+              }, errorCallback);
+            }).addErrback(fail);
+      }).addErrback(fail);
 }
