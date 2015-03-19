@@ -228,3 +228,13 @@ input:focus {
 .unclickable {
   pointer-events: none;
 }
+
+.select-all-link {
+  color: #acacac;
+  cursor: pointer;
+  margin: 0 3px;
+}
+
+.select-all-link:hover {
+  color: #0c0c0c;
+}
