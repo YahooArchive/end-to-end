@@ -137,10 +137,6 @@ function testNonEmptyExport() {
 function testImportKeyring() {
   var filename = 'temp.asc';
   var importedFile = false;
-  stubs.replace(HTMLDivElement.prototype, 'querySelector', function(selector) {
-    return (selector === 'input') ? {files: [filename]} :
-        goog.dom.createElement('div');
-  });
 
   panel = new e2e.ext.ui.panels.KeyringMgmtMini(
       goog.abstractMethod, function(file) {
@@ -148,6 +144,11 @@ function testImportKeyring() {
         importedFile = true;
       }, goog.abstractMethod, goog.abstractMethod, goog.abstractMethod);
   panel.render(document.body);
+
+  stubs.replace(HTMLDivElement.prototype, 'querySelector', function(selector) {
+    return (selector === 'input') ? {files: [filename]} :
+        goog.dom.createElement('div');
+  });
 
   panel.importKeyring_();
   assertTrue(importedFile);
