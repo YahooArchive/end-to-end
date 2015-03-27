@@ -49,7 +49,8 @@ function testBytesToPhrase() {
   var evenBytes =
       [0, 0, 17, 212, 12, 140, 90, 247, 46, 83, 254, 60, 54, 169, 255, 255];
   var phrase =
-      'a bioengineering balloted gobbledegook creneled written depriving zyzzyva';
+      'a bioengineering balloted gobbledegook creneled written depriving ' +
+      'zyzzyva';
   assertEquals(phrase, utils.passphrase.bytesToPhrase(evenBytes));
   var oddBytes = [1, 2, 3];
   assertThrows('Odd byte array should throw exception',
@@ -59,11 +60,13 @@ function testBytesToPhrase() {
 
 function testPhraseToBytes() {
   var phrase =
-      'a  bioengineering balloted gobbledegook creneled written depriving zyzzyVA 120 \n';
+      'a  bioengineering balloted gobbledegook creneled written depriving ' +
+      'zyzzyVA 120 \n';
   var bytes =
-      [120, 0, 0, 17, 212, 12, 140, 90, 247, 46, 83, 254, 60, 54, 169, 255, 255];
+      [120, 0, 0, 17, 212, 12, 140, 90, 247, 46, 83, 254, 60, 54, 169, 255,
+       255];
   assertArrayEquals(bytes, utils.passphrase.phraseToBytes(phrase));
   var invalidPhrase = 'word dfafklfje jkadfjkje irrelevant';
   assertThrows('Invalid phrase should throw exception', goog.partial(
-               utils.passphrase.phraseToBytes, invalidPhrase));
+      utils.passphrase.phraseToBytes, invalidPhrase));
 }
