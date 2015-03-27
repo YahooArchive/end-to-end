@@ -206,13 +206,6 @@ function testSendKey() {
 }
 
 
-function testCacheKeyData() {
-  client.cacheKeyData({foo: 'bar'});
-  assertArrayEquals([{foo: 'bar'}], JSON.parse(window.localStorage.getItem(
-      'keyserver-signed-responses')));
-}
-
-
 function testFetchAndImportKeys() {
   var userId = 'adhintz@google.com';
   var time = (new Date().getTime())/1000;

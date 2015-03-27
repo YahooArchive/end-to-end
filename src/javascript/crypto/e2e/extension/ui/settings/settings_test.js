@@ -132,7 +132,6 @@ function testGenerateKey() {
   window.setTimeout(function() {
     assertNotEquals(-1, document.body.textContent.indexOf(
         '<test@yahoo-inc.com>'));
-    assertNotNull(window.localStorage.getItem('keyserver-signed-responses'));
     testCase.continueTesting();
   }, 100);
 }
