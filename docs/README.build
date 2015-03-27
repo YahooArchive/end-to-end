@@ -60,8 +60,3 @@ Starting the test server:
   $ ./do.sh testserver
   Starting the End-To-End test server (Press Ctrl-C to stop)...
   Starting test server at http://127.0.0.1:8000
-
-Grunt
-=====
-For convenience, Gruntfile has been included to allow running the same tasks with Grunt (http://gruntjs.com/). Grunt and Node.js are not required to build End
--To-End though.
