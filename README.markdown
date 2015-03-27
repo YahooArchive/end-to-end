@@ -2,10 +2,6 @@
 
 A fork of Google's [End-to-End](https://github.com/google/end-to-end) for Yahoo mail.
 
-![Screenshot](/docs/E2E_animation.gif)
-
-[Watch a demo video.](https://www.youtube.com/watch?v=F54J8GtAYHE)
-
 ## Build instructions
 
 ### Install prerequisites
