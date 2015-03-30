@@ -338,16 +338,12 @@ ext.keyserver.Client.prototype.safeDecode_ = function(str) {
 
 
 /**
- * Saves keydata entry to local storage.
+ * Saves keydata entry to local storage for pruning "expired" keys. This is
+ * just a placeholder method for now.
  * @param {string} response Response to cache.
  */
 ext.keyserver.Client.prototype.cacheKeyData = function(response) {
-  var responses = JSON.parse(window.localStorage.getItem(
-      constants.StorageKey.KEYSERVER_SIGNED_RESPONSES) || '[]') || [];
-  responses.push(response);
-  window.localStorage.setItem(
-      constants.StorageKey.KEYSERVER_SIGNED_RESPONSES,
-      JSON.stringify(responses));
+  return;
 };
 
 
