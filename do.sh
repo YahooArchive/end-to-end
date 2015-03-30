@@ -228,7 +228,7 @@ e2e_lint() {
     else
       ADDITIONAL=$*
     fi
-    gjslint --strict --closurized_namespaces=goog,e2e --limited_doc_files=_test.js $ADDITIONAL
+    gjslint --strict --closurized_namespaces=goog,e2e --limited_doc_files=_test.js --exclude_files=src/javascript/crypto/e2e/extension/utils/wordlist.js $ADDITIONAL
     RETVAL=$?
   fi
 }
