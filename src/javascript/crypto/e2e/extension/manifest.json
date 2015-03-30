@@ -8,7 +8,7 @@
     "cookies",
     "notifications",
     "tabs",
-    "https://keyshop.paranoids.corp.yahoo.com:25519/*",
+    "https://localhost:25519/*",
     "https://*.mail.yahoo.com/*"
   ],
   "optional_permissions": [],
