@@ -12,27 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Runs a test server for End-To-End."""
-
+from __future__ import print_function
 __author__ = "koto@google.com (Krzysztof Kotowicz)"
 
-import BaseHTTPServer
+
+import sys
+import argparse
+if sys.version_info.major < 3:
+  import BaseHTTPServer
+else:
+  import http.server as BaseHTTPServer
 import cgi
 import fnmatch
 import os
 import os.path
-import SimpleHTTPServer
-import StringIO
-import sys
+if sys.version_info.major < 3:
+  import SimpleHTTPServer
+  import StringIO
+else:
+  import http.server as SimpleHTTPServer
+  import io as StringIO
 
-PORT=8000
-if len(sys.argv) > 1:
-  PORT = int(sys.argv[1])
-
-server_address = ("127.0.0.1", PORT)
 
 # ./do.sh testserver generates the file
-DEPS_FILE="build/test_js_deps-runfiles.js"
-ALL_JSTESTS_FILE="build/all_tests.js"
+DEPS_FILE = "build/test_js_deps-runfiles.js"
+ALL_JSTESTS_FILE = "build/all_tests.js"
+
 
 class TestServerRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
   """Request handler for End-To-End test server."""
@@ -54,9 +59,9 @@ class TestServerRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     if os.path.exists(ALL_JSTESTS_FILE):
       return
     with open(ALL_JSTESTS_FILE, 'wb') as f:
-      f.write('var _allTests=')
-      f.write(repr(self.get_test_files()))
-      f.write(';')
+      f.write(bytes('var _allTests='))
+      f.write(bytes(repr(self.get_test_files())))
+      f.write(bytes(';'))
 
   def list_directory(self, path):
     """Lists only src/**/_test.html files."""
@@ -89,6 +94,22 @@ class TestServerRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     return SimpleHTTPServer.SimpleHTTPRequestHandler.translate_path(
         self, path)
 
-httpd = BaseHTTPServer.HTTPServer(server_address, TestServerRequestHandler)
-print "Starting test server at http://%s:%d" % server_address
-httpd.serve_forever()
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    'port', default=8000, type=int, help='Port to use (default: %(default)s)'
+  )
+  parser.add_argument(
+    '--server_address', default='127.0.0.1',
+    help='Web server address (default: %(default)s)'
+  )
+  args = parser.parse_args()
+  httpd = BaseHTTPServer.HTTPServer(
+    (args.server_address, args.port,),
+     TestServerRequestHandler
+  )
+  print(
+    "Starting test server at http://%s:%d" % (args.server_address, args.port)
+  )
+  httpd.serve_forever()
