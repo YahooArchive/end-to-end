@@ -24,7 +24,7 @@ goog.provide('e2e.ecc.Ecdsa');
 goog.require('e2e');
 goog.require('e2e.BigNum');
 goog.require('e2e.ecc.ByteLen');
-goog.require('e2e.ecc.JwsHeader');
+goog.require('e2e.ecc.JwsAlg');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.ecc.Protocol');
 goog.require('e2e.error.InvalidArgumentsError');
@@ -212,12 +212,23 @@ e2e.ecc.Ecdsa.prototype.verifyJws = function(jws) {
   if (parts.length !== 3) {
     throw new e2e.error.InvalidArgumentsError('Too many parts to be a JWS.');
   }
-  var header = parts[0], emsg = parts[1], esig = parts[2];
+  var eheader = parts[0], emsg = parts[1], esig = parts[2];
   var dsig = goog.crypt.base64.decodeStringToByteArray(esig, true),
-      msg = goog.crypt.base64.decodeStringToByteArray(emsg, true);
+      msg = goog.crypt.base64.decodeStringToByteArray(emsg, true),
+      header = goog.crypt.base64.decodeString(eheader);
 
-  var expected_header = e2e.ecc.JwsHeader[this.curveName_];
-  if (header !== expected_header) {
+  var expected_alg = e2e.ecc.JwsAlg[this.curveName_];
+  var parsedHeader;
+  var alg;
+  try {
+    parsedHeader = /** @type {{alg: string}} */ (JSON.parse(header));
+    alg = parsedHeader.alg;
+    if (alg !== expected_alg) {
+      throw new e2e.error.InvalidArgumentsError(
+          'unexpected JWS algorithm header for curve' +
+          this.curveName_ + ':' + alg);
+    }
+  } catch(e) {
     throw new e2e.error.InvalidArgumentsError(
         'unexpected JWS protected header for curve' +
         this.curveName_ + ':' + header);
@@ -230,7 +241,7 @@ e2e.ecc.Ecdsa.prototype.verifyJws = function(jws) {
   }
 
   var sig = {r: dsig.slice(0, bytelen), s: dsig.slice(bytelen, bytelen * 2)};
-  if (this.verify(header + '.' + emsg, sig)) {
+  if (this.verify(eheader + '.' + emsg, sig)) {
     return msg;
   } else {
     return null;
