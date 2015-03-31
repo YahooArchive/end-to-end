@@ -22,6 +22,7 @@
 
 goog.provide('e2e.ecc.ByteLen');
 goog.provide('e2e.ecc.DomainParam');
+goog.provide('e2e.ecc.JwsAlg');
 goog.provide('e2e.ecc.JwsHeader');
 goog.provide('e2e.ecc.PrimeCurve');
 goog.provide('e2e.ecc.PrimeCurveOid');
@@ -56,6 +57,17 @@ e2e.ecc.PrimeCurve = {
   P_521: 'P_521',
   CURVE_25519: 'CURVE_25519',
   ED_25519: 'ED_25519'
+};
+
+
+/**
+ * Algorithm names in JWS header.
+ * @enum {string}
+ */
+e2e.ecc.JwsAlg = {
+  P_256: 'ES256',
+  P_384: 'ES384',
+  P_512: 'ES512'
 };
 
 
