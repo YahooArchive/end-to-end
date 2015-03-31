@@ -28,7 +28,7 @@ Or, MacPorts:
 The extension requires a keyserver implementing [this API](docs/keyserver.md)
 to fetch keys for other users.
 
-We do not currently provide a publicly-exposed keyserver, so for now the recommended way is to [follow these instructions](https://example.com) to run a local keyserver.
+We do not currently provide a publicly-exposed keyserver, so for now the recommended way is to [follow these instructions](https://github.com/yahoo/keyshop) to run a local keyserver.
 
 Once that's done:
 
