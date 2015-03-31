@@ -28,16 +28,16 @@ Or, MacPorts:
 The extension requires a keyserver implementing [this API](docs/keyserver.md)
 to fetch keys for other users.
 
-We do not currently provide a publicly-exposed keyserver. So you'll need to run your own for now. (We will provide an open source vagrantfile or node package for this soon.)
+We do not currently provide a publicly-exposed keyserver, so for now the recommended way is to [follow these instructions](https://example.com) to run a local keyserver.
 
 Once that's done:
 
-1. Edit `src/javascript/crypto/e2e/extension/manifest.json` and replace
-   `https://keyshop.paranoids.corp.yahoo.com:25519` with the origin of your
-   keyserver.
-2. Edit `src/javascript/crypto/extension/config.js` with your keyserver
-   parameters. Most likely you will want to set `AUTH_ENABLED` to false, in
-   which case you can put anything for `AUTH_COOKIE` and `AUTH_DEFAULT_ORIGIN`.
+1. Replace `KAUTH_PUB` in `src/javascript/crypto/e2e/extension/config.js` with
+   the contents of `/path/to/keyshop/data/kauth/kauth.pub.js`.
+2. [OPTIONAL] If you're running the keyshop at a non-default origin, replace
+   `https://localhost:25519` with the keyserver origin in
+   `src/javascript/crypto/e2e/extension/config.js` and
+   `src/javascript/crypto/e2e/extension/manifest.json`.
 
 Then to build the extension:
 
@@ -45,7 +45,10 @@ Then to build the extension:
 
 ## Installation instructions
 
-Go to chrome://extensions, check the "developer mode" checkbox, click on "Load
+Go to `https://localhost:25519` in Chrome and click through the self-signed certificate
+warning so that the extension can talk to the keyserver.
+
+To load the extension, go to chrome://extensions, check the "developer mode" checkbox, click on "Load
 unpacked extension" and selected `file:///path/to/this/repo/build/extension`.
 
 
