@@ -30,14 +30,12 @@ to fetch keys for other users.
 
 We do not currently provide a publicly-exposed keyserver, so for now the recommended way is to [follow these instructions](https://github.com/yahoo/keyshop) to run a local keyserver.
 
-Once that's done:
+Once that's done, run:
 
-1. Replace `KAUTH_PUB` in `src/javascript/crypto/e2e/extension/config.js` with
-   the contents of `/path/to/keyshop/data/kauth/kauth.pub.js`.
-2. [OPTIONAL] If you're running the keyshop at a non-default origin, replace
-   `https://localhost:25519` with the keyserver origin in
-   `src/javascript/crypto/e2e/extension/config.js` and
-   `src/javascript/crypto/e2e/extension/manifest.json`.
+    ./do.sh config [host]
+
+where `[host]` is the hostname of the keyserver if you're not using the default
+host of `localhost:25519`.
 
 Then to build the extension:
 
