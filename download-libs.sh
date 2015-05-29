@@ -25,12 +25,18 @@ cd lib
 
 # checkout closure library
 if [ ! -d closure-library/.git ]; then
-  git clone --depth 1 https://github.com/google/closure-library closure-library
+  git clone https://github.com/google/closure-library closure-library
+  cd closure-library
+  git checkout eb26f425dbd99a70d2955d8fcc892f2fd0178acb
+  cd ..
 fi
 
 # checkout zlib.js
 if [ ! -d zlib.js/.git ]; then
-  git clone --depth 1 https://github.com/imaya/zlib.js zlib.js
+  git clone https://github.com/imaya/zlib.js zlib.js
+  cd zlib.js
+  git checkout b99bd33d485d63e93310b911a1f8dbf9ceb265d5
+  cd ..
   mkdir typedarray
   ln -s ../zlib.js/define/typedarray/use.js typedarray/use.js
 fi
@@ -42,6 +48,7 @@ if [ ! -d closure-compiler/.git ]; then
   fi
   git clone --depth 1 https://github.com/google/closure-compiler closure-compiler
   cd closure-compiler
+  git checkout e7dc2720838d0c8fb14dbd31729b665c0b8735f4
   ant jar
   cd ..
 fi
@@ -60,6 +67,7 @@ if [ ! -d closure-stylesheets/.git ]; then
   fi
   git clone https://code.google.com/p/closure-stylesheets/
   cd closure-stylesheets
+  git checkout 3eb80f827270e73abd882ba69dbc3f3182a55889
   ant
   cp build/closure-stylesheets.jar ../
   cd ..
