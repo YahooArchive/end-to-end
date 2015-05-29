@@ -88,7 +88,7 @@ ext.Launcher = function() {
  * @param {!function(...)} callback The function to invoke once the content has
  *     been updated.
  * @param {string=} opt_subject The subject of the message if applicable.
- * @expose
+ * @export
  */
 ext.Launcher.prototype.updateSelectedContent =
     function(content, recipients, origin, expectMoreUpdates,
@@ -111,7 +111,7 @@ ext.Launcher.prototype.updateSelectedContent =
  * Retrieves the content that the user has selected.
  * @param {!function(...)} callback The callback where the selected content will
  *     be passed.
- * @expose
+ * @export
  */
 ext.Launcher.prototype.getSelectedContent = function(callback) {
   this.getActiveTab_(goog.bind(function(tabId) {
@@ -170,7 +170,7 @@ ext.Launcher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
  * Asks for the keyring passphrase and start the launcher. Will throw an
  * exception if the password is wrong.
  * @param {string=} opt_passphrase The passphrase of the keyring.
- * @expose
+ * @export
  */
 ext.Launcher.prototype.start = function(opt_passphrase) {
   this.start_(opt_passphrase || '');
@@ -305,7 +305,7 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
 /**
  * Returns the PGP context used within the extension.
  * @return {e2e.openpgp.Context} The PGP context.
- * @expose
+ * @export
  */
 ext.Launcher.prototype.getContext = function() {
   return this.pgpContext_;
@@ -315,7 +315,7 @@ ext.Launcher.prototype.getContext = function() {
 /**
  * Indicates if the keyring was loaded with the correct passphrase.
  * @return {boolean} True if the keyring was loaded with the correct passphrase.
- * @expose
+ * @export
  */
 ext.Launcher.prototype.hasPassphrase = function() {
   return this.started_;
