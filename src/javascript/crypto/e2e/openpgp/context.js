@@ -69,13 +69,13 @@ e2e.openpgp.Context.KeyType = {
 /**
  * @param {string} passphrase The passphrase for encrypting the KeyRing
  *     when stored locally.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.setKeyRingPassphrase;
 
 
 /**
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.unsetKeyringPassphrase;
 
@@ -83,21 +83,21 @@ e2e.openpgp.Context.prototype.unsetKeyringPassphrase;
 /**
  * @param {string} passphrase Change the passphrase for encrypting the KeyRing
  *     when stored locally. Empty string for unencrypted.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.changeKeyRingPassphrase;
 
 
 /**
  * @return {boolean} True if there is a correct keyring passphrase set.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.hasPassphrase;
 
 
 /**
  * @return {boolean} True if the keyring is encrypted in LocalStorage.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.isKeyRingEncrypted;
 
@@ -106,7 +106,7 @@ e2e.openpgp.Context.prototype.isKeyRingEncrypted;
  * Parses key blocks and returns a structured description of the keys.
  * @param {!e2e.ByteArray|string} key Key(s) to get the description of.
  * @return {!e2e.openpgp.KeyResult} Description of the keys.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.getKeyDescription;
 
@@ -118,7 +118,7 @@ e2e.openpgp.Context.prototype.getKeyDescription;
  * @param {!e2e.ByteArray|string} key The key to import.
  * @return {!e2e.openpgp.ImportKeyResult} List of user IDs that were
  *     successfully imported.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.importKey;
 
@@ -134,7 +134,7 @@ e2e.openpgp.Context.prototype.importKey;
  * @param {string} email The email to associate the key to.
  * @param {number} expirationDate Timestamp in seconds to expire the key.
  * @return {!e2e.openpgp.GenerateKeyResult} The generated key.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.generateKey;
 
@@ -151,7 +151,7 @@ e2e.openpgp.Context.prototype.generateKey;
  *     the message with.
  * @return {!e2e.openpgp.EncryptSignResult} The result of the encrypt/sign
  *     operation.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.encryptSign;
 
@@ -164,7 +164,7 @@ e2e.openpgp.Context.prototype.encryptSign;
  *     a cleartext message).
  * @return {!e2e.openpgp.VerifyDecryptResult} The result of the
  *     verify/decrypt operation.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.verifyDecrypt;
 
@@ -173,7 +173,7 @@ e2e.openpgp.Context.prototype.verifyDecrypt;
  * Searches a public key from a user identifier.
  * @param {string} uid The user id to search for.
  * @return {!e2e.openpgp.KeyResult} The result of the key search.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.searchPublicKey;
 
@@ -182,7 +182,7 @@ e2e.openpgp.Context.prototype.searchPublicKey;
  * Searches a private key from a user identifier.
  * @param {string} uid The user id to search for.
  * @return {!e2e.openpgp.KeyResult} The result of the key search.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.searchPrivateKey;
 
@@ -191,7 +191,7 @@ e2e.openpgp.Context.prototype.searchPrivateKey;
  * Searches a public and private key from a user identifier.
  * @param {string} uid The user id to search for.
  * @return {!e2e.openpgp.KeyResult} The result of the key search.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.searchKey;
 
@@ -201,7 +201,7 @@ e2e.openpgp.Context.prototype.searchKey;
  * @param {boolean=} opt_priv Whether to return the private keyring.
  * @return {!e2e.async.Result.<!e2e.openpgp.KeyRingMap>} A clone of the key ring
  *     map.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.getAllKeys;
 
@@ -209,7 +209,7 @@ e2e.openpgp.Context.prototype.getAllKeys;
 /**
  * Deletes all keys for a user identifier.
  * @param {string} uid The user id to delete all keys.
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.deleteKey;
 
@@ -218,7 +218,7 @@ e2e.openpgp.Context.prototype.deleteKey;
  * Exports the secret keyring.
  * @param {boolean} armored Whether to export the keyring in radix64 armor.
  * @return {!e2e.async.Result.<!e2e.ByteArray|string>}
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.exportKeyring;
 
@@ -226,7 +226,7 @@ e2e.openpgp.Context.prototype.exportKeyring;
 /**
  * Provides serialized data needed to back up generated EC keys.
  * @return {!e2e.async.Result.<e2e.openpgp.KeyringBackupInfo>}
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.getKeyringBackupData;
 
@@ -236,7 +236,7 @@ e2e.openpgp.Context.prototype.getKeyringBackupData;
  * @param {e2e.openpgp.KeyringBackupInfo} data Serialized data to restore
  * @param {string} email The email to associate with restored keys.
  * @return {e2e.async.Result.<undefined>}
- * @expose
+ * @export
  */
 e2e.openpgp.Context.prototype.restoreKeyring;
 

@@ -95,7 +95,7 @@ gmonkey.isAvailable = function(callback) {
  * Gets the last selected message in Gmail.
  * @param {!function(Element)} callback The callback where the element
  *     containing the last selected message should be passed.
- * @expose
+ * @export
  */
 gmonkey.getCurrentMessage = function(callback) {
   gmonkey.callGmonkey_('getCurrentMessage', function(result) {
@@ -110,7 +110,7 @@ gmonkey.getCurrentMessage = function(callback) {
  * Gets the active draft in Gmail.
  * @param {!function(!Array.<string>,string)} callback The callback where the
  *     active draft information should be passed.
- * @expose
+ * @export
  * @suppress {missingProperties}
  */
 gmonkey.getActiveDraft = function(callback) {
@@ -141,7 +141,7 @@ gmonkey.getActiveDraft = function(callback) {
  * Indicates if there is an active draft in Gmail.
  * @param {!function(boolean)} callback The callback where the active draft
  *     information should be passed.
- * @expose
+ * @export
  */
 gmonkey.hasActiveDraft = function(callback) {
   gmonkey.callGmonkey_(
@@ -155,7 +155,7 @@ gmonkey.hasActiveDraft = function(callback) {
  * @param {string} msgBody The content body of the message.
  * @param {function()=} opt_callback Optional. A callback to invoke once the
  *     draft's contents have been set.
- * @expose
+ * @export
  */
 gmonkey.setActiveDraft = function(recipients, msgBody, opt_callback) {
   var callback = goog.nullFunction;
