@@ -85,12 +85,11 @@ if [ ! -d closure-stylesheets ]; then
   cd closure-stylesheets
   git checkout $CLOSURE_STYLESHEETS_COMMIT
   ant
-  cp build/closure-stylesheets.jar ../
   cd ..
 fi
 
-if [ ! -f chrome_extensions.js ]; then
-  curl https://raw.githubusercontent.com/google/closure-compiler/master/contrib/externs/chrome_extensions.js -O
+if [ -f chrome_extensions.js ]; then
+  rm -f chrome_extensions.js
 fi
 
 # Temporary fix
