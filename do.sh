@@ -27,9 +27,9 @@ PKG_VERSION=`git rev-parse HEAD`
 
 e2e_assert_dependencies() {
   # Check if required binaries are present.
-  type "$PYTHON_CMD" >/dev/null 2>&1 || { echo >&2 "Python is required to build End-To-End"; exit 1; }
-  type ant >/dev/null 2>&1 || { echo >&2 "Ant is required to build End-To-End"; exit 1; }
-  type java >/dev/null 2>&1 || { echo >&2 "Java is required to build End-To-End"; exit 1; }
+  type "$PYTHON_CMD" >/dev/null 2>&1 || { echo >&2 "Python is required to build End-To-End."; exit 1; }
+  type ant >/dev/null 2>&1 || { echo >&2 "Ant is required to build End-To-End."; exit 1; }
+  type java >/dev/null 2>&1 || { echo >&2 "Java is required to build End-To-End."; exit 1; }
   jversion=$(java -version 2>&1 | grep version | awk -F '"' '{print $2}')
   if [[ $jversion < "1.7" ]]; then
     echo "Java 1.7 or higher is required to build End-To-End."
@@ -40,9 +40,9 @@ e2e_assert_dependencies() {
     lib/closure-templates-compiler \
     lib/typedarray \
     lib/zlib.js \
-    lib/closure-stylesheets.jar \
+    lib/closure-stylesheets/build/closure-stylesheets.jar \
     lib/closure-compiler/build/compiler.jar \
-    lib/chrome_extensions.js \
+    lib/closure-compiler/contrib/externs/chrome_extensions.js \
   )
   for var in "${files[@]}"
   do
@@ -82,7 +82,7 @@ e2e_assert_templates() {
     # If cmp is unavailable, just ignore the check, instead of exiting
     type cmp >/dev/null 2>&1 && (e2e_get_file_cksum '*.soy' | cmp "$BUILD_TPL_DIR/cksum" - >/dev/null 2>&1) || true
     if [ -f "$BUILD_TPL_DIR/cksum" -a $? -eq 0 ] ; then
-      echo "Using previous template build - ./do.sh clean if you with to rebuild the templates."
+      echo "Using previous template build. Run ./do.sh clean if you want to rebuild the templates."
     else
       echo "Template files changed since last build. Rebuilding..."
       e2e_build_templates
@@ -122,7 +122,7 @@ e2e_build_library() {
 e2e_build_css() {
   BUILD_EXT_DIR="$BUILD_DIR/extension"
   SRC_EXT_DIR="src/javascript/crypto/e2e/extension"
-  csscompile_e2e="java -jar lib/closure-stylesheets.jar src/javascript/crypto/e2e/extension/ui/styles/ycolors.css src/javascript/crypto/e2e/extension/ui/styles/base.css"
+  csscompile_e2e="java -jar lib/closure-stylesheets/build/closure-stylesheets.jar src/javascript/crypto/e2e/extension/ui/styles/ycolors.css src/javascript/crypto/e2e/extension/ui/styles/base.css"
   set -e
   echo "Compiling CSS files..."
   $csscompile_e2e "$SRC_EXT_DIR/ui/glass/glass.css" > "$BUILD_EXT_DIR/glass_styles.css"
@@ -147,16 +147,18 @@ e2e_build_extension() {
   SRC_DIRS=( src lib/closure-library lib/closure-templates-compiler $BUILD_TPL_DIR \
     lib/zlib.js/src lib/typedarray )
 
+  # compile javascript files
   jscompile_e2e="$JSCOMPILE_CMD"
   for var in "${SRC_DIRS[@]}"
   do
     jscompile_e2e+=" --js='$var/**.js' --js='!$var/**_test.js'"
   done
   # compile javascript files
-  echo "Compiling JS files..."
   if [ "$1" == "debug" ]; then
+    echo "Debug mode enabled"
     jscompile_e2e+=" --debug --formatting=PRETTY_PRINT"
   fi
+  echo "Compiling JS files..."
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.bootstrap" --js_output_file "$BUILD_EXT_DIR/launcher_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.Helper" --js_output_file "$BUILD_EXT_DIR/helper_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.bootstrap" --js_output_file "$BUILD_EXT_DIR/glass_binary.js"
@@ -184,6 +186,7 @@ e2e_build_clean() {
 }
 
 e2e_install_deps() {
+  set -e
   echo "Installing build dependencies..."
   ./download-libs.sh
   echo "Done."
@@ -281,14 +284,8 @@ case "$CMD" in
   install_deps)
     e2e_install_deps;
     ;;
-  build)
-    e2e_build $*;
-    ;;
   build_extension)
-    e2e_build_extension;
-    ;;
-  build_extension_debug)
-    e2e_build_extension "debug";
+    e2e_build_extension $1;
     ;;
   build_library)
     e2e_build_library;
@@ -318,7 +315,7 @@ case "$CMD" in
     e2e_config $*;
     ;;
   *)
-    echo "Usage: $0 {build_extension|build_extension_debug|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip|config}"
+    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip|config} [debug]"
     RETVAL=1
 esac
 
