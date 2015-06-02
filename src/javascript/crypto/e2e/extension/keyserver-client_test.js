@@ -283,8 +283,8 @@ function testRefreshKeyring() {
 
 function populatePgpKeys(opt_key) {
   var ctx = launcher.getContext();
-  ctx.importKey(function(uid, callback) {
-    callback('test');
+  ctx.importKey(function(uid) {
+    return e2e.async.Result.toResult('test');
   }, PRIVATE_KEY_ASCII);
 
   ctx.importKey(function() {}, PUBLIC_KEY_ASCII);

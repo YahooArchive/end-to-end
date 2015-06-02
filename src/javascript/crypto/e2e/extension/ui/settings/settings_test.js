@@ -307,7 +307,7 @@ function testRenderPassphraseCallback() {
     return b;
   });
   page.decorate(document.documentElement);
-  page.renderPassphraseCallback_('test_uid', function() {});
+  page.renderPassphraseCallback_('test_uid');
 
   assertContains('test_uid', document.body.textContent);
 }

@@ -371,17 +371,16 @@ ui.Setup.prototype.updateKeyringPassphrase_ = function(passphrase) {
  * Renders the UI elements needed for requesting the passphrase of an individual
  * PGP key.
  * @param {string} uid The UID of the PGP key.
- * @param {!function(string)} callback The callback to invoke when the
- *     passphrase has been provided.
  * @private
  */
-ui.Setup.prototype.renderPassphraseCallback_ = function(uid, callback) {
+ui.Setup.prototype.renderPassphraseCallback_ = function(uid) {
+  var result = new e2e.async.Result();
   var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
   var dialog = new dialogs.Generic(chrome.i18n.getMessage(
       'promptPassphraseCallbackMessage', uid),
       function(passphrase) {
         goog.dispose(dialog);
-        callback(/** @type {string} */ (passphrase));
+        result.callback(/** @type {string} */ (passphrase));
       },
       // Use a password field to ask for the passphrase.
       dialogs.InputType.SECURE_TEXT,
@@ -391,6 +390,7 @@ ui.Setup.prototype.renderPassphraseCallback_ = function(uid, callback) {
 
   this.addChild(dialog, false);
   dialog.render(popupElem);
+  return result;
 };
 
 
