@@ -21,6 +21,7 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.actions.DecryptVerifyTest');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.ext.actions.DecryptVerify');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
@@ -121,8 +122,8 @@ function testExecute() {
   var pgpContext = new e2e.openpgp.ContextImpl();
   pgpContext.setKeyRingPassphrase(''); // No passphrase.
 
-  var pwdCallback = function(uid, callback) {
-    callback('test');
+  var pwdCallback = function(uid) {
+    return e2e.async.Result.toResult('test');
   };
   var plaintext = 'some secret message.';
 

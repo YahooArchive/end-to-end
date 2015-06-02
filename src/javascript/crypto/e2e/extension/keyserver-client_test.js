@@ -182,7 +182,7 @@ function testSendKey() {
         assertEquals('POST', arg);
         return true;
       }), new mockmatchers.ArgumentMatcher(function(arg) {
-        assertEquals('https://localhost:25519' +
+        assertEquals('https://keyshop.paranoids.corp.yahoo.com:25519' +
             '/v1/k/yan@mit.edu/T59IFsYRLW3GewSBBrwL', arg);
         return true;
       }), new mockmatchers.ArgumentMatcher(function(arg) {
@@ -283,8 +283,8 @@ function testRefreshKeyring() {
 
 function populatePgpKeys(opt_key) {
   var ctx = launcher.getContext();
-  ctx.importKey(function(uid, callback) {
-    callback('test');
+  ctx.importKey(function(uid) {
+    return e2e.async.Result.toResult('test');
   }, PRIVATE_KEY_ASCII);
 
   ctx.importKey(function() {}, PUBLIC_KEY_ASCII);

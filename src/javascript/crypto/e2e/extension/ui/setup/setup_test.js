@@ -317,7 +317,7 @@ function testRenderPassphraseCallback() {
   mockControl.$replayAll();
   page.decorate(document.documentElement);
 
-  page.renderPassphraseCallback_('test_uid', callback);
+  page.renderPassphraseCallback_('test_uid').addCallback(callback);
 
   assertContains('test_uid', document.body.textContent);
   for (var childIdx = 0; childIdx < page.getChildCount(); childIdx++) {
