@@ -4,7 +4,7 @@ install:
 
 script:
   - ./do.sh clean
-  - ./do.sh build_extension_debug
+  - ./do.sh build_extension debug
 
 after_script:
   - ./do.sh lint
