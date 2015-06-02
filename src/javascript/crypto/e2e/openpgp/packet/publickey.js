@@ -26,6 +26,7 @@ goog.require('e2e');
 goog.require('e2e.algorithm.KeyLocations');
 goog.require('e2e.cipher.Algorithm');
 goog.require('e2e.cipher.factory');
+goog.require('e2e.debug.Console');
 goog.require('e2e.hash.Md5');
 goog.require('e2e.hash.Sha1');
 goog.require('e2e.openpgp.Mpi');
@@ -82,6 +83,8 @@ e2e.openpgp.packet.PublicKey.prototype.serializePacketBody =
   var keyData;
   switch (this.cipher.algorithm) {
     case e2e.cipher.Algorithm.RSA:
+    case e2e.cipher.Algorithm.RSA_ENCRYPT:
+    case e2e.signer.Algorithm.RSA_SIGN:
       keyData = goog.array.flatten(
           e2e.openpgp.Mpi.serialize(keyObj['n']),
           e2e.openpgp.Mpi.serialize(keyObj['e']));
@@ -135,16 +138,6 @@ e2e.openpgp.packet.PublicKey.prototype.serializePacketBody =
 
 
 /** @override */
-e2e.openpgp.packet.PublicKey.prototype.can = function(use) {
-  if (use == e2e.openpgp.packet.Key.Usage.ENCRYPT) {
-    return e2e.cipher.factory.has(
-        /** @type {e2e.cipher.Algorithm} */ (this.cipher.algorithm));
-  }
-  return false;
-};
-
-
-/** @override */
 e2e.openpgp.packet.PublicKey.prototype.getPublicKeyPacket = function() {
   return this;
 };
@@ -162,6 +155,8 @@ e2e.openpgp.packet.PublicKey.parse = function(body) {
     throw new e2e.openpgp.error.UnsupportedError(
         'Deprecated key packet version.');
   }
+  e2e.openpgp.packet.PublicKey.console_.info(
+      '  Ver', version);
   var timestamp = e2e.byteArrayToDwordArray(body.splice(0, 4))[0];
   if (version == 3 || version == 2) {
     var daysUntilExpiration = e2e.byteArrayToWord(body.splice(0, 2));
@@ -169,18 +164,28 @@ e2e.openpgp.packet.PublicKey.parse = function(body) {
   var cipherId = body.shift();
   var cipherAlgorithm = e2e.openpgp.constants.getAlgorithm(
       e2e.openpgp.constants.Type.PUBLIC_KEY, cipherId);
+  e2e.openpgp.packet.PublicKey.console_.info(
+      '  Pub alg', cipherAlgorithm);
   var cipher;
   var keyData = {};
   keyData.loc = e2e.algorithm.KeyLocations.JAVASCRIPT;
   // TODO(user): Clean up these types, add loc fields when b/16299258 is fixed.
   switch (cipherAlgorithm) {
     case e2e.cipher.Algorithm.RSA:
+    case e2e.cipher.Algorithm.RSA_ENCRYPT:
+    case e2e.signer.Algorithm.RSA_SIGN:
       var n = e2e.openpgp.Mpi.parse(body);
       var e = e2e.openpgp.Mpi.parse(body);
       keyData = /** @type {!e2e.cipher.key.Rsa} */({
         'n': goog.array.clone(n),
         'e': goog.array.clone(e)});
-      cipher = e2e.cipher.factory.require(cipherAlgorithm, keyData);
+      if (cipherAlgorithm == e2e.signer.Algorithm.RSA_SIGN) {
+        cipher = e2e.signer.factory.require(
+            /** @type {!e2e.signer.Algorithm} */ (cipherAlgorithm), keyData);
+      } else {
+        cipher = e2e.cipher.factory.require(
+            /** @type {!e2e.cipher.Algorithm} */ (cipherAlgorithm), keyData);
+      }
       break;
     case e2e.cipher.Algorithm.ELGAMAL:
       var p = e2e.openpgp.Mpi.parse(body);
@@ -260,7 +265,8 @@ e2e.openpgp.packet.PublicKey.parse = function(body) {
     fingerprint = /** @type {!e2e.ByteArray} */ (md5.hash(
         goog.array.concat(keyData['n'], keyData['e'])));
   }
-
+  e2e.openpgp.packet.PublicKey.console_.info(
+      '  Fingerprint', fingerprint);
   return new e2e.openpgp.packet.PublicKey(version, timestamp,
                                           goog.asserts.assertObject(cipher),
                                           fingerprint, keyId);
@@ -282,5 +288,13 @@ e2e.openpgp.packet.PublicKey.calculateFingerprint = function(pubKey) {
   var sha1 = new e2e.hash.Sha1();
   return /** @type {!e2e.ByteArray} */ (sha1.hash(fingerprintData));
 };
+
+
+/**
+ * @type {!e2e.debug.Console}
+ * @private
+ */
+e2e.openpgp.packet.PublicKey.console_ =
+    e2e.debug.Console.getConsole('e2e.openpgp.packet.PublicKey');
 
 e2e.openpgp.packet.factory.add(e2e.openpgp.packet.PublicKey);

@@ -27,6 +27,7 @@ goog.require('e2e');
 goog.require('e2e.async.Result');
 goog.require('e2e.cipher.Algorithm');
 goog.require('e2e.cipher.Rsa');
+goog.require('e2e.debug.Console');
 /** @suppress {extraRequire} force loading of all hash functions */
 goog.require('e2e.hash.all');
 goog.require('e2e.hash.factory');
@@ -78,6 +79,8 @@ e2e.openpgp.packet.Signature = function(
     opt_hashedSubpackets, opt_unhashedSubpackets,
     opt_signerKeyId, opt_creationTime) {
   goog.base(this);
+
+  var creationTime;
   if (version == 0x04) {
     /**
      * Hashed signature subpackets.
@@ -92,6 +95,15 @@ e2e.openpgp.packet.Signature = function(
       e2e.openpgp.packet.SignatureSub.populateAttribute(
           this.attributes, subpacket, false);
     }, this);
+
+    // rfc 4880: 5.2.3.4 - signature creation time MUST be present
+    // within the hashed area.
+    if (!this.attributes.hasOwnProperty('SIGNATURE_CREATION_TIME')) {
+      throw new e2e.openpgp.error.InvalidArgumentsError(
+          'Missing signature timestamp.');
+    }
+    creationTime = this.attributes.SIGNATURE_CREATION_TIME;
+
     /**
      * Non hashed signature subpackets.
      * @type {!Array.<!e2e.openpgp.packet.SignatureSub>}
@@ -122,16 +134,12 @@ e2e.openpgp.packet.Signature = function(
       throw new e2e.openpgp.error.InvalidArgumentsError(
           'Missing key data.');
     }
+    creationTime = opt_creationTime;
     /**
      * ID of the key that generated this signature..
      * @type {!e2e.ByteArray}
      */
     this.signerKeyId = opt_signerKeyId;
-    /**
-     * Creation time of the signature.
-     * @type {number}
-     */
-    this.creationTime = opt_creationTime;
   } else {
     throw new e2e.openpgp.error.InvalidArgumentsError(
         'Invalid Signature Packet version.');
@@ -141,6 +149,11 @@ e2e.openpgp.packet.Signature = function(
    * @type {number}
    */
   this.version = version;
+  /**
+   * Creation time of the signature.
+   * @type {number}
+   */
+  this.creationTime = creationTime;
   /**
    * Type of the signature.
    * @type {!e2e.openpgp.packet.Signature.SignatureType}
@@ -204,6 +217,7 @@ e2e.openpgp.packet.Signature.prototype.serializePacketBody = function() {
   var sig = this.signature;
   switch (this.pubKeyAlgorithm) {
     case e2e.cipher.Algorithm.RSA:
+    case e2e.signer.Algorithm.RSA_SIGN:
       goog.array.extend(serialized,
           e2e.openpgp.Mpi.serialize(sig['s']));
       break;
@@ -252,6 +266,8 @@ e2e.openpgp.packet.Signature.prototype.getHashAlgorithm = function() {
 /** @inheritDoc */
 e2e.openpgp.packet.Signature.parse = function(data) {
   var version = data.shift();
+  e2e.openpgp.packet.Signature.console_.info(
+      'Signature packet Ver ', version);
   if (version == 0x03 || version == 0x02) {
     var hashedMaterialLength = data.shift();
     if (hashedMaterialLength != 0x05) {
@@ -268,6 +284,14 @@ e2e.openpgp.packet.Signature.parse = function(data) {
     var hashAlgorithm = /** @type {e2e.hash.Algorithm} */ (
         e2e.openpgp.constants.getAlgorithm(
         e2e.openpgp.constants.Type.HASH, data.shift()));
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Sig type ', signatureType);
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Pub alg ', pubKeyAlgorithm);
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Hash alg ', hashAlgorithm);
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Issuer ID ', signerKeyId);
   } else if (version == 0x04) {
     var signatureType =
         /** @type {e2e.openpgp.packet.Signature.SignatureType} */(
@@ -278,10 +302,20 @@ e2e.openpgp.packet.Signature.parse = function(data) {
     var hashAlgorithm = /** @type {e2e.hash.Algorithm} */ (
         e2e.openpgp.constants.getAlgorithm(
         e2e.openpgp.constants.Type.HASH, data.shift()));
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Sig type ', signatureType);
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Pub alg ', pubKeyAlgorithm);
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Hash alg ', hashAlgorithm);
     var hashedSubpacketLength = e2e.byteArrayToWord(
         data.splice(0, 2));
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Hashed subpackets');
     var hashedSubpackets = e2e.openpgp.packet.SignatureSub.parse(
         data.splice(0, hashedSubpacketLength));
+    e2e.openpgp.packet.Signature.console_.info(
+        '  Unhashed subpackets');
     var unhashedSubpacketLength = e2e.byteArrayToWord(
         data.splice(0, 2));
     var unhashedSubpackets = e2e.openpgp.packet.SignatureSub.parse(
@@ -290,12 +324,14 @@ e2e.openpgp.packet.Signature.parse = function(data) {
     throw new e2e.openpgp.error.UnsupportedError(
         'Unsupported signature packet version:' + version);
   }
+
   var leftTwoBytes = data.splice(0, 2);
   var signature = {
     's': []
   };
   switch (pubKeyAlgorithm) {
     case e2e.signer.Algorithm.RSA:
+    case e2e.signer.Algorithm.RSA_SIGN:
       signature['s'] = e2e.openpgp.Mpi.parse(data);
       break;
     case e2e.signer.Algorithm.DSA:
@@ -304,6 +340,8 @@ e2e.openpgp.packet.Signature.parse = function(data) {
       signature['s'] = e2e.openpgp.Mpi.parse(data);
       break;
     default:  // Unsupported signature algorithm.
+      e2e.openpgp.packet.Signature.console_.warn(
+          'Unsupported Signature Algorithm', pubKeyAlgorithm);
       return null;
   }
   return new e2e.openpgp.packet.Signature(
@@ -430,17 +468,24 @@ e2e.openpgp.packet.Signature.prototype.isCertificationSignature = function() {
  * @param {!e2e.openpgp.packet.SecretKey} key Key to sign with.
  * @param {!e2e.ByteArray} data Data to sign.
  * @param {!e2e.openpgp.packet.Signature.SignatureType} signatureType
- * @param {Object.<string, number|!e2e.ByteArray>=} opt_attributes
- *     The signature attributes.
+ * @param {!Object.<string, number|!e2e.ByteArray>} attributes
+ *     The signature attributes. The SIGNATURE_CREATION_TIME attribute must
+ *     always be present within it.
  * @param {Object.<string, number|!e2e.ByteArray>=}
  *     opt_untrustedAttributes The signature untrusted attributes.
  * @return {!e2e.async.Result.<!e2e.openpgp.packet.Signature>} Signature packet.
  */
 e2e.openpgp.packet.Signature.construct = function(
-    key, data, signatureType, opt_attributes, opt_untrustedAttributes) {
+    key, data, signatureType, attributes, opt_untrustedAttributes) {
   // Described in RFC4880 section 5.2.4.
-  var hashedSubpackets = opt_attributes ?
-      e2e.openpgp.packet.SignatureSub.construct(opt_attributes) : [];
+  // 5.2.3.4 - SIGNATURE_CREATION_TIME must be present as a hashed attribute.
+  if (!attributes.hasOwnProperty('SIGNATURE_CREATION_TIME')) {
+    throw new e2e.openpgp.error.InvalidArgumentsError(
+        'Missing required SIGNATURE_CREATION_TIME attribute.');
+  }
+
+  var hashedSubpackets = e2e.openpgp.packet.SignatureSub.construct(attributes);
+
   var unhashedSubpackets = opt_untrustedAttributes ?
       e2e.openpgp.packet.SignatureSub.construct(opt_untrustedAttributes) :
       [];
@@ -568,3 +613,10 @@ e2e.openpgp.packet.Signature.RevocationReason = {
   'KEY_RETIRED': 0x03,
   'USER_ID_INVALID': 0x04
 };
+
+
+/**
+ * @private {e2e.debug.Console}
+ */
+e2e.openpgp.packet.Signature.console_ =
+    e2e.debug.Console.getConsole('e2e.openpgp.packet.Signature');
