@@ -371,8 +371,6 @@ ui.Setup.prototype.updateKeyringPassphrase_ = function(passphrase) {
  * Renders the UI elements needed for requesting the passphrase of an individual
  * PGP key.
  * @param {string} uid The UID of the PGP key.
- * @param {!function(string)} callback The callback to invoke when the
- *     passphrase has been provided.
  * @private
  */
 ui.Setup.prototype.renderPassphraseCallback_ = function(uid) {
