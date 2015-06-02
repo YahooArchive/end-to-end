@@ -84,8 +84,8 @@ goog.inherits(e2e.openpgp.block.EncryptedMessage,
  * @param {function(!e2e.ByteArray):e2e.openpgp.packet.Key}
  *     getKeyForSessionKeyCallback A callback to get a key packet with a given
  *     key id.
- * @param {function(string, function(string))} passphraseCallback A callback to
- *     get a passphrase for a given hint.
+ * @param {function(string):!e2e.async.Result<string>} passphraseCallback A
+ *     callback to get a passphrase for a given hint.
  * @return {!e2e.async.Result.<!e2e.openpgp.block.Message>}
  */
 e2e.openpgp.block.EncryptedMessage.prototype.decrypt = function(
@@ -182,8 +182,8 @@ e2e.openpgp.block.EncryptedMessage.prototype.decryptKeyAndMessage_ = function(
 /**
  * Attempts to decrypt the block with a passphrase. Will return an exception
  * in the errback if it fails.
- * @param {function(string, function(string))} passphraseCallback The callback
- *     for the passphrase.
+ * @param {function(string):!e2e.async.Result<string>} passphraseCallback The
+ *     callback for the passphrase.
  * @return {!e2e.async.Result.<!e2e.openpgp.block.Message>}
  * @private
  */
@@ -216,7 +216,7 @@ e2e.openpgp.block.EncryptedMessage.prototype.decryptWithPassphrase_ = function(
             throw new e2e.openpgp.error.DecryptError(
                 'Passphrase decryption failed');
           } else {
-            passphraseCallback('', decryptCallback);
+            passphraseCallback('').addCallback(decryptCallback);
           }
         }
       }, this);
@@ -224,15 +224,15 @@ e2e.openpgp.block.EncryptedMessage.prototype.decryptWithPassphrase_ = function(
       result.errback(e);
     }
   }, this);
-  passphraseCallback('', decryptCallback);
+  passphraseCallback('').addCallback(decryptCallback);
   return result;
 };
 
 
 /**
  * Tries to decrypt the ESK packets with a given passphrase.
- * @param {function(string, function(string))} passphraseCallback A callback to
- *     get a passphrase for a given hint.
+ * @param {function(string):!e2e.async.Result<string>} passphraseCallback A
+ *     callback to get a passphrase for a given hint.
  * @param {!Array.<!e2e.openpgp.packet.EncryptedSessionKey>} symEskPackets The
  *     list of symmetrically encrypted session key packets.
  * @param {string} passphraseString The passphrase to try to use to decrypt the
@@ -303,13 +303,10 @@ e2e.openpgp.block.EncryptedMessage.prototype.decryptMessage_ = function(
   var decryptedData = this.encryptedData.data;
   // TODO(user): Can this be refactored to avoid the circular dependency?
   /** @suppress {missingRequire} We assume the factory is already present. */
-  var decryptedBlocks = e2e.openpgp.block.factory.parseByteArrayMulti(
+  var message = e2e.openpgp.block.factory.parseByteArrayMessage(
       decryptedData, this.getCharset());
-  if (decryptedBlocks.length == 1) {
-    var decryptedBlock = decryptedBlocks[0];
-    if (decryptedBlock instanceof e2e.openpgp.block.Message) {
-      return decryptedBlock;
-    }
+  if (message) {
+    return message;
   }
   throw new e2e.openpgp.error.ParseError('Invalid decrypted message.');
 };

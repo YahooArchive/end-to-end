@@ -24,6 +24,7 @@
 goog.provide('e2e');
 goog.provide('e2e.ByteArray');
 goog.provide('e2e.DwordArray');
+goog.provide('e2e.ImmutableArray');
 
 goog.require('e2e.async.Result');
 goog.require('e2e.error.InvalidArgumentsError');
@@ -208,6 +209,8 @@ e2e.byteArrayToStringAsync = function(bytes, opt_charset) {
 
 /**
  * Converts a string into a UTF-8 encoded byte array.
+ * Throws {@code e2e.error.InvalidArgumentsError} if the string
+ * contains unencodable codepoints (eg: surrogate characters.)
  * @param {string} stringInput The string to convert.
  * @return {!e2e.ByteArray} The UTF-8 byte representation of the string.
  */
@@ -216,18 +219,81 @@ e2e.stringToByteArray = function(stringInput) {
   var out = [], p = 0;
   for (var i = 0; i < stringInput.length; i++) {
     var c = stringInput.charCodeAt(i);
-    if (c < 128) {
+    // If present, convert surrogate pairs to Unicode code points
+    // From Section 3.7 of the Unicode Standard:
+    // If <H,L> is a surrogate pair,
+    // N = (H - 0xD800)*0x400 + (L - 0xDC00) + 0x10000
+    // See:
+    // http://unicode.org/versions/Unicode3.0.0/ch03.pdf
+    // and the String.charCodeAt() documentation
+    // http://goo.gl/d4oFPv
+    if (e2e.isHighSurrogate_(c)) {
+      i++;
+      // charCodeAt() returns NaN if i >= stringInput.length
+      var low = stringInput.charCodeAt(i);
+      if (isNaN(low) || !e2e.isLowSurrogate_(low)) {
+        throw new e2e.error.InvalidArgumentsError(
+            'Cannot encode string to utf-8.');
+      }
+      c = ((c - 0xd800) * 0x400) + (low - 0xdc00) + 0x10000;
+    }
+    else if (e2e.isLowSurrogate_(c)) {
+      throw new e2e.error.InvalidArgumentsError(
+          'Cannot encode string to utf-8.');
+    }
+
+    // Convert a code point into utf-8
+    // See:
+    // http://tools.ietf.org/html/rfc3629#section-3
+    // for the encoding procedure.
+    if (c <= 0x7f) {
+      // one byte encoding
+      // 0xxxxxxx
       out[p++] = c;
-    } else if (c < 2048) {
-      out[p++] = (c >> 6) | 192;
-      out[p++] = (c & 63) | 128;
+    } else if (c <= 0x7ff) {
+      // two byte encoding
+      // 110xxxxx 10xxxxxx
+      out[p++] = (c >> 6) | 0xc0;
+      out[p++] = (c & 0x3f) | 0x80;
+    } else if (c <= 0xffff) {
+      // three byte encoding
+      // 1110xxxx 10xxxxxx 10xxxxxx
+      out[p++] = (c >> 12) | 0xe0;
+      out[p++] = ((c >> 6) & 0x3f) | 0x80;
+      out[p++] = (c & 0x3f) | 0x80;
+    } else if (c <= 0x10ffff) {
+      // four byte encoding
+      // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+      out[p++] = ((c >> 18) & 0x7) | 0xf0;
+      out[p++] = ((c >> 12) & 0x3f) | 0x80;
+      out[p++] = ((c >> 6) & 0x3f) | 0x80;
+      out[p++] = (c & 0x3f) | 0x80;
     } else {
-      out[p++] = (c >> 12) | 224;
-      out[p++] = ((c >> 6) & 63) | 128;
-      out[p++] = (c & 63) | 128;
+      throw new e2e.error.InvalidArgumentsError(
+          'Cannot encode character codes > 0x10ffff');
     }
   }
   return out;
+};
+
+
+/**
+ * @param {!number} code The character code
+ * @return {!boolean} true if it is a high surrogate
+ * @private
+ */
+e2e.isHighSurrogate_ = function(code) {
+  return 0xd800 <= code && code <= 0xdbff;
+};
+
+
+/**
+ * @param {!number} code The character code
+ * @return {!boolean} true if it is a low surrogate
+ * @private
+ */
+e2e.isLowSurrogate_ = function(code) {
+  return 0xdc00 <= code && code <= 0xdfff;
 };
 
 
@@ -318,4 +384,151 @@ e2e.incrementByteArray = function(n) {
     return n;
   };
   return fn(n);
+};
+
+
+
+/**
+ * A ImmutableArray is a collection that just offers indexed access to its
+ * elements, and a limited set of (static) operations that do not
+ * mutate the collection. It can also store an optional "state" object
+ * that may be retrieved later on. The reference to this state cannot
+ * be modified through public methods.
+ *
+ * @param {!e2e.ImmutableArray<T>|!Array<T>|!goog.array.ArrayLike} elements
+ * @param {S=} opt_state opaque data that may be retrieved via the
+ *     getState() method.
+ * @template T,S
+ * @constructor
+ */
+e2e.ImmutableArray = function(elements, opt_state) {
+
+  /**
+   * An underlying array which holds elements in our collection.
+   * @type {!Array<T>}
+   * @private
+   */
+  this.elements_ = (elements instanceof e2e.ImmutableArray) ?
+      goog.array.toArray(elements.elements_) :
+      goog.array.toArray(elements);
+
+  /**
+   * An optional opaque state object that can be stored along
+   * with this array.
+   * @type {S|undefined}
+   * @private
+   */
+  this.state_ = opt_state;
+};
+
+
+/**
+ * Returns the element at the provided index, or undefined if it
+ * does not exist.
+ * @param {number} index the index into the collection
+ * @return {!T|undefined} the element at the index.
+ */
+e2e.ImmutableArray.prototype.get = function(index) {
+  return this.elements_[index];
+};
+
+
+/**
+ * @return {number} number of elements in the collection.
+ */
+e2e.ImmutableArray.prototype.size = function() {
+  return this.elements_.length;
+};
+
+
+/**
+ * Returns the state provided in the constructor, if any.
+ * @return {S|undefined} the state
+ */
+e2e.ImmutableArray.prototype.getState = function() {
+  return this.state_;
+};
+
+
+/**
+ * Returns a new ImmutableArray after appending an element to
+ * a provided ImmutableArray.  If the source array is null or
+ * undefined, it will return an array containing just the
+ * element. Note that the returned ImmutableArray will have
+ * its state set to undefined.
+ *
+ * @param {e2e.ImmutableArray<T>} arr the source array.
+ * @param {!T} element the element to append to the collection.
+ * @return {!e2e.ImmutableArray<T>} the new ImmutableArray
+ * @template T
+ */
+e2e.ImmutableArray.pushCopy = function(arr, element) {
+  if (goog.isDefAndNotNull(arr)) {
+    return new e2e.ImmutableArray(
+        goog.array.concat(arr.elements_, element));
+  } else {
+    return new e2e.ImmutableArray([element]);
+  }
+};
+
+
+/**
+ * Create a new ImmutableArray after removing/adding some elements from a
+ * provided ImmutableArray. Note that the state in the returned ImmutableArray
+ * is undefined.
+ * @param {!e2e.ImmutableArray<T>} arr the source array.
+ * @param {number} index The index at which to start changing the array.
+ * @param {number} howMany How many elements to remove (0 means no removal.)
+ * @param {...T} var_args Optional, additional elements to insert into the
+ *     array.
+ * @return {!e2e.ImmutableArray<T>} the result ImmutableArray.
+ * @template T
+ */
+e2e.ImmutableArray.spliceCopy = function(arr, index, howMany, var_args) {
+  // swap in a clone before passing it to the destructive splice operator.
+  var elements = goog.array.clone(arr.elements_);
+  arguments[0] = elements;
+  goog.array.splice.apply(null, arguments);
+  return new e2e.ImmutableArray(elements);
+};
+
+
+/**
+ * Retuns a new ImmutableArray that is the concatenation
+ * all its arguments. Note that the state in the returned ImmutableArray is
+ * undefined.
+ * @param {...!e2e.ImmutableArray<T>} var_args
+ * @return {!e2e.ImmutableArray<T>} the result ImmutableArray
+ * @template T
+ */
+e2e.ImmutableArray.concat = function(var_args) {
+  var result = [];
+  for (var i = 0; i < arguments.length; i++) {
+    result = goog.array.concat(result, arguments[i].elements_);
+  }
+  return new e2e.ImmutableArray(result);
+};
+
+
+/**
+ * Calls a function for each element in the provided ImmutableArray. Skips
+ * holes in the array.
+ *
+ * @param {e2e.ImmutableArray<T>} sarray ImmutableArray over which to iterate.
+ * @param {function(this: S, T, number): ?} f The function to call for every
+ *     element. This function takes 2 arguments (the element and the index).
+ *     The return value is ignored.
+ * @param {S=} opt_obj The object to be used as the value of 'this' within f.
+ * @template T,S
+ */
+e2e.ImmutableArray.forEach = function(sarray, f, opt_obj) {
+  // We don't use goog.array.forEach directly, as it potentially
+  // offers access to the underlying array.
+  var arr = sarray.elements_;
+  var len = arr.length;
+  for (var i = 0; i < len; i++) {
+    if (i in arr) {
+      f.call(opt_obj, arr[i], i);
+    }
+  }
 };
