@@ -1,0 +1,35 @@
+{
+  "manifest_version": 2,
+  "name": "__MSG_extName__",
+  "description": "__MSG_extDescription__",
+  "version": "0.0.5",
+  "permissions": [
+    "activeTab",
+    "cookies",
+    "notifications",
+    "tabs",
+    "https://localhost:25519/*",
+    "https://*.mail.yahoo.com/*"
+  ],
+  "optional_permissions": [],
+  "background": {"scripts": ["launcher_binary.js"]},
+  "options_page": "settings.html",
+  "browser_action": {
+    "default_title": "__MSG_extName__",
+    "default_icon": "images/yahoo/icon-128.png",
+    "default_popup": "prompt.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.mail.yahoo.com/*"],
+      "js": ["helper_binary.js"]
+    }
+  ],
+  "icons": {
+    "16": "images/yahoo/icon-16.png",
+    "48": "images/yahoo/icon-48.png",
+    "128": "images/yahoo/icon-128.png"
+  },
+  "web_accessible_resources": ["glass.html", "gmonkeystub.js", "composeglass.html"],
+  "default_locale": "en"
+}
