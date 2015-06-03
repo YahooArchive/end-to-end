@@ -35,8 +35,6 @@ goog.require('e2e.openpgp.KeyRing');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.EncryptedMessage');
 goog.require('e2e.openpgp.block.LiteralMessage');
-goog.require('e2e.openpgp.block.Message');
-goog.require('e2e.openpgp.block.TransferableKey');
 goog.require('e2e.openpgp.block.factory');
 goog.require('e2e.openpgp.error.InvalidArgumentsError');
 goog.require('e2e.openpgp.error.ParseError');
@@ -46,6 +44,7 @@ goog.require('e2e.signer.all');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.async.DeferredList');
+goog.require('goog.storage.mechanism.HTML5LocalStorage');
 goog.require('goog.structs');
 goog.require('goog.structs.Map');
 
@@ -57,8 +56,10 @@ goog.require('goog.structs.Map');
  *     user interface, to call the base OpenPGP library.
  * @constructor
  * @implements {e2e.openpgp.Context}
+ * @param {goog.storage.mechanism.Mechanism=} opt_keyRingStorageMechanism
+ *     mechanism for storing keyring data. Defaults to HTML5 local storage.
  */
-e2e.openpgp.ContextImpl = function() {
+e2e.openpgp.ContextImpl = function(opt_keyRingStorageMechanism) {
   /**
    * List of headers to add to armored messages (Version, Comment, etc).
    * @type {!Object.<string>}
@@ -67,6 +68,14 @@ e2e.openpgp.ContextImpl = function() {
   this.armorHeaders_ = {};
 
   this.keyServerUrl = e2e.openpgp.ContextImpl.KEY_SERVER_URL || undefined;
+
+  /**
+   * Mechanism for storing keyring data.
+   * @type {!goog.storage.mechanism.Mechanism}
+   * @private
+   */
+  this.keyRingStorageMechanism_ = opt_keyRingStorageMechanism ||
+      new goog.storage.mechanism.HTML5LocalStorage();
 };
 
 
@@ -87,6 +96,7 @@ e2e.openpgp.ContextImpl.prototype.keyServerUrl;
 /** @override */
 e2e.openpgp.ContextImpl.prototype.setArmorHeader = function(name, value) {
   this.armorHeaders_[name] = value;
+  return e2e.async.Result.toResult(undefined);
 };
 
 
@@ -101,7 +111,9 @@ e2e.openpgp.ContextImpl.prototype.keyRing_ = null;
 /** @inheritDoc */
 e2e.openpgp.ContextImpl.prototype.setKeyRingPassphrase = function(
     passphrase) {
-  this.keyRing_ = new e2e.openpgp.KeyRing(passphrase, this.keyServerUrl);
+  this.keyRing_ = new e2e.openpgp.KeyRing(passphrase,
+      this.keyRingStorageMechanism_, this.keyServerUrl);
+  return e2e.async.Result.toResult(undefined);
 };
 
 
@@ -115,18 +127,20 @@ e2e.openpgp.ContextImpl.prototype.unsetKeyringPassphrase = function() {
 e2e.openpgp.ContextImpl.prototype.changeKeyRingPassphrase = function(
     passphrase) {
   this.keyRing_.changePassphrase(passphrase);
+  return e2e.async.Result.toResult(undefined);
 };
 
 
 /** @inheritDoc */
 e2e.openpgp.ContextImpl.prototype.hasPassphrase = function() {
-  return goog.isDefAndNotNull(this.keyRing_) && this.keyRing_.hasPassphrase();
+  return e2e.async.Result.toResult(
+      goog.isDefAndNotNull(this.keyRing_) && this.keyRing_.hasPassphrase());
 };
 
 
 /** @inheritDoc */
 e2e.openpgp.ContextImpl.prototype.isKeyRingEncrypted = function() {
-  return this.keyRing_.isEncrypted();
+  return e2e.async.Result.toResult(this.keyRing_.isEncrypted());
 };
 
 
@@ -134,14 +148,35 @@ e2e.openpgp.ContextImpl.prototype.isKeyRingEncrypted = function() {
 e2e.openpgp.ContextImpl.prototype.getKeyDescription = function(key) {
   try {
     if (typeof key == 'string') {
-      key = e2e.openpgp.asciiArmor.parse(key).data;
+      key = this.extractByteArrayFromArmorText_(key);
     }
-    var blocks = e2e.openpgp.block.factory.parseByteArrayMulti(key);
+    var blocks = e2e.openpgp.block.factory.parseByteArrayAllTransferableKeys(
+        key, true /* skip keys with errors */);
+    if (blocks.length == 0) {
+      throw new e2e.openpgp.error.ParseError('No valid key blocks found.');
+    }
     return e2e.async.Result.toResult(
-        e2e.openpgp.block.factory.extractKeys(blocks));
+        e2e.openpgp.block.factory.extractKeys(
+            blocks, true /* skip keys with errors */));
   } catch (e) {
     return e2e.async.Result.toError(e);
   }
+};
+
+
+/**
+ * @private
+ * @param {string} text String with one or more armor messages.
+ * @return {!e2e.ByteArray} Serialized keys
+ */
+e2e.openpgp.ContextImpl.prototype.extractByteArrayFromArmorText_ = function(
+    text) {
+  var messages = e2e.openpgp.asciiArmor.parseAll(text);
+  var bytes = [];
+  goog.array.forEach(messages, function(armor) {
+    goog.array.extend(bytes, armor.data);
+  });
+  return bytes;
 };
 
 
@@ -149,17 +184,19 @@ e2e.openpgp.ContextImpl.prototype.getKeyDescription = function(key) {
 e2e.openpgp.ContextImpl.prototype.importKey = function(
     passphraseCallback, key) {
   if (typeof key == 'string') {
-    key = e2e.openpgp.asciiArmor.parse(key).data;
+    key = this.extractByteArrayFromArmorText_(key);
   }
-  var blocks = e2e.openpgp.block.factory.parseByteArrayMulti(key);
+  var blocks = e2e.openpgp.block.factory.parseByteArrayAllTransferableKeys(
+      key, true /* skip keys with errors */);
+  if (blocks.length == 0) {
+    throw new e2e.openpgp.error.ParseError('No valid key blocks found.');
+  }
   var importedBlocksResult = goog.array.map(blocks, function(block) {
-    goog.asserts.assertInstanceof(block, e2e.openpgp.block.TransferableKey);
     return this.tryToImportKey_(passphraseCallback, block);
   }, this);
-  var allResults =
-      /** @type {!goog.async.Deferred.<!Array.<!string>>} */ (
-          goog.async.DeferredList.gatherResults(importedBlocksResult)
-              .addCallback(function(importedBlocks) {
+  var allResults = (
+      goog.async.DeferredList.gatherResults(importedBlocksResult)
+      .addCallback(function(importedBlocks) {
         return goog.array.flatten(goog.array.map(importedBlocks,
             function(block) {
               return block ? block.getUserIds() : [];
@@ -171,11 +208,14 @@ e2e.openpgp.ContextImpl.prototype.importKey = function(
 
 /**
  * Attempts to decrypt and import the key with the given passphrase.
- * @param {function(string, function(string))} callback
+ * @param {function(string):!e2e.async.Result<string>} callback Callback used
+ *     to provide a passphrase.
  * @param {!e2e.openpgp.block.TransferableKey} block
- * @param {e2e.async.Result.<!Array.<string>>=} opt_result
+ * @param {e2e.async.Result.<e2e.openpgp.block.TransferableKey>=}
+ *     opt_result Result from the previous call.
  * @param {string=} opt_passphrase
- * @return {!e2e.async.Result.<!Array.<string>>} Result with all imported uids.
+ * @return {!e2e.async.Result.<
+ *     e2e.openpgp.block.TransferableKey>} Result with all imported uids.
  * @private
  */
 e2e.openpgp.ContextImpl.prototype.tryToImportKey_ = function(
@@ -184,6 +224,9 @@ e2e.openpgp.ContextImpl.prototype.tryToImportKey_ = function(
   try {
     var passphrase = goog.isDef(opt_passphrase) ?
         e2e.stringToByteArray(opt_passphrase) : undefined;
+    // Ignore the return value. If the key is invalid (e.g. because of wrong
+    // certification), importKey throws. False as a return value only indicates
+    // duplicate keys already existing.
     this.keyRing_.importKey(block, passphrase);
     result.callback(block);
   } catch (e) {
@@ -192,15 +235,15 @@ e2e.openpgp.ContextImpl.prototype.tryToImportKey_ = function(
         // Allow the user to bail out.
         result.callback(null);
       } else {
-        callback(
-            block.getUserIds().join('\n'),
+        callback(block.getUserIds().join('\n')).addCallback(
             goog.bind(this.tryToImportKey_, this, callback, block, result));
       }
     } else {
       result.errback(e);
     }
   }
-  return result;
+  return /** @type {!e2e.async.Result.<e2e.openpgp.block.TransferableKey>} */ (
+      result.branch());
 };
 
 
@@ -267,8 +310,9 @@ e2e.openpgp.ContextImpl.prototype.verifyDecrypt = function(
 
 /**
  * Internal implementation of the verification/decryption operation.
- * @param {function(string, function(string))} passphraseCallback This callback
- *     is used for requesting an action-specific passphrase from the user.
+ * @param {function(string):!e2e.async.Result<string>} passphraseCallback This
+ *     callback is used for requesting an action-specific passphrase from the
+ *     user.
  * @param {!e2e.ByteArray} encryptedMessage The encrypted data.
  * @param {string=} opt_charset The (optional) charset to decrypt with.
  * @protected
@@ -277,18 +321,14 @@ e2e.openpgp.ContextImpl.prototype.verifyDecrypt = function(
 e2e.openpgp.ContextImpl.prototype.verifyDecryptInternal = function(
     passphraseCallback, encryptedMessage, opt_charset) {
   try {
-    var block = e2e.openpgp.block.factory.parseByteArray(
+    var block = e2e.openpgp.block.factory.parseByteArrayMessage(
         encryptedMessage, opt_charset);
     if (block instanceof e2e.openpgp.block.EncryptedMessage) {
       var keyCallback = goog.bind(this.keyRing_.getSecretKey, this.keyRing_);
       return block.decrypt(keyCallback, passphraseCallback).addCallback(
           this.processLiteralMessage_, this);
     } else {
-      if (block instanceof e2e.openpgp.block.Message) {
-        return this.processLiteralMessage_(block);
-      } else {
-        throw new e2e.openpgp.error.ParseError('Invalid message block.');
-      }
+      return this.processLiteralMessage_(block);
     }
   } catch (e) {
     return e2e.async.Result.toError(e);
@@ -525,6 +565,7 @@ e2e.openpgp.ContextImpl.prototype.getAllKeys = function(opt_priv) {
 /** @inheritDoc */
 e2e.openpgp.ContextImpl.prototype.deleteKey = function(uid) {
   this.keyRing_.deleteKey(uid);
+  return e2e.async.Result.toResult(undefined);
 };
 
 
