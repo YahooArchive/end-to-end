@@ -55,7 +55,7 @@ actions.ImportKey.prototype.execute =
         execute(ctx, r, requestor, function(result) {
           if (goog.isDef(result)) {
             ctx.importKey(
-                /** @type {!function(string, !function(string))} */
+                /** @type {!function(string): !e2e.async.Result<string>} */
                 (request.passphraseCallback), request.content).
                 addCallback(callback).addErrback(errorCallback);
           }
@@ -63,7 +63,7 @@ actions.ImportKey.prototype.execute =
   } else {
     // TODO(yan): Show a dialog in this case as well.
     ctx.importKey(
-        /** @type {!function(string, !function(string))} */
+        /** @type {!function(string): !e2e.async.Result<string>} */
         (request.passphraseCallback), request.content).
         addCallback(callback).addErrback(errorCallback);
   }
