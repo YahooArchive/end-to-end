@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # // Copyright 2014 Google Inc. All rights reserved.
 # //
 # // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,24 @@
 #  * @author koto@google.com (Krzysztof Kotowicz)
 #  */
 
+export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
+CLOSURE_LIB_COMMIT="35c9311042b95796d7b12f58cd2bec6086052f7e"
+CLOSURE_STYLESHEETS_COMMIT="fd1095b9a5e84a9a6a9c00cf24949cabe33478b6"
+
+type ant >/dev/null 2>&1 || {
+  echo >&2 "Ant is required to build End-To-End dependencies."
+  exit 1
+}
+type javac >/dev/null 2>&1 || {
+  echo >&2 "Java compiler is required to build End-To-End dependencies."
+  exit 1
+}
+jversion=$(java -version 2>&1 | grep version | awk -F '"' '{print $2}')
+if [[ $jversion < "1.7" ]]; then
+  echo "Java 1.7 or higher is required to build End-To-End."
+  exit 1
+fi
+
 if [ ! -d lib ]; then
   mkdir lib
 fi
@@ -25,7 +43,10 @@ cd lib
 
 # checkout closure library
 if [ ! -d closure-library/.git ]; then
-  git clone --depth 1 https://github.com/google/closure-library closure-library
+  git clone https://github.com/google/closure-library closure-library
+  cd closure-library
+  git checkout $CLOSURE_LIB_COMMIT
+  cd ..
 fi
 
 # checkout zlib.js
@@ -38,10 +59,15 @@ fi
 # checkout closure compiler
 if [ ! -d closure-compiler/.git ]; then
   if [ -d closure-compiler ]; then # remove binary release directory
-    rm -rf closure-compiler 
+    rm -rf closure-compiler
   fi
-  git clone --depth 1 https://github.com/google/closure-compiler closure-compiler
+  git clone --branch maven-release-v20150315 --depth 1 https://github.com/google/closure-compiler closure-compiler
+fi
+
+# build closure compiler
+if [ ! -f closure-compiler/build/compiler.jar ]; then
   cd closure-compiler
+  ant clean
   ant jar
   cd ..
 fi
@@ -54,12 +80,10 @@ if [ ! -d closure-templates-compiler ]; then
 fi
 
 # checkout css compiler
-if [ ! -d closure-stylesheets/.git ]; then
-  if [ -d closure-stylesheets ]; then # remove binary release directory
-    rm -rf closure-stylesheets
-  fi
-  git clone https://code.google.com/p/closure-stylesheets/
+if [ ! -d closure-stylesheets ]; then
+  git clone https://github.com/google/closure-stylesheets
   cd closure-stylesheets
+  git checkout $CLOSURE_STYLESHEETS_COMMIT
   ant
   cp build/closure-stylesheets.jar ../
   cd ..
