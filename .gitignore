@@ -1,4 +1,5 @@
 build/*
 node_modules/*
-lib/*
+lib/closure-templates-compiler/*
+lib/typedarray/*
 pkg/*
