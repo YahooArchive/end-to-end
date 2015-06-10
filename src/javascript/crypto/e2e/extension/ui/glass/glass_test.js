@@ -49,7 +49,7 @@ function setUp() {
     return 'chrome-extension://abcd';
   });
   stubs.replace(e2e.ext.utils, 'sendProxyRequest', goog.nullFunction);
-  replacer.setPath('window.setTimeout', function(callback) {
+  stubs.setPath('window.setTimeout', function(callback) {
     callback();
   });
 }
