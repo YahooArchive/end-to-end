@@ -28,9 +28,6 @@ goog.provide('e2e.ext.testingstubs');
  */
 e2e.ext.testingstubs.initStubs = function(replacer) {
   replacer.setPath('window.open', goog.nullFunction);
-  replacer.setPath('window.setTimeout', function(callback) {
-    callback();
-  });
   replacer.setPath('window.confirm', function(msg) { return true; });
 
 
