@@ -237,8 +237,7 @@ ui.Prompt.prototype.renderKeyringPassphrase_ = function(elem) {
       // Use a password field to ask for the passphrase.
       dialogs.InputType.SECURE_TEXT,
       chrome.i18n.getMessage('actionEnterPassphraseDescription'),
-      chrome.i18n.getMessage('actionEnterPassphrase'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
+      chrome.i18n.getMessage('actionEnterPassphrase'));
 
   elem.textContent = '';
   this.addChild(dialog, false);
