@@ -549,5 +549,8 @@
   },
   "sendKeySuccess": {
     "message": "Successfully registered key!"
+  },
+  "passphraseError": {
+    "message": "Wrong passphrase"
   }
 }

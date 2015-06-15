@@ -28,16 +28,9 @@ goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
-goog.require('e2e.ext.ui.panels.prompt.DecryptVerify');
-goog.require('e2e.ext.ui.panels.prompt.EncryptSign');
-goog.require('e2e.ext.ui.panels.prompt.ImportKey');
-goog.require('e2e.ext.ui.panels.prompt.PanelBase');
-goog.require('e2e.ext.ui.preferences');
 goog.require('e2e.ext.ui.templates.prompt');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
-goog.require('e2e.ext.utils.text');
-goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
@@ -54,8 +47,6 @@ var constants = e2e.ext.constants;
 var dialogs = e2e.ext.ui.dialogs;
 var ext = e2e.ext;
 var messages = e2e.ext.messages;
-var panels = e2e.ext.ui.panels;
-var preferences = e2e.ext.ui.preferences;
 var templates = e2e.ext.ui.templates.prompt;
 var ui = e2e.ext.ui;
 var utils = e2e.ext.utils;
@@ -80,26 +71,10 @@ ui.Prompt = function() {
 
   /**
    * The End-to-End actions that the user can select in the prompt UI.
-   * @type {!Array.<!Object.<constants.Actions,string,boolean>>}
+   * @type {!Array.<!Object.<constants.Actions,string>>}
    * @private
    */
   this.selectableActions_ = [{
-    value: constants.Actions.ENCRYPT_SIGN,
-    title: chrome.i18n.getMessage('promptEncryptSignTitle'),
-    optional: true
-  }, {
-    value: constants.Actions.DECRYPT_VERIFY,
-    title: chrome.i18n.getMessage('promptDecryptVerifyTitle'),
-    optional: true
-  }, {
-    value: constants.Actions.IMPORT_KEY,
-    title: chrome.i18n.getMessage('promptImportKeyTitle'),
-    optional: true
-  }, {
-    value: constants.Actions.SHARE_KEY,
-    title: chrome.i18n.getMessage('promptShareKeyTitle'),
-    optional: true
-  }, {
     value: constants.Actions.CONFIGURE_EXTENSION,
     title: chrome.i18n.getMessage('actionConfigureExtension')
   }, {
@@ -141,14 +116,8 @@ ui.Prompt.prototype.decorateInternal = function(elem) {
 
   utils.action.getExtensionLauncher(function(launcher) {
     this.pgpLauncher_ = launcher || this.pgpLauncher_;
-    // Don't try to guess the PGP action for now, just show the menu.
-    this.processSelectedContent_(null);
+    this.processSelectedContent_();
   }, this.displayFailure_, this);
-
-  /*
-  utils.action.getSelectedContent(
-      this.processSelectedContent_, this.displayFailure_, this);
-  */
 };
 
 
@@ -160,176 +129,58 @@ ui.Prompt.prototype.getContentElement = function() {
 
 /**
  * Process the retrieved content blob and display it into the prompt UI.
- * @param {?messages.BridgeMessageRequest} contentBlob The content that the user
- *     has selected.
  * @param {constants.Actions=} opt_action Optional. The PGP action to perform.
  *     Defaults to user-specified.
  * @private
  */
 ui.Prompt.prototype.processSelectedContent_ =
-    function(contentBlob, opt_action) {
-  this.clearFailure_();
+    function(opt_action) {
   var action = opt_action || ext.constants.Actions.USER_SPECIFIED;
-  var content = '';
-  var origin = '';
-  var recipients = [];
-  var canInject = false;
-  var isYmail = false;
 
-  if (contentBlob) {
-    if (contentBlob.request) {
-      content = contentBlob.selection;
+  if (action !== ext.constants.Actions.GET_PASSPHRASE) {
+    // Show the "wrong passphrase" message if the action is GET_PASSPHRASE
+    this.clearFailure_();
+    if (!this.pgpLauncher_.hasPassphrase()) {
+      this.processSelectedContent_(ext.constants.Actions.GET_PASSPHRASE);
+      return;
     }
-    origin = contentBlob.origin;
-    isYmail = origin ? utils.text.isYmailOrigin(origin) : false;
-    if (isYmail) {
-      action = opt_action ||
-          utils.text.getPgpAction(content, true,
-                                  constants.Actions.USER_SPECIFIED);
-    } else {
-      action = opt_action || contentBlob.action ||
-          utils.text.getPgpAction(content,
-                                  preferences.isActionSniffingEnabled());
-    }
-    if (e2e.openpgp.asciiArmor.isDraft(content)) {
-      action = constants.Actions.ENCRYPT_SIGN;
-    }
-    recipients = contentBlob.recipients || [];
-    contentBlob.action = action;
-    canInject = contentBlob.canInject;
-    contentBlob.subject = contentBlob.subject || undefined;
   }
 
-  if (!this.pgpLauncher_.hasPassphrase() &&
-      action != ext.constants.Actions.GET_PASSPHRASE) {
-    this.processSelectedContent_(
-        contentBlob, ext.constants.Actions.GET_PASSPHRASE);
-    return;
-  }
-
-  var promptPanel = null;
   var elem = goog.dom.getElement(constants.ElementId.BODY);
   var title = goog.dom.getElement(constants.ElementId.TITLE);
   title.textContent = this.getTitle_(action) || title.textContent;
   switch (action) {
-    case constants.Actions.ENCRYPT_SIGN:
-      promptPanel = new panels.prompt.EncryptSign(
-          this.actionExecutor_,
-          /** @type {!messages.BridgeMessageRequest} */ (contentBlob || {}),
-          goog.bind(this.displayFailure_, this));
-      break;
-    case constants.Actions.DECRYPT_VERIFY:
-      promptPanel = new panels.prompt.DecryptVerify(
-          this.actionExecutor_,
-          /** @type {!messages.BridgeMessageRequest} */ (contentBlob || {}),
-          goog.bind(this.displayFailure_, this));
-      break;
-    case constants.Actions.IMPORT_KEY:
-      promptPanel = new panels.prompt.ImportKey(
-          this.actionExecutor_,
-          /** @type {!messages.BridgeMessageRequest} */ (contentBlob || {}),
-          goog.bind(this.displayFailure_, this));
-      break;
-    case constants.Actions.SHARE_KEY:
-      contentBlob = /** @type {!messages.BridgeMessageRequest} */
-          (contentBlob || {});
-      contentBlob.subject = chrome.i18n.getMessage('shareKeySubject');
-      promptPanel = new panels.prompt.EncryptSign(
-          this.actionExecutor_,
-          contentBlob,
-          goog.bind(this.displayFailure_, this));
-      break;
     case constants.Actions.GET_PASSPHRASE:
-      this.renderKeyringPassphrase_(elem, contentBlob);
+      this.renderKeyringPassphrase_(elem);
       break;
     case constants.Actions.USER_SPECIFIED:
       var menuContainer =
           goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
       goog.dom.classlist.add(menuContainer, constants.CssClass.HIDDEN);
-      this.renderMenu_(elem, contentBlob, isYmail);
-      return;
+      this.renderMenu_();
+      break;
     case constants.Actions.CONFIGURE_EXTENSION:
       chrome.tabs.create({
         url: 'settings.html',
         active: false
       }, goog.nullFunction);
-      return;
+      break;
     case constants.Actions.LOCK_KEYRING:
       this.pgpLauncher_.stop();
-      return;
+      break;
     case constants.Actions.NO_OP:
       this.close();
-      return;
-  }
-
-  if (promptPanel) {
-    this.addChild(promptPanel, false);
-    promptPanel.decorate(elem);
-    title.textContent = promptPanel.getTitle();
-  }
-
-  this.getHandler().listen(
-      elem, goog.events.EventType.CLICK,
-      goog.bind(this.buttonClick_, this, action, origin, contentBlob));
-
-  this.getHandler().listen(
-      goog.dom.getElement(constants.ElementId.MENU_CONTAINER),
-      goog.events.EventType.CLICK,
-      goog.bind(this.renderMenu_, this, elem, promptPanel, isYmail),
-      true);
-};
-
-
-/**
- * @param {constants.Actions} action
- * @param {string} origin
- * @param {messages.BridgeMessageRequest} contentBlob
- * @param {Event} event
- * @private
- */
-ui.Prompt.prototype.buttonClick_ = function(
-    action, origin, contentBlob, event) {
-  var elem = goog.dom.getElement(constants.ElementId.BODY);
-  var target = event.target;
-
-  if (target instanceof HTMLImageElement) {
-    target = target.parentElement;
-  }
-
-  if (target instanceof Element) {
-    if (goog.dom.classlist.contains(target, constants.CssClass.CANCEL)) {
-      this.close();
-    }
   }
 };
 
 
 /**
  * Renders the main menu.
- * @param {Element} elem The element into which the UI elements are to be
- *     rendered.
- * @param {panels.prompt.PanelBase|messages.BridgeMessageRequest} blob The
- *     prompt UI panel that is displayed to the user or the content blob that
- *     the user has selected.
- * @param {boolean=} opt_showReduced Whether to show a reduced version of the
- *     menu.
  * @private
  */
-ui.Prompt.prototype.renderMenu_ = function(elem, blob, opt_showReduced) {
-  var contentBlob;
-  var showReduced = true;  // TODO: should be opt_showReduced || false;
-  if (blob instanceof panels.prompt.PanelBase) {
-    contentBlob = blob.getContent();
-  } else {
-    contentBlob = blob || null;
-  }
-
+ui.Prompt.prototype.renderMenu_ = function() {
   var menu = new goog.ui.PopupMenu();
   goog.array.forEach(this.selectableActions_, function(action) {
-    // For now, only show a few actions out of the supported ones.
-    if (showReduced && action.optional) {
-      return;
-    }
     var menuItem = new goog.ui.MenuItem(action.title);
     menuItem.setValue(action.value);
     menu.addChild(menuItem, true);
@@ -340,7 +191,7 @@ ui.Prompt.prototype.renderMenu_ = function(elem, blob, opt_showReduced) {
   this.getHandler().listen(
       menu,
       goog.ui.Component.EventType.ACTION,
-      goog.partial(this.selectAction_, contentBlob));
+      this.selectAction_);
 
   var menuContainer = goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
   if (goog.dom.classlist.contains(menuContainer, constants.CssClass.HIDDEN)) {
@@ -365,27 +216,20 @@ ui.Prompt.prototype.renderMenu_ = function(elem, blob, opt_showReduced) {
  * keyring.
  * @param {Element} elem The element into which the UI elements are to be
  *     rendered.
- * @param {?messages.BridgeMessageRequest} contentBlob The content that the user
- *     has selected.
  * @private
  */
-ui.Prompt.prototype.renderKeyringPassphrase_ = function(elem, contentBlob) {
+ui.Prompt.prototype.renderKeyringPassphrase_ = function(elem) {
   var dialog = new dialogs.Generic(
       '',
       goog.bind(function(passphrase) {
         try {
           // Correct passphrase entered.
           this.pgpLauncher_.start(passphrase);
-          if (contentBlob && contentBlob.action) {
-            if (contentBlob.action == constants.Actions.GET_PASSPHRASE) {
-              contentBlob.action = undefined; // Fall into the default action.
-            }
-            this.processSelectedContent_(contentBlob, contentBlob.action);
-          } else {
-            this.close();
-          }
+          this.processSelectedContent_();
         } catch (e) { // Incorrect passphrase, so ask again.
-          this.processSelectedContent_(contentBlob,
+          this.displayFailure_(
+              new Error(chrome.i18n.getMessage('passphraseError')));
+          this.processSelectedContent_(
               ext.constants.Actions.GET_PASSPHRASE);
         }
         goog.dispose(dialog);
@@ -441,19 +285,16 @@ ui.Prompt.prototype.getTitle_ = function(action) {
 
 /**
  * Enables the user to select the PGP action they'd like to execute.
- * @param {?messages.BridgeMessageRequest} contentBlob The content that the user
- *     has selected.
  * @param {!goog.events.Event} evt The event generated by the user's
  *     selection.
  * @private
  */
-ui.Prompt.prototype.selectAction_ = function(contentBlob, evt) {
+ui.Prompt.prototype.selectAction_ = function(evt) {
   var menuContainer = goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
   goog.dom.classlist.remove(menuContainer, constants.CssClass.HIDDEN);
   this.removeChildren();
 
   this.processSelectedContent_(
-      contentBlob,
       /** @type {constants.Actions} */ (evt.target.getValue()));
 };
 
