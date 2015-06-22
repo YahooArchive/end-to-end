@@ -65,6 +65,9 @@ Guidelines](docs/CONTRIBUTING.md) for submitting to this repo.
 
 See [docs](docs) for current documentation.
 
+Here is a simplified diagram of the current E2E architecture:
+![e2e diagram](docs/e2e-diagram.png)
+
 ## Acknowledgements
 
 The committers would like to thank the following current and former Yahoo employees for their help with this project:
