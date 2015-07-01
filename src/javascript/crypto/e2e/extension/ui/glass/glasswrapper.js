@@ -92,12 +92,20 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   var surroundings = this.targetElem_.innerText.split(pgpMessage);
 
   this.targetElem_.textContent = '';
-  this.targetElem_.appendChild(document.createTextNode(surroundings[0]));
-  this.targetElem_.appendChild(document.createElement('p'));
-  // TODO(radi): Render in a shadow DOM.
+  var before = surroundings[0] ? surroundings[0].split('\n') : '';
+  var after = surroundings[1] ? surroundings[1].split('\n') : '';
+
+  var p1 = this.targetElem_.appendChild(document.createElement('p'));
+  goog.array.forEach(before, function(item) {
+    p1.appendChild(document.createTextNode(item));
+    p1.appendChild(document.createElement('br'));
+  });
   this.targetElem_.appendChild(glassFrame);
-  this.targetElem_.appendChild(document.createElement('p'));
-  this.targetElem_.appendChild(document.createTextNode(surroundings[1]));
+  var p2 = this.targetElem_.appendChild(document.createElement('p'));
+  goog.array.forEach(after, function(item) {
+    p2.appendChild(document.createTextNode(item));
+    p2.appendChild(document.createElement('br'));
+  });
 
   glassFrame.addEventListener('load', goog.bind(function() {
     glassFrame.contentWindow.postMessage(

@@ -587,7 +587,6 @@ e2ebind.installReadGlass_ = function(elem, opt_text) {
       if (message.action === constants.Actions.SET_GLASS_SIZE) {
         var height = message.content.height;
         if (height) {
-          elem.style.height = height + 'px';
           elem.getElementsByTagName('iframe')[0].style.height = height + 'px';
         }
         chrome.runtime.onMessage.removeListener(resizeHandler);
