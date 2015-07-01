@@ -56,13 +56,6 @@ ui.GlassWrapper = function(targetElem, opt_text) {
                                 this.targetElem_.innerText);
 
   /**
-   * The original text associated with the glass.
-   * @type {(string|undefined)}
-   * @private
-   */
-  this.originalText_ = opt_text;
-
-  /**
    * The original children of the target element.
    * @type {!Array.<Node>}
    * @private
@@ -93,16 +86,10 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   glassFrame.scrolling = 'no';
   goog.style.setSize(glassFrame, goog.style.getSize(this.targetElem_));
   glassFrame.style.border = 0;
-  var pgpMessage = '';
-  var surroundings = ['', ''];
 
-  if (this.originalText_) {
-    pgpMessage = this.originalText_;
-  } else {
-    pgpMessage =
-        e2e.openpgp.asciiArmor.extractPgpBlock(this.targetElem_.innerText);
-    surroundings = this.targetElem_.innerText.split(pgpMessage);
-  }
+  var pgpMessage =
+      e2e.openpgp.asciiArmor.extractPgpBlock(this.targetElem_.innerText);
+  var surroundings = this.targetElem_.innerText.split(pgpMessage);
 
   this.targetElem_.textContent = '';
   this.targetElem_.appendChild(document.createTextNode(surroundings[0]));
