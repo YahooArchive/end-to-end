@@ -226,6 +226,7 @@ ui.Prompt.prototype.renderKeyringPassphrase_ = function(elem) {
           // Correct passphrase entered.
           this.pgpLauncher_.start(passphrase);
           this.processSelectedContent_();
+          this.close();
         } catch (e) { // Incorrect passphrase, so ask again.
           this.displayFailure_(
               new Error(chrome.i18n.getMessage('passphraseError')));
