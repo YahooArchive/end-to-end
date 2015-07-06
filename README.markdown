@@ -33,13 +33,14 @@ We do not currently provide a publicly-exposed keyserver, so for now the recomme
 Once that's done, run:
 
     ./do.sh config [host]
+    ./do.sh install_deps
 
 where `[host]` is the hostname of the keyserver if you're not using the default
 host of `localhost:25519`.
 
 Then to build the extension:
 
-    ./do.sh build_extension_debug
+    ./do.sh build_extension debug
 
 ## Installation instructions
 
