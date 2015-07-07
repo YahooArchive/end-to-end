@@ -7,17 +7,9 @@
     "message": "Helps you send end-to-end protected messages in Yahoo mail.",
     "description": "Description of the extension."
   },
-  "promptDismissActionLabel": {
-    "message": "Dismiss",
-    "description": "A verb prompting the user to dismiss the current action."
-  },
   "promptOkActionLabel": {
     "message": "OK",
     "description": "A verb prompting the user to accept the current action."
-  },
-  "promptDecryptionSuccessMsg": {
-    "message": "Decryption successful!",
-    "description": "Message informing about a successful decryption of a message."
   },
   "promptVerificationSuccessMsg": {
     "message": "Good signature(s) from $1",
@@ -35,73 +27,9 @@
     "message": "Send protected message",
     "description": "A verb prompting the user to encrypt and/or sign a message."
   },
-  "promptEncryptSignInsertLabel": {
-    "message": "Insert into the page",
-    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into the page."
-  },
-  "promptEncryptSignInsertIntoSupportedLabel": {
-    "message": "Insert into Compose",
-    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into a supported provider. NOTE: This is being used in places where the action is to create a new messsage, e.g., sharing a key."
-  },
-  "promptEncryptSignSaveDraftLabel": {
-    "message": "Save encrypted draft",
-    "description": "A sentence fragment prompting the user to save the working draft into the visiting page."
-  },
-  "promptEncryptSignRestoreDraftMsg": {
-    "message": "You previously saved a draft. Would you liked to continue editing it?",
-    "description": "A sentence asking the user if the saved draft should be used."
-  },
-  "promptEncryptSignRestoreDraftLabel": {
-    "message": "Restore the draft",
-    "description": "A sentence fragment prompting the user to restore the saved draft."
-  },
-  "promptEncryptSignDiscardDraftLabel": {
-    "message": "Discard the draft",
-    "description": "A sentence fragment prompting the user to discard the saved draft."
-  },
   "promptEncryptSignReplyHeader": {
     "message": "Original message",
     "description": "A sentence fragment indicating where the original message begins."
-  },
-  "promptDecryptVerifyTitle": {
-    "message": "Read a protected message",
-    "description": "A friendly title for the decrypt&verify action."
-  },
-  "promptDecryptVerifyPlaceholder": {
-    "message": "Paste here the protected message that you would like to read.",
-    "description": "A sentence prompting the user to paste an encrypted PGP message."
-  },
-  "shareKeySubject": {
-    "message": "My email encryption key",
-    "description": "Default subject line for Share Key messages"
-  },
-  "shareKeyFromLabel": {
-    "message": "Share key(s) for this address:",
-    "description": "Label for 'from' field when sharing keys"
-  },
-  "shareKeyToLabel": {
-    "message": "Share with:",
-    "description": "Label for the 'to' field when sharing keys"
-  },
-  "promptDecryptVerifyActionLabel": {
-    "message": "Read",
-    "description": "A verb prompting the user to encrypt and/or sign a message."
-  },
-  "promptShareKeyTitle": {
-    "message": "Share an Encryption Key",
-    "description": "A friendly title for the key share action."
-  },
-  "promptShareKeyActionLabel": {
-    "message": "Share",
-    "description": "A verb prompting the user to share a key."
-  },
-  "promptImportKeyTitle": {
-    "message": "Import an End-to-End Key",
-    "description": "A friendly title for the key import action."
-  },
-  "promptImportKeyActionLabel": {
-    "message": "Import",
-    "description": "A verb prompting the user to import an End-to-End key into End-To-End."
   },
   "promptImportKeyConfirmLabel": {
     "message": "Do you want to import the following keys?",
@@ -549,5 +477,8 @@
   },
   "sendKeySuccess": {
     "message": "Successfully registered key!"
+  },
+  "passphraseError": {
+    "message": "Wrong passphrase"
   }
 }
