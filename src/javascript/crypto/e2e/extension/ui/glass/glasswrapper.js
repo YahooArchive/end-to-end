@@ -92,20 +92,14 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   var surroundings = this.targetElem_.innerText.split(pgpMessage);
 
   this.targetElem_.textContent = '';
-  var before = surroundings[0] ? surroundings[0].split('\n') : '';
-  var after = surroundings[1] ? surroundings[1].split('\n') : '';
+  var before = surroundings[0] || '';
+  var after = surroundings[1] || '';
 
-  var p1 = this.targetElem_.appendChild(document.createElement('p'));
-  goog.array.forEach(before, function(item) {
-    p1.appendChild(document.createTextNode(item));
-    p1.appendChild(document.createElement('br'));
-  });
+  var p1 = this.targetElem_.appendChild(document.createElement('pre'));
+  p1.appendChild(document.createTextNode(before));
   this.targetElem_.appendChild(glassFrame);
-  var p2 = this.targetElem_.appendChild(document.createElement('p'));
-  goog.array.forEach(after, function(item) {
-    p2.appendChild(document.createTextNode(item));
-    p2.appendChild(document.createElement('br'));
-  });
+  var p2 = this.targetElem_.appendChild(document.createElement('pre'));
+  p2.appendChild(document.createTextNode(after));
 
   glassFrame.addEventListener('load', goog.bind(function() {
     glassFrame.contentWindow.postMessage(
@@ -201,7 +195,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
 
   // Hide the original compose window
   goog.array.forEach(this.targetElem_.children, function(elem) {
-    if (elem.style.display != 'none') {
+    if (elem.style.display !== 'none') {
       elem.setAttribute('hidden_by_compose_glass', true);
       goog.style.setElementShown(elem, false);
     }
