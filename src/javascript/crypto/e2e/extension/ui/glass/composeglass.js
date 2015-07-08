@@ -463,16 +463,7 @@ ui.ComposeGlass.prototype.sendRequestToInsert_ = function(request, origin) {
 ui.ComposeGlass.prototype.shouldSignMessage_ = function() {
   var recipients = this.chipHolder_.getSelectedUids();
   // If there are no recipients, don't sign the message.
-  if (recipients.length === 0) {
-    return false;
-  }
-  // Issue #26: For corpmail release, only sign if all recipients are yahoo-inc.
-  for (var i = 0; i < recipients.length; i++) {
-    if (utils.text.extractValidYahooEmail(recipients[i]) === null) {
-      return false;
-    }
-  }
-  return true;
+  return recipients.length !== 0;
 };
 
 
