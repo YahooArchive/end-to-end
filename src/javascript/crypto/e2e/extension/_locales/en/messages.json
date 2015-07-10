@@ -112,7 +112,7 @@
     "description": "A noun indicating that there are no PGP keys to display."
   },
   "keyMgmtImportKeyringLabel": {
-    "message": "Import a keyring",
+    "message": "Import key from file",
     "description": "A sentence prompting the user to import an existing PGP keyring."
   },
   "keyMgmtExportKeyringLabel": {
@@ -184,6 +184,14 @@
   "keyMgmtFbImport": {
     "message": "Enter someone's Facebook username to import their key from Facebook:",
     "description": "A sentence telling the user how to import a key from Facebook."
+  },
+  "keyMgmtFbFail": {
+    "message": "No keys found for $1. :(",
+    "description": "Indicates that no FB key exists for the user."
+  },
+  "keyMgmtFbInvalid": {
+    "message": "Please enter a valid username.",
+    "description": "Ask the user to enter a valid username."
   },
   "genKeyTitle": {
     "message": "Generate a new PGP key",

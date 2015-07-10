@@ -166,12 +166,15 @@ function testImportFbKey() {
         importedFile = true;
       }, goog.abstractMethod, goog.abstractMethod, goog.abstractMethod);
 
-  stubs.replace(panel, 'sendFbRequest_', function(user, cb) {
+  stubs.replace(panel, 'sendFbRequest_', function(user, cb, eb) {
     if (user === username) {
       cb(userKey);
     }
   });
 
+  var errorDiv = goog.dom.createElement('div');
+  errorDiv.id = constants.ElementId.ERROR_DIV;
+  document.body.appendChild(errorDiv);
   panel.render(document.body);
   var div = document.getElementById(constants.ElementId.FB_IMPORT_DIV);
   div.querySelector('input').value = username;
