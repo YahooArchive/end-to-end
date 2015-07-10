@@ -45,6 +45,7 @@ Facebook's end. It does rely on Alice setting her PGP key vsibility to "Public"
 in Facebook's profile settings.
 
 To fetch a key for Alice:
+
 1. Ask Bob to enter Alice's Facebook username.
 2. Make an XHR to the Facebook profile endpoint that returns the ASCII-armored public key. This isn't an officially supported API, so it could go away at any time.
 3. Read the XHR response as a string and import it into the E2E keyring.
@@ -74,3 +75,7 @@ API. This script should not be able to access E2E data that is not available to 
   he is sending encrypted mail to).
 * Yahoo Mail should not be able to learn who Bob is Facebook friends with. This
  is a potential risk if Facebook makes the Graph API changes needed for V2.
+* End users who don't want to use Facebook lookups should be able to disable
+  this feature. When FB lookup is disabled, the extension should refuse to make
+  connections to Facebook origins, reducing attack surface. Other functionality
+  should not be affected when FB lookup is disabled.
