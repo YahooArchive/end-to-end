@@ -135,22 +135,47 @@ function testNonEmptyExport() {
 
 
 function testImportKeyring() {
-  var filename = 'temp.asc';
+  var filecontent = 'blah';
   var importedFile = false;
 
   panel = new e2e.ext.ui.panels.KeyringMgmtMini(
       goog.abstractMethod, function(file) {
-        assertEquals(file, filename);
+        assertEquals(file, filecontent);
         importedFile = true;
       }, goog.abstractMethod, goog.abstractMethod, goog.abstractMethod);
   panel.render(document.body);
 
   stubs.replace(HTMLDivElement.prototype, 'querySelector', function(selector) {
-    return (selector === 'input') ? {files: [filename]} :
+    return (selector === 'input') ? {files: [filecontent]} :
         goog.dom.createElement('div');
   });
 
   panel.importKeyring_();
+  assertTrue(importedFile);
+}
+
+
+function testImportFbKey() {
+  var username = 'alex.stamos';
+  var importedFile = false;
+  var userKey = 'blah';
+
+  panel = new e2e.ext.ui.panels.KeyringMgmtMini(
+      goog.abstractMethod, function(text) {
+        assertEquals(userKey, text);
+        importedFile = true;
+      }, goog.abstractMethod, goog.abstractMethod, goog.abstractMethod);
+
+  stubs.replace(panel, 'sendFbRequest_', function(user, cb) {
+    if (user === username) {
+      cb(userKey);
+    }
+  });
+
+  panel.render(document.body);
+  var div = document.getElementById(constants.ElementId.FB_IMPORT_DIV);
+  div.querySelector('input').value = username;
+  div.querySelector('button.action').click();
   assertTrue(importedFile);
 }
 

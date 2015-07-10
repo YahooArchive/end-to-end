@@ -90,6 +90,8 @@
  * @param passphraseChangeCancelButtonTitle The title for the passphrase change cancel button.
  * @param content content to show at the top of the panel.
  * @param cancelLabel Label for the 'cancel' button
+ * @param fbImportLabel Label for the 'Facebook import' button
+ * @param fbDescription Description for the 'Facebook import' feature
  */
 {template .manageKeyring}
   <div>{$content}</div>
@@ -97,6 +99,15 @@
        class="{e2e.ext.constants.CssClass.HIDDEN}">
     <input type="file" class="{e2e.ext.constants.CssClass.ACTION}"/>
     <button class="{e2e.ext.constants.CssClass.CANCEL}">{$importCancelButtonTitle}</button>
+  </div>
+  <div id="{e2e.ext.constants.ElementId.FB_IMPORT_DIV}"
+       class="{e2e.ext.constants.CssClass.HIDDEN}">
+    <div>{$fbDescription}</div>
+    <span>
+      <input type="text"/>
+      <button class="{e2e.ext.constants.CssClass.ACTION}">Import</button>
+      <button class="{e2e.ext.constants.CssClass.CANCEL}">{$importCancelButtonTitle}</button>
+    </span>
   </div>
   <div id="{e2e.ext.constants.ElementId.KEYRING_PASSPHRASE_CHANGE_DIV}"
        class="{e2e.ext.constants.CssClass.HIDDEN}">
@@ -125,6 +136,8 @@
                    {e2e.ext.constants.CssClass.CANCEL}">{$restoreKeyringLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_IMPORT}
                    {sp}{e2e.ext.constants.CssClass.CANCEL}">{$importKeyringLabel}</button>
+    <button class="{e2e.ext.constants.CssClass.FB_IMPORT}
+                   {sp}{e2e.ext.constants.CssClass.CANCEL}">{$fbImportLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_EXPORT}
                    {sp}{e2e.ext.constants.CssClass.CANCEL}">{$exportKeyringLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_PASSPHRASE_CHANGE}{sp}

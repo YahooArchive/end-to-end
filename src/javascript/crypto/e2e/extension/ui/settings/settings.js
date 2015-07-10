@@ -306,7 +306,7 @@ ui.Settings.prototype.renderNewKey_ = function(keyUid) {
 
 /**
  * Imports a keyring from a file and appends it to the current keyring.
- * @param {!File} file The file to import.
+ * @param {(!File|string)} file The file to import.
  * @private
  */
 ui.Settings.prototype.importKeyring_ = function(file) {

@@ -177,6 +177,14 @@
     "message": "Successfully changed the passphrase for the existing keyring!",
     "description": "A sentence confirming that the user has successfully changed the keyring's passphrase."
   },
+  "keyMgmtFbImportLabel": {
+    "message": "Import key from Facebook",
+    "description": "A sentence prompting the user to import a key from Facebook."
+  },
+  "keyMgmtFbImport": {
+    "message": "Enter someone's Facebook username to import their key from Facebook:",
+    "description": "A sentence telling the user how to import a key from Facebook."
+  },
   "genKeyTitle": {
     "message": "Generate a new PGP key",
     "description": "A section title indicating where the user can generate a new PGP key."

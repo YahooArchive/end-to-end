@@ -47,7 +47,7 @@ utils.writeToFile = function(content, callback) {
 /**
  * Reads the contents of the provided file returns it via the provided callback.
  * Automatically handles both binary OpenPGP packets and text files.
- * @param {!File} file The file to read.
+ * @param {(string|!File)} file The file to read.
  * @param {!function(string)} callback The callback to invoke with the file's
  *     contents.
  */
@@ -67,15 +67,20 @@ utils.readFile = function(file, callback) {
  * Reads the contents of the provided file as text and returns them via the
  * provided callback.
  * @param {boolean} asText If true, then read as text.
- * @param {!File} file The file to read.
+ * @param {(string|!File)} file The file to read. If it's a string, call the
+ *     callback immediately.
  * @param {!function(string)} callback The callback to invoke with the file's
  *     contents.
  * @private
  */
 utils.readFile_ = function(asText, file, callback) {
+  if (typeof file === 'string') {
+    callback(/** @type {string} */ (file));
+    return;
+  }
   var reader = new FileReader();
   reader.onload = function() {
-    if (reader.readyState != reader.LOADING) {
+    if (reader.readyState !== reader.LOADING) {
       reader.onload = null;
       callback(/** @type {string} */ (reader.result));
     }

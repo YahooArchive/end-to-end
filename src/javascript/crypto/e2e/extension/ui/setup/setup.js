@@ -329,7 +329,7 @@ ui.Setup.prototype.generateKey_ =
 
 /**
  * Imports a keyring from a file and appends it to the current keyring.
- * @param {!File} file The file to import.
+ * @param {(!File|string)} file The file to import.
  * @private
  */
 ui.Setup.prototype.importKeyring_ = function(file) {
