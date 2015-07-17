@@ -80,7 +80,7 @@ function testInstallAndRemoveGlass() {
 
   asyncTestCase.waitForAsync('Waiting for glass to be installed.');
   wrapper.installGlass(function() {
-    assertEquals(5, elem.childNodes.length);
+    assertEquals(3, elem.childNodes.length);
     assertNotNull(elem.querySelector('iframe'));
     assertContains('Here is', elem.innerText);
     assertContains('to display', elem.innerText);

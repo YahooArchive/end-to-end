@@ -316,7 +316,6 @@ function testProviderRequestToInstallReadGlass() {
     args: {messages: [{elem: s1, text: text1}, {elem: s2, text: text2}]}
   });
 
-  assertEquals(div1.lookingGlass.originalText_, text1);
   assertEquals(div2.lookingGlass, undefined);
   div1.lookingGlass.disposeInternal();
   mockControl.$verifyAll();

@@ -56,13 +56,6 @@ ui.GlassWrapper = function(targetElem, opt_text) {
                                 this.targetElem_.innerText);
 
   /**
-   * The original text associated with the glass.
-   * @type {(string|undefined)}
-   * @private
-   */
-  this.originalText_ = opt_text;
-
-  /**
    * The original children of the target element.
    * @type {!Array.<Node>}
    * @private
@@ -93,24 +86,20 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   glassFrame.scrolling = 'no';
   goog.style.setSize(glassFrame, goog.style.getSize(this.targetElem_));
   glassFrame.style.border = 0;
-  var pgpMessage = '';
-  var surroundings = ['', ''];
 
-  if (this.originalText_) {
-    pgpMessage = this.originalText_;
-  } else {
-    pgpMessage =
-        e2e.openpgp.asciiArmor.extractPgpBlock(this.targetElem_.innerText);
-    surroundings = this.targetElem_.innerText.split(pgpMessage);
-  }
+  var pgpMessage =
+      e2e.openpgp.asciiArmor.extractPgpBlock(this.targetElem_.innerText);
+  var surroundings = this.targetElem_.innerText.split(pgpMessage);
 
   this.targetElem_.textContent = '';
-  this.targetElem_.appendChild(document.createTextNode(surroundings[0]));
-  this.targetElem_.appendChild(document.createElement('p'));
-  // TODO(radi): Render in a shadow DOM.
+  var before = surroundings[0] || '';
+  var after = surroundings[1] || '';
+
+  var p1 = this.targetElem_.appendChild(document.createElement('pre'));
+  p1.appendChild(document.createTextNode(before));
   this.targetElem_.appendChild(glassFrame);
-  this.targetElem_.appendChild(document.createElement('p'));
-  this.targetElem_.appendChild(document.createTextNode(surroundings[1]));
+  var p2 = this.targetElem_.appendChild(document.createElement('pre'));
+  p2.appendChild(document.createTextNode(after));
 
   glassFrame.addEventListener('load', goog.bind(function() {
     glassFrame.contentWindow.postMessage(
@@ -206,7 +195,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
 
   // Hide the original compose window
   goog.array.forEach(this.targetElem_.children, function(elem) {
-    if (elem.style.display != 'none') {
+    if (elem.style.display !== 'none') {
       elem.setAttribute('hidden_by_compose_glass', true);
       goog.style.setElementShown(elem, false);
     }
