@@ -176,7 +176,8 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
     content: this.content_,
     cancelLabel: this.cancelLabel_,
     fbImportLabel: chrome.i18n.getMessage('keyMgmtFbImportLabel'),
-    fbDescription: chrome.i18n.getMessage('keyMgmtFbImport')
+    fbDescription: chrome.i18n.getMessage('keyMgmtFbImport'),
+    importButtonLabel: chrome.i18n.getMessage('promptImportKeyButtonLabel')
   });
 
   var refreshOptions = true;
@@ -186,6 +187,9 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.KEYRING_EXPORT),
         constants.CssClass.HIDDEN);
+    // If keyring export is hidden, this is probably rendered in a context
+    // where the user hasn't yet set up a private key. Hence, hide the facebook
+    // key import functionality as well.
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.FB_IMPORT),
         constants.CssClass.HIDDEN);
@@ -399,21 +403,26 @@ panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
 
 /**
  * Handles requests from the user to import a key from Facebook.
+ * @param {Event} event
  * @private
  */
-panels.KeyringMgmtMini.prototype.fbImportKey_ = function() {
+panels.KeyringMgmtMini.prototype.fbImportKey_ = function(event) {
   var importDiv = this.getChildById_(
       constants.ElementId.FB_IMPORT_DIV);
-  var username = importDiv.querySelector('input').value;
+  var username = goog.string.trim(importDiv.querySelector('input').value);
   var errDiv = document.getElementById(constants.ElementId.ERROR_DIV);
   errDiv.textContent = '';
   if (!username) {
     errDiv.textContent = chrome.i18n.getMessage('keyMgmtFbInvalid');
+    // Stop propagation since there is a click handler upstream that clears
+    // the error div in the settings menu.
+    event.stopPropagation();
     return;
   }
-  username = goog.string.urlEncode(goog.string.trim(username));
+  username = goog.string.urlEncode(username);
   this.sendFbRequest_(username, this.importCallback_, function() {
     errDiv.textContent = chrome.i18n.getMessage('keyMgmtFbFail', username);
+    event.stopPropagation();
   });
 };
 

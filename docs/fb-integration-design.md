@@ -34,7 +34,7 @@ offline.
 ### Facebook lookup guarantees:
 
 * Prevents equivocation by the key provider if Bob knows Alice's Facebook
-account username a priori and Alice has chosen to pubish her key to her
+account username a priori and Alice has chosen to publish her key to her
 Facebook profile. A malicious provider can't change her key without detection unless the provider has her Facebook
 credentials or is colluding with Facebook.
 

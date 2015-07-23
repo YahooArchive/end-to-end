@@ -31,6 +31,10 @@
     "message": "Original message",
     "description": "A sentence fragment indicating where the original message begins."
   },
+  "promptImportKeyButtonLabel": {
+    "message": "Import",
+    "description": "A verb prompting the user to import keys."
+  },
   "promptImportKeyConfirmLabel": {
     "message": "Do you want to import the following keys?",
     "description": "A sentence asking the user to confirm the key import."

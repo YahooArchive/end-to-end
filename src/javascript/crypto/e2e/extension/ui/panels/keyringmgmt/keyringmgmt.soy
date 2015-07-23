@@ -92,6 +92,7 @@
  * @param cancelLabel Label for the 'cancel' button
  * @param fbImportLabel Label for the 'Facebook import' button
  * @param fbDescription Description for the 'Facebook import' feature
+ * @param importButtonLabel Label for the import button.
  */
 {template .manageKeyring}
   <div>{$content}</div>
@@ -105,7 +106,7 @@
     <div>{$fbDescription}</div>
     <span>
       <input type="text"/>
-      <button class="{e2e.ext.constants.CssClass.ACTION}">Import</button>
+      <button class="{e2e.ext.constants.CssClass.ACTION}">{$importButtonLabel}</button>
       <button class="{e2e.ext.constants.CssClass.CANCEL}">{$importCancelButtonTitle}</button>
     </span>
   </div>
