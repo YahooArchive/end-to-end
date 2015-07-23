@@ -75,13 +75,14 @@ function testWrite() {
 
 function testRead() {
   var content = 'some content';
-  var readFile = false;
   var file = new Blob([content], {type: 'text/plain'});
   testCase.waitForAsync('waiting for file to be read');
   utils.readFile(file, function(readContents) {
-    readFile = true;
     assertEquals('Failed to read contents', content, readContents);
-    testCase.continueTesting();
+    utils.readFile('hello', function(textContents) {
+      assertEquals('hello', textContents);
+      testCase.continueTesting();
+    });
   });
 }
 

@@ -288,6 +288,9 @@ function testEncrypt() {
 
 
 function testSendUnsignedPlaintext() {
+  stubs.replace(composeglass, 'shouldSignMessage_', function() {
+    return false;
+  });
   var message = 'foo';
   stubs.replace(composeglass, 'insertMessageIntoPage_',
                 mockControl.createFunctionMock('insertMessageIntoPage_'));

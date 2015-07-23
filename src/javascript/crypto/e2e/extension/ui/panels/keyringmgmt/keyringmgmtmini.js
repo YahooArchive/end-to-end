@@ -51,8 +51,8 @@ var templates = e2e.ext.ui.templates.panels.keyringmgmt;
  * Constructor for the minimized version of the keyring management UI.
  * @param {!function()} exportCallback The callback to invoke when the keyring
  *     is to be exported.
- * @param {!function(!File)} importCallback The callback to invoke when an
- *     existing keyring is to be imported.
+ * @param {!function((!File|string))} importCallback The callback to invoke
+ *     when an existing keyring is to be imported.
  * @param {!function(string)} updatePassphraseCallback The callback to invoke
  *     when the passphrase to the keyring is to be updated.
  * @param {!function(string)=} opt_restoreKeyringCallback The callback to invoke
@@ -86,7 +86,7 @@ panels.KeyringMgmtMini =
 
   /**
    * The callback to invoke when an existing keyring is to be imported.
-   * @type {!function(!File)}
+   * @type {!function((!File|string))}
    * @private
    */
   this.importCallback_ = importCallback;
@@ -174,33 +174,45 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
     passphraseConfirmActionButtonTitle:
         chrome.i18n.getMessage('keyMgmtConfirmPassphraseActionLabel'),
     content: this.content_,
-    cancelLabel: this.cancelLabel_
+    cancelLabel: this.cancelLabel_,
+    fbImportLabel: chrome.i18n.getMessage('keyMgmtFbImportLabel'),
+    fbDescription: chrome.i18n.getMessage('keyMgmtFbImport'),
+    importButtonLabel: chrome.i18n.getMessage('promptImportKeyButtonLabel')
   });
 
   var refreshOptions = true;
 
   // Only show buttons if they have defined callbacks
-  if (this.exportCallback_ == goog.nullFunction) {
+  if (this.exportCallback_ === goog.nullFunction) {
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.KEYRING_EXPORT),
         constants.CssClass.HIDDEN);
+    // If keyring export is hidden, this is probably rendered in a context
+    // where the user hasn't yet set up a private key. Hence, hide the facebook
+    // key import functionality as well.
+    goog.dom.classlist.add(
+        this.getElementByClass(constants.CssClass.FB_IMPORT),
+        constants.CssClass.HIDDEN);
   }
-  if (this.updatePassphraseCallback_ == goog.nullFunction) {
+  if (this.updatePassphraseCallback_ === goog.nullFunction) {
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.KEYRING_PASSPHRASE_CHANGE),
         constants.CssClass.HIDDEN);
   }
-  if (this.importCallback_ == goog.nullFunction) {
+  if (this.importCallback_ === goog.nullFunction) {
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.KEYRING_IMPORT),
         constants.CssClass.HIDDEN);
+    goog.dom.classlist.add(
+        this.getElementByClass(constants.CssClass.FB_IMPORT),
+        constants.CssClass.HIDDEN);
   }
-  if (this.cancelCallback_ == goog.nullFunction) {
+  if (this.cancelCallback_ === goog.nullFunction) {
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.KEYRING_CANCEL),
         constants.CssClass.HIDDEN);
   }
-  if (this.restoreKeyringCallback_ == goog.nullFunction) {
+  if (this.restoreKeyringCallback_ === goog.nullFunction) {
     goog.dom.classlist.add(
         this.getElementByClass(constants.CssClass.KEYRING_RESTORE),
         constants.CssClass.HIDDEN);
@@ -234,10 +246,16 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
 
   var importDiv = this.getChildById_(
       constants.ElementId.KEYRING_IMPORT_DIV);
+  var fbImportDiv = this.getChildById_(
+      constants.ElementId.FB_IMPORT_DIV);
   var passphraseChangeDiv = this.getChildById_(
       constants.ElementId.KEYRING_PASSPHRASE_CHANGE_DIV);
   var passphraseConfirmDiv = this.getChildById_(
       constants.ElementId.KEYRING_PASSPHRASE_CONFIRM_DIV);
+
+  var keyboardHandler = new goog.ui.KeyboardShortcutHandler(fbImportDiv);
+  keyboardHandler.registerShortcut('enter', goog.events.KeyCodes.ENTER);
+
   this.getHandler().
       listen(
           this.getElementByClass(constants.CssClass.KEYRING_IMPORT),
@@ -245,6 +263,12 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           goog.partial(
               this.showKeyringMgmtForm_,
               constants.ElementId.KEYRING_IMPORT_DIV)).
+      listen(
+          this.getElementByClass(constants.CssClass.FB_IMPORT),
+          goog.events.EventType.CLICK,
+          goog.partial(
+            this.showKeyringMgmtForm_,
+            constants.ElementId.FB_IMPORT_DIV)).
       listen(
           this.getElementByClass(constants.CssClass.KEYRING_EXPORT),
           goog.events.EventType.CLICK,
@@ -275,9 +299,19 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
               this.showKeyringMgmtForm_,
               constants.ElementId.KEYRING_OPTIONS_DIV)).
       listen(
+          goog.dom.getElementByClass(constants.CssClass.CANCEL, fbImportDiv),
+          goog.events.EventType.CLICK,
+          goog.partial(
+              this.showKeyringMgmtForm_,
+              constants.ElementId.KEYRING_OPTIONS_DIV)).
+      listen(
           goog.dom.getElementByClass(constants.CssClass.ACTION, importDiv),
           goog.events.EventType.CHANGE,
           this.importKeyring_).
+      listen(
+          goog.dom.getElementByClass(constants.CssClass.ACTION, fbImportDiv),
+          goog.events.EventType.CLICK,
+          this.fbImportKey_).
       listen(
           goog.dom.getElementByClass(
               constants.CssClass.CANCEL, passphraseChangeDiv),
@@ -301,7 +335,12 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           goog.events.EventType.CLICK,
           goog.partial(
               this.showKeyringMgmtForm_,
-              constants.ElementId.KEYRING_OPTIONS_DIV));
+              constants.ElementId.KEYRING_OPTIONS_DIV)).
+      listen(
+          keyboardHandler,
+          goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
+          this.fbImportKey_);
+
       // Hide overlays when user clicks outside them
       window.document.addEventListener('click', goog.bind(function(e) {
         if (e.target.nodeName === 'BUTTON') {
@@ -359,6 +398,60 @@ panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
   if (fileInput.files.length > 0) {
     this.importCallback_(fileInput.files[0]);
   }
+};
+
+
+/**
+ * Handles requests from the user to import a key from Facebook.
+ * @param {Event} event
+ * @private
+ */
+panels.KeyringMgmtMini.prototype.fbImportKey_ = function(event) {
+  var importDiv = this.getChildById_(
+      constants.ElementId.FB_IMPORT_DIV);
+  var username = goog.string.trim(importDiv.querySelector('input').value);
+  var errDiv = document.getElementById(constants.ElementId.ERROR_DIV);
+  errDiv.textContent = '';
+  if (!username) {
+    errDiv.textContent = chrome.i18n.getMessage('keyMgmtFbInvalid');
+    // Stop propagation since there is a click handler upstream that clears
+    // the error div in the settings menu.
+    event.stopPropagation();
+    return;
+  }
+  username = goog.string.urlEncode(username);
+  this.sendFbRequest_(username, this.importCallback_, function() {
+    errDiv.textContent = chrome.i18n.getMessage('keyMgmtFbFail', username);
+    event.stopPropagation();
+  });
+};
+
+
+/**
+ * Sends a public key request to Facebook.
+ * @param {string} username The username to get a key for.
+ * @param {!function(string)} cb The callback to call with the response text.
+ * @param {!function()} errback The error callback.
+ * @private
+ */
+panels.KeyringMgmtMini.prototype.sendFbRequest_ = function(username, cb,
+                                                           errback) {
+  var url = ['https://www.facebook.com', username, 'publickey',
+    'download?_rdr=p'].join('/');
+  var xhr = new XMLHttpRequest();
+  xhr.timeout = 2000;
+  xhr.open('GET', url, true);
+  xhr.send();
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        cb(xhr.responseText);
+      } else {
+        errback();
+      }
+    }
+  };
 };
 
 

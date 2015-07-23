@@ -9,7 +9,8 @@
     "notifications",
     "tabs",
     "https://localhost:25519/*",
-    "https://*.mail.yahoo.com/*"
+    "https://*.mail.yahoo.com/*",
+    "https://www.facebook.com/*/publickey/download?_rdr=p"
   ],
   "optional_permissions": [],
   "background": {"scripts": ["launcher_binary.js"]},
