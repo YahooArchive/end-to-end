@@ -14,14 +14,20 @@ End-to-End depends on the following:
 * ant
 * JDK 1.7
 * Python
+* node (for Firefox builds)
+* jpm (for Firefox builds)
 
 On OSX with Homebrew:
 
-    brew install ant git
+    brew install ant git node
 
 Or, MacPorts:
 
-    port install apache-ant git
+    port install apache-ant git nodejs
+
+To install jpm:
+
+    npm install jpm -g
 
 ### Build the extension
 
