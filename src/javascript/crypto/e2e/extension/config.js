@@ -31,5 +31,7 @@ e2e.ext.config = {
   /* Whether users need a valid auth cookie in order to use the keyserver */
   AUTH_ENABLED: false,
   /* Some location that has access to the auth cookie. */
-  AUTH_DEFAULT_ORIGIN: 'https://us-mg5.mail.yahoo.com'
+  AUTH_DEFAULT_ORIGIN: 'https://us-mg5.mail.yahoo.com',
+  /* Whether we are running in Chrome or Firefox. */
+  FIREFOX: false
 };
