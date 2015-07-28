@@ -61,8 +61,7 @@ shim.runtime.getVersion = FF ? require('sdk/self').version :
  */
 shim.tabs.reloadYmail = function() {
   if (FF) {
-    var tabs = require('sdk/tabs');
-    goog.array.forEach(tabs, function(tab) {
+    goog.array.forEach(require('sdk/tabs').tabs, function(tab) {
       if (utils.text.isYmailOrigin(tab.url)) {
         tab.reload();
       }
@@ -97,13 +96,13 @@ shim.tabs.reload = function() {
  */
 shim.tabs.sendMessage = function(message) {
   if (FF) {
-    var tab = require('sdk/tabs').activeTab;
-    if (!utils.text.isYmailOrigin(tab.url)) {
+    var activeTab = require('sdk/tabs').activeTab;
+    if (!utils.text.isYmailOrigin(activeTab.url)) {
       return;
     }
     // Run the helper script in the tab. Note that this is declaratively run on
     // all Yahoo mail pages in Chrome using chrome.manifest.
-    var worker = tab.attach({
+    var worker = activeTab.attach({
       contentScriptFile: './helper_binary.js'
     });
     worker.port.emit(message);
