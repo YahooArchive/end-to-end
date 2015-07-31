@@ -36,7 +36,6 @@ goog.require('proto2.SignedServerMessage.ServerMessage');
 
 goog.scope(function() {
 var ext = e2e.ext;
-var proto2 = proto2;
 var keyserver = e2e.ext.keyserverV2;
 
 
@@ -94,9 +93,9 @@ keyserver.Client = function(freshnessThreshold,
   this.consensusSignaturesRequired_ = consensusSignaturesRequired;
 
   /**
-   * @private {proto2.Serializer}
+   * @private {goog.proto2.Serializer}
    */
-  this.serializer_ = new proto2.Serializer();
+  this.serializer_ = new goog.proto2.Serializer();
 };
 
 
@@ -109,7 +108,7 @@ keyserver.Client = function(freshnessThreshold,
 keyserver.Client.prototype.lookup = function(name, data) {
   var reply = /** @type {proto2.ClientReply} */ (this.serializer_.deserialize(
       (new proto2.ClientReply()).getDescriptor(), data));
-  return this.lookupFromReply_(reply);
+  return this.lookupFromReply_(name, reply);
 };
 
 
@@ -125,7 +124,7 @@ keyserver.Client.prototype.lookupFromReply_ = function(name, reply) {
 
   // Check for consensus
   try {
-    root = this.verifyConsensus_(reply.getStateConfirmations());
+    root = this.verifyConsensus_(reply.stateConfirmationsArray());
   } catch (ex) {
     return null;
   }
@@ -136,14 +135,14 @@ keyserver.Client.prototype.lookupFromReply_ = function(name, reply) {
 
   // Check that the entry is in the tree and correctly mapped
   var profile = this.verifyResolveAgainstRoot_(root, name,
-                                               reply.getLookupNodes());
+                                               reply.lookupNodesArray());
   if (profile === null) {
     return null;
   }
 
   // Check that the profile is not expired. XXX: Why is MAX_VALIDITY_PERIOD
   // here? Also need to make sure expiration time is a base 10 string.
-  if (this.isExpired_(window.parseInt(profile.getExpirationTime()) -
+  if (this.isExpired_(window.parseInt(profile.getExpirationTime(), 10) -
                       keyserver.MAX_VALIDITY_PERIOD / 2 * 10E9)) {
     throw new Error('This profile is out of date.');
   }
@@ -158,7 +157,7 @@ keyserver.Client.prototype.lookupFromReply_ = function(name, reply) {
  * otherwise null.
  * @param {Array.<proto2.SignedServerMessage>} signedMsgs The signed messages
  *     from the server.
- * @return {e2e.ByteArray}
+ * @return {?e2e.ByteArray}
  * @private
  */
 keyserver.Client.prototype.verifyConsensus_ = function(signedMsgs) {
@@ -204,7 +203,7 @@ keyserver.Client.prototype.verifyConsensus_ = function(signedMsgs) {
         // TODO: Define a new error type for this.
         throw new Error('verifyConsensus: hash is null');
       }
-    } else if (!goog.array.equals(rootHash, serverMessage.getHashOfState())) {
+    } else if (rootHash !== serverMessage.getHashOfState()) {
       throw new Error('verifyConsensus: state hashes differ.');
     }
 
@@ -212,7 +211,7 @@ keyserver.Client.prototype.verifyConsensus_ = function(signedMsgs) {
     consensusServers[server] = true;
 
     // Record freshness state from the server
-    if (!this.isExpired_(window.parseInt(serverMessage.getTime()) +
+    if (!this.isExpired_(window.parseInt(serverMessage.getTime(), 10) +
                          this.freshnessThreshold_)) {
       freshnessServers[server] = true;
     }
@@ -227,7 +226,8 @@ keyserver.Client.prototype.verifyConsensus_ = function(signedMsgs) {
     throw new Error('verifyConsensus: not enough freshness signatures.');
   }
 
-  return rootHash ? goog.crypt.stringToByteArray(rootHash) : null;
+  return rootHash ?
+      goog.crypt.stringToByteArray(/** @type {string} */ (rootHash)) : null;
 };
 
 
@@ -246,12 +246,12 @@ keyserver.Client.prototype.isExpired_ = function(expirationTime) {
 /**
  * Gets a public key for a given server or null if none is found.
  * @param {string} server
- * @return {e2e.ByteArray}
+ * @return {?e2e.ByteArray}
  * @private
  */
 keyserver.Client.prototype.getPubKey_ = function(server) {
   var profile = /** @type {(proto2.Profile.PublicKey|undefined)} */ (
-      this.verifier_[server]);
+      keyserver.verifier_[server]);
   if (!profile) {
     return null;
   }
@@ -283,7 +283,7 @@ keyserver.Client.prototype.verifySignature_ = function(pubKey, msg, sig) {
  * Returns the profile mapped to the name.
  * @param {!e2e.ByteArray} rootHash The root hash of the tree.
  * @param {string} name The name to prove for.
- * @param {proto2.ClientReply.MerklemapNode} proof The proof.
+ * @param {!Array.<!proto2.ClientReply.MerklemapNode>} proof The proof.
  * @return {proto2.Profile}
  * @private
  */
