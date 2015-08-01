@@ -41,6 +41,7 @@ class TestServerRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
       "/javascript/closure/": "lib/closure-library/closure/goog/",
       "/javascript/crypto/e2e/": "src/javascript/crypto/e2e/",
       "/third_party/closure/": "lib/closure-library/third_party/closure/",
+      "/protobuf.js/": "lib/protobuf.js/"
   }
 
   def get_test_files(self):
