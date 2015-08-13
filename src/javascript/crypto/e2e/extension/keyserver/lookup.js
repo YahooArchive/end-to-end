@@ -25,6 +25,7 @@ goog.require('e2e.ecc.Ed25519');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('goog.array');
 goog.require('goog.crypt');
+goog.require('goog.net.jsloader');
 goog.require('goog.object');
 goog.require('goog.proto2.Serializer');
 goog.require('proto2.ClientReply');
@@ -96,6 +97,45 @@ keyserver.Client = function(freshnessThreshold,
    * @private {goog.proto2.Serializer}
    */
   this.serializer_ = new goog.proto2.Serializer();
+
+  /**
+   * @private {boolean}
+   */
+  this.initialized_ = false;
+};
+
+
+/**
+ * Initializes the external protobuf dependency.
+ * @param {function()} callback The function to call when protobuf is loaded.
+ * @param {function()} errback The error callback.
+ */
+keyserver.Client.prototype.initialize = function(callback, errback) {
+  var pbURL = chrome.runtime.getURL('ProtoBuf.js');
+  var bbURL = chrome.runtime.getURL('ByteBufferAB.js');
+  if (window.dcodeIO && window.dcodeIO.ByteBuffer && window.dcodeIO.ProtoBuf) {
+    this.initialized_ = true;
+    callback();
+    return;
+  }
+  // Load the ByteBuffer dependency for ProtoBuf
+  // XXX: jsloader has spurious timeout errors, so set it to 0 for no timeout.
+  goog.net.jsloader.load(bbURL, {timeout: 0}).addCallback(function() {
+    if (window.dcodeIO && window.dcodeIO.ByteBuffer) {
+      // Load ProtoBuf
+      goog.net.jsloader.load(pbURL, {timeout: 0}).addCallback(function() {
+        if (window.dcodeIO && window.dcodeIO.ProtoBuf) {
+          // Success
+          this.initialized_ = true;
+          callback();
+        } else {
+          return new Error('Missing protobuf!');
+        }
+      }, this).addErrback(errback, this);
+    } else {
+      return new Error('Missing bytebuffer!');
+    }
+  }, this).addErrback(errback, this);
 };
 
 
