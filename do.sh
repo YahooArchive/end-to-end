@@ -177,7 +177,7 @@ e2e_build_extension() {
   find "$SRC_EXT_DIR/ui" -regex .*.html -not -regex .*_test.html -exec cp -f "{}" "$BUILD_EXT_DIR" \;
   cp -f "$SRC_EXT_DIR/helper/gmonkeystub.js" "$BUILD_EXT_DIR"
   cp -f "$SRC_EXT_DIR/manifest.json" "$BUILD_EXT_DIR"
-  cp -f "lib/protobuf.js/*.js" "$BUILD_EXT_DIR"
+  cp -f lib/protobuf.js/*.js "$BUILD_EXT_DIR"
   echo "Done."
 }
 
