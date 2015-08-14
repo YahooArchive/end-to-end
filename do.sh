@@ -43,7 +43,7 @@ e2e_assert_dependencies() {
     lib/closure-stylesheets/build/closure-stylesheets.jar \
     lib/closure-compiler/build/compiler.jar \
     lib/closure-compiler/contrib/externs/chrome_extensions.js \
-    lib/protobuf.js/externs \
+    lib/protobuf.js \
   )
   for var in "${files[@]}"
   do

@@ -71,13 +71,12 @@ if [ ! -f closure-stylesheets/build/closure-stylesheets.jar ]; then
 fi
 
 # build protobuf js
-if [ ! -d protobuf.js/externs ]; then
-    mkdir -p protobuf.js/externs
-    cd protobuf.js/externs
-    curl https://raw.githubusercontent.com/dcodeIO/ProtoBuf.js/master/externs/{ByteBuffer.js,Long.js,ProtoBuf.js,fs.js} -O -O -O -O
-    cd ..
+if [ ! -d protobuf.js ]; then
+    mkdir protobuf.js
+    cd protobuf.js
     curl https://raw.githubusercontent.com/dcodeIO/ProtoBuf.js/master/dist/ProtoBuf.js -O
     curl https://raw.githubusercontent.com/dcodeIO/ByteBuffer.js/master/dist/ByteBufferAB.js -O
+    curl https://raw.githubusercontent.com/dcodeIO/Long.js/master/dist/Long.js -O
     cd ..
 fi
 
