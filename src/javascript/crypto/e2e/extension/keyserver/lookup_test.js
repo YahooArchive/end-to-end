@@ -66,8 +66,10 @@ function testInitialize() {
   asyncTestCase.waitForAsync('Waiting for protobuf initialize');
   client.initialize(function() {
     assertTrue(client.initialized_);
+    assertEquals('function', typeof window.dcodeIO.Long);
     assertEquals('function', typeof window.dcodeIO.ByteBuffer);
     assertEquals('object', typeof window.dcodeIO.ProtoBuf);
+    assertEquals('object', typeof client.builder);
     asyncTestCase.continueTesting();
   });
 }

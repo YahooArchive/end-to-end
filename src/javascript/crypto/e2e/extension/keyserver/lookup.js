@@ -99,27 +99,38 @@ keyserver.Client = function(freshnessThreshold,
 keyserver.Client.prototype.initialize = function(callback, errback) {
   var pbURL = chrome.runtime.getURL('ProtoBuf.js');
   var bbURL = chrome.runtime.getURL('ByteBufferAB.js');
+  var longURL = chrome.runtime.getURL('Long.js');
+
   if (window.dcodeIO && window.dcodeIO.ByteBuffer && window.dcodeIO.ProtoBuf) {
     this.initialized_ = true;
     callback();
     return;
   }
-  // Load the ByteBuffer dependency for ProtoBuf
+
   // XXX: jsloader has spurious timeout errors, so set it to 0 for no timeout.
-  goog.net.jsloader.load(bbURL, {timeout: 0}).addCallback(function() {
-    if (window.dcodeIO && window.dcodeIO.ByteBuffer) {
-      // Load ProtoBuf
-      goog.net.jsloader.load(pbURL, {timeout: 0}).addCallback(function() {
-        if (window.dcodeIO && window.dcodeIO.ProtoBuf) {
-          // Success
-          this.initialized_ = true;
-          callback();
+  // Load Long.js for int64 support.
+  goog.net.jsloader.load(longURL, {timeout: 0}).addCallback(function() {
+    if (window.dcodeIO && window.dcodeIO.Long) {
+      // Load the ByteBuffer dependency for ProtoBuf
+      goog.net.jsloader.load(bbURL, {timeout: 0}).addCallback(function() {
+        if (window.dcodeIO && window.dcodeIO.ByteBuffer) {
+          // Load ProtoBuf
+          goog.net.jsloader.load(pbURL, {timeout: 0}).addCallback(function() {
+            if (window.dcodeIO && window.dcodeIO.ProtoBuf) {
+              // Success
+              this.initialized_ = true;
+              this.loadBuilder_();
+              callback();
+            } else {
+              return new Error('Missing protobuf!');
+            }
+          }, this).addErrback(errback, this);
         } else {
-          return new Error('Missing protobuf!');
+          return new Error('Missing bytebuffer!');
         }
       }, this).addErrback(errback, this);
     } else {
-      return new Error('Missing bytebuffer!');
+      return new Error('Missing long!');
     }
   }, this).addErrback(errback, this);
 };
