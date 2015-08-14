@@ -178,6 +178,7 @@ e2e_build_extension() {
   cp -f "$SRC_EXT_DIR/helper/gmonkeystub.js" "$BUILD_EXT_DIR"
   cp -f "$SRC_EXT_DIR/manifest.json" "$BUILD_EXT_DIR"
   cp -f lib/protobuf.js/*.js "$BUILD_EXT_DIR"
+  cp -fr "$SRC_EXT_DIR/proto" "$BUILD_EXT_DIR"
   echo "Done."
 }
 

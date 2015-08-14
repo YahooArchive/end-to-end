@@ -1,0 +1,298 @@
+// Copyright 2014-2015 The Dename Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy of
+// the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations under
+// the License.
+
+syntax = "proto3";
+package proto;
+import "timestamp.proto";
+
+service E2EKSLookup {
+	rpc Lookup(LookupRequest) returns (LookupProof);
+}
+service E2EKSUpdate {
+	rpc Lookup(LookupRequest) returns (LookupProof); // TODO: do grpc interfaces support embedding/composition/inheritance?
+	rpc Update(UpdateRequest) returns (LookupProof);
+}
+
+message LookupRequest {
+	// Epoch as of which to perform the lookup ("latest" if not specified)
+	uint64 epoch = 1;
+	oneof target { 
+		// UserId will be mapped to an index by the server using VRF
+		string user_id = 2;
+		// The client specifies it 
+		bytes index = 3;
+	}
+	// quorum_requirement specifies which verifiers must have ratified the
+	// result for it to be accepted. A server would fall back to an older
+	// directory state if the ratifications of the latest one do not satisfy
+	// the quourm requirement.
+	QuorumExpr quorum_requirement = 4;
+}
+
+// UpdateRequest specifies an update and the quorum required for
+// considering the update successful. The server should respond with a lookup
+// of the updated name with the specified parameters.
+message UpdateRequest {
+	// Update is passed on to verifiers.
+	SignedEntryUpdate update = 1;
+	// Profile is included in the update request from the client to the
+	// keyserver, but not passed on to the verifiers. The keyserver SHOULD
+	// store it locally and include it in LookupProofs returned for lookups.
+	// The verifiers MUST NOT try to read this field.
+	// A keyserver MUST NOT discriminate users based on ther structure of their
+	// profile other than enforcing a common-sense size limit. In particular, a
+	// profile with fields that the keyserver does not understand or whose
+	// values it considers invalid MUST be accepted.
+	Profile profile = 2;
+	LookupRequest lookup_parameters = 3;
+}
+
+// LookupProof encapsulates end-to-end cryptographc evidence that assuming *at
+// least one* of the ratifiers has been correctly following the rules of the
+// keyserver protocol then profile contains the latest public keys and metadata
+// uploaded by user_id before the time specified in ratifications[0]. If any
+// step of the proof does not check out, the contents of profile MUST NOT be
+// used for any other purpose than debugging.
+message LookupProof {
+	string user_id = 1;
+	// index proof that index is a result of applying a globally fixed
+	// bijection VRF to user_id: idx = VRF(user_ID). If this proof checks out,
+	// we can safely continue by looking up the keyserver entry corresponding
+	// to index to get the public key of user_id.
+	bytes index_proof = 2;
+	// ratifications contains signed directory state summaries for consecutive
+	// epochs, starting with the one as of which the lookup was performed.
+	// A single valid ratification r by a honest and correct verifier implies
+	// that the r.ratification.summary.root_hash summarizes the authenticated
+	// data structure containing the unique and correct mapping from indices to
+	// entries as of epoch r.ratification.epoch at human time
+	// r.ratification.timestamp.
+	// The ratifications of the later epochs indirectly vouch for the first one
+	// through directory state summary hash chaining. Only the latest valid
+	// signature from each verifier is provided, so some returned ratifications
+	// may have no signatures on them. A client MUST ignore a proof if the
+	// ratifications do not satisfy its quorum requirement and MUST require the
+	// keyserver itself to be in the quorum.
+	repeated SignedEpochHead ratifications = 3;
+	// tree_proof contains an authenticated data structure lookup trace,
+	// arguing that index maps to entry in the data structure with hash
+	// ratifications[0].ratification.summary.root_hash.
+	TreeProof tree_proof = 4;
+	// Entry specifies profile by hash(profile) = entry.profile_hash
+	Entry entry = 5;
+	Profile profile = 6;
+}
+
+// A Proof provides an authentication path through the Merkle Tree that
+// proves that an item is or is not present in the tree.
+message TreeProof {
+  // Neighbors is a list of all the adacent nodes along the path from the
+  // bottommost node to the root. To save space, hashes for empty subtrees are
+  // nil, and the number of hashes is equal to the length of the longest common
+  // prefix with another entry in the tree (since a leaf node is moved up to
+  // that point -- subtrees with a single entry are coalesced into a single
+  // node).
+  repeated bytes neighbors = 1;
+  // This is the index for the binding that does exist; it will share a prefix
+  // with vuf, but in case the leaf contains the wrong contents, it will be
+  // different. It will be nil if the requested VRF falls under an empty branch.
+  bytes existing_index = 2;
+  // This is the hash of the entry for the binding that does exist. If the leaf
+  // contains the wrong contents, the client can use this to verify that it in
+  // fact is at that position in the tree.
+  bytes existing_entry_hash = 3;
+}
+
+// Entry is the value type in the authenticated mapping data structure.  The
+// contents of all entries should be considered public (they are served to
+// verifiers).
+message Entry {
+	// Index specifies the location of the entry in the authenticated
+	// mapping data structure. It is computed as a verifiable random
+	// function of the name: the keyserver can prove that index=vrf(name)
+	// to anybody, but nobody else can compute vrf(name1). This is to
+	// maintain the privacy of usernames.
+	bytes index = 1;
+	// Version starts at 0 at registration and must not decrease. The keyserver
+	// and verifiers MUST reject SignedEntryUpdates which violate these rules.
+	// The purpose of this is to prevent an attacker from replaying a
+	// SignedEntryUpdate that publishes a key that the attacker has gained
+	// control of. On the other hand, increases by more than one are allowed: a
+	// user should be allowed to generate a long-lived offline revocation
+	// certificate that is valid even after they make some other change to
+	// their profile. Nevertheless, unless explicitly required otherwise,
+	// clients should increase the version number by exactly one on each
+	// update.
+	uint64 version = 2;
+	// UpdatePolicy will be used to verify SignedEntryUpdates to this
+	// entry. It is NOT used for encryption, and SHOULD be ignored by
+	// applications that do not intend to manage the user's profile. It has
+	// also been called "the public key of the profile signing key" or "the
+	// public identity key". A keyserver MUST NOT discriminate users based on
+	// ther structure of their update_key other than (1) as specified in
+	// SignedEntryUpdate and (2) common-sense limits on the total size of an
+	// entry to limit storage cost.
+	AuthorizationPolicy update_policy = 3;
+	// The entry uniquely specifies the profile using a collision-resistant
+	// hash function.
+	bytes profile_hash = 4;
+}
+
+// SignedEntryUpdate is the minimal self-contained structure to justify
+// changing the value of an entry. In the state machine model of a namespace,
+// SignedEntryUpdate is the main input type.
+message SignedEntryUpdate {
+	Entry new_entry = 1;
+	// NewSig, if successfully verified using update.new_entry.update_key,
+	// confirms that the new entry is willing to be bound to this index.
+	// Both the keyserver and verifiers MUST check these signatures against the
+	// old profile's authorization policy AND the new profile's authorization
+	// policy. All signatures are tagged with ID of the public key that
+	// generated them.
+	map<fixed64,bytes> signatures  = 2;
+}
+
+// A user's profile, containing public keys and other information.
+// A new field will be added here for each application, with the TCP/UDP port
+// number as field number whenever possible to avoid collisions.
+message Profile {
+	// Nonce containst at least 16 bytes (and counts towards the total profile
+	// size limit). Having a nonce in each profile ensures that an attacker
+	// curious guess-and-check somebody's profile contents using
+	// Entry.profile_hash. It is the client's responsibility to generate a
+	// random nonce to protect the privacy of its profile, thus the presence of
+	// this field is not checked by the server.
+	bytes nonce = 1;
+	// Application-specific public keys. The map is keyed by application ID.
+	map<string,bytes> keys = 2;
+}
+
+// SignedEpochHead messages are used by auditors and the service provider to
+// vouch that the SummaryHash represents the correct unique global state at the
+// end of epoch. In particular, it means that the signer has enforced the
+// profile update policy specified in the doc-comments of SignedEntryUpdate and
+// Profile for the specified epoch AND all prior epochs. A Ratification MUST
+// NOT be signed in any other circumstances.
+message SignedEpochHead {
+	TimestampedEpochHead head = 1; // signed field, do not re-encode
+	// Signatures is used for authentication of ratification and MUST be
+	// verified before interpreting any contents of ratification.
+	// All signatures are tagged with ID of the public key that generated them.
+	map<fixed64,bytes> signatures = 2;
+}
+
+message TimestampedEpochHead {
+	// EpochHead specifies the entire state and history of the
+	// realm. 
+	EpochHead head = 1; // hashed field, do not re-encode
+	// Timestamp specifies when the requirements for SignedEpochHead
+	// were checked. Clients will accept a SignedEpochHead timestamped
+	// with at most a fixed amount of time into the past, and MUST fail
+	// secure if the timestamp is not fresh because the directory state may
+	// have changed. The signature expiration tolerance plus the maximum
+	// clock skew between a pair of clients is the maximum propogation time
+	// of a change from one to another after which even a malicious
+	// keyserve will not be able to convince a client to a accept the
+	// previous state (assuming that all quorums it considers sufficient
+	// containt a correct and honest server).
+	Timestamp timestamp = 2;
+}
+
+message EpochHead {
+	// Realm is the fully-qualified domain name of the keyserver whose
+	// state is being ratified.
+	string realm = 1;
+	// Epoch is a sequence number tracking distinct ratified states.
+	uint64 epoch = 2;
+	// RootHash specifies the authenticated data structure.
+	bytes root_hash = 3;
+	// PreviousSummaryHash chaining is used to allow signatures from
+	// different epochs in the same quorum: a signature vouches for all
+	// epochs chained to that in addition to the one listed.
+	// Each PreviousSummaryHash depends on PreviousSummary, therefore
+	// (by induction on the hash-pointer structure) a
+	// PreviousSummeryHash for some epoch specifies the states of all
+	// previous epochs.
+	bytes previous_summary_hash = 4;
+
+	// NextEpochTime MUST contain the time by which the server plans to sign
+	// and publish the next epoch after this one. The server SHOULD give a
+	// sufficiently pessimistic estimate that, for example, a replicated
+	// state-machine failover would not prevent it from being met. To maintain
+	// a monotonic view of the directory, a server MUST NOT issue an epoch i
+	// with a smaller next_epoch_time than was used for epoch i-1, and if it
+	// does, verifiers MUST NOT sign it.
+	Timestamp next_epoch_time = 5;
+	// NextEpochPolicy allows for automated server key rollover: the new key(s)
+	// are signed by the current one as a part of the epoch. This field is nil
+	// if no key change is requested. If the server key is distributed with the
+	// client software and benefits from reliable automated updates, clients
+	// MAY ignore this field.
+	AuthorizationPolicy next_epoch_policy = 6;
+}
+
+// AuthorizationPolicy is used to check whether some signatures make up
+// sufficient authorization to back an action.
+// This is used to implement the following:
+// 1. Account Recovery through service provider: if an user's entry has the
+// update key set to threshold(1,user,serviceprovider), the service
+// provider can perform account recovery. Note that a third party will not
+// necessarily know who the subkeys are held by. Thus, the client
+// implementation MUST require a signed certificate confirming possession
+// of the secret key and promising to do no evil from every trustee whose
+// key is used for recovery in this manner.
+// 2. Service providers with servers in geographically diverse locations
+// can use a threshold to limit the damage the compromise or loss of one
+// replica can do. Example threshold(2,freedonia,gilead,mordor).
+// 3. Adaptive key rollover during cryptocalypse.
+message AuthorizationPolicy {
+	map <fixed64, PublicKey> public_keys = 1;
+	oneof policy_type {
+		QuorumExpr quorum = 2;
+		// TODO: time-restricted signature delegation a la TOR dirauths?
+		// This would make running a server without HSM significantly safer
+	}
+}
+
+// PublicKey wraps a public key of a cryptographically secure signature
+// scheme and verification metadata. Each verifier can have its own signature
+// format and needs to implement serialization and deserialization of its own
+// signatures. The ID of a public key is defined as the first 64 bits of the
+// protobuf-encoded public key (and interpreted as little-endian when a numeric
+// representation is required).
+message PublicKey {
+	oneof pubkey_type {
+		bytes ed25519 = 1; // 32 bytes (<http://ed25519.cr.yp.to/>)
+		// possible additions:
+		// bytes pkcs_rsa2048_sha256 = 2;
+		// bytes ecdsa_p256_sha256 = 3;
+		// bytes sphincs = 4;
+	}
+}
+
+// QuorumExpr represents a function with type set<uint64> -> bool. An
+// expression evaluates to true given args iff the sum of the following two
+// numbers is at least threshold:
+// - number of entries in verifiers that are in args
+// - number of subexpressions that evaluate to true
+// note: expr.eval(a) \wedge expr.eval(b) -> expr.eval(a \cup b)
+message QuorumExpr {
+	uint32 threshold = 1; // required
+	repeated fixed64 candidates = 2;
+	// QuorumExpr allows expressing contitions of the form "two out of these
+	// and three out of those".
+	// If an implementation chooses to ban recursive thresholding, it can do so
+	// ignoring this field. However, doing so is NOT SUPPORTED.
+	repeated QuorumExpr subexpressions = 3;
+}

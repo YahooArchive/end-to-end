@@ -26,6 +26,7 @@ goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('e2e.ext.keyserverV2.Client');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.GenerateKey');
@@ -433,4 +434,5 @@ if (Boolean(chrome.extension)) {
   /** @type {!e2e.ext.ui.Settings} */
   window.settingsPage = new e2e.ext.ui.Settings();
   window.settingsPage.decorate(document.documentElement);
+  window.client = new e2e.ext.keyserverV2.Client(24 * 3600 * 10E9, 2, 2);
 }
