@@ -44,6 +44,9 @@ function setUp() {
   e2e.ext.testingstubs.initStubs(stubs);
 
   stubs.setPath('chrome.runtime.getURL', function(path) {
+    if (goog.string.endsWith(path, '.proto')) {
+      return '../' + path;
+    }
     var url = '/lib/protobuf.js/' + path;
     return url;
   });
@@ -70,6 +73,7 @@ function testInitialize() {
     assertEquals('function', typeof window.dcodeIO.ByteBuffer);
     assertEquals('object', typeof window.dcodeIO.ProtoBuf);
     assertEquals('object', typeof client.builder);
+    assertEquals('object', typeof client.proto);
     asyncTestCase.continueTesting();
   });
 }

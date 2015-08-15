@@ -85,6 +85,11 @@ keyserver.Client = function(freshnessThreshold,
   this.builder = null;
 
   /**
+   * @type {Object}
+   */
+  this.proto = null;
+
+  /**
    * @private {boolean}
    */
   this.initialized_ = false;
@@ -143,6 +148,7 @@ keyserver.Client.prototype.initialize = function(callback, errback) {
 keyserver.Client.prototype.loadBuilder_ = function() {
   var clientProtoURL = chrome.runtime.getURL('proto/client.proto');
   this.builder = window.dcodeIO.ProtoBuf.loadProtoFile(clientProtoURL);
+  this.proto = this.builder.build('proto');
 };
 
 
