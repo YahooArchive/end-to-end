@@ -85,7 +85,8 @@ keyserver.Client = function(freshnessThreshold,
   this.builder = null;
 
   /**
-   * @type {Object}
+   * TODO: Define this as a new type so Closure Compiler stops complaining.
+   * @type {dcodeIO.ProtoBuf.Builder.Message}
    */
   this.proto = null;
 
@@ -149,6 +150,36 @@ keyserver.Client.prototype.loadBuilder_ = function() {
   var clientProtoURL = chrome.runtime.getURL('proto/client.proto');
   this.builder = window.dcodeIO.ProtoBuf.loadProtoFile(clientProtoURL);
   this.proto = this.builder.build('proto');
+};
+
+
+/**
+ * Builds and encodes a lookup request.
+ * @param {string} userid The email to look up.
+ * @return {ArrayBuffer}
+ */
+keyserver.Client.prototype.encodeLookupRequest = function(userid) {
+  var epoch = 0; // TODO: this.getEpoch()
+  var request = new this.proto.LookupRequest({
+    'epoch': epoch,
+    'user_id': userid,
+    'quorum_requirement': {
+      'threshold': this.consensusSignaturesRequired_,
+      'candidates': [1, 2, 3],
+      'subexpressions': []
+    }
+  });
+  return request.toArrayBuffer();
+};
+
+
+/**
+ * Decode and parse a lookup request.
+ * @param {ArrayBuffer} request The request to decode.
+ * @return {Object.<string, *>}
+ */
+keyserver.Client.prototype.decodeLookupRequest = function(request) {
+  return this.proto.LookupRequest.decode(request);
 };
 
 

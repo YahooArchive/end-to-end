@@ -59,7 +59,6 @@ function setUp() {
 function tearDown() {
   stubs.reset();
   mockControl.$tearDown();
-  client = undefined;
   window.dcodeIO = undefined;
   window.localStorage.clear();
 }
@@ -77,3 +76,37 @@ function testInitialize() {
     asyncTestCase.continueTesting();
   });
 }
+
+
+function testEncodeLookupRequest() {
+  asyncTestCase.waitForAsync('Waiting for protobuf initialize');
+  client.initialize(function() {
+    var request = client.encodeLookupRequest('yan@mit.edu');
+    var result = new Uint8Array(request);
+    assertElementsEquals([18, 11, 121, 97, 110, 64, 109, 105, 116, 46, 101,
+                          100, 117, 34, 29, 8, 2, 17, 1, 0, 0, 0, 0, 0, 0, 0,
+                          17, 2, 0, 0, 0, 0, 0, 0, 0, 17, 3, 0, 0, 0, 0, 0, 0,
+                          0], result);
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testDecodeLookupRequest() {
+  asyncTestCase.waitForAsync('Waiting for protobuf initialize');
+  client.initialize(function() {
+    var request = [18, 11, 121, 97, 110, 64, 109, 105, 116, 46, 101,
+                   100, 117, 34, 29, 8, 2, 17, 1, 0, 0, 0, 0, 0, 0, 0,
+                   17, 2, 0, 0, 0, 0, 0, 0, 0, 17, 3, 0, 0, 0, 0, 0, 0, 0];
+    var decoded = client.decodeLookupRequest(request);
+    console.log(decoded);
+    assertObjectEquals(0, decoded.epoch.low);
+    assertElementsEquals([], new Uint8Array(decoded.index.buffer));
+    assertEquals('user_id', decoded.target);
+    assertEquals('yan@mit.edu', decoded.user_id);
+    assertEquals(3, decoded.quorum_requirement.candidates.length);
+    asyncTestCase.continueTesting();
+  });
+}
+
+
