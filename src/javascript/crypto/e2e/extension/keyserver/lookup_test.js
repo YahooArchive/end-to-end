@@ -99,12 +99,10 @@ function testDecodeLookupRequest() {
                    100, 117, 34, 29, 8, 2, 17, 1, 0, 0, 0, 0, 0, 0, 0,
                    17, 2, 0, 0, 0, 0, 0, 0, 0, 17, 3, 0, 0, 0, 0, 0, 0, 0];
     var decoded = client.decodeLookupRequest(request);
-    console.log(decoded);
     assertObjectEquals(0, decoded.epoch.low);
-    assertElementsEquals([], new Uint8Array(decoded.index.buffer));
-    assertEquals('user_id', decoded.target);
     assertEquals('yan@mit.edu', decoded.user_id);
     assertEquals(3, decoded.quorum_requirement.candidates.length);
+    assertEquals(2, decoded.quorum_requirement.threshold);
     asyncTestCase.continueTesting();
   });
 }
