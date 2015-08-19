@@ -49,7 +49,6 @@ keyserver.PAD_TO_ = 4 << 10;
 keyserver.MAX_VALIDITY_PERIOD = 60 * 60 * 24 * 365;  // seconds
 
 
-
 /**
  * Constructor for the lookup client.
  * @param {number} freshnessThreshold The client's allowed freshness threshold
@@ -85,8 +84,7 @@ keyserver.Client = function(freshnessThreshold,
   this.builder = null;
 
   /**
-   * TODO: Define this as a new type so Closure Compiler stops complaining.
-   * @type {dcodeIO.ProtoBuf.Builder.Message}
+   * @type {?{LookupRequest: Function}}
    */
   this.proto = null;
 
@@ -160,7 +158,8 @@ keyserver.Client.prototype.loadBuilder_ = function() {
  */
 keyserver.Client.prototype.encodeLookupRequest = function(userid) {
   var epoch = 0; // TODO: this.getEpoch()
-  var request = new this.proto.LookupRequest({
+  var request = /** @type {dcodeIO.ProtoBuf.Builder.Message} */ (
+    new this.proto.LookupRequest({
     'epoch': epoch,
     'user_id': userid,
     'quorum_requirement': {
@@ -168,7 +167,7 @@ keyserver.Client.prototype.encodeLookupRequest = function(userid) {
       'candidates': [1, 2, 3],
       'subexpressions': []
     }
-  });
+  }));
   return request.toArrayBuffer();
 };
 
@@ -176,7 +175,7 @@ keyserver.Client.prototype.encodeLookupRequest = function(userid) {
 /**
  * Decode and parse a lookup request.
  * @param {ArrayBuffer} request The request to decode.
- * @return {Object.<string, *>}
+ * @return {dcodeIO.ProtoBuf.Builder.Message}
  */
 keyserver.Client.prototype.decodeLookupRequest = function(request) {
   return this.proto.LookupRequest.decode(request);
