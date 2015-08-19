@@ -27,12 +27,8 @@ service E2EKSUpdate {
 message LookupRequest {
 	// Epoch as of which to perform the lookup ("latest" if not specified)
 	uint64 epoch = 1;
-	oneof target { 
-		// UserId will be mapped to an index by the server using VRF
-		string user_id = 2;
-		// The client specifies it 
-		bytes index = 3;
-	}
+	// UserId will be mapped to an index by the server using VRF
+	string user_id = 2;
 	// quorum_requirement specifies which verifiers must have ratified the
 	// result for it to be accepted. A server would fall back to an older
 	// directory state if the ratifications of the latest one do not satisfy
@@ -54,8 +50,12 @@ message UpdateRequest {
 	// profile other than enforcing a common-sense size limit. In particular, a
 	// profile with fields that the keyserver does not understand or whose
 	// values it considers invalid MUST be accepted.
-	Profile profile = 2;
+	bytes profile = 2; // gogoproto.customtype EncodedProfile
 	LookupRequest lookup_parameters = 3;
+
+	// UserID specifies the id for the new account to be registered.
+	string user_id = 1000;
+	bytes dkim_proof = 1001;
 }
 
 // LookupProof encapsulates end-to-end cryptographc evidence that assuming *at
@@ -71,27 +71,24 @@ message LookupProof {
 	// we can safely continue by looking up the keyserver entry corresponding
 	// to index to get the public key of user_id.
 	bytes index_proof = 2;
-	// ratifications contains signed directory state summaries for consecutive
-	// epochs, starting with the one as of which the lookup was performed.
+	// ratifications contains signed directory state summaries for the epoch under
+	// which the lookup was performed.
 	// A single valid ratification r by a honest and correct verifier implies
 	// that the r.ratification.summary.root_hash summarizes the authenticated
 	// data structure containing the unique and correct mapping from indices to
 	// entries as of epoch r.ratification.epoch at human time
 	// r.ratification.timestamp.
-	// The ratifications of the later epochs indirectly vouch for the first one
-	// through directory state summary hash chaining. Only the latest valid
-	// signature from each verifier is provided, so some returned ratifications
-	// may have no signatures on them. A client MUST ignore a proof if the
-	// ratifications do not satisfy its quorum requirement and MUST require the
-	// keyserver itself to be in the quorum.
+	// Each ratification must contain the same epoch head. A client MUST ignore a
+	// proof if the ratifications do not satisfy its quorum requirement and MUST
+	// require the keyserver itself to be in the quorum.
 	repeated SignedEpochHead ratifications = 3;
 	// tree_proof contains an authenticated data structure lookup trace,
 	// arguing that index maps to entry in the data structure with hash
 	// ratifications[0].ratification.summary.root_hash.
 	TreeProof tree_proof = 4;
 	// Entry specifies profile by hash(profile) = entry.profile_hash
-	Entry entry = 5;
-	Profile profile = 6;
+	bytes entry = 5; // gogoproto.customtype EncodedEntry
+	bytes profile = 6; // gogoproto.customtype EncodedProfile
 }
 
 // A Proof provides an authentication path through the Merkle Tree that
@@ -153,7 +150,7 @@ message Entry {
 // changing the value of an entry. In the state machine model of a namespace,
 // SignedEntryUpdate is the main input type.
 message SignedEntryUpdate {
-	Entry new_entry = 1;
+	bytes new_entry = 1; // gogoproto.customtype EncodedEntry
 	// NewSig, if successfully verified using update.new_entry.update_key,
 	// confirms that the new entry is willing to be bound to this index.
 	// Both the keyserver and verifiers MUST check these signatures against the
@@ -185,7 +182,7 @@ message Profile {
 // Profile for the specified epoch AND all prior epochs. A Ratification MUST
 // NOT be signed in any other circumstances.
 message SignedEpochHead {
-	TimestampedEpochHead head = 1; // signed field, do not re-encode
+	bytes head = 1; // gogoproto.customtype EncodedTimestampedEpochHead
 	// Signatures is used for authentication of ratification and MUST be
 	// verified before interpreting any contents of ratification.
 	// All signatures are tagged with ID of the public key that generated them.
@@ -194,8 +191,8 @@ message SignedEpochHead {
 
 message TimestampedEpochHead {
 	// EpochHead specifies the entire state and history of the
-	// realm. 
-	EpochHead head = 1; // hashed field, do not re-encode
+	// realm.
+	bytes head = 1; // gogoproto.customtype EncodedEpochHead
 	// Timestamp specifies when the requirements for SignedEpochHead
 	// were checked. Clients will accept a SignedEpochHead timestamped
 	// with at most a fixed amount of time into the past, and MUST fail
