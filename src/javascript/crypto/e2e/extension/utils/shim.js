@@ -20,8 +20,9 @@
  */
 
 goog.provide('e2e.ext.utils.shim');
+goog.provide('e2e.ext.utils.shim.cookies');
 goog.provide('e2e.ext.utils.shim.runtime');
-goog.provide('e2e.ext.utils.shim.tabs');
+goog.provide('e2e.ext.utils.shim.ui');
 
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.config');
@@ -42,6 +43,7 @@ var require = require || goog.nullFunction;
 shim.getLocalizedMessage = FF ? require('sdk/l10n').get :
     chrome.i18n.getMessage;
 
+
 /**
  * Gets the runtime URL.
  * @type {function(string): string}
@@ -49,12 +51,14 @@ shim.getLocalizedMessage = FF ? require('sdk/l10n').get :
 shim.runtime.getURL = FF ? require('sdk/self').data.url :
     chrome.runtime.getURL;
 
+
 /**
  * Gets the extension version.
  * @type {function(string): string}
  */
 shim.runtime.getVersion = FF ? require('sdk/self').version :
     chrome.runtime.getManifest().version;
+
 
 /**
  * Reloads all ymail tabs.
@@ -75,6 +79,7 @@ shim.tabs.reloadYmail = function() {
   }
 };
 
+
 /**
  * Reloads the currently active tab(s).
  */
@@ -89,6 +94,7 @@ shim.tabs.reload = function() {
     });
   }
 };
+
 
 /**
  * Sends a message to the currently active tab.
@@ -122,6 +128,7 @@ shim.tabs.sendMessage = function(message) {
   }
 };
 
+
 /**
  * Creates a tab with the given extension path.
  * @param {string} path The path to open.
@@ -134,6 +141,76 @@ shim.tabs.open = function(path) {
     chrome.tabs.create({
       url: path
     }, goog.nullFunction);
+  }
+};
+
+
+/**
+ * Changes browseraction title.
+ * @param {string} title The new title.
+ * @param {number=} opt_tabId The ID of the active tab.
+ */
+shim.ui.setTitle = function(title, opt_tabId) {
+  if (FF) {
+    // TODO: Fill this out.
+    return;
+  } else {
+    chrome.browserAction.setTitle({
+      title: title,
+      tabId: opt_tabId
+    });
+  }
+};
+
+
+/**
+ * Changes browseraction icon.
+ * @param {string} path The path to the new icon.
+ * @param {number=} opt_tabId The ID of the active tab.
+ */
+shim.ui.setIcon = function(path, opt_tabId) {
+  if (FF) {
+    // TODO: Fill this out.
+    return;
+  } else {
+    chrome.browserAction.setIcon({
+      path: path,
+      tabId: opt_tabId
+    });
+  }
+};
+
+
+/**
+ * Changes browseraction badge text.
+ * @param {string} text The text to set.
+ */
+shim.ui.setBadge = function(text) {
+  if (FF) {
+    // TODO: Fill this out.
+    return;
+  } else {
+    chrome.browserAction.setBadgeText({text: text});
+  }
+};
+
+
+/**
+ * Gets a cookie. Yum.
+ * @param {string} url The URL to get a cookie for.
+ * @param {string} name The name of the cookie.
+ * @param {function(chrome.cookies.Cookie)} callback The callback to call with
+ *   the cookie.
+ */
+shim.cookies.get = function(url, name, callback) {
+  if (FF) {
+    callback(null);
+    return;
+  } else {
+    chrome.cookies.get({
+      url: url,
+      name: name
+    }, callback);
   }
 };
 
