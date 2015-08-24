@@ -1,0 +1,13 @@
+{
+  "title": "End to End",
+  "name": "e2e-firefox",
+  "version": "0.0.1",
+  "description": "Helps you send encrypted email",
+  "main": "index.js",
+  "author": "Yan Zhu",
+  "engines": {
+    "firefox": ">=38.0a1",
+    "fennec": ">=38.0a1"
+  },
+  "license": "Apache-2.0"
+}
