@@ -1,0 +1,33 @@
+{
+  "manifest_version": 2,
+  "name": "End-to-End Firefox",
+  "description": "Helps you send encrypted messages in Yahoo Mail",
+  "version": "0.0.5",
+  "applications": {
+    "gecko": {
+      "id": "yyy@yahoo-inc.com"
+    }
+  },
+  "permissions": [
+    "cookies",
+    "notifications",
+    "tabs",
+    "https://localhost:25519/*",
+    "https://*.mail.yahoo.com/*",
+    "https://www.facebook.com/*/publickey/download?_rdr=p"
+  ],
+  "background": {"scripts": ["launcher_binary.js"]},
+  "browser_action": {
+    "default_title": "__MSG_extName__",
+    "default_icon": "images/yahoo/icon-128.png",
+    "default_popup": "prompt.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.mail.yahoo.com/*"],
+      "js": ["helper_binary.js"]
+    }
+  ],
+  "web_accessible_resources": ["glass.html", "gmonkeystub.js", "composeglass.html"],
+  "default_locale": "en"
+}
