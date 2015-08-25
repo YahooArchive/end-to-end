@@ -257,6 +257,14 @@ e2e_zip() {
   cd ..
 }
 
+e2e_xpi() {
+  # Assumes you've run ./do.sh build_extension already
+  cd build/extension
+  cp ../../src/javascript/crypto/e2e/extension/firefox_manifest.json manifest.json
+  zip -r "../firefox.xpi" *
+  cd ..
+}
+
 e2e_config() {
   KAUTH_PUB="$GOPATH/src/github.com/yahoo/keyshop/data/kauth/kauth.pub.js"
   CONFIG_FILE="src/javascript/crypto/e2e/extension/config.js"
@@ -311,11 +319,14 @@ case "$CMD" in
   zip)
     e2e_zip;
     ;;
+  xpi)
+    e2e_xpi;
+    ;;
   config)
     e2e_config $*;
     ;;
   *)
-    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip|config} [debug]"
+    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip|xpi|config} [debug]"
     RETVAL=1
 esac
 
