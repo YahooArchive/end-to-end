@@ -125,7 +125,7 @@ goog.inherits(utils.Error, Error);
  */
 utils.showNotification = function(msg, callback) {
   chrome.notifications.create(constants.ElementId.NOTIFICATION_SUCCESS, {
-    type: 'basic',
+    type: 'basic', // not supported in Firefox
     iconUrl: '/images/yahoo/icon-48.png',
     title: chrome.i18n.getMessage('extName'),
     message: msg

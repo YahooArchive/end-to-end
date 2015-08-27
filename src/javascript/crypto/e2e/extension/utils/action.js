@@ -180,7 +180,8 @@ utils.getAddressFromYBY_ = function(callback) {
   var email;
 
   if (!chrome.cookies || !chrome.cookies.get) {
-    // Someone tried to call this from a content script. Abort.
+    // Someone tried to call this from a content script, or from Firefox where
+    // cookies isn't a supported API. Return.
     callback(email);
     return;
   }

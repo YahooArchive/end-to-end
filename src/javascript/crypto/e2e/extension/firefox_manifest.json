@@ -9,7 +9,6 @@
     }
   },
   "permissions": [
-    "cookies",
     "notifications",
     "tabs",
     "https://localhost:25519/*",
