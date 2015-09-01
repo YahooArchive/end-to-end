@@ -61,17 +61,32 @@ utils.extractUserIds = function(keys) {
  */
 utils.getExtensionLauncher = function(callback, errorCallback, opt_scope) {
   var scope = opt_scope || goog.global;
-  chrome.runtime.getBackgroundPage(
-      function(backgroundPage) {
-        var page =
-            /** @type {{launcher: !e2e.ext.Launcher}} */ (backgroundPage);
-        if (backgroundPage) {
-          callback.call(scope, page.launcher);
-        } else {
-          errorCallback.call(
-              scope, /** @type {Error} */ (chrome.runtime.lastError));
-        }
-      });
+  var page;
+  if (chrome.runtime.getBackgroundPage) {
+    chrome.runtime.getBackgroundPage(
+        function(backgroundPage) {
+          var page =
+              /** @type {{launcher: !e2e.ext.Launcher}} */ (backgroundPage);
+          if (backgroundPage) {
+            callback.call(scope, page.launcher);
+          } else {
+            errorCallback.call(
+                scope, /** @type {Error} */ (chrome.runtime.lastError));
+          }
+        });
+  } else {
+    // chrome.runtime.getBackgroundPage isn't supported in FF webextensions
+    page = /** @type {{launcher: !e2e.ext.Launcher}} */ (
+        chrome.extension.getBackgroundPage());
+    if (page) {
+      console.log('got background page', page);
+      callback.call(scope, page.launcher);
+    } else {
+      console.log('background page not found');
+      errorCallback.call(
+          scope, /** @type {Error} */ (chrome.runtime.lastError));
+    }
+  }
 };
 
 

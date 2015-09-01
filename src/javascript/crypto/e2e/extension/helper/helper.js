@@ -522,7 +522,7 @@ ext.Helper.prototype.getOrigin_ = function() {
 });  // goog.scope
 
 // Create the helper and start it.
-if (!!chrome.extension) {
+if (window.chrome && !!window.chrome.extension) {
   if (!window.helper ||
       !e2e.ext.utils.text.isYmailOrigin(window.location.origin)) {
     /** @type {!e2e.ext.Helper} */
