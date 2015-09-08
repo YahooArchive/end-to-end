@@ -107,8 +107,7 @@ ui.Prompt.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
   soy.renderElement(elem, templates.main, {
-    extName: chrome.i18n.getMessage('extName'),
-    menuLabel: chrome.i18n.getMessage('actionOpenMenu')
+    extName: chrome.i18n.getMessage('extName')
   });
 
   var styles = elem.querySelector('link');
@@ -154,10 +153,7 @@ ui.Prompt.prototype.processSelectedContent_ =
       this.renderKeyringPassphrase_(elem);
       break;
     case constants.Actions.USER_SPECIFIED:
-      var menuContainer =
-          goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
-      goog.dom.classlist.add(menuContainer, constants.CssClass.HIDDEN);
-      this.renderMenu_();
+      this.renderMenu_(elem);
       break;
     case constants.Actions.CONFIGURE_EXTENSION:
       chrome.tabs.create({
@@ -176,9 +172,11 @@ ui.Prompt.prototype.processSelectedContent_ =
 
 /**
  * Renders the main menu.
+ * @param {Element} elem The element into which the UI elements are to be
+ *     rendered.
  * @private
  */
-ui.Prompt.prototype.renderMenu_ = function() {
+ui.Prompt.prototype.renderMenu_ = function(elem) {
   var menu = new goog.ui.PopupMenu();
   goog.array.forEach(this.selectableActions_, function(action) {
     var menuItem = new goog.ui.MenuItem(action.title);
@@ -186,28 +184,23 @@ ui.Prompt.prototype.renderMenu_ = function() {
     menu.addChild(menuItem, true);
   });
   this.addChild(menu, false);
-  menu.render(goog.dom.getElement(constants.ElementId.BODY));
+  menu.render(elem);
 
   this.getHandler().listen(
       menu,
       goog.ui.Component.EventType.ACTION,
       this.selectAction_);
 
-  var menuContainer = goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
-  if (goog.dom.classlist.contains(menuContainer, constants.CssClass.HIDDEN)) {
-    goog.dom.classlist.remove(menu.getElement(), 'goog-menu');
-    goog.style.setStyle(menu.getElement(), {
-      'display': 'block',
-      'outline': 'none',
-      'position': 'relative',
-      'top': '-10px'
-    });
-  } else {
-    menu.attach(
-        menuContainer,
-        goog.positioning.Corner.TOP_LEFT,
-        goog.positioning.Corner.BOTTOM_LEFT);
-  }
+  goog.dom.classlist.remove(menu.getElement(), 'goog-menu');
+  goog.style.setStyle(menu.getElement(), {
+    'outline': 'none',
+    'position': 'relative',
+    'top': '-10px'
+  });
+  // Hack to work around something setting the display to 'none'
+  window.setTimeout(function() {
+    menu.getElement().style.display = 'block';
+  }, 50);
 };
 
 
@@ -290,9 +283,9 @@ ui.Prompt.prototype.getTitle_ = function(action) {
  * @private
  */
 ui.Prompt.prototype.selectAction_ = function(evt) {
-  var menuContainer = goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
-  goog.dom.classlist.remove(menuContainer, constants.CssClass.HIDDEN);
+  /*
   this.removeChildren();
+  */
 
   this.processSelectedContent_(
       /** @type {constants.Actions} */ (evt.target.getValue()));
