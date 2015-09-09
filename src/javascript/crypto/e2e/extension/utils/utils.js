@@ -147,19 +147,8 @@ utils.showNotification = function(msg, callback) {
 *   to call with the result.
 */
 utils.sendExtensionRequest = function(args, opt_callback) {
-  var port = chrome.runtime.connect();
-  port.postMessage(args);
-
-  var respHandler = function(response) {
-    if (opt_callback) {
-      opt_callback(response);
-    }
-    port.disconnect();
-  };
-  port.onMessage.addListener(respHandler);
-  port.onDisconnect.addListener(function() {
-    port = null;
-  });
+  console.log('sending extension request', args);
+  chrome.runtime.sendMessage(args, opt_callback);
 };
 
 

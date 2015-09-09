@@ -96,7 +96,13 @@ api.Api.prototype.disposeInternal = function() {
  * Installs the API.
  */
 api.Api.prototype.installApi = function() {
+  console.log('installing API');
   chrome.runtime.onConnect.addListener(this.requestHandler_);
+  chrome.runtime.onMessage.addListener(goog.bind(
+    function(message, sender, sendResponse) {
+    console.log('got message', message);
+    this.executeAction_(sendResponse, message);
+  }, this));
 };
 
 
@@ -127,6 +133,7 @@ api.Api.prototype.openPort_ = function(port) {
  * @private
  */
 api.Api.prototype.executeAction_ = function(callback, req) {
+  console.log('got API request', req);
   var incoming =
       /** @type {!messages.ApiRequest.<(string|undefined|!e2e.ByteArray)>} */
       (req);
