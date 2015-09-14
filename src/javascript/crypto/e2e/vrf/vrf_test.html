@@ -1,0 +1,53 @@
+<!-- Copyright 2015 Yahoo Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -->
+<!DOCTYPE html>
+<html>
+<head>
+<title>Unit Test of e2e.vrf.verify</title>
+<script src="../../../../../javascript/closure/base.js"></script>
+<script src="test_js_deps-runfiles.js"></script>
+<script>
+goog.require('goog.testing.jsunit');
+
+goog.require('e2e.vrf.verify');
+
+</script>
+<script>
+
+/*
+Test Vector 1
+pk:           C2BF608B6AF918FDC68358A964E707D346ABABCF181E96724D7CF07BBF0E1D6F
+sk:           4AFC605963BA3572D8547B371CE828C822B4B26B21F52838DB33BE7833583321C2BF608B6AF918FDC68358A964E707D346ABABCF181E96724D7CF07BBF0E1D6F
+alice(bytes): 616C696365
+aliceVRF:     4462374E99BD0B0F08EE8405351CE816DE62158B59436FC5D54B56E2B247F59F
+aliceProof:   318004FD67F1A433152DA837126716E9F588F2EE71DAA07A81594867FADE0303EFEB5D62AD73A818DEA5BAE08A4CC9ED82C92F12BF183D50718BF6E9175EB10CC16A26AC42C016BCB10E906426B36046379D508B913E5EC3B5E0B72A404291A2
+*/
+
+var pk = [194, 191, 96, 139, 106, 249, 24, 253, 198, 131, 88, 169, 100, 231, 7, 211, 70, 171, 171, 207, 24, 30, 150, 114, 77, 124, 240, 123, 191, 14, 29, 111];
+var alice = [97, 108, 105, 99, 101];
+var aliceVRF = [68, 98, 55, 78, 153, 189, 11, 15, 8, 238, 132, 5, 53, 28, 232, 22, 222, 98, 21, 139, 89, 67, 111, 197, 213, 75, 86, 226, 178, 71, 245, 159];
+var aliceProof = [49, 128, 4, 253, 103, 241, 164, 51, 21, 45, 168, 55, 18, 103, 22, 233, 245, 136, 242, 238, 113, 218, 160, 122, 129, 89, 72, 103, 250, 222, 3, 3, 239, 235, 93, 98, 173, 115, 168, 24, 222, 165, 186, 224, 138, 76, 201, 237, 130, 201, 47, 18, 191, 24, 61, 80, 113, 139, 246, 233, 23, 94, 177, 12, 193, 106, 38, 172, 66, 192, 22, 188, 177, 14, 144, 100, 38, 179, 96, 70, 55, 157, 80, 139, 145, 62, 94, 195, 181, 224, 183, 42, 64, 66, 145, 162];
+
+/**
+ * Tests that e2e.vrf.verify() works
+ */
+function testVRFVerify() {
+    assertTrue(e2e.vrf.verify(pk, alice, aliceVRF, aliceProof));
+}
+
+</script>
+</head>
+</html>
+
