@@ -51,10 +51,14 @@ var blocks = [],
     s = [];
 
 // This is not necessarily constant time.
-var keccak = function(message, bits, padding, outputByteLen, outputFormat) {
+var keccak = function(message, bits, padding, outputByteLen) {
   // by @adon. expect to use with only byte array or ArrayBuffer
-  var notString = true; // typeof(message) != 'string';
-  if (notString && message.constructor == ArrayBuffer) {
+  // var notString = typeof(message) != 'string';
+  // if (notString && message.constructor == ArrayBuffer) {
+  //   message = new Uint8Array(message);
+  // }
+  if (message.constructor && ArrayBuffer && Uint8Array && 
+      message.constructor === ArrayBuffer) {
     message = new Uint8Array(message);
   }
 
@@ -314,40 +318,16 @@ var keccak = function(message, bits, padding, outputByteLen, outputFormat) {
   // allow output in ArrayBuffer and variable output byte length
   outputByteLen || (outputByteLen = bits / 8);
 
-  if (outputFormat === 'hex') {
+  var buffer = new Array(outputByteLen);
+  for (i = 0; i < outputByteLen; i += 4) {
+    h = s[i / 4];
 
-    var hex = '';
-    for (i = 0, n = outputByteLen / 4; i < n; ++i) {
-      h = s[i];
-      hex += HEX_CHARS[(h >> 4) & 0x0F] + HEX_CHARS[h & 0x0F] +
-          HEX_CHARS[(h >> 12) & 0x0F] + HEX_CHARS[(h >> 8) & 0x0F] +
-          HEX_CHARS[(h >> 20) & 0x0F] + HEX_CHARS[(h >> 16) & 0x0F] +
-          HEX_CHARS[(h >> 28) & 0x0F] + HEX_CHARS[(h >> 24) & 0x0F];
-    }
-    return hex;
-
-  } else if (outputFormat === 'arrayBuffer') {
-
-    var buffer = new ArrayBuffer(outputByteLen),
-        dv = new DataView(buffer);
-    for (i = 0, n = outputByteLen / 4; i < n; i++) {
-      dv.setUint32(i * 4, s[i], true);
-    }
-    return buffer;
-
-  } else {
-
-    var buffer = new Array(outputByteLen);
-    for (i = 0; i < outputByteLen; i += 4) {
-      h = s[i / 4];
-
-      buffer[i] = h & 0xFF;
-      buffer[i + 1] = (h >> 8) & 0xFF;
-      buffer[i + 2] = (h >> 16) & 0xFF;
-      buffer[i + 3] = (h >> 24) & 0xFF;
-    }
-    return buffer;
+    buffer[i] = h & 0xFF;
+    buffer[i + 1] = (h >> 8) & 0xFF;
+    buffer[i + 2] = (h >> 16) & 0xFF;
+    buffer[i + 3] = (h >> 24) & 0xFF;
   }
+  return buffer;
 };
 
 
@@ -359,12 +339,15 @@ var SHAKE_PADDING = [0x1F, 0x1F00, 0x1F0000, 0x1F000000];
  * Simulate the output of SHAKE256. In this implementation, only the first 136
  *  bytes (or 1088 bits) of output is reliable
  * @param {Array.<number>} input An array of bytes
- * @param {number} outputByteLen A non-negative 32-bit integer
+ * @param {number} outputByteLen A number, being a multiple of 4, for ouput 
+ * length
  * @return {Array.<number>} the output stored in an array of bytes
  */
 e2e.vrf.sha3Shake256 = function(input, outputByteLen) {
   goog.asserts.assert(outputByteLen <= 136,
       'Only the first 136 bytes (or 1088 bits) of output is reliable');
+  goog.asserts.assert(outputByteLen % 4 === 0,
+      'outputByteLen is required to be a multiple of 4');
 
   return keccak(input, 256, SHAKE_PADDING, outputByteLen);
 };
