@@ -83,10 +83,20 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
     // var P, B, ii, iic edwards25519.ExtendedGroupElement
     // var A, hmtP, iicP edwards25519.ProjectiveGroupElement
 
-    // P.FromBytesBaseGroup(&pk)
-    // ii.FromBytesBaseGroup(&iiB)
-    var P = e2e.vrf.extra25519.fromBytesBaseGroup(pk),
-        ii = e2e.vrf.extra25519.fromBytesBaseGroup(iiB);
+    // if !P.FromBytesBaseGroup(&pk) {
+    //   return false
+    // }
+    // if !ii.FromBytesBaseGroup(&iiB) {
+    //   return false
+    // }
+    var P = e2e.vrf.extra25519.fromBytesBaseGroup(pk);
+    if (P === false) {
+      return P;
+    }
+    var ii = e2e.vrf.extra25519.fromBytesBaseGroup(iiB);
+    if (ii === false) {
+      return ii;
+    }
 
     // edwards25519.GeDoubleScalarMultVartime(&A, &c, &P, &t)
     // A.ToBytes(&ABytes)

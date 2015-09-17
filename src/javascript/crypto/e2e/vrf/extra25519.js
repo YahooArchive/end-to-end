@@ -45,19 +45,19 @@ e2e.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
 
   var P = ed25519.curve.pointFromByteArray(sBytes);
 
+  // P itself is not infinity
   if (P.isIdentity()) {
-    throw new e2e.error.InvalidArgumentsError(
-        'fromBytesBaseGroup: P != infinity');
+    return false;
   }
 
+  // P must be on curve
   if (!P.isOnCurve()) {
-    throw new e2e.error.InvalidArgumentsError(
-        'fromBytesBaseGroup: P != infinity');
+    return false;
   }
 
+  // nP = infinity, where n is the order
   if (!P.multiply(ed25519.n).isIdentity()) {
-    throw new e2e.error.InvalidArgumentsError(
-        'fromBytesBaseGroup: nP = infinity, where n is the order');
+    return false;
   }
 
   return P;
