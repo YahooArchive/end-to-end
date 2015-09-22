@@ -27,22 +27,35 @@ goog.require('e2e.ecc.Element');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.error.InvalidArgumentsError');
 
-var ed25519 = e2e.ecc.DomainParam.fromCurve(e2e.ecc.PrimeCurve.ED_25519);
-var curve25519 = e2e.ecc.DomainParam.fromCurve(e2e.ecc.PrimeCurve.CURVE_25519);
+
+/**
+ * @private Domain Params for ed25519
+ */
+e2e.vrf.extra25519.ed25519_ = e2e.ecc.DomainParam.fromCurve(
+                                  e2e.ecc.PrimeCurve.ED_25519);
+
+
+/**
+ * @private Domain Params for curve25519
+ */
+e2e.vrf.extra25519.curve25519_ = e2e.ecc.DomainParam.fromCurve(
+                                     e2e.ecc.PrimeCurve.CURVE_25519);
 
 
 /**
  * Unmarshals an elliptic curve point, and validates that it is an Ed25519
  *  public key
+ * Returns the unmarshaled Point, or false if the validation fails.
  *
  * Refer to Definition 1 in
  *  https://www.iacr.org/archive/pkc2003/25670211/25670211.pdf
  *
  * @param {!e2e.ByteArray} sBytes A byte array of length 32
- * @return {!e2e.ecc.point.Ed25519}
+ * @return {!e2e.ecc.point.Point|boolean}
  */
 e2e.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
 
+  var ed25519 = e2e.vrf.extra25519.ed25519_;
   var P = ed25519.curve.pointFromByteArray(sBytes);
 
   // P itself is not infinity
@@ -63,11 +76,6 @@ e2e.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
   return P;
 };
 
-// converts a uniform representative value for a
-// curve25519 public key, as produced by ScalarBaseMult, to a curve25519 public
-// key.
-// See Elligator paper section 5.2.
-
 
 /**
  * Converts a uniform representative value to an element in Curve25519,
@@ -80,11 +88,13 @@ e2e.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
  * @return {!e2e.ecc.Element}
  */
 function representativeToMontgomeryX(r) {
-  var A = curve25519.curve.A;
+
+  var ed25519Curve = e2e.vrf.extra25519.ed25519_.curve;
+  var A = e2e.vrf.extra25519.curve25519_.curve.A;
 
   // v = -A/(1+ur^2), where u = 2 (any non-square field element)
   r = r.square();
-  var v = r.add(r).add(ed25519.curve.ONE).inverse().multiply(A).negate();
+  var v = r.add(r).add(ed25519Curve.ONE).inverse().multiply(A).negate();
 
   // assertEquals('d4ad43e1aaf9b0ce31093a2cbe62af7e53bcb072c804e23b0d395147be6eed44',
   //  goog.crypt.byteArrayToHex(v.x.toByteArray().reverse()));
@@ -94,7 +104,7 @@ function representativeToMontgomeryX(r) {
   var v2 = v.square();
   var v3 = v2.multiply(v);
   var e = v3.add(v2.multiply(A)).add(v)
-      .power(ed25519.curve.q.subtract(e2e.BigNum.ONE).shiftRight(1));
+      .power(ed25519Curve.q.subtract(e2e.BigNum.ONE).shiftRight(1));
 
   // leading zeros are dropped
   // assertEquals('01',
@@ -103,7 +113,7 @@ function representativeToMontgomeryX(r) {
   // e is either 1 or -1
   // x = ev - (1-e)A/2
   // This is not constant time and thus must not be used with secret inputs.
-  var x = e.isEqual(ed25519.curve.ONE) ? v : A.substract(v);
+  var x = e.isEqual(ed25519Curve.ONE) ? v : A.subtract(v);
 
   // assertEquals('d4ad43e1aaf9b0ce31093a2cbe62af7e53bcb072c804e23b0d395147be6eed44',
   //  goog.crypt.byteArrayToHex(x.x.toByteArray().reverse()));
@@ -120,6 +130,8 @@ function representativeToMontgomeryX(r) {
  * @return {!e2e.ecc.Element}
  */
 function montgomeryXToEdwardsY(x) {
+
+  var ed25519CurveOne = e2e.vrf.extra25519.ed25519_.curve.ONE;
   // var t, tt edwards25519.FieldElement
   // edwards25519.FeOne(&t)
   // edwards25519.FeAdd(&tt, x, &t)   // u+1
@@ -127,8 +139,8 @@ function montgomeryXToEdwardsY(x) {
   // edwards25519.FeSub(&t, x, &t)    // u-1
   // edwards25519.FeMul(out, &tt, &t) // (u-1)/(u+1)
 
-  var y = x.add(ed25519.curve.ONE).inverse()
-      .multiply(x.subtract(ed25519.curve.ONE));
+  var y = x.add(ed25519CurveOne).inverse()
+      .multiply(x.subtract(ed25519CurveOne));
 
   // assertEquals('2d53cc5079f9f7e495d408c88f43c839c900fea065b38c7901a76289398e283e',
   //  goog.crypt.byteArrayToHex(y.x.toByteArray().reverse()));
@@ -145,6 +157,8 @@ function montgomeryXToEdwardsY(x) {
  * @return {!e2e.ecc.point.Ed25519}
  */
 e2e.vrf.extra25519.hashToEdwards = function(h) {
+
+  var ed25519Curve = e2e.vrf.extra25519.ed25519_.curve;
   // hh := *h
   // bit := hh[31] >> 7
   // hh[31] &= 127
@@ -154,7 +168,7 @@ e2e.vrf.extra25519.hashToEdwards = function(h) {
   // edwards25519.FeFromBytes(&out.Y, &hh)
   // Here it is unsafe to use ed25519.curve.elementFromByteArray(),
   //  as it enforces byteArray to be within the modulus q
-  var q = ed25519.curve.q;
+  var q = ed25519Curve.q;
   var outY = new e2e.ecc.Element(q,
       new e2e.BigNum(h.reverse()).mod(q));
 
@@ -167,7 +181,7 @@ e2e.vrf.extra25519.hashToEdwards = function(h) {
   // if ok := out.FromParityAndY(bit, &out.Y); !ok {
   //  panic("HashToEdwards: point not on curve")
   // }
-  var out = ed25519.curve.pointFromYCoordinate_(outY, parity);
+  var out = ed25519Curve.pointFromYCoordinate_(outY, parity);
   if (!out.isOnCurve()) {
     throw new e2e.error.InvalidArgumentsError(
         'HashToEdwards: point not on curve');

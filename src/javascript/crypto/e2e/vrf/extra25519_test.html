@@ -35,8 +35,10 @@ goog.require('goog.crypt');
  */
 function testFromBytesBaseGroup() {
 	var pk = [194, 191, 96, 139, 106, 249, 24, 253, 198, 131, 88, 169, 100, 231, 7, 211, 70, 171, 171, 207, 24, 30, 150, 114, 77, 124, 240, 123, 191, 14, 29, 111];
+	var P = e2e.vrf.extra25519.fromBytesBaseGroup(pk);
 
-	e2e.vrf.extra25519.fromBytesBaseGroup(pk);
+	assertEquals(goog.crypt.byteArrayToHex(pk),
+		goog.crypt.byteArrayToHex(P.toByteArray()));
 }
 
 function testHashToEdwards() {

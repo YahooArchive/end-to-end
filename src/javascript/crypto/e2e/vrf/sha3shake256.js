@@ -57,7 +57,7 @@ var keccak = function(message, bits, padding, outputByteLen) {
   // if (notString && message.constructor == ArrayBuffer) {
   //   message = new Uint8Array(message);
   // }
-  if (message.constructor && ArrayBuffer && Uint8Array && 
+  if (message.constructor && ArrayBuffer && Uint8Array &&
       message.constructor === ArrayBuffer) {
     message = new Uint8Array(message);
   }
@@ -338,10 +338,10 @@ var SHAKE_PADDING = [0x1F, 0x1F00, 0x1F0000, 0x1F000000];
 /**
  * Simulate the output of SHAKE256. In this implementation, only the first 136
  *  bytes (or 1088 bits) of output is reliable
- * @param {Array.<number>} input An array of bytes
- * @param {number} outputByteLen A number, being a multiple of 4, for ouput 
+ * @param {!e2e.ByteArray} input An array of bytes
+ * @param {number} outputByteLen A number, being a multiple of 4, for ouput
  * length
- * @return {Array.<number>} the output stored in an array of bytes
+ * @return {!e2e.ByteArray} the output stored in an array of bytes
  */
 e2e.vrf.sha3Shake256 = function(input, outputByteLen) {
   goog.asserts.assert(outputByteLen <= 136,

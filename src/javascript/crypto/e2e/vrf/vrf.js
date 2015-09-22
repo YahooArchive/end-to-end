@@ -21,17 +21,43 @@
 
 goog.provide('e2e.vrf.verify');
 
+goog.require('e2e');
 goog.require('e2e.BigNum');
 goog.require('e2e.ecc.DomainParam');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.vrf.extra25519');
 goog.require('e2e.vrf.sha3Shake256');
 
-var PublicKeySize = 32,
-    // SecretKeySize = 64,
-    Size = 32,
-    intermediateSize = 32,
-    ProofSize = 32 + 32 + intermediateSize;
+
+/**
+ * @private Public Key Size
+ */
+e2e.vrf.PUBLICKEYSIZE_ = 32;
+
+
+/**
+ * @private VRF Size
+ */
+e2e.vrf.SIZE_ = 32;
+
+
+/**
+ * @private Intermediate Size
+ */
+e2e.vrf.INTERMEDIATESIZE_ = 32;
+
+
+/**
+ * @private Proof Size
+ */
+e2e.vrf.PROOFSIZE_ = 32 + 32 + e2e.vrf.INTERMEDIATESIZE_;
+
+
+/**
+ * @private Domain Params for ed25519
+ */
+e2e.vrf.ed25519_ = e2e.ecc.DomainParam.fromCurve(
+                       e2e.ecc.PrimeCurve.ED_25519);
 
 
 /**
@@ -47,12 +73,12 @@ var PublicKeySize = 32,
  */
 e2e.vrf.verify = function(pk, m, vrf, proof) {
 
-  if (proof.length !== ProofSize || vrf.length !== Size ||
-      pk.length !== PublicKeySize) {
+  if (proof.length !== e2e.vrf.PROOFSIZE_ || vrf.length !== e2e.vrf.SIZE_ ||
+      pk.length !== e2e.vrf.PUBLICKEYSIZE_) {
     return false;
   }
 
-  var ed25519 = e2e.ecc.DomainParam.fromCurve(e2e.ecc.PrimeCurve.ED_25519);
+  var ed25519 = e2e.vrf.ed25519_;
 
   // copy(vrf[:], vrfBytes)
   // copy(pk[:], pkBytes)
@@ -72,10 +98,8 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
   //  return false
   // }
   // hash.Reset()
-  hash = e2e.vrf.sha3Shake256(iiB.concat(m), 32);
-  // equiv. to (vrf !== hash)
-  if (vrf.length !== hash.length ||
-      vrf.some(function(b, i) {return b !== hash[i];})) {
+  var hash = e2e.vrf.sha3Shake256(iiB.concat(m), 32);
+  if (!e2e.compareByteArray(hash, vrf)) {
     return false;
   }
 
