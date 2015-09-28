@@ -21,7 +21,7 @@
 <script>
 goog.require('goog.testing.jsunit');
 
-goog.require('e2e.vrf.sha3Shake256');
+goog.require('e2e.vrf.sha3');
 goog.require('e2e.vrf.extra25519');
 
 goog.require('goog.crypt');
@@ -44,7 +44,7 @@ function testFromBytesBaseGroup() {
 function testHashToEdwards() {
 	var alice = [97, 108, 105, 99, 101];
 
-	var hmb = e2e.vrf.sha3Shake256(alice, 32);
+	var hmb = e2e.vrf.sha3.shake256(32).update(alice).digest();
 	var out = e2e.vrf.extra25519.hashToEdwards(hmb);
 
 	assertEquals('2d53cc5079f9f7e495d408c88f43c839c900fea065b38c7901a76289398e283e', 

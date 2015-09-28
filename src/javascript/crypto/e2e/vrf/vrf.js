@@ -27,7 +27,7 @@ goog.require('e2e.BigNum');
 goog.require('e2e.ecc.DomainParam');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.vrf.extra25519');
-goog.require('e2e.vrf.sha3Shake256');
+goog.require('e2e.vrf.sha3');
 
 
 /**
@@ -99,7 +99,8 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
   //  return false
   // }
   // hash.Reset()
-  var hash = e2e.vrf.sha3Shake256(iiB.concat(m), 32);
+
+  var hash = e2e.vrf.sha3.shake256(32).update(iiB).update(m).digest();
   if (!e2e.compareByteArray(hash, vrf)) {
     return false;
   }
@@ -150,7 +151,11 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
 
     // the two ABytes and BBytes must be of length 32
     // ref: e2e.ecc.point.Ed25519.prototype.toByteArray
-    hash = e2e.vrf.sha3Shake256(ABytes.concat(BBytes).concat(m), 64);
+    hash = e2e.vrf.sha3.shake256(64)
+        .update(ABytes)
+        .update(BBytes)
+        .update(m)
+        .digest();
 
     // edwards25519.ScReduce(&cRef, &cH)
     var cRef = ed25519.n.residue(new e2e.BigNum(hash.reverse()));
@@ -177,7 +182,7 @@ e2e.vrf.hashToCurve = function(m) {
   // H(n) = (f(h(n))^8)
   // var hmb [32]byte
   // sha3.ShakeSum256(hmb[:], m)
-  var hmb = e2e.vrf.sha3Shake256(m, 32);
+  var hmb = e2e.vrf.sha3.shake256(32).update(m).digest();
 
   // var hm edwards25519.ExtendedGroupElement
   // extra25519.HashToEdwards(&hm, &hmb)
