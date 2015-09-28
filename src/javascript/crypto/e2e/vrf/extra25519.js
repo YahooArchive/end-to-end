@@ -87,7 +87,7 @@ e2e.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
  * @param {!e2e.ecc.Element} r the representative coordinate
  * @return {!e2e.ecc.Element}
  */
-function representativeToMontgomeryX(r) {
+e2e.vrf.extra25519.representativeToMontgomeryX = function(r) {
 
   var ed25519Curve = e2e.vrf.extra25519.ed25519_.curve;
   var A = e2e.vrf.extra25519.curve25519_.curve.A;
@@ -119,7 +119,7 @@ function representativeToMontgomeryX(r) {
   //  goog.crypt.byteArrayToHex(x.x.toByteArray().reverse()));
 
   return x;
-}
+};
 
 
 /**
@@ -129,7 +129,7 @@ function representativeToMontgomeryX(r) {
  * @param {!e2e.ecc.Element} x the Curve25519 coordinate
  * @return {!e2e.ecc.Element}
  */
-function montgomeryXToEdwardsY(x) {
+e2e.vrf.extra25519.montgomeryXToEdwardsY = function(x) {
 
   var ed25519CurveOne = e2e.vrf.extra25519.ed25519_.curve.ONE;
   // var t, tt edwards25519.FieldElement
@@ -146,7 +146,7 @@ function montgomeryXToEdwardsY(x) {
   //  goog.crypt.byteArrayToHex(y.x.toByteArray().reverse()));
 
   return y;
-}
+};
 
 
 /**
@@ -173,10 +173,10 @@ e2e.vrf.extra25519.hashToEdwards = function(h) {
       new e2e.BigNum(h.reverse()).mod(q));
 
   // representativeToMongomeryX(&out.X, &out.Y)
-  var outX = representativeToMontgomeryX(outY);
+  var outX = e2e.vrf.extra25519.representativeToMontgomeryX(outY);
 
   // montgomeryXToEdwardsY(&out.Y, &out.X)
-  outY = montgomeryXToEdwardsY(outX);
+  outY = e2e.vrf.extra25519.montgomeryXToEdwardsY(outX);
 
   // if ok := out.FromParityAndY(bit, &out.Y); !ok {
   //  panic("HashToEdwards: point not on curve")

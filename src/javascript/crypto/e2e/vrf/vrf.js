@@ -19,6 +19,7 @@
  * This is ported from https://github.com/yahoo/coname/blob/master/vrf/vrf.go
  */
 
+goog.provide('e2e.vrf');
 goog.provide('e2e.vrf.verify');
 
 goog.require('e2e');
@@ -32,7 +33,7 @@ goog.require('e2e.vrf.sha3Shake256');
 /**
  * @private Public Key Size
  */
-e2e.vrf.PUBLICKEYSIZE_ = 32;
+e2e.vrf.PUBLIC_KEY_SIZE_ = 32;
 
 
 /**
@@ -44,13 +45,13 @@ e2e.vrf.SIZE_ = 32;
 /**
  * @private Intermediate Size
  */
-e2e.vrf.INTERMEDIATESIZE_ = 32;
+e2e.vrf.INTERMEDIATE_SIZE_ = 32;
 
 
 /**
  * @private Proof Size
  */
-e2e.vrf.PROOFSIZE_ = 32 + 32 + e2e.vrf.INTERMEDIATESIZE_;
+e2e.vrf.PROOF_SIZE_ = 32 + 32 + e2e.vrf.INTERMEDIATE_SIZE_;
 
 
 /**
@@ -73,8 +74,8 @@ e2e.vrf.ed25519_ = e2e.ecc.DomainParam.fromCurve(
  */
 e2e.vrf.verify = function(pk, m, vrf, proof) {
 
-  if (proof.length !== e2e.vrf.PROOFSIZE_ || vrf.length !== e2e.vrf.SIZE_ ||
-      pk.length !== e2e.vrf.PUBLICKEYSIZE_) {
+  if (proof.length !== e2e.vrf.PROOF_SIZE_ || vrf.length !== e2e.vrf.SIZE_ ||
+      pk.length !== e2e.vrf.PUBLIC_KEY_SIZE_) {
     return false;
   }
 
@@ -129,7 +130,7 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
     // hm := hashToCurve(m)
     // edwards25519.GeDoubleScalarMultVartime(&hmtP, &t, hm, &[32]byte{})
     // edwards25519.GeDoubleScalarMultVartime(&iicP, &c, &ii, &[32]byte{})
-    var hm = hashToCurve(m);
+    var hm = e2e.vrf.hashToCurve(m);
     var zeroB = ed25519.curve.B.multiply(e2e.BigNum.ZERO);
     var hmtP = hm.multiply(t).add(zeroB);
     var iicP = ii.multiply(c).add(zeroB);
@@ -171,7 +172,7 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
  * @param {!e2e.ByteArray} m A byte array of length 32
  * @return {!e2e.ecc.point.Ed25519}
  */
-function hashToCurve(m) {
+e2e.vrf.hashToCurve = function(m) {
 
   // H(n) = (f(h(n))^8)
   // var hmb [32]byte
@@ -190,5 +191,5 @@ function hashToCurve(m) {
   hm = hm.add(hm);
   hm = hm.add(hm);
   return hm;
-}
+};
 
