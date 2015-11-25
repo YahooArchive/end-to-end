@@ -19,46 +19,46 @@
  * This is ported from https://github.com/yahoo/coname/blob/master/vrf/vrf.go
  */
 
-goog.provide('e2e.vrf');
-goog.provide('e2e.vrf.verify');
+goog.provide('e2e.coname.vrf');
+goog.provide('e2e.coname.vrf.verify');
 
 goog.require('e2e');
 goog.require('e2e.BigNum');
+goog.require('e2e.coname.sha3');
+goog.require('e2e.coname.vrf.extra25519');
 goog.require('e2e.ecc.DomainParam');
 goog.require('e2e.ecc.PrimeCurve');
-goog.require('e2e.vrf.extra25519');
-goog.require('e2e.vrf.sha3');
 
 
 /**
  * @private Public Key Size
  */
-e2e.vrf.PUBLIC_KEY_SIZE_ = 32;
+e2e.coname.vrf.PUBLIC_KEY_SIZE_ = 32;
 
 
 /**
  * @private VRF Size
  */
-e2e.vrf.SIZE_ = 32;
+e2e.coname.vrf.SIZE_ = 32;
 
 
 /**
  * @private Intermediate Size
  */
-e2e.vrf.INTERMEDIATE_SIZE_ = 32;
+e2e.coname.vrf.INTERMEDIATE_SIZE_ = 32;
 
 
 /**
  * @private Proof Size
  */
-e2e.vrf.PROOF_SIZE_ = 32 + 32 + e2e.vrf.INTERMEDIATE_SIZE_;
+e2e.coname.vrf.PROOF_SIZE_ = 32 + 32 + e2e.coname.vrf.INTERMEDIATE_SIZE_;
 
 
 /**
  * @private Domain Params for ed25519
  */
-e2e.vrf.ed25519_ = e2e.ecc.DomainParam.fromCurve(
-                       e2e.ecc.PrimeCurve.ED_25519);
+e2e.coname.vrf.ed25519_ = e2e.ecc.DomainParam.fromCurve(
+    e2e.ecc.PrimeCurve.ED_25519);
 
 
 /**
@@ -72,14 +72,15 @@ e2e.vrf.ed25519_ = e2e.ecc.DomainParam.fromCurve(
  *  consisting of 32 bytes in a byte array of length 96
  * @return {boolean}
  */
-e2e.vrf.verify = function(pk, m, vrf, proof) {
+e2e.coname.vrf.verify = function(pk, m, vrf, proof) {
 
-  if (proof.length !== e2e.vrf.PROOF_SIZE_ || vrf.length !== e2e.vrf.SIZE_ ||
-      pk.length !== e2e.vrf.PUBLIC_KEY_SIZE_) {
+  if (proof.length !== e2e.coname.vrf.PROOF_SIZE_ ||
+      vrf.length !== e2e.coname.vrf.SIZE_ ||
+      pk.length !== e2e.coname.vrf.PUBLIC_KEY_SIZE_) {
     return false;
   }
 
-  var ed25519 = e2e.vrf.ed25519_;
+  var ed25519 = e2e.coname.vrf.ed25519_;
 
   // copy(vrf[:], vrfBytes)
   // copy(pk[:], pkBytes)
@@ -100,7 +101,7 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
   // }
   // hash.Reset()
 
-  var hash = e2e.vrf.sha3.shake256(32).update(iiB).update(m).digest();
+  var hash = e2e.coname.sha3.shake256(32).update(iiB).update(m).digest();
   if (!e2e.compareByteArray(hash, vrf)) {
     return false;
   }
@@ -115,11 +116,11 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
     // if !ii.FromBytesBaseGroup(&iiB) {
     //   return false
     // }
-    var P = e2e.vrf.extra25519.fromBytesBaseGroup(pk);
+    var P = e2e.coname.vrf.extra25519.fromBytesBaseGroup(pk);
     if (P === false) {
       return P;
     }
-    var ii = e2e.vrf.extra25519.fromBytesBaseGroup(iiB);
+    var ii = e2e.coname.vrf.extra25519.fromBytesBaseGroup(iiB);
     if (ii === false) {
       return ii;
     }
@@ -131,7 +132,7 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
     // hm := hashToCurve(m)
     // edwards25519.GeDoubleScalarMultVartime(&hmtP, &t, hm, &[32]byte{})
     // edwards25519.GeDoubleScalarMultVartime(&iicP, &c, &ii, &[32]byte{})
-    var hm = e2e.vrf.hashToCurve(m);
+    var hm = e2e.coname.vrf.hashToCurve(m);
     var zeroB = ed25519.curve.B.multiply(e2e.BigNum.ZERO);
     var hmtP = hm.multiply(t).add(zeroB);
     var iicP = ii.multiply(c).add(zeroB);
@@ -151,7 +152,7 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
 
     // the two ABytes and BBytes must be of length 32
     // ref: e2e.ecc.point.Ed25519.prototype.toByteArray
-    hash = e2e.vrf.sha3.shake256(64)
+    hash = e2e.coname.sha3.shake256(64)
         .update(ABytes)
         .update(BBytes)
         .update(m)
@@ -178,12 +179,12 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
  * @param {!e2e.ByteArray} m A byte array of length 32
  * @return {!e2e.ecc.point.Ed25519}
  */
-e2e.vrf.hashToCurve = function(m) {
+e2e.coname.vrf.hashToCurve = function(m) {
 
   // H(n) = (f(h(n))^8)
   // var hmb [32]byte
   // sha3.ShakeSum256(hmb[:], m)
-  var hmb = e2e.vrf.sha3.shake256(32).update(m).digest();
+  var hmb = e2e.coname.sha3.shake256(32).update(m).digest();
 
   // var hm edwards25519.ExtendedGroupElement
   // extra25519.HashToEdwards(&hm, &hmb)
@@ -192,10 +193,9 @@ e2e.vrf.hashToCurve = function(m) {
   // edwards25519.GeDouble(&hm, &hm)
   // return &hm
 
-  var hm = e2e.vrf.extra25519.hashToEdwards(hmb);
+  var hm = e2e.coname.vrf.extra25519.hashToEdwards(hmb);
   hm = hm.add(hm);
   hm = hm.add(hm);
   hm = hm.add(hm);
   return hm;
 };
-

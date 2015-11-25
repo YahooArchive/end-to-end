@@ -33,15 +33,22 @@ if [[ $jversion < "1.7" ]]; then
   echo "Java 1.7 or higher is required to build End-To-End."
   exit 1
 fi
+type node >/dev/null 2>&1 || {
+  echo >&2 "NodeJS is required to build End-To-End dependencies."
+  exit 1
+}
+type npm >/dev/null 2>&1 || {
+  echo >&2 "NPM is required to build End-To-End dependencies."
+  exit 1
+}
 
 if [ ! -d lib ]; then
   mkdir lib
 fi
+cd lib
 
 git submodule init
 git submodule update
-
-cd lib
 
 # symlink typedarray
 if [ ! -d typedarray ]; then
@@ -69,6 +76,39 @@ if [ ! -f closure-stylesheets/build/closure-stylesheets.jar ]; then
   cd closure-stylesheets
   ant
   cd ..
+fi
+
+# use protobuf js to generate the json proto
+if [ ! -d protobufjs ]; then
+  mkdir protobufjs
+  mkdir protobufjs/externs
+
+  cd protobufjs
+  curl https://raw.githubusercontent.com/dcodeIO/long.js/2.3.0/dist/Long.min.js -O
+  curl https://raw.githubusercontent.com/dcodeIO/bytebuffer.js/5.0.0/dist/bytebuffer.min.js -O
+  curl https://raw.githubusercontent.com/dcodeIO/protobuf.js/5.0.0/dist/protobuf-light.min.js -O
+
+  # create a single protobuf JS file
+  cat *.js > protobuf-light.alldeps.js
+
+  # prepare the proto file
+  curl https://raw.githubusercontent.com/yahoo/coname/master/proto/timestamp.proto -O
+  curl https://raw.githubusercontent.com/yahoo/coname/master/proto/client.proto -O
+
+  # remove gogoproto import
+  sed 's/import "gogoproto\/gogo.proto";//' client.proto > client-js.proto
+
+  # generate coname-client.proto.json
+  npm install protobufjs
+  ../../node_modules/.bin/pbjs client-js.proto timestamp.proto -m > coname-client.proto.json
+
+  # download the externs
+  cd externs
+  curl https://raw.githubusercontent.com/dcodeIO/long.js/2.3.0/externs/Long.js -O
+  curl https://raw.githubusercontent.com/dcodeIO/bytebuffer.js/5.0.0/externs/bytebuffer.js -O
+  curl https://raw.githubusercontent.com/dcodeIO/protobuf.js/5.0.0/externs/protobuf.js -O
+
+  cd ../..
 fi
 
 if [ -f chrome_extensions.js ]; then
