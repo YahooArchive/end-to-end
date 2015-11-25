@@ -1,0 +1,216 @@
+<!-- Copyright 2015 Yahoo Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -->
+<!DOCTYPE html>
+<html>
+<head>
+<title>Unit Test of e2e.coname.verifyLookup</title>
+<script src="../../../../../javascript/closure/base.js"></script>
+<script src="test_js_deps-runfiles.js"></script>
+<script>
+goog.require('goog.testing.jsunit');
+
+goog.require('e2e.coname.verifyLookup');
+</script>
+<script>
+
+function base64ToByteArray(string) {
+    string = atob(string);
+    for (var i = 0, n = string.length, ret = []; i < n; i++) {
+        ret[i] = string.charCodeAt(i);
+    }
+    return ret;
+}
+
+var clientconfig = {
+    "realms": [{
+        "domains": ["yahoo-inc.com"],
+        "addr": "ks1.paranoids.corp.bf1.yahoo.com:4625",
+        "URL": "",
+        "VRFPublic": base64ToByteArray("rVetQeQaiGkrU01ModonIWEyf8MM5Yw88FdhAYctKrM="),
+        "verification_policy": {
+            "public_keys": {
+                "16574727844889599213": {
+                    "ed25519": base64ToByteArray("i/eTj1prLyKLgRl5NE4omtrC3xjVf2sowJzgdsSXKUs=")
+                },
+                "1702327623518731708": {
+                    "ed25519": base64ToByteArray("tnyH37Flkf9ne0yj8DbRmGgMg+MD8pZmZS7JUlQNX0Y=")
+                },
+                "5004056709842995553": {
+                    "ed25519": base64ToByteArray("zYQyJ9RRn3XosP0pMIm5fPqpTYDyAe1e/oxYtl6NoYE=")
+                }
+            },
+            "quorum": {
+                "threshold": 2,
+                "subexpressions": [{
+                    "threshold": 1,
+                    "candidates": ["5004056709842995553"]
+                }, {
+                    "threshold": 1,
+                    "candidates": ["16574727844889599213"]
+                }, {
+                    "threshold": 1,
+                    "candidates": ["1702327623518731708"]
+                }]
+            }
+        },
+        "epoch_time_to_live": {
+            "seconds": "180",
+            "nanos": 0
+        },
+        "client_tls": {
+            "certificates": [{
+                "certificate": ["MIIBTDCB+6ADAgECAhEAiZG0EutuQ2fmf+54JzKDDzAKBggqhkjOPQQDAjAUMRIwEAYDVQQDEwl0ZXN0aW5nQ0EwHhcNMTUxMDA3MjMyMDM1WhcNMTcxMDA3MjMyMDM1WjARMQ8wDQYDVQQDEwZjbGllbnQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAARQ/VpiYFZjlilkwxDv5ECfULoolEVj2XP1Q8qRZG1HiKRqzev2Duo5X8teHX170PcuieVfctkCl82giFXlpILgozEwLzAOBgNVHQ8BAf8EBAMCAIAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAoGCCqGSM49BAMCA0AAMD0CHQCGlTQG0+qXWLCmcFJmVPYw1fSbPyJgoX8zCRfIAhw1pyS9ndYxC31CnMcEmh3QknYFSlfIpNd7WCh4"],
+                "key_id": "client.key.pem"
+            }],
+            "root_cas": ["MIIBODCB56ADAgECAhAZfpTyA7t/o8/UQFDuNnOEMAoGCCqGSM49BAMCMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTAeFw0xNTEwMDcyMzE5NTZaFw0yNzAzMDUxNTE5NTZaMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTBOMBAGByqGSM49AgEGBSuBBAAhAzoABBXxzbQHSHyRxsunXjDrObkYocJiCYnFmaikAOrnRy7Z98Znl5nKkzHPkUvBpxJjlM2RBH54wGkcoyYwJDAOBgNVHQ8BAf8EBAMCAIQwEgYDVR0TAQH/BAgwBgEB/wIBBDAKBggqhkjOPQQDAgNAADA9Ah0AvLpfgaYS6JUNt361g7gZy2211JRUf+UFBeL9hAIcfyULPYBqUnNtyGqvJeYxZ66g1Rt1cB12QyvaLw=="],
+            "server_name": "",
+            "client_auth": 0,
+            "prefer_server_cipher_suites": false,
+            "session_tickets_enabled": false,
+            "session_ticket_key_id": "",
+            "min_version": 0,
+            "max_version": 0
+        }
+    }]
+};
+
+// clientconfig.realms[0].tree_nonce = null;
+
+/**
+ * Tests that e2e.coname.verifyLookup works
+ */
+function testVerifyLookup() {
+    var lookupProof = {
+        "user_id": "adon@yahoo-inc.com",
+        "index": "ajBsOaETPLW/TTSRlTDjSelmOxb97pahF73tC+QBqXY=",
+        "index_proof": "KjGw6JX/3h2fWsF4SlXyvtz6fF8y1JdYXhL7OhlM+wx5Nkvq+3pWP8ahgymUAfyWR1JREtEz3XZu8Nylvps5C1jUrWa9ZPnXeMJaFf9XOJ0t1lGn5GTDm0vUUh4HPGl9",
+        "ratifications": [{
+            head: {
+                // TimestampedEpochHead: TimestampedEpochHead {
+                    head: {
+                        // EpochHead: EpochHead {
+                            realm: "yahoo",
+                            epoch: 735,
+                            root_hash: [129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2],
+                            issue_time: {
+                                Seconds: 1448938709,
+                                Nanos: 206962788,
+                            },
+                            previous_summary_hash: [224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251],
+                            next_epoch_policy: {
+                                PublicKeys: {},
+                                PolicyType: null,
+                            },
+                        // },
+                        encoding: [10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0]
+                    },
+                    timestamp: {
+                        seconds: 1448938709,
+                        nanos: 206962788,
+                    },
+                // },
+                encoding: [10,125,10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0,18,11,8,213,153,244,178,5,16,228,128,216,98]
+            },
+            signatures: {
+                "5004056709842995553": [14,180,236,99,74,32,209,53,119,183,75,165,21,148,96,137,105,255,39,133,164,86,213,9,78,115,2,32,241,79,251,79,16,206,222,153,191,23,34,240,91,40,188,72,121,52,214,183,154,207,244,88,190,155,186,207,244,226,143,108,185,38,75,1],
+            },
+        },
+        {
+            head: {
+                // TimestampedEpochHead: TimestampedEpochHead {
+                    head: {
+                        // EpochHead: EpochHead {
+                            realm: "yahoo",
+                            epoch: 735,
+                            root_hash: [129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2],
+                            issue_time: {
+                                seconds: 1448938709,
+                                banos: 206962788,
+                            },
+                            previous_summary_hash: [224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251],
+                            next_epoch_policy: {
+                                PublicKeys: {},
+                                PolicyType: null,
+                            },
+                        // },
+                        encoding: [10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0]
+                    },
+                    timestamp: {
+                        seconds: 1448938709,
+                        nanos: 206962788,
+                    },
+                // },
+                encoding: [10,125,10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0,18,11,8,213,153,244,178,5,16,228,128,216,98]
+            },
+            signatures: {
+                "1702327623518731708": [174,42,7,210,122,152,244,125,152,22,0,187,56,159,115,60,138,91,179,61,236,44,130,178,51,102,39,128,12,198,60,106,155,65,26,191,36,79,73,44,112,31,6,214,222,121,95,187,100,140,46,155,141,103,144,109,217,236,101,213,74,92,34,8],
+            },
+        }],
+        "tree_proof": {
+            "neighbors": ["Aj2/iia09hdY9M15RG/mYwIJuuvo5uEzBGiu5WTsF1Q=", "uHZAo3zIZNmrlvCIVokRuMdBVHGqJ88qdDG4MnbJhpw="],
+            "existing_index": "ajBsOaETPLW/TTSRlTDjSelmOxb97pahF73tC+QBqXY=",
+            "existing_entry_hash": "Uw5tQi6D13ZLkHB42gOD6QYz1EbKf7KlRNpDMVatvTU="
+        },
+        "entry": {
+            index: [106,48,108,57,161,19,60,181,191,77,52,145,149,48,227,73,233,102,59,22,253,238,150,161,23,189,237,11,228,1,169,118],
+            version: 15,
+            update_policy: { /*
+                PublicKeys: map[uint64] * PublicKey {},
+                PolicyType: & AuthorizationPolicy_Quorum {
+                    Quorum: & QuorumExpr {
+                        Threshold: 0,
+                        Candidates: [],
+                        Subexpressions: [],
+                    },
+                },*/
+            },
+            profile_commitment: [159,242,116,67,5,139,228,17,60,243,80,171,8,117,27,93,98,174,151,165,118,118,164,199,69,143,146,9,98,232,21,112,16,58,51,128,100,38,96,45,199,223,81,146,82,136,116,49,29,194,133,89,92,254,254,189,205,46,82,22,138,30,96,229],
+            encoding: [10,32,106,48,108,57,161,19,60,181,191,77,52,145,149,48,227,73,233,102,59,22,253,238,150,161,23,189,237,11,228,1,169,118,16,15,26,2,18,0,34,64,159,242,116,67,5,139,228,17,60,243,80,171,8,117,27,93,98,174,151,165,118,118,164,199,69,143,146,9,98,232,21,112,16,58,51,128,100,38,96,45,199,223,81,146,82,136,116,49,29,194,133,89,92,254,254,189,205,46,82,22,138,30,96,229]
+        },
+        "profile": {
+            nonce: [183,191,68,13,155,58,238,136,117,1,218,12,94,156,7,95],
+            keys: {
+                abc: [102,111,111,32,98,97,114],
+                xyz: [84,69,83,84,32,52,53,54],
+            },
+            encoding: [10,16,
+                183,191,68,13,155,58,238,136,117,1,218,12,94,156,7,95,
+                18,14,10,3,97,98,99,18,7,
+                    102,111,111,32,98,97,114,
+                18,15,10,3,120,121,122,18,8,
+                    84,69,83,84,32,52,53,54]
+        }
+    };
+
+    lookupProof.index = base64ToByteArray(lookupProof.index);
+    lookupProof.index_proof = base64ToByteArray(lookupProof.index_proof);
+    lookupProof.tree_proof.neighbors = lookupProof.tree_proof.neighbors.map(function(n){return base64ToByteArray(n);});
+    lookupProof.tree_proof.existing_index = base64ToByteArray(lookupProof.tree_proof.existing_index);
+    lookupProof.tree_proof.existing_entry_hash = base64ToByteArray(lookupProof.tree_proof.existing_entry_hash);
+    // lookupProof.entry = base64ToByteArray(lookupProof.entry);
+    // lookupProof.profile = base64ToByteArray(lookupProof.profile);
+
+
+	assertEquals(e2e.coname.verifyLookup(clientconfig, "adon@yahoo-inc.com", lookupProof, new Date()), lookupProof.profile.keys);
+}
+
+
+
+</script>
+</head>
+</html>
+
+
+
