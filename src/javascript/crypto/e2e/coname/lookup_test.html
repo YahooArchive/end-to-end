@@ -1,0 +1,106 @@
+<!-- Copyright 2015 Yahoo Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -->
+<!DOCTYPE html>
+<html>
+<head>
+<title>Unit Test of e2e.coname.verifyLookup</title>
+<script src="../../../../../javascript/closure/base.js"></script>
+<script src="test_js_deps-runfiles.js"></script>
+<script>
+goog.require('goog.testing.jsunit');
+
+goog.require('e2e.coname.verifyLookup');
+</script>
+<script>
+
+
+
+var clientconfig = {
+    "realms": [
+        {
+            "domains": [
+                "yahoo-inc.com"
+            ],
+            "addr": "yahoo-inc.com:4625",
+            "URL": "",
+            // atob('XvNbVjX+vxbuobB0UZpT1Wx/J1fthP1cRkqhgXkB+zM=').split('').map(function(n){ return n.charCodeAt(0); })
+            "VRFPublic": [94, 243, 91, 86, 53, 254, 191, 22, 238, 161, 176, 116, 81, 154, 83, 213, 108, 127, 39, 87, 237, 132, 253, 92, 70, 74, 161, 129, 121, 1, 251, 51],
+            "verification_policy": {
+                "public_keys": {
+                    "13244406598198447426": {
+                        "ed25519": "NinbpJAK8AQ0wU40cuFAVRy4VFqFqP6hmQ0ZD6mwIGA="
+                    }
+                },
+                "quorum": {
+                    "threshold": 1,
+                    "subexpressions": [
+                        {
+                            "threshold": 1,
+                            "candidates": [
+                                "13244406598198447426"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "epoch_time_to_live": {
+                "seconds": "180",
+                "nanos": 0
+            },
+            "client_tls": {
+                "certificates": [
+                    {
+                        "certificate": [
+                            "MIIBSzCB+6ADAgECAhEAinzQaOA4YKfEJ499FmYEoDAKBggqhkjOPQQDAjAUMRIwEAYDVQQDEwl0ZXN0aW5nQ0EwHhcNMTUxMTI2MTAxMTQ0WhcNMTcxMTI2MTAxMTQ0WjARMQ8wDQYDVQQDEwZjbGllbnQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQhRFqHl5Pul9mCpoRERPehuizuMn1GCVJ8BCS4Xtal5YDJ24qOz7EtQsfS2ALR+soqEpnFs6e2bqcZgceKYp2nozEwLzAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAoGCCqGSM49BAMCAz8AMDwCHBz+HJIHzRP3G5xyXniYGQ/LOG6QNFod5QdMBbMCHBLlMbzjAk+j5aPDk1+HBCUxnNbHzOihJY05xXw="
+                        ],
+                        "key_id": "client.key.pem"
+                    }
+                ],
+                "root_cas": [
+                    "MIIBODCB56ADAgECAhAaT9QN9PEyQCdYrVD7D16FMAoGCCqGSM49BAMCMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTAeFw0xNTExMjYwOTAzNTFaFw0yNzA0MjQwMTAzNTFaMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTBOMBAGByqGSM49AgEGBSuBBAAhAzoABKOcW4O1OGrwclctVjTuzkLgAt+2iaDGPc0lxNthojK7iUpkQzZafSCKi/ToeIko0pe4Dop9TyAcoyYwJDAOBgNVHQ8BAf8EBAMCAoQwEgYDVR0TAQH/BAgwBgEB/wIBBDAKBggqhkjOPQQDAgNAADA9AhwjpxKaGn94o9f/mcmed/6IDdsKT+DJpAeahSIsAh0AjB1gAShlPfQhxZ4KtzB7NgvC1kc77yHovGs/xA=="
+                ],
+                "server_name": "",
+                "client_auth": 0,
+                "prefer_server_cipher_suites": false,
+                "session_tickets_enabled": false,
+                "session_ticket_key_id": "",
+                "min_version": 0,
+                "max_version": 0
+            }
+        }
+    ]
+};
+
+/**
+ * Tests that e2e.coname.verifyLookup works
+ */
+function testVerifyLookup() {
+	var lookupProof = {
+		UserId: 'adon@yahoo-inc.com',
+		Index: [],
+		IndexProof: []
+	};
+
+	assertEquals(e2e.coname.verifyLookup(clientconfig, "adon@yahoo-inc.com", lookupProof, new Date()), null);
+}
+
+
+
+</script>
+</head>
+</html>
+
+
+

@@ -18,165 +18,405 @@
  * @fileoverview The Yahoo E2E Lookup Verify implementation
  * This is ported from https://github.com/yahoo/coname/blob/master/lookup.go
  */
-
 goog.provide('e2e.coname');
 goog.provide('e2e.coname.verifyLookup');
+goog.provide('e2e.coname.MerkleNode');
 
 goog.require('e2e');
+goog.require('e2e.error.InvalidArgumentsError');
+goog.require('e2e.vrf.sha3');
 goog.require('e2e.vrf.verify');
-goog.require('e2e.vrf.sha3.shake256');
-
 
 
 /**
- * 
+ * @const
+ * @type {number}
+ */
+e2e.coname.MERKLE_HASH_BYTES = 32;
+
+
+/**
+ * @const
+ * @type {number}
+ */
+e2e.coname.MERKLE_INDEX_BYTES = 32;
+
+
+/**
+ * @const
+ * @type {number}
+ */
+e2e.coname.MERKLE_INDEX_BITS = e2e.coname.MERKLE_INDEX_BYTES * 8;
+
+
+/**
+ * @const
+ * @type {e2e.ByteArray}
+ */
+e2e.coname.MERKLE_NODEID_INTERNAL = [73]; // ['I'.charCodeAt(0)]
+
+
+/**
+ * @const
+ * @type {e2e.ByteArray}
+ */
+e2e.coname.MERKLE_NODEID_LEAF = [76]; // ['L'.charCodeAt(0)]
+
+
+/**
+ * @const
+ * @type {e2e.ByteArray}
+ */
+e2e.coname.MERKLE_NODEID_EMPTY_BRANCH = [69]; // ['E'.charCodeAt(0)]
+
+
+/**
+ * Refer to https://github.com/yahoo/coname/blob/master/merkle.go#L31-L44
+ * @typedef {{
+ *    isLeaf: boolean,
+ *    depth: number,
+ *    index: ?e2e.ByteArray,
+ *    value: ?e2e.ByteArray,
+ *    children: ?Array.<object>
+ * }}
+ */
+e2e.coname.MerkleNode;
+
+
+/**
+ * @private
+ * In each byte, the bits are ordered MSB to LSB
+ * @param {number} num The number of bits
+ * @param {!e2e.ByteArray} bs The byte array
+ * @return {Array.<boolean>} The bit array
+ */
+e2e.coname.toBits_ = function(num, bs) {
+  for (var bits = [], i = 0, n; i < num; i += 8) {
+    n = i % 8;
+    bits[i] = bs[n] & 128 > 0;
+    bits[i + 1] = bs[n] & 64 > 0;
+    bits[i + 2] = bs[n] & 32 > 0;
+    bits[i + 3] = bs[n] & 16 > 0;
+    bits[i + 4] = bs[n] & 8 > 0;
+    bits[i + 5] = bs[n] & 4 > 0;
+    bits[i + 6] = bs[n] & 2 > 0;
+    bits[i + 7] = bs[n] & 1 > 0;
+  }
+  return bits;
+};
+
+
+/**
+ * @private
+ * In each byte, the bits are ordered MSB to LSB
+ * @param {Array.<boolean>} bits The bit array
+ * @return {!e2e.ByteArray} The byte array
+ */
+e2e.coname.toBytes_ = function(bits) {
+  var bs = [], i = 0, n = bits.length;
+  if (n % 8 !== 0) {
+    throw new e2e.error.InvalidArgumentsError(
+        'bit array length must be of a multiple of 8');
+  }
+  for (; i < n; i += 8) {
+    bs[i / 8] = bits[i] << 7 | bits[i + 1] << 6 |
+                bits[i + 2] << 5 | bits[i + 3] << 4 |
+                bits[i + 4] << 3 | bits[i + 5] << 2 |
+                bits[i + 6] << 1 | bits[i + 7];
+  }
+  return bs;
+};
+
+
+/**
+ * @private
  * @param {object} cfg The config object
- * @param {string} user The username encoded in ASCII
+ * @param {string} user The username
  * @return {object} ret The *proto.RealmConfig
  */
 e2e.coname.getRealmByUser_ = function(cfg, user) {
-	return {};
-}
+  var i = user.lastIndexOf('@');
+  if (i === -1) {
+    throw new e2e.error.InvalidArgumentsError(
+        'GetRealm: user must be of the form .*@.* (got ' + user + ')');
+  }
+  return e2e.coname.getRealmByDomain_(cfg, user.slice(i + 1));
+};
+
 
 /**
- * 
- * @param {object} rcg The RealmConfig
- * @param {object} ratifications The []*proto.SignedEpochHead
- * @param {Date} now The current time
- * @return {!e2e.ByteArray} root
+ * @private
+ * @param {object} cfg The config object
+ * @param {string} domain The domain name
+ * @return {object} ret The *proto.RealmConfig
  */
-e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
-	return [];
-}
+e2e.coname.getRealmByDomain_ = function(cfg, domain) {
+  var ret = null;
+  cfg.realms.forEach(function(realm) {
+    realm.domains.forEach(function(pattern) {
+      if (pattern === domain) { // TODO: implement wildcards?
+        if (ret !== null && ret !== realm) {
+          throw new e2e.error.InvalidArgumentsError(
+              'GetRealmByDomain: multiple realms match ' + domain +
+              ': ' + realm + ' and ' + ret);
+        }
+        ret = realm;
+      }
+    });
+  });
+  if (ret === null) {
+    throw new e2e.error.InvalidArgumentsError(
+        'GetRealm: unknown domain ' + domain);
+  }
+  return ret;
+};
+
 
 
 
 /**
- * 
- * @param {object} trace The tree proof *proto.TreeProof
- * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
- * @return {object} the ReconstructedNode
+ * @private
+ * @param {e2e.coname.MerkleNode} n The MerkleNode
+ * @param {boolean} isRightChild Whether it is the right child
+ * @return {object} the child
  */
-e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
-	return e2e.coname.reconstructBranch_(trace, lookupIndexBits, 0);
-}
+e2e.coname.merkleChild_ = function(n, isRightChild) {
+  // Give an error if the lookup algorithm tries to access anything the
+  //  server didn't provide us.
+  if (n.children[isRightChild ? 1 : 0].Omitted !== null) {
+    throw new e2e.error.InvalidArgumentsError("can't access omitted node");
+  }
+  // This might still be null if the branch is in fact empty.
+  return n.children[isRightChild ? 1 : 0].Present;
+};
 
 
 /**
- * 
- * @param {object} trace The tree proof *proto.TreeProof
- * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
- * @param {Number} depth The depth of the tree
- * @return {object} the ReconstructedNode
+ * @private
+ * treeLookup looks up the entry at a particular index in the snapshot
+ * @param {e2e.coname.MerkleNode} root The MerkleNode
+ * @param {!e2e.ByteArray} indexBytes The index bytes
+ * @return {?e2e.ByteArray} the entry value
  */
+e2e.coname.merkleTreeLookup_ = function(root, indexBytes) {
+  if (indexBytes.length !== e2e.coname.MERKLE_INDEX_BYTES) {
+    throw new e2e.error.InvalidArgumentsError('Wrong index length');
+  }
+  if (root === null) {
+    // Special case: The tree is empty.
+    return null;
+  }
+  var descendingRight,
+      n = root,
+      indexBits = e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, indexBytes);
 
-e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
-	if (depth === trace.Neighbors.length) {
-		if (trace.ExistingEntryHash === null) {
-			return null;
-		} else {
-			return /* &ReconstructedNode */ {
-				isLeaf: true,
-				depth:  depth,
-				index:  trace.ExistingIndex,
-				value:  trace.ExistingEntryHash
-			};
-		}
-	} else {
-		var node = /* &ReconstructedNode */ {
-				isLeaf: false,
-				depth:  depth,
-				children: {}
-			}, 
-			presentChild = lookupIndexBits[depth];
-
-		node.children[presentChild ? 1 : 0].Present = e2e.coname.reconstructBranch_(trace, lookupIndexBits, depth+1);
-		node.children[presentChild ? 0 : 1].Omitted = trace.Neighbors[depth];
-		return node;
-	}
-}
-
-
-// https://github.com/yahoo/coname/blob/master/merkle.go#L142-L149
-e2e.coname.toBits_ = function(num, bs) {
-	// In each byte, the bits are ordered MSB to LSB
-	for (var bits = [], i = 0; i < num; i++) {
-		// bits[i] = (bs[Math.floor(i/8)] << i%8) & (1<<7) > 0;
-		bits[i] = (bs[Math.floor(i/8)] << i%8) & 128 > 0;
-	}
-	return bits;
-
-}
+  // Traverse down the tree, following either the left or right child
+  //  depending on the next bit.
+  while (!n.isLeaf) {
+    descendingRight = indexBits[n.depth];
+    n = e2e.coname.merkleChild_(n, descendingRight);
+    if (n === null) {
+      // There's no leaf with this index.
+      return null;
+    }
+  }
+  // Once a leaf node is reached, compare the entire index stored in the leaf
+  //  node.
+  return e2e.compareByteArray(indexBytes, n.index) ?
+      // The leaf exists: we will simply return the value.
+      n.value :
+      // There is no leaf with the requested index.
+      null;
+};
 
 
 /**
- * @private IndexBits
- */
-e2e.coname.IndexBytes = 32;
-
-/**
- * @private IndexBits
- */
-e2e.coname.IndexBits = e2e.coname.IndexBytes * 8;
-
-
-/**
- * 
- * @param {!e2e.ByteArray} treeNonce The tree nonce
- * @param {!e2e.ByteArray} rootHash The root hash
- * @param {!e2e.ByteArray} index The user index
- * @param {object} proof The tree proof *proto.TreeProof
- * @return {e2e.ByteArray|null} the verified EntryHash
- */
-e2e.coname.reconstructTreeAndLookup_ = function(treeNonce, rootHash, index, proof) {
-
-	// First, reconstruct the partial tree
-	reconstructed = e2e.coname.reconstructTree_(proof, e2e.coname.toBits_(e2e.coname.IndexBits, index))
-	// TODO: this will never get fired
-	// if (err !== null) {
-	// 	throw new e2e.error.InvalidArgumentsError(
-	// 		"VerifyLookup: failed to verify the lookup: " + err);
-	// }
-
-
-	// // Reconstruct the root hash
-	// reconstructedHash = e2e.coname.recomputeHash_(treeNonce, reconstructed)
-	// if (err !== null) {
-	// 	throw new e2e.error.InvalidArgumentsError(
-	// 		"VerifyLookup: failed to verify the lookup: " + err);
-	// }
-	// // Compare root hashes
-	// if (!e2e.compareByteArray(reconstructedHash, rootHash)) {
-	// 	throw new e2e.error.InvalidArgumentsError(
-	// 		"VerifyLookup: failed to verify the lookup: " + 
-	// 		"Root hashes do not match! Reconstructed " + reconstructedHash + 
-	// 		"; wanted " + rootHash);
-	// }
-	// // Then, do the lookup
-	// value = e2e.coname.treeLookup_(reconstructed, index)
-	// if (err !== null) {
-	// 	throw new e2e.error.InvalidArgumentsError(
-	// 		"VerifyLookup: failed to verify the lookup: " + err);
-	// }
-	// return value;
-}
-
-/**
- * 
+ * @private
  * @param {!e2e.ByteArray} commitment The commitment
  * @param {object} profile The profile *proto.EncodedProfile
  * @return {Boolean} whether the commitment is validated
  */
 e2e.coname.checkCommitment_ = function(commitment, profile) {
-	// The hash used here is modeled as a random oracle. This means that SHA3
-	// is fine but SHA2 is not (consider HMAC-SHA2 instead).
-	var commitmentCheck = e2e.vrf.sha3.shake256(64).
-							update(profile.Encoding). // includes a nonce
-							digest();
+  // The hash used here is modeled as a random oracle. This means that SHA3
+  // is fine but SHA2 is not (consider HMAC-SHA2 instead).
+  var commitmentCheck = e2e.vrf.sha3.shake256(64).
+                        update(profile.Encoding). // includes a nonce
+                        digest();
 
-	return e2e.compareByteArray(commitment, commitmentCheck);
-}
+  return e2e.compareByteArray(commitment, commitmentCheck);
+};
 
+/**
+ * @private
+ * @param {object} rcg The RealmConfig
+ * @param {object} ratifications The []*proto.SignedEpochHead
+ * @param {Date} now The current time
+ * @return {!e2e.ByteArray} the root hash
+ */
+e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
+  return [];
+};
+
+
+/**
+ * @private
+ * @param {object} trace The tree proof *proto.TreeProof
+ * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
+ * @return {object} the ReconstructedNode
+ */
+e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
+  return e2e.coname.reconstructBranch_(trace, lookupIndexBits, 0);
+};
+
+
+/**
+ * @private
+ * @param {object} trace The tree proof *proto.TreeProof
+ * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
+ * @param {Number} depth The depth of the tree
+ * @return {e2e.coname.MerkleNode}
+ */
+e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
+  if (depth === trace.Neighbors.length) {
+    if (trace.ExistingEntryHash === null) {
+      return null;
+    } else {
+      return /* &ReconstructedNode */ {
+        isLeaf: true,
+        depth: depth,
+        index: trace.ExistingIndex,
+        value: trace.ExistingEntryHash
+      };
+    }
+  } else {
+    var presentChild = lookupIndexBits[depth],
+        node = /* &ReconstructedNode */ {
+          isLeaf: false,
+          depth: depth,
+          children: [{}, {}]
+        };
+
+    node.children[presentChild ? 1 : 0].Present =
+        e2e.coname.reconstructBranch_(trace, lookupIndexBits, depth + 1);
+    node.children[presentChild ? 0 : 1].Omitted = trace.Neighbors[depth];
+    return node;
+  }
+};
+
+
+/**
+ * @private
+ * assumes ownership of the array underlying prefixBits
+ * @param {!e2e.ByteArray} treeNonce The tree nonce
+ * @param {Array.<boolean>} prefixBits The prefix bits
+ * @param {object} node The ReconstructedNode
+ * @return {!e2e.ByteArray}
+ */
+e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
+  if (node === null) {
+    // return HashEmptyBranch(treeNonce, prefixBits);
+    // This is the same as in the CONIKS paper.
+    // H(k_empty || nonce || prefix || depth)
+    return e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES).
+        update(e2e.coname.MERKLE_NODEID_EMPTY_BRANCH).
+        update(treeNonce).
+        update(e2e.coname.toBytes_(prefixBits)).
+        // reverse e2e.numberToByteArray() to get little-endian
+        update(e2e.numberToByteArray(prefixBits.length).reverse()).
+        digest();
+
+  } else if (node.isLeaf) {
+    // return HashLeaf(treeNonce, node.index, node.depth, node.value);
+    // This is the same as in the CONIKS paper:
+    // H(k_leaf || nonce || index || depth || value)
+    return e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES).
+        update(e2e.coname.MERKLE_NODEID_LEAF).
+        update(treeNonce).
+        update(node.index).
+        // reverse e2e.numberToByteArray() to get little-endian
+        update(e2e.numberToByteArray(node.depth).reverse()).
+        update(node.value).
+        digest();
+
+  } else {
+    // var childHashes := [2][HashBytes]byte
+    for (var h, ch, childHashes = [null, null], i = 0; i < 2; i++) {
+      rightChild = i === 1;
+      // h = node.ChildHash(rightChild);
+      h = node.children[rightChild ? 1 : 0].Omitted;
+      if (h === null) {
+        ch = e2e.coname.merkleChild_(node, rightChild);
+        h = e2e.coname.recomputeHash_(
+                treeNonce, prefixBits.concat(rightChild), ch);
+      }
+      // copy(childHashes[i][:], h);
+      childHashes[i] = h.slice();
+    }
+
+    // return HashInternalNode(prefixBits, childHashes);
+    // Differences from the CONIKS paper:
+    // * Add an identifier byte at the beginning to make it impossible for this
+    //   to collide with leaves or empty branches.
+    // * Add the prefix of the index, to protect against limited hash
+    //   collisions or bugs.
+    // This gives H(k_internal || h_child0 || h_child1 || prefix || depth)
+    return e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES).
+        update(e2e.coname.MERKLE_NODEID_INTERNAL).
+        update(childHashes[0]).
+        update(childHashes[1]).
+        update(e2e.coname.toBytes_(prefixBits)).
+        // reverse e2e.numberToByteArray() to get little-endian
+        update(e2e.numberToByteArray(prefixBits.length).reverse()).
+        digest();
+  }
+
+};
+
+
+/**
+ * @private
+ * @param {!e2e.ByteArray} treeNonce The tree nonce
+ * @param {!e2e.ByteArray} rootHash The root hash
+ * @param {!e2e.ByteArray} index The user index
+ * @param {object} proof The tree proof *proto.TreeProof
+ * @return {?e2e.ByteArray} the verified EntryHash
+ */
+e2e.coname.reconstructTreeAndLookup_ = function(
+                                           treeNonce, rootHash, index, proof) {
+
+  // First, reconstruct the partial tree
+  var reconstructedHash,
+      reconstructed = e2e.coname.reconstructTree_(
+          proof, e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, index));
+  // TODO: this will never get fired
+  // if (err !== null) {
+  //  throw new e2e.error.InvalidArgumentsError(
+  //    "VerifyLookup: failed to verify the lookup: " + err);
+  // }
+
+
+  // Reconstruct the root hash
+  reconstructedHash = e2e.coname.recomputeHash_(treeNonce, [], reconstructed);
+  // TODO: this will never get fired
+  // if (err !== null) {
+  //  throw new e2e.error.InvalidArgumentsError(
+  //    "VerifyLookup: failed to verify the lookup: " + err);
+  // }
+  // Compare root hashes
+  if (!e2e.compareByteArray(reconstructedHash, rootHash)) {
+    throw new e2e.error.InvalidArgumentsError(
+        'VerifyLookup: failed to verify the lookup: ' +
+        'Root hashes do not match! Reconstructed ' + reconstructedHash +
+        '; wanted ' + rootHash);
+  }
+  // Then, do the lookup
+  value = e2e.coname.merkleTreeLookup_(reconstructed, index);
+  // if (err !== null) {
+  //  throw new e2e.error.InvalidArgumentsError(
+  //    "VerifyLookup: failed to verify the lookup: " + err);
+  // }
+  return value;
+};
 
 
 /**
@@ -184,67 +424,66 @@ e2e.coname.checkCommitment_ = function(commitment, profile) {
  * Refer to https://github.com/yahoo/coname/blob/master/lookup.go#L49-L90
  *
  * @param {object} cfg The config object
- * @param {string} user The username encoded in ASCII
+ * @param {string} user The username
  * @param {object} pf The lookup proof retrieved from the keyserver
  * @param {Date} now The current time
- * @return {object|null} the profile keys if validated (in the format of map[string][]byte)
+ * @return {?object} the profile keys (map[string][]byte)
  */
 e2e.coname.verifyLookup = function(cfg, user, pf, now) {
-	var realm, userByteArray, root, verifiedEntryHash, entryHash;
+  var realm, root, verifiedEntryHash, entryHash;
 
-	if (pf.UserId !== '' && pf.UserId !== user) {
-		throw new e2e.error.InvalidArgumentsError(
-        	'VerifyLookup: proof specifies different user ID: ' + 
-        	pf.UserId + ' != ' + user);
-	}
+  if (pf.UserId !== '' && pf.UserId !== user) {
+    throw new e2e.error.InvalidArgumentsError(
+        'VerifyLookup: proof specifies different user ID: ' +
+        pf.UserId + ' != ' + user);
+  }
 
-	realm = e2e.coname.getRealmByUser_(cfg, user);
+  realm = e2e.coname.getRealmByUser_(cfg, user);
 
-	userByteArray = user.split('').map(function(chr){
-		return chr.charCodeAt(0);
-	});
+  if (!e2e.vrf.verify(realm.VRFPublic,
+      // user is converted into a UTF-8 encoded byte array
+      e2e.stringToByteArray(user),
+      pf.Index,
+      pf.IndexProof)) {
+    throw new e2e.error.InvalidArgumentsError(
+        'VerifyLookup: VRF verification failed');
+  }
 
-	if (!e2e.vrf.verify(
-			realm.VRFPublic, userByteArray, pf.Index, pf.IndexProof)) {
-		throw new e2e.error.InvalidArgumentsError(
-			'VerifyLookup: VRF verification failed');
-	}
+  root = e2e.coname.verifyConsensus_(realm, pf.Ratifications, now);
 
-	root = e2e.coname.verifyConsensus_(realm, pf.Ratifications, now);
-	
-	verifiedEntryHash = e2e.coname.reconstructTreeAndLookup_(
-		realm.TreeNonce, root, pf.Index, pf.TreeProof);
+  verifiedEntryHash = e2e.coname.reconstructTreeAndLookup_(
+      realm.TreeNonce, root, pf.Index, pf.TreeProof);
 
-	if (verifiedEntryHash === null) {
-		if (pf.Entry !== null) {
-			throw new e2e.error.InvalidArgumentsError(
-				"VerifyLookup: non-empty entry " + pf.Entry + 
-				" did not match verified lookup result <null>");
-		}
-		if (pf.Profile !== null) {
-			throw new e2e.error.InvalidArgumentsError(
-				"VerifyLookup: non-empty profile " + pf.Profile + 
-				" did not match verified lookup result <null>");
-		}
-		return null;
-	} else {
+  if (verifiedEntryHash === null) {
+    if (pf.Entry !== null) {
+      throw new e2e.error.InvalidArgumentsError(
+          'VerifyLookup: non-empty entry ' + pf.Entry +
+          ' did not match verified lookup result <null>');
+    }
+    if (pf.Profile !== null) {
+      throw new e2e.error.InvalidArgumentsError(
+          'VerifyLookup: non-empty profile ' + pf.Profile +
+          ' did not match verified lookup result <null>');
+    }
+    return null;
+  } else {
 
-		entryHash = e2e.vrf.sha3.shake256(32).
-						update(pf.Entry.Encoding).
-						digest();
+    entryHash = e2e.vrf.sha3.shake256(32).
+            update(pf.Entry.Encoding).
+            digest();
 
-		if (!e2e.compareByteArray(entryHash, verifiedEntryHash)) {
-			throw new e2e.error.InvalidArgumentsError(
-				"VerifyLookup: entry hash " + entryHash + 
-				" did not match verified lookup result " + verifiedEntryHash);
-		}
+    if (!e2e.compareByteArray(entryHash, verifiedEntryHash)) {
+      throw new e2e.error.InvalidArgumentsError(
+          'VerifyLookup: entry hash ' + entryHash +
+          ' did not match verified lookup result ' + verifiedEntryHash);
+    }
 
-		if (!e2e.coname.checkCommitment_(
-				pf.Entry.ProfileCommitment, pf.Profile)) {
-			throw new e2e.error.InvalidArgumentsError(
-				"VerifyLookup: profile does not match the hash in the entry");
-		}
+    if (!e2e.coname.checkCommitment_(
+        pf.Entry.ProfileCommitment, pf.Profile)) {
+      throw new e2e.error.InvalidArgumentsError(
+          'VerifyLookup: profile does not match the hash in the entry');
+    }
 
-		return pf.Profile.Keys;
-	}
-}
+    return pf.Profile.Keys;
+  }
+};
