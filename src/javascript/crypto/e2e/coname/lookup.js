@@ -240,11 +240,89 @@ e2e.coname.checkCommitment_ = function(commitment, profile) {
   // The hash used here is modeled as a random oracle. This means that SHA3
   // is fine but SHA2 is not (consider HMAC-SHA2 instead).
   var commitmentCheck = e2e.vrf.sha3.shake256(64).
-                        update(profile.Encoding). // includes a nonce
+                        update(profile.encoding). // includes a nonce
                         digest();
 
   return e2e.compareByteArray(commitment, commitmentCheck);
 };
+
+
+/**
+ * CheckQuorum evaluates whether the quorum requirement want can be satisfied
+ * by ratifications of the verifiers in have.
+ * @private
+ * @param {object} want The quorum requirement
+ * @param {object} have The ratifications
+ * @return {boolean} whether the quorum is validated
+ */
+e2e.coname.checkQuorum_ = function(want, have) {
+  if (!want) {
+    return true; // no requirements
+  }
+
+  var n = 0;
+  want.candidates && want.candidates.forEach(function(verifier){
+    have[verifier] && n++;
+  });
+
+  want.subexpressions && want.subexpressions.forEach(function(e){
+    e2e.coname.checkQuorum_(e, have) && n++;
+  });
+
+  return n >= want.threshold;
+};
+
+
+/**
+ * flattenQuorum_ puts all (nested) quorums into a flattened array
+ * @private
+ * @param {object} quorums The quorum requirement
+ * @param {?Array.<object>} out The array
+ * @return {Array.<object>} an array of all quorums
+ */
+e2e.coname.flattenQuorum_ = function(quorums, out) {
+  if (!e) {
+    return [];
+  }
+
+  out || (out = []);
+  
+  if (quorums.candidates) {
+    out = out.concat(Object.keys(quorums.candidates));
+  }
+
+  quorums.subexpressions && quorums.subexpressions.forEach(function(e){
+    e2e.coname.flattenQuorum_(e, out);
+  });
+
+  return out;
+}
+
+/**
+ * verifyQuorumSignature_ returns true iff sig is a valid signature of message
+ * by verifier
+ * @private
+ * @param {!e2e.ByteArray} pk The quorum public key
+ * @param {!e2e.ByteArray} message The message
+ * @param {!e2e.ByteArray} sig The sigature
+ * @return {boolean} whether the signature is valid
+ */
+e2e.coname.verifyQuorumSignature_ = function(pk, message, sig) {
+//   switch pk.PubkeyType.(type) {
+//   case *proto.PublicKey_Ed25519:
+//     var edpk [32]byte
+//     var edsig [64]byte
+//     copy(edpk[:], pk.PubkeyType.(*proto.PublicKey_Ed25519).Ed25519[:])
+//     copy(edsig[:], sig)
+//     return ed25519.Verify(&edpk, message, &edsig)
+//   default:
+//     return false
+//   }
+
+
+  return false;
+}
+
 
 /**
  * @private
@@ -254,7 +332,61 @@ e2e.coname.checkCommitment_ = function(commitment, profile) {
  * @return {!e2e.ByteArray} the root hash
  */
 e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
-  return [];
+  var i = 1, n = ratifications.length, want, got, pks, have = {}, t, valid, 
+    verifyQuorumSignature_ = e2e.coname.verifyQuorumSignature_;
+
+  if (n === 0) {
+    throw new e2e.error.InvalidArgumentsError(
+        "VerifyConsensus: no signed epoch heads provided");
+  }
+  // check that all the SEHs have the same head
+  for (; i < n; i++) {
+    want = ratifications[0].head.head.encoding;
+    got = ratifications[i].head.head.encoding;
+    if (!e2e.compareByteArray(want, got)) {
+      throw new e2e.error.InvalidArgumentsError(
+        "VerifyConsensus: epoch heads don't match: " + want + " vs " + got);
+    }
+  }
+  // check that the seh is not expired
+  // t = ratifications[0].Head.Head.IssueTime.Time().Add(rcg.EpochTimeToLive.Duration());
+  t = (ratifications[0].head.head.issue_time.seconds + rcg.epoch_time_to_live.seconds) * 1000;
+  if (now.getTime() > t) {
+    n = new Date();
+    n.setTime(t);
+    throw new e2e.error.InvalidArgumentsError(
+        "VerifyConsensus: epoch expired at " + n + " < " + now);
+  }
+  // check that there are sufficiently many fresh signatures.
+  pks = rcg.verification_policy.public_keys;
+
+  // the JSON marshaler in Go fails to export PolicyType
+  // if (!rcg.verification_policy.PolicyType) {
+  //   throw new e2e.error.InvalidArgumentsError(
+  //       "VerifyConsensus: unknown verification policy in realm config: " + rcg)
+  // }
+
+  want = rcg.verification_policy.quorum;
+  valid = e2e.coname.flattenQuorum_(want).some(function(id){
+
+    ratifications.some(function(seh){
+      var sig = seh.signatures[id];
+      return (sig && verifyQuorumSignature_(pks[id], seh.head.encoding, sig)) ?
+        (have[id] = true) : 
+        false;
+    });
+
+    return e2e.coname.checkQuorum_(want, have);
+
+  });
+
+  if (valid) {
+    return ratifications[0].head.head.root_hash;
+  }
+
+  throw new e2e.error.InvalidArgumentsError(
+      "VerifyConsensus: insufficient signatures (have " + have +
+       ", want " + want + ")");
 };
 
 
@@ -432,10 +564,10 @@ e2e.coname.reconstructTreeAndLookup_ = function(
 e2e.coname.verifyLookup = function(cfg, user, pf, now) {
   var realm, root, verifiedEntryHash, entryHash;
 
-  if (pf.UserId !== '' && pf.UserId !== user) {
+  if (pf.user_id !== '' && pf.user_id !== user) {
     throw new e2e.error.InvalidArgumentsError(
         'VerifyLookup: proof specifies different user ID: ' +
-        pf.UserId + ' != ' + user);
+        pf.user_id + ' != ' + user);
   }
 
   realm = e2e.coname.getRealmByUser_(cfg, user);
@@ -443,33 +575,33 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
   if (!e2e.vrf.verify(realm.VRFPublic,
       // user is converted into a UTF-8 encoded byte array
       e2e.stringToByteArray(user),
-      pf.Index,
-      pf.IndexProof)) {
+      pf.index,
+      pf.index_proof)) {
     throw new e2e.error.InvalidArgumentsError(
         'VerifyLookup: VRF verification failed');
   }
 
-  root = e2e.coname.verifyConsensus_(realm, pf.Ratifications, now);
+  root = e2e.coname.verifyConsensus_(realm, pf.ratifications, now);
 
   verifiedEntryHash = e2e.coname.reconstructTreeAndLookup_(
-      realm.TreeNonce, root, pf.Index, pf.TreeProof);
+      realm.TreeNonce, root, pf.index, pf.tree_proof);
 
   if (verifiedEntryHash === null) {
-    if (pf.Entry !== null) {
+    if (pf.entry !== null) {
       throw new e2e.error.InvalidArgumentsError(
-          'VerifyLookup: non-empty entry ' + pf.Entry +
+          'VerifyLookup: non-empty entry ' + pf.entry +
           ' did not match verified lookup result <null>');
     }
-    if (pf.Profile !== null) {
+    if (pf.profile !== null) {
       throw new e2e.error.InvalidArgumentsError(
-          'VerifyLookup: non-empty profile ' + pf.Profile +
+          'VerifyLookup: non-empty profile ' + pf.profile +
           ' did not match verified lookup result <null>');
     }
     return null;
   } else {
 
     entryHash = e2e.vrf.sha3.shake256(32).
-            update(pf.Entry.Encoding).
+            update(pf.entry.encoding).
             digest();
 
     if (!e2e.compareByteArray(entryHash, verifiedEntryHash)) {
@@ -479,11 +611,11 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
     }
 
     if (!e2e.coname.checkCommitment_(
-        pf.Entry.ProfileCommitment, pf.Profile)) {
+        pf.entry.profileCommitment, pf.profile)) {
       throw new e2e.error.InvalidArgumentsError(
           'VerifyLookup: profile does not match the hash in the entry');
     }
 
-    return pf.Profile.Keys;
+    return pf.profile.keys;
   }
 };

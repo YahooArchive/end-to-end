@@ -25,73 +25,149 @@ goog.require('e2e.coname.verifyLookup');
 </script>
 <script>
 
-
+function base64ToByteArray(string) {
+    string = atob(string);
+    for (var i = 0, n = string.length, ret = []; i < n; i++) {
+        ret[i] = string.charCodeAt(i);
+    }
+    return ret;
+}
 
 var clientconfig = {
-    "realms": [
-        {
-            "domains": [
-                "yahoo-inc.com"
-            ],
-            "addr": "yahoo-inc.com:4625",
-            "URL": "",
-            // atob('XvNbVjX+vxbuobB0UZpT1Wx/J1fthP1cRkqhgXkB+zM=').split('').map(function(n){ return n.charCodeAt(0); })
-            "VRFPublic": [94, 243, 91, 86, 53, 254, 191, 22, 238, 161, 176, 116, 81, 154, 83, 213, 108, 127, 39, 87, 237, 132, 253, 92, 70, 74, 161, 129, 121, 1, 251, 51],
-            "verification_policy": {
-                "public_keys": {
-                    "13244406598198447426": {
-                        "ed25519": "NinbpJAK8AQ0wU40cuFAVRy4VFqFqP6hmQ0ZD6mwIGA="
-                    }
+    "realms": [{
+        "domains": ["yahoo-inc.com"],
+        "addr": "ks1.paranoids.corp.bf1.yahoo.com:4625",
+        "URL": "",
+        "VRFPublic": "rVetQeQaiGkrU01ModonIWEyf8MM5Yw88FdhAYctKrM=",
+        "verification_policy": {
+            "public_keys": {
+                "16574727844889599213": {
+                    "ed25519": "i/eTj1prLyKLgRl5NE4omtrC3xjVf2sowJzgdsSXKUs="
                 },
-                "quorum": {
-                    "threshold": 1,
-                    "subexpressions": [
-                        {
-                            "threshold": 1,
-                            "candidates": [
-                                "13244406598198447426"
-                            ]
-                        }
-                    ]
+                "1702327623518731708": {
+                    "ed25519": "tnyH37Flkf9ne0yj8DbRmGgMg+MD8pZmZS7JUlQNX0Y="
+                },
+                "5004056709842995553": {
+                    "ed25519": "zYQyJ9RRn3XosP0pMIm5fPqpTYDyAe1e/oxYtl6NoYE="
                 }
             },
-            "epoch_time_to_live": {
-                "seconds": "180",
-                "nanos": 0
-            },
-            "client_tls": {
-                "certificates": [
-                    {
-                        "certificate": [
-                            "MIIBSzCB+6ADAgECAhEAinzQaOA4YKfEJ499FmYEoDAKBggqhkjOPQQDAjAUMRIwEAYDVQQDEwl0ZXN0aW5nQ0EwHhcNMTUxMTI2MTAxMTQ0WhcNMTcxMTI2MTAxMTQ0WjARMQ8wDQYDVQQDEwZjbGllbnQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQhRFqHl5Pul9mCpoRERPehuizuMn1GCVJ8BCS4Xtal5YDJ24qOz7EtQsfS2ALR+soqEpnFs6e2bqcZgceKYp2nozEwLzAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAoGCCqGSM49BAMCAz8AMDwCHBz+HJIHzRP3G5xyXniYGQ/LOG6QNFod5QdMBbMCHBLlMbzjAk+j5aPDk1+HBCUxnNbHzOihJY05xXw="
-                        ],
-                        "key_id": "client.key.pem"
-                    }
-                ],
-                "root_cas": [
-                    "MIIBODCB56ADAgECAhAaT9QN9PEyQCdYrVD7D16FMAoGCCqGSM49BAMCMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTAeFw0xNTExMjYwOTAzNTFaFw0yNzA0MjQwMTAzNTFaMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTBOMBAGByqGSM49AgEGBSuBBAAhAzoABKOcW4O1OGrwclctVjTuzkLgAt+2iaDGPc0lxNthojK7iUpkQzZafSCKi/ToeIko0pe4Dop9TyAcoyYwJDAOBgNVHQ8BAf8EBAMCAoQwEgYDVR0TAQH/BAgwBgEB/wIBBDAKBggqhkjOPQQDAgNAADA9AhwjpxKaGn94o9f/mcmed/6IDdsKT+DJpAeahSIsAh0AjB1gAShlPfQhxZ4KtzB7NgvC1kc77yHovGs/xA=="
-                ],
-                "server_name": "",
-                "client_auth": 0,
-                "prefer_server_cipher_suites": false,
-                "session_tickets_enabled": false,
-                "session_ticket_key_id": "",
-                "min_version": 0,
-                "max_version": 0
+            "quorum": {
+                "threshold": 2,
+                "subexpressions": [{
+                    "threshold": 1,
+                    "candidates": ["5004056709842995553"]
+                }, {
+                    "threshold": 1,
+                    "candidates": ["16574727844889599213"]
+                }, {
+                    "threshold": 1,
+                    "candidates": ["1702327623518731708"]
+                }]
             }
+        },
+        "epoch_time_to_live": {
+            "seconds": "180",
+            "nanos": 0
+        },
+        "client_tls": {
+            "certificates": [{
+                "certificate": ["MIIBTDCB+6ADAgECAhEAiZG0EutuQ2fmf+54JzKDDzAKBggqhkjOPQQDAjAUMRIwEAYDVQQDEwl0ZXN0aW5nQ0EwHhcNMTUxMDA3MjMyMDM1WhcNMTcxMDA3MjMyMDM1WjARMQ8wDQYDVQQDEwZjbGllbnQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAARQ/VpiYFZjlilkwxDv5ECfULoolEVj2XP1Q8qRZG1HiKRqzev2Duo5X8teHX170PcuieVfctkCl82giFXlpILgozEwLzAOBgNVHQ8BAf8EBAMCAIAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAoGCCqGSM49BAMCA0AAMD0CHQCGlTQG0+qXWLCmcFJmVPYw1fSbPyJgoX8zCRfIAhw1pyS9ndYxC31CnMcEmh3QknYFSlfIpNd7WCh4"],
+                "key_id": "client.key.pem"
+            }],
+            "root_cas": ["MIIBODCB56ADAgECAhAZfpTyA7t/o8/UQFDuNnOEMAoGCCqGSM49BAMCMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTAeFw0xNTEwMDcyMzE5NTZaFw0yNzAzMDUxNTE5NTZaMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTBOMBAGByqGSM49AgEGBSuBBAAhAzoABBXxzbQHSHyRxsunXjDrObkYocJiCYnFmaikAOrnRy7Z98Znl5nKkzHPkUvBpxJjlM2RBH54wGkcoyYwJDAOBgNVHQ8BAf8EBAMCAIQwEgYDVR0TAQH/BAgwBgEB/wIBBDAKBggqhkjOPQQDAgNAADA9Ah0AvLpfgaYS6JUNt361g7gZy2211JRUf+UFBeL9hAIcfyULPYBqUnNtyGqvJeYxZ66g1Rt1cB12QyvaLw=="],
+            "server_name": "",
+            "client_auth": 0,
+            "prefer_server_cipher_suites": false,
+            "session_tickets_enabled": false,
+            "session_ticket_key_id": "",
+            "min_version": 0,
+            "max_version": 0
         }
-    ]
+    }]
 };
+
+clientconfig.realms[0].VRFPublic = base64ToByteArray(clientconfig.realms[0].VRFPublic);
+clientconfig.realms[0].tree_nonce = null;
+
 
 /**
  * Tests that e2e.coname.verifyLookup works
  */
 function testVerifyLookup() {
-	var lookupProof = {
-		UserId: 'adon@yahoo-inc.com',
-		Index: [],
-		IndexProof: []
-	};
+    var lookupProof = {
+        "user_id": "adon@yahoo-inc.com",
+        "index": "ajBsOaETPLW/TTSRlTDjSelmOxb97pahF73tC+QBqXY=",
+        "index_proof": "KjGw6JX/3h2fWsF4SlXyvtz6fF8y1JdYXhL7OhlM+wx5Nkvq+3pWP8ahgymUAfyWR1JREtEz3XZu8Nylvps5C1jUrWa9ZPnXeMJaFf9XOJ0t1lGn5GTDm0vUUh4HPGl9",
+        "ratifications": [
+            {
+                head: {
+                    // TimestampedEpochHead: {
+                        head:{
+                            // EpochHead:{
+                                realm:'yahoo',
+                                epoch:192,
+                                root_hash:[181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63],
+                                issue_time:{seconds:1448505513,nanos:642932463},
+                                previous_summary_hash:[111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55],
+                                next_epoch_policy:{
+                                    PublicKeys:{},
+                                    PolicyType:null,
+                                },
+                            // }, 
+                            encoding: [10,5,121,97,104,111,111,16,192,1,26,32,181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63,34,12,8,169,225,217,178,5,16,239,189,201,178,2,42,64,111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55,50,0]
+                        },
+                        timestamp:{seconds:1448505513,nanos:642932463,},
+                    // }, 
+                    encoding: [10,126,10,5,121,97,104,111,111,16,192,1,26,32,181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63,34,12,8,169,225,217,178,5,16,239,189,201,178,2,42,64,111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55,50,0,18,12,8,169,225,217,178,5,16,239,189,201,178,2]
+                },
+                signatures:{
+                    5004056709842995553: [207,205,144,220,124,254,32,35,56,7,162,163,244,238,39,205,250,28,66,148,231,123,29,51,245,33,229,151,86,247,224,169,207,247,235,218,125,13,84,63,230,170,191,243,232,6,171,164,220,183,2,29,13,112,138,73,237,175,139,123,183,254,234,10],
+                },
+            },
+
+            {
+                head:{
+                    // TimestampedEpochHead: {
+                        head:{
+                            // EpochHead: {
+                                realm:'yahoo',
+                                epoch:192,
+                                root_hash:[181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63],
+                                issue_time:{seconds:1448505513,nanos:642932463,},
+                                previous_summary_hash:[111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55],
+                                next_epoch_policy:{
+                                    PublicKeys:{},
+                                    PolicyType:null,
+                                },
+                            // }, 
+                            encoding: [10,5,121,97,104,111,111,16,192,1,26,32,181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63,34,12,8,169,225,217,178,5,16,239,189,201,178,2,42,64,111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55,50,0]
+                        },
+                        timestamp:{seconds:1448505513,nanos:642932463,},
+                    // }, 
+                    encoding: [10,126,10,5,121,97,104,111,111,16,192,1,26,32,181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63,34,12,8,169,225,217,178,5,16,239,189,201,178,2,42,64,111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55,50,0,18,12,8,169,225,217,178,5,16,239,189,201,178,2]
+                },
+                signatures:{
+                    1702327623518731708: [211,239,38,179,129,4,80,150,103,4,109,151,87,244,200,31,146,173,162,7,10,23,199,231,140,197,178,196,187,76,53,179,231,165,146,105,186,29,0,111,167,106,105,139,99,118,162,162,79,254,166,211,47,113,250,152,205,55,36,28,32,24,207,7],
+                },
+            }
+        ],
+        "tree_proof": {
+            "neighbors": ["Aj2/iia09hdY9M15RG/mYwIJuuvo5uEzBGiu5WTsF1Q=", "uHZAo3zIZNmrlvCIVokRuMdBVHGqJ88qdDG4MnbJhpw="],
+            "existing_index": "ajBsOaETPLW/TTSRlTDjSelmOxb97pahF73tC+QBqXY=",
+            "existing_entry_hash": "Hd9px9/8cfMTYLicy0alvoDlbFY5AerFnEwnB7RmVMM="
+        },
+        "entry": "CiBqMGw5oRM8tb9NNJGVMONJ6WY7Fv3ulqEXve0L5AGpdhoCEgAiQGE8T9LlUuKc5KjUpyXuRrJseTuUGAaCOLfz5U5ovlbGQ7AM5rqOvhxE0OH2ME8xr2nETZWu40SJee1+nJZovA4=",
+        "profile": "ChDmw0Rr7z7lhm/3NhV4mQoAEg4KA2FiYxIHZm9vIGJhchIPCgN4eXoSCFRFU1QgNDU2"
+    };
+
+    lookupProof.index = base64ToByteArray(lookupProof.index);
+    lookupProof.index_proof = base64ToByteArray(lookupProof.index_proof);
+    lookupProof.tree_proof.neighbors = lookupProof.tree_proof.neighbors.map(function(n){return base64ToByteArray(n);});
+    lookupProof.tree_proof.existing_index = base64ToByteArray(lookupProof.tree_proof.existing_index);
+    lookupProof.tree_proof.existing_entry_hash = base64ToByteArray(lookupProof.tree_proof.existing_entry_hash);
+    // lookupProof.tree_proof.entry = base64ToByteArray(lookupProof.tree_proof.entry);
+    // lookupProof.tree_proof.profile = base64ToByteArray(lookupProof.tree_proof.profile);
+
 
 	assertEquals(e2e.coname.verifyLookup(clientconfig, "adon@yahoo-inc.com", lookupProof, new Date()), null);
 }
