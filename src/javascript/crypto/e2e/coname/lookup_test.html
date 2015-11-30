@@ -38,17 +38,17 @@ var clientconfig = {
         "domains": ["yahoo-inc.com"],
         "addr": "ks1.paranoids.corp.bf1.yahoo.com:4625",
         "URL": "",
-        "VRFPublic": "rVetQeQaiGkrU01ModonIWEyf8MM5Yw88FdhAYctKrM=",
+        "VRFPublic": base64ToByteArray("rVetQeQaiGkrU01ModonIWEyf8MM5Yw88FdhAYctKrM="),
         "verification_policy": {
             "public_keys": {
                 "16574727844889599213": {
-                    "ed25519": "i/eTj1prLyKLgRl5NE4omtrC3xjVf2sowJzgdsSXKUs="
+                    "ed25519": base64ToByteArray("i/eTj1prLyKLgRl5NE4omtrC3xjVf2sowJzgdsSXKUs=")
                 },
                 "1702327623518731708": {
-                    "ed25519": "tnyH37Flkf9ne0yj8DbRmGgMg+MD8pZmZS7JUlQNX0Y="
+                    "ed25519": base64ToByteArray("tnyH37Flkf9ne0yj8DbRmGgMg+MD8pZmZS7JUlQNX0Y=")
                 },
                 "5004056709842995553": {
-                    "ed25519": "zYQyJ9RRn3XosP0pMIm5fPqpTYDyAe1e/oxYtl6NoYE="
+                    "ed25519": base64ToByteArray("zYQyJ9RRn3XosP0pMIm5fPqpTYDyAe1e/oxYtl6NoYE=")
                 }
             },
             "quorum": {
@@ -86,9 +86,7 @@ var clientconfig = {
     }]
 };
 
-clientconfig.realms[0].VRFPublic = base64ToByteArray(clientconfig.realms[0].VRFPublic);
-clientconfig.realms[0].tree_nonce = null;
-
+// clientconfig.realms[0].tree_nonce = null;
 
 /**
  * Tests that e2e.coname.verifyLookup works
@@ -121,7 +119,7 @@ function testVerifyLookup() {
                     encoding: [10,126,10,5,121,97,104,111,111,16,192,1,26,32,181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63,34,12,8,169,225,217,178,5,16,239,189,201,178,2,42,64,111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55,50,0,18,12,8,169,225,217,178,5,16,239,189,201,178,2]
                 },
                 signatures:{
-                    5004056709842995553: [207,205,144,220,124,254,32,35,56,7,162,163,244,238,39,205,250,28,66,148,231,123,29,51,245,33,229,151,86,247,224,169,207,247,235,218,125,13,84,63,230,170,191,243,232,6,171,164,220,183,2,29,13,112,138,73,237,175,139,123,183,254,234,10],
+                    "5004056709842995553": [207,205,144,220,124,254,32,35,56,7,162,163,244,238,39,205,250,28,66,148,231,123,29,51,245,33,229,151,86,247,224,169,207,247,235,218,125,13,84,63,230,170,191,243,232,6,171,164,220,183,2,29,13,112,138,73,237,175,139,123,183,254,234,10],
                 },
             },
 
@@ -147,7 +145,7 @@ function testVerifyLookup() {
                     encoding: [10,126,10,5,121,97,104,111,111,16,192,1,26,32,181,221,163,64,28,26,174,124,62,0,170,16,150,166,1,253,61,188,20,82,192,52,160,20,49,183,200,145,199,133,115,63,34,12,8,169,225,217,178,5,16,239,189,201,178,2,42,64,111,94,172,73,75,112,139,88,240,119,53,252,47,98,181,121,89,98,163,111,99,251,11,126,69,236,191,167,228,207,88,227,82,11,51,23,145,220,147,127,245,43,63,47,254,67,9,177,232,198,223,220,187,162,75,109,31,167,6,88,212,94,206,55,50,0,18,12,8,169,225,217,178,5,16,239,189,201,178,2]
                 },
                 signatures:{
-                    1702327623518731708: [211,239,38,179,129,4,80,150,103,4,109,151,87,244,200,31,146,173,162,7,10,23,199,231,140,197,178,196,187,76,53,179,231,165,146,105,186,29,0,111,167,106,105,139,99,118,162,162,79,254,166,211,47,113,250,152,205,55,36,28,32,24,207,7],
+                    "1702327623518731708": [211,239,38,179,129,4,80,150,103,4,109,151,87,244,200,31,146,173,162,7,10,23,199,231,140,197,178,196,187,76,53,179,231,165,146,105,186,29,0,111,167,106,105,139,99,118,162,162,79,254,166,211,47,113,250,152,205,55,36,28,32,24,207,7],
                 },
             }
         ],
@@ -165,8 +163,8 @@ function testVerifyLookup() {
     lookupProof.tree_proof.neighbors = lookupProof.tree_proof.neighbors.map(function(n){return base64ToByteArray(n);});
     lookupProof.tree_proof.existing_index = base64ToByteArray(lookupProof.tree_proof.existing_index);
     lookupProof.tree_proof.existing_entry_hash = base64ToByteArray(lookupProof.tree_proof.existing_entry_hash);
-    // lookupProof.tree_proof.entry = base64ToByteArray(lookupProof.tree_proof.entry);
-    // lookupProof.tree_proof.profile = base64ToByteArray(lookupProof.tree_proof.profile);
+    lookupProof.entry = base64ToByteArray(lookupProof.entry);
+    lookupProof.profile = base64ToByteArray(lookupProof.profile);
 
 
 	assertEquals(e2e.coname.verifyLookup(clientconfig, "adon@yahoo-inc.com", lookupProof, new Date()), null);

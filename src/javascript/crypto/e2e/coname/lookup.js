@@ -23,6 +23,8 @@ goog.provide('e2e.coname.verifyLookup');
 goog.provide('e2e.coname.MerkleNode');
 
 goog.require('e2e');
+goog.require('e2e.ecc.Ed25519');
+goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.vrf.sha3');
 goog.require('e2e.vrf.verify');
@@ -73,7 +75,6 @@ e2e.coname.MERKLE_NODEID_EMPTY_BRANCH = [69]; // ['E'.charCodeAt(0)]
 /**
  * Refer to https://github.com/yahoo/coname/blob/master/merkle.go#L31-L44
  * @typedef {{
- *    isLeaf: boolean,
  *    depth: number,
  *    index: ?e2e.ByteArray,
  *    value: ?e2e.ByteArray,
@@ -87,20 +88,20 @@ e2e.coname.MerkleNode;
  * @private
  * In each byte, the bits are ordered MSB to LSB
  * @param {number} num The number of bits
- * @param {!e2e.ByteArray} bs The byte array
+ * @param {!e2e.ByteArray} byteArray The byte array
  * @return {Array.<boolean>} The bit array
  */
-e2e.coname.toBits_ = function(num, bs) {
-  for (var bits = [], i = 0, n; i < num; i += 8) {
-    n = i % 8;
-    bits[i] = bs[n] & 128 > 0;
-    bits[i + 1] = bs[n] & 64 > 0;
-    bits[i + 2] = bs[n] & 32 > 0;
-    bits[i + 3] = bs[n] & 16 > 0;
-    bits[i + 4] = bs[n] & 8 > 0;
-    bits[i + 5] = bs[n] & 4 > 0;
-    bits[i + 6] = bs[n] & 2 > 0;
-    bits[i + 7] = bs[n] & 1 > 0;
+e2e.coname.toBits_ = function(num, byteArray) {
+  for (var bits = [], i = 0, b; i < num; i += 8) {
+    b = byteArray[i / 8];
+    bits[i] = (b & 128) > 0;
+    bits[i + 1] = (b & 64) > 0;
+    bits[i + 2] = (b & 32) > 0;
+    bits[i + 3] = (b & 16) > 0;
+    bits[i + 4] = (b & 8) > 0;
+    bits[i + 5] = (b & 4) > 0;
+    bits[i + 6] = (b & 2) > 0;
+    bits[i + 7] = (b & 1) > 0;
   }
   return bits;
 };
@@ -114,10 +115,6 @@ e2e.coname.toBits_ = function(num, bs) {
  */
 e2e.coname.toBytes_ = function(bits) {
   var bs = [], i = 0, n = bits.length;
-  if (n % 8 !== 0) {
-    throw new e2e.error.InvalidArgumentsError(
-        'bit array length must be of a multiple of 8');
-  }
   for (; i < n; i += 8) {
     bs[i / 8] = bits[i] << 7 | bits[i + 1] << 6 |
                 bits[i + 2] << 5 | bits[i + 3] << 4 |
@@ -177,17 +174,17 @@ e2e.coname.getRealmByDomain_ = function(cfg, domain) {
 /**
  * @private
  * @param {e2e.coname.MerkleNode} n The MerkleNode
- * @param {boolean} isRightChild Whether it is the right child
+ * @param {number} childId Number 1 stands for the right child, 0 for the left
  * @return {object} the child
  */
-e2e.coname.merkleChild_ = function(n, isRightChild) {
+e2e.coname.merkleChild_ = function(n, childId) {
   // Give an error if the lookup algorithm tries to access anything the
   //  server didn't provide us.
-  if (n.children[isRightChild ? 1 : 0].Omitted !== null) {
+  if (n.children[childId].Omitted !== null) {
     throw new e2e.error.InvalidArgumentsError("can't access omitted node");
   }
   // This might still be null if the branch is in fact empty.
-  return n.children[isRightChild ? 1 : 0].Present;
+  return n.children[childId].Present;
 };
 
 
@@ -212,7 +209,7 @@ e2e.coname.merkleTreeLookup_ = function(root, indexBytes) {
 
   // Traverse down the tree, following either the left or right child
   //  depending on the next bit.
-  while (!n.isLeaf) {
+  while (n.children) {  // i.e., !isLeaf()
     descendingRight = indexBits[n.depth];
     n = e2e.coname.merkleChild_(n, descendingRight);
     if (n === null) {
@@ -281,18 +278,18 @@ e2e.coname.checkQuorum_ = function(want, have) {
  * @return {Array.<object>} an array of all quorums
  */
 e2e.coname.flattenQuorum_ = function(quorums, out) {
-  if (!e) {
+  if (!quorums) {
     return [];
   }
 
   out || (out = []);
   
   if (quorums.candidates) {
-    out = out.concat(Object.keys(quorums.candidates));
+    out = out.concat(quorums.candidates);
   }
 
   quorums.subexpressions && quorums.subexpressions.forEach(function(e){
-    e2e.coname.flattenQuorum_(e, out);
+    out = e2e.coname.flattenQuorum_(e, out);
   });
 
   return out;
@@ -308,17 +305,14 @@ e2e.coname.flattenQuorum_ = function(quorums, out) {
  * @return {boolean} whether the signature is valid
  */
 e2e.coname.verifyQuorumSignature_ = function(pk, message, sig) {
-//   switch pk.PubkeyType.(type) {
-//   case *proto.PublicKey_Ed25519:
-//     var edpk [32]byte
-//     var edsig [64]byte
-//     copy(edpk[:], pk.PubkeyType.(*proto.PublicKey_Ed25519).Ed25519[:])
-//     copy(edsig[:], sig)
-//     return ed25519.Verify(&edpk, message, &edsig)
-//   default:
-//     return false
-//   }
+  var pubKeyType = Object.keys(pk)[0];
 
+  switch (pubKeyType) {
+    case 'ed25519':
+      return new e2e.ecc.Ed25519(e2e.ecc.PrimeCurve.ED_25519, {
+        'pubKey': pk[pubKeyType]
+      }).verify(message, sig);
+  }
 
   return false;
 }
@@ -357,27 +351,18 @@ e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
     throw new e2e.error.InvalidArgumentsError(
         "VerifyConsensus: epoch expired at " + n + " < " + now);
   }
+
   // check that there are sufficiently many fresh signatures.
   pks = rcg.verification_policy.public_keys;
-
-  // the JSON marshaler in Go fails to export PolicyType
-  // if (!rcg.verification_policy.PolicyType) {
-  //   throw new e2e.error.InvalidArgumentsError(
-  //       "VerifyConsensus: unknown verification policy in realm config: " + rcg)
-  // }
-
   want = rcg.verification_policy.quorum;
   valid = e2e.coname.flattenQuorum_(want).some(function(id){
-
     ratifications.some(function(seh){
       var sig = seh.signatures[id];
       return (sig && verifyQuorumSignature_(pks[id], seh.head.encoding, sig)) ?
         (have[id] = true) : 
         false;
     });
-
     return e2e.coname.checkQuorum_(want, have);
-
   });
 
   if (valid) {
@@ -385,54 +370,9 @@ e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
   }
 
   throw new e2e.error.InvalidArgumentsError(
-      "VerifyConsensus: insufficient signatures (have " + have +
-       ", want " + want + ")");
-};
-
-
-/**
- * @private
- * @param {object} trace The tree proof *proto.TreeProof
- * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
- * @return {object} the ReconstructedNode
- */
-e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
-  return e2e.coname.reconstructBranch_(trace, lookupIndexBits, 0);
-};
-
-
-/**
- * @private
- * @param {object} trace The tree proof *proto.TreeProof
- * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
- * @param {Number} depth The depth of the tree
- * @return {e2e.coname.MerkleNode}
- */
-e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
-  if (depth === trace.Neighbors.length) {
-    if (trace.ExistingEntryHash === null) {
-      return null;
-    } else {
-      return /* &ReconstructedNode */ {
-        isLeaf: true,
-        depth: depth,
-        index: trace.ExistingIndex,
-        value: trace.ExistingEntryHash
-      };
-    }
-  } else {
-    var presentChild = lookupIndexBits[depth],
-        node = /* &ReconstructedNode */ {
-          isLeaf: false,
-          depth: depth,
-          children: [{}, {}]
-        };
-
-    node.children[presentChild ? 1 : 0].Present =
-        e2e.coname.reconstructBranch_(trace, lookupIndexBits, depth + 1);
-    node.children[presentChild ? 0 : 1].Omitted = trace.Neighbors[depth];
-    return node;
-  }
+      "VerifyConsensus: insufficient signatures (have " + 
+      JSON.stringify(have) + ", want " + 
+      JSON.stringify(want) + ")");
 };
 
 
@@ -445,45 +385,42 @@ e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
  * @return {!e2e.ByteArray}
  */
 e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
+  var shake256 = e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES);
   if (node === null) {
     // return HashEmptyBranch(treeNonce, prefixBits);
     // This is the same as in the CONIKS paper.
     // H(k_empty || nonce || prefix || depth)
-    return e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES).
-        update(e2e.coname.MERKLE_NODEID_EMPTY_BRANCH).
-        update(treeNonce).
-        update(e2e.coname.toBytes_(prefixBits)).
-        // reverse e2e.numberToByteArray() to get little-endian
-        update(e2e.numberToByteArray(prefixBits.length).reverse()).
-        digest();
+    return shake256.update(e2e.coname.MERKLE_NODEID_EMPTY_BRANCH).
+          update(treeNonce).
+          update(e2e.coname.toBytes_(prefixBits)).
+          // reverse e2e.numberToByteArray() to get little-endian
+          update(e2e.numberToByteArray(prefixBits.length).reverse()).
+          digest();
 
-  } else if (node.isLeaf) {
+  } else if (!node.children) { // i.e., isLeaf()
     // return HashLeaf(treeNonce, node.index, node.depth, node.value);
     // This is the same as in the CONIKS paper:
     // H(k_leaf || nonce || index || depth || value)
-    return e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES).
-        update(e2e.coname.MERKLE_NODEID_LEAF).
-        update(treeNonce).
-        update(node.index).
-        // reverse e2e.numberToByteArray() to get little-endian
-        update(e2e.numberToByteArray(node.depth).reverse()).
-        update(node.value).
-        digest();
+    return shake256.update(e2e.coname.MERKLE_NODEID_LEAF).
+          update(treeNonce).
+          update(node.index).
+          // reverse e2e.numberToByteArray() to get little-endian
+          update(e2e.numberToByteArray(node.depth).reverse()).
+          update(node.value).
+          digest();
 
   } else {
-    // var childHashes := [2][HashBytes]byte
-    for (var h, ch, childHashes = [null, null], i = 0; i < 2; i++) {
-      rightChild = i === 1;
-      // h = node.ChildHash(rightChild);
-      h = node.children[rightChild ? 1 : 0].Omitted;
-      if (h === null) {
-        ch = e2e.coname.merkleChild_(node, rightChild);
-        h = e2e.coname.recomputeHash_(
-                treeNonce, prefixBits.concat(rightChild), ch);
-      }
-      // copy(childHashes[i][:], h);
-      childHashes[i] = h.slice();
+    for (var h, childHashes = [], i = 0; i < 2; i++) {
+      h = node.children[i];
+
+      childHashes[i] = h.Omitted ? 
+                        h.Omitted : 
+                        e2e.coname.recomputeHash_(treeNonce, 
+                              prefixBits.concat(i === 1),
+                              h.Present);
     }
+
+    throw new e2e.error.InvalidArgumentsError(JSON.stringify(prefixBits));
 
     // return HashInternalNode(prefixBits, childHashes);
     // Differences from the CONIKS paper:
@@ -492,16 +429,61 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
     // * Add the prefix of the index, to protect against limited hash
     //   collisions or bugs.
     // This gives H(k_internal || h_child0 || h_child1 || prefix || depth)
-    return e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES).
-        update(e2e.coname.MERKLE_NODEID_INTERNAL).
-        update(childHashes[0]).
-        update(childHashes[1]).
-        update(e2e.coname.toBytes_(prefixBits)).
-        // reverse e2e.numberToByteArray() to get little-endian
-        update(e2e.numberToByteArray(prefixBits.length).reverse()).
-        digest();
+    return shake256.
+          update(e2e.coname.MERKLE_NODEID_INTERNAL).
+          update(childHashes[0] || []).
+          update(childHashes[1] || []).
+          update(e2e.coname.toBytes_(prefixBits)).
+          // reverse e2e.numberToByteArray() to get little-endian
+          update(e2e.numberToByteArray(prefixBits.length).reverse()).
+          digest();
   }
 
+};
+
+
+/**
+ * @private
+ * @param {object} trace The tree proof *proto.TreeProof
+ * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
+ * @param {Number} depth The depth of the tree
+ * @return {e2e.coname.MerkleNode}
+ */
+e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
+  if (depth === trace.neighbors.length) {
+    if (trace.existing_entry_hash === null) {
+      return null;
+    } else {
+      return {
+        depth: depth,
+        index: trace.existing_index,
+        value: trace.existing_entry_hash
+      };
+    }
+  } else {
+    var presentChild = lookupIndexBits[depth], 
+        children = [{}, {}];
+
+    children[presentChild ? 1 : 0].Present =
+        e2e.coname.reconstructBranch_(trace, lookupIndexBits, depth + 1);
+    children[presentChild ? 0 : 1].Omitted = trace.neighbors[depth];
+
+    return {
+      depth: depth,
+      children: children
+    };
+  }
+};
+
+
+/**
+ * @private
+ * @param {object} trace The tree proof *proto.TreeProof
+ * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
+ * @return {object} the ReconstructedNode
+ */
+e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
+  return e2e.coname.reconstructBranch_(trace, lookupIndexBits, 0);
 };
 
 
@@ -520,20 +502,13 @@ e2e.coname.reconstructTreeAndLookup_ = function(
   var reconstructedHash,
       reconstructed = e2e.coname.reconstructTree_(
           proof, e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, index));
-  // TODO: this will never get fired
-  // if (err !== null) {
-  //  throw new e2e.error.InvalidArgumentsError(
-  //    "VerifyLookup: failed to verify the lookup: " + err);
-  // }
-
 
   // Reconstruct the root hash
   reconstructedHash = e2e.coname.recomputeHash_(treeNonce, [], reconstructed);
-  // TODO: this will never get fired
-  // if (err !== null) {
-  //  throw new e2e.error.InvalidArgumentsError(
-  //    "VerifyLookup: failed to verify the lookup: " + err);
-  // }
+
+  throw new e2e.error.InvalidArgumentsError(reconstructedHash);
+
+
   // Compare root hashes
   if (!e2e.compareByteArray(reconstructedHash, rootHash)) {
     throw new e2e.error.InvalidArgumentsError(
@@ -584,7 +559,7 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
   root = e2e.coname.verifyConsensus_(realm, pf.ratifications, now);
 
   verifiedEntryHash = e2e.coname.reconstructTreeAndLookup_(
-      realm.TreeNonce, root, pf.index, pf.tree_proof);
+      realm.tree_nonce || [], root, pf.index, pf.tree_proof);
 
   if (verifiedEntryHash === null) {
     if (pf.entry !== null) {
