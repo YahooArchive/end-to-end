@@ -114,12 +114,8 @@ e2e.coname.toBits_ = function(num, byteArray) {
  * @return {!e2e.ByteArray} The byte array
  */
 e2e.coname.toBytes_ = function(bits) {
-  var bs = [], i = 0, n = bits.length;
-  for (; i < n; i += 8) {
-    bs[i / 8] = bits[i] << 7 | bits[i + 1] << 6 |
-                bits[i + 2] << 5 | bits[i + 3] << 4 |
-                bits[i + 4] << 3 | bits[i + 5] << 2 |
-                bits[i + 6] << 1 | bits[i + 7];
+  for (var i = 0, n = bits.length, bs = []; i < n; i++) {
+    bs[Math.floor(i/8)] |= bits[i] ? (128 >> (i % 8)) : 0;
   }
   return bs;
 };
@@ -420,7 +416,7 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
                               h.Present);
     }
 
-    throw new e2e.error.InvalidArgumentsError(JSON.stringify(prefixBits));
+    throw new e2e.error.InvalidArgumentsError(JSON.stringify(e2e.coname.toBytes_(prefixBits)));
 
     // return HashInternalNode(prefixBits, childHashes);
     // Differences from the CONIKS paper:
