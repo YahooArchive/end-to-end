@@ -167,60 +167,59 @@ e2e.coname.getRealmByDomain_ = function(cfg, domain) {
 
 
 
-/**
- * @private
- * @param {e2e.coname.MerkleNode} n The MerkleNode
- * @param {number} childId Number 1 stands for the right child, 0 for the left
- * @return {object} the child
- */
-e2e.coname.merkleChild_ = function(n, childId) {
-  // Give an error if the lookup algorithm tries to access anything the
-  //  server didn't provide us.
-  if (n.children[childId].Omitted !== null) {
-    throw new e2e.error.InvalidArgumentsError("can't access omitted node");
-  }
-  // This might still be null if the branch is in fact empty.
-  return n.children[childId].Present;
-};
+// /**
+//  * @private
+//  * @param {e2e.coname.MerkleNode} n The MerkleNode
+//  * @param {number} childId Number 1 stands for the right child, 0 for the left
+//  * @return {object} the child
+//  */
+// e2e.coname.merkleChild_ = function(n, childId) {
+//   // Give an error if the lookup algorithm tries to access anything the
+//   //  server didn't provide us.
+//   if (!n.children[childId].Omitted) {
+//     throw new e2e.error.InvalidArgumentsError("can't access omitted node");
+//   }
+//   // This might still be null if the branch is in fact empty.
+//   return n.children[childId].Present;
+// };
 
 
-/**
- * @private
- * treeLookup looks up the entry at a particular index in the snapshot
- * @param {e2e.coname.MerkleNode} root The MerkleNode
- * @param {!e2e.ByteArray} indexBytes The index bytes
- * @return {?e2e.ByteArray} the entry value
- */
-e2e.coname.merkleTreeLookup_ = function(root, indexBytes) {
-  if (indexBytes.length !== e2e.coname.MERKLE_INDEX_BYTES) {
-    throw new e2e.error.InvalidArgumentsError('Wrong index length');
-  }
-  if (root === null) {
-    // Special case: The tree is empty.
-    return null;
-  }
-  var descendingRight,
-      n = root,
-      indexBits = e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, indexBytes);
+// /**
+//  * @private
+//  * treeLookup looks up the entry at a particular index in the snapshot
+//  * @param {e2e.coname.MerkleNode} root The MerkleNode
+//  * @param {!e2e.ByteArray} indexBytes The index bytes
+//  * @return {?e2e.ByteArray} the entry value
+//  */
+// e2e.coname.merkleTreeLookup_ = function(root, indexBytes) {
+//   if (indexBytes.length !== e2e.coname.MERKLE_INDEX_BYTES) {
+//     throw new e2e.error.InvalidArgumentsError('Wrong index length');
+//   }
+//   // Special case: The tree is empty.
+//   if (!root) {
+//     return null;
+//   }
 
-  // Traverse down the tree, following either the left or right child
-  //  depending on the next bit.
-  while (n.children) {  // i.e., !isLeaf()
-    descendingRight = indexBits[n.depth];
-    n = e2e.coname.merkleChild_(n, descendingRight);
-    if (n === null) {
-      // There's no leaf with this index.
-      return null;
-    }
-  }
-  // Once a leaf node is reached, compare the entire index stored in the leaf
-  //  node.
-  return e2e.compareByteArray(indexBytes, n.index) ?
-      // The leaf exists: we will simply return the value.
-      n.value :
-      // There is no leaf with the requested index.
-      null;
-};
+//   var n = root,
+//       indexBits = e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, indexBytes);
+
+//   // Traverse down the tree, following either the left or right child
+//   //  depending on the next bit.
+//   while (n.children) {  // i.e., !isLeaf()
+//     n = e2e.coname.merkleChild_(n, indexBits[n.depth] ? 1 : 0);
+//     if (!n) {
+//       // There's no leaf with this index.
+//       return null;
+//     }
+//   }
+//   // Once a leaf node is reached, compare the entire index stored in the leaf
+//   //  node.
+//   return e2e.compareByteArray(indexBytes, n.index) ?
+//       // The leaf exists: we will simply return the value.
+//       n.value :
+//       // There is no leaf with the requested index.
+//       null;
+// };
 
 
 /**
@@ -233,8 +232,8 @@ e2e.coname.checkCommitment_ = function(commitment, profile) {
   // The hash used here is modeled as a random oracle. This means that SHA3
   // is fine but SHA2 is not (consider HMAC-SHA2 instead).
   var commitmentCheck = e2e.vrf.sha3.shake256(64).
-                        update(profile.encoding). // includes a nonce
-                        digest();
+                          update(profile.encoding). // includes a nonce
+                          digest();
 
   return e2e.compareByteArray(commitment, commitmentCheck);
 };
@@ -373,6 +372,25 @@ e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
 
 
 /**
+ * Converts a non-negative 32-bit integer into a 4-byte little-endian ByteArray
+ * @private
+ * @param {!number} value The number to convert
+ * @return {!e2e.ByteArray} The number as a little-endian ByteArray.
+ */
+e2e.coname.numberTo4ByteArray_ = function(value) {
+  if (value < 0 || value > 4294967295) {
+    throw new e2e.error.InvalidArgumentsError('The number is out of range');
+  }
+
+  for (var i = 0, byteArray = [0, 0, 0, 0]; value > 0; i++) {
+    byteArray[i] = value & 0xff;
+    value >>>= 8;
+  }
+  return byteArray;
+};
+
+
+/**
  * @private
  * assumes ownership of the array underlying prefixBits
  * @param {!e2e.ByteArray} treeNonce The tree nonce
@@ -382,15 +400,14 @@ e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
  */
 e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
   var shake256 = e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES);
-  if (node === null) {
+  if (!node) {
     // return HashEmptyBranch(treeNonce, prefixBits);
     // This is the same as in the CONIKS paper.
     // H(k_empty || nonce || prefix || depth)
     return shake256.update(e2e.coname.MERKLE_NODEID_EMPTY_BRANCH).
           update(treeNonce).
           update(e2e.coname.toBytes_(prefixBits)).
-          // reverse e2e.numberToByteArray() to get little-endian
-          update(e2e.numberToByteArray(prefixBits.length).reverse()).
+          update(e2e.coname.numberTo4ByteArray_(prefixBits.length)).
           digest();
 
   } else if (!node.children) { // i.e., isLeaf()
@@ -400,8 +417,7 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
     return shake256.update(e2e.coname.MERKLE_NODEID_LEAF).
           update(treeNonce).
           update(node.index).
-          // reverse e2e.numberToByteArray() to get little-endian
-          update(e2e.numberToByteArray(node.depth).reverse()).
+          update(e2e.coname.numberTo4ByteArray_(node.depth)).
           update(node.value).
           digest();
 
@@ -416,8 +432,6 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
                               h.Present);
     }
 
-    throw new e2e.error.InvalidArgumentsError(JSON.stringify(e2e.coname.toBytes_(prefixBits)));
-
     // return HashInternalNode(prefixBits, childHashes);
     // Differences from the CONIKS paper:
     // * Add an identifier byte at the beginning to make it impossible for this
@@ -430,8 +444,7 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
           update(childHashes[0] || []).
           update(childHashes[1] || []).
           update(e2e.coname.toBytes_(prefixBits)).
-          // reverse e2e.numberToByteArray() to get little-endian
-          update(e2e.numberToByteArray(prefixBits.length).reverse()).
+          update(e2e.coname.numberTo4ByteArray_(prefixBits.length)).
           digest();
   }
 
@@ -494,15 +507,11 @@ e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
 e2e.coname.reconstructTreeAndLookup_ = function(
                                            treeNonce, rootHash, index, proof) {
 
-  // First, reconstruct the partial tree
-  var reconstructedHash,
-      reconstructed = e2e.coname.reconstructTree_(
-          proof, e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, index));
-
-  // Reconstruct the root hash
-  reconstructedHash = e2e.coname.recomputeHash_(treeNonce, [], reconstructed);
-
-  throw new e2e.error.InvalidArgumentsError(reconstructedHash);
+  // First, reconstruct the partial tree and root hash
+  var reconstructed = e2e.coname.reconstructTree_(
+          proof, e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, index)),
+      reconstructedHash = e2e.coname.recomputeHash_(
+          treeNonce, [], reconstructed);
 
 
   // Compare root hashes
@@ -510,15 +519,12 @@ e2e.coname.reconstructTreeAndLookup_ = function(
     throw new e2e.error.InvalidArgumentsError(
         'VerifyLookup: failed to verify the lookup: ' +
         'Root hashes do not match! Reconstructed ' + reconstructedHash +
-        '; wanted ' + rootHash);
+        '; Wanted ' + rootHash);
   }
-  // Then, do the lookup
-  value = e2e.coname.merkleTreeLookup_(reconstructed, index);
-  // if (err !== null) {
-  //  throw new e2e.error.InvalidArgumentsError(
-  //    "VerifyLookup: failed to verify the lookup: " + err);
-  // }
-  return value;
+
+  // since the hash is already verified, the merkle lookup is unneccessary
+  // return the leaf.value
+  return proof.existing_entry_hash;
 };
 
 
@@ -571,9 +577,7 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
     return null;
   } else {
 
-    entryHash = e2e.vrf.sha3.shake256(32).
-            update(pf.entry.encoding).
-            digest();
+    entryHash = e2e.vrf.sha3.shake256(32).update(pf.entry.encoding).digest();
 
     if (!e2e.compareByteArray(entryHash, verifiedEntryHash)) {
       throw new e2e.error.InvalidArgumentsError(
@@ -582,11 +586,11 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
     }
 
     if (!e2e.coname.checkCommitment_(
-        pf.entry.profileCommitment, pf.profile)) {
+          pf.entry.profile_commitment, pf.profile)) {
       throw new e2e.error.InvalidArgumentsError(
           'VerifyLookup: profile does not match the hash in the entry');
     }
-
+    
     return pf.profile.keys;
   }
 };
