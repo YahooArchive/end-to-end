@@ -150,8 +150,8 @@ e2e.vrf.extra25519.montgomeryXToEdwardsY = function(x) {
 
 
 /**
- * Converts an 32-byte hashed output to an Ed25519 point using Elligator
- *
+ * Converts an 32-byte hashed output to an Ed25519 point using Elligator.
+ * This is not constant time because the variable-length BigNum is not.
  * Refer to Section 5.2 in http://elligator.cr.yp.to/elligator-20130828.pdf
  * @param {!e2e.ByteArray} h A byte array of length 32
  * @return {!e2e.ecc.point.Ed25519}

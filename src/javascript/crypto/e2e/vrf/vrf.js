@@ -170,8 +170,9 @@ e2e.vrf.verify = function(pk, m, vrf, proof) {
 
 
 /**
- * Converts an 32-byte hashed output to an Ed25519 point using Elligator
- * This point is multiplied by 8.
+ * Converts an 32-byte hashed output to an Ed25519 point using Elligator.
+ * This point is multiplied by 8. This is not constant time due to use of
+ * hashToEdwards
  *
  * Refer to Section 5.2 in http://elligator.cr.yp.to/elligator-20130828.pdf
  * @param {!e2e.ByteArray} m A byte array of length 32
