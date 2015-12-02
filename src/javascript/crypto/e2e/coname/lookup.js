@@ -19,8 +19,8 @@
  * This is ported from https://github.com/yahoo/coname/blob/master/lookup.go
  */
 goog.provide('e2e.coname');
-goog.provide('e2e.coname.verifyLookup');
 goog.provide('e2e.coname.MerkleNode');
+goog.provide('e2e.coname.verifyLookup');
 
 goog.require('e2e');
 goog.require('e2e.ecc.Ed25519');
@@ -115,7 +115,7 @@ e2e.coname.toBits_ = function(num, byteArray) {
  */
 e2e.coname.toBytes_ = function(bits) {
   for (var i = 0, n = bits.length, bs = []; i < n; i++) {
-    bs[Math.floor(i/8)] |= bits[i] ? (128 >> (i % 8)) : 0;
+    bs[Math.floor(i / 8)] |= bits[i] ? (128 >> (i % 8)) : 0;
   }
   return bs;
 };
@@ -170,7 +170,7 @@ e2e.coname.getRealmByDomain_ = function(cfg, domain) {
 // /**
 //  * @private
 //  * @param {e2e.coname.MerkleNode} n The MerkleNode
-//  * @param {number} childId Number 1 stands for the right child, 0 for the left
+//  * @param {number} childId Number 1 stands for the right, 0 for the left
 //  * @return {object} the child
 //  */
 // e2e.coname.merkleChild_ = function(n, childId) {
@@ -201,7 +201,8 @@ e2e.coname.getRealmByDomain_ = function(cfg, domain) {
 //   }
 
 //   var n = root,
-//       indexBits = e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, indexBytes);
+//      indexBits = e2e.coname.toBits_(
+//        e2e.coname.MERKLE_INDEX_BITS, indexBytes);
 
 //   // Traverse down the tree, following either the left or right child
 //   //  depending on the next bit.
@@ -232,16 +233,16 @@ e2e.coname.checkCommitment_ = function(commitment, profile) {
   // The hash used here is modeled as a random oracle. This means that SHA3
   // is fine but SHA2 is not (consider HMAC-SHA2 instead).
   var commitmentCheck = e2e.vrf.sha3.shake256(64).
-                          update(profile.encoding). // includes a nonce
-                          digest();
+      update(profile.encoding). // includes a nonce
+      digest();
 
   return e2e.compareByteArray(commitment, commitmentCheck);
 };
 
 
 /**
- * CheckQuorum evaluates whether the quorum requirement want can be satisfied
- * by ratifications of the verifiers in have.
+ * CheckQuorum evaluates whether the quorum requirement want can be
+ * satisfied by ratifications of the verifiers in have.
  * @private
  * @param {object} want The quorum requirement
  * @param {object} have The ratifications
@@ -253,11 +254,11 @@ e2e.coname.checkQuorum_ = function(want, have) {
   }
 
   var n = 0;
-  want.candidates && want.candidates.forEach(function(verifier){
+  want.candidates && want.candidates.forEach(function(verifier) {
     have[verifier] && n++;
   });
 
-  want.subexpressions && want.subexpressions.forEach(function(e){
+  want.subexpressions && want.subexpressions.forEach(function(e) {
     e2e.coname.checkQuorum_(e, have) && n++;
   });
 
@@ -278,17 +279,18 @@ e2e.coname.flattenQuorum_ = function(quorums, out) {
   }
 
   out || (out = []);
-  
+
   if (quorums.candidates) {
     out = out.concat(quorums.candidates);
   }
 
-  quorums.subexpressions && quorums.subexpressions.forEach(function(e){
+  quorums.subexpressions && quorums.subexpressions.forEach(function(e) {
     out = e2e.coname.flattenQuorum_(e, out);
   });
 
   return out;
-}
+};
+
 
 /**
  * verifyQuorumSignature_ returns true iff sig is a valid signature of message
@@ -310,7 +312,7 @@ e2e.coname.verifyQuorumSignature_ = function(pk, message, sig) {
   }
 
   return false;
-}
+};
 
 
 /**
@@ -321,12 +323,12 @@ e2e.coname.verifyQuorumSignature_ = function(pk, message, sig) {
  * @return {!e2e.ByteArray} the root hash
  */
 e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
-  var i = 1, n = ratifications.length, want, got, pks, have = {}, t, valid, 
-    verifyQuorumSignature_ = e2e.coname.verifyQuorumSignature_;
+  var i = 1, n = ratifications.length, want, got, pks, have = {}, t, valid,
+      verifyQuorumSignature_ = e2e.coname.verifyQuorumSignature_;
 
   if (n === 0) {
     throw new e2e.error.InvalidArgumentsError(
-        "VerifyConsensus: no signed epoch heads provided");
+        'VerifyConsensus: no signed epoch heads provided');
   }
   // check that all the SEHs have the same head
   for (; i < n; i++) {
@@ -334,28 +336,28 @@ e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
     got = ratifications[i].head.head.encoding;
     if (!e2e.compareByteArray(want, got)) {
       throw new e2e.error.InvalidArgumentsError(
-        "VerifyConsensus: epoch heads don't match: " + want + " vs " + got);
+          'VerifyConsensus: epoch heads don\'t match: ' + want + ' vs ' + got);
     }
   }
   // check that the seh is not expired
-  // t = ratifications[0].Head.Head.IssueTime.Time().Add(rcg.EpochTimeToLive.Duration());
-  t = (ratifications[0].head.head.issue_time.seconds + rcg.epoch_time_to_live.seconds) * 1000;
+  t = 1000 * (ratifications[0].head.head.issue_time.seconds +
+      rcg.epoch_time_to_live.seconds);
   if (now.getTime() > t) {
     n = new Date();
     n.setTime(t);
     throw new e2e.error.InvalidArgumentsError(
-        "VerifyConsensus: epoch expired at " + n + " < " + now);
+        'VerifyConsensus: epoch expired at ' + n + ' < ' + now);
   }
 
   // check that there are sufficiently many fresh signatures.
   pks = rcg.verification_policy.public_keys;
   want = rcg.verification_policy.quorum;
-  valid = e2e.coname.flattenQuorum_(want).some(function(id){
-    ratifications.some(function(seh){
+  valid = e2e.coname.flattenQuorum_(want).some(function(id) {
+    ratifications.some(function(seh) {
       var sig = seh.signatures[id];
       return (sig && verifyQuorumSignature_(pks[id], seh.head.encoding, sig)) ?
-        (have[id] = true) : 
-        false;
+          (have[id] = true) :
+          false;
     });
     return e2e.coname.checkQuorum_(want, have);
   });
@@ -365,9 +367,9 @@ e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
   }
 
   throw new e2e.error.InvalidArgumentsError(
-      "VerifyConsensus: insufficient signatures (have " + 
-      JSON.stringify(have) + ", want " + 
-      JSON.stringify(want) + ")");
+      'VerifyConsensus: insufficient signatures (have ' +
+      JSON.stringify(have) + ', want ' +
+      JSON.stringify(want) + ')');
 };
 
 
@@ -405,31 +407,31 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
     // This is the same as in the CONIKS paper.
     // H(k_empty || nonce || prefix || depth)
     return shake256.update(e2e.coname.MERKLE_NODEID_EMPTY_BRANCH).
-          update(treeNonce).
-          update(e2e.coname.toBytes_(prefixBits)).
-          update(e2e.coname.numberTo4ByteArray_(prefixBits.length)).
-          digest();
+        update(treeNonce).
+        update(e2e.coname.toBytes_(prefixBits)).
+        update(e2e.coname.numberTo4ByteArray_(prefixBits.length)).
+        digest();
 
   } else if (!node.children) { // i.e., isLeaf()
     // return HashLeaf(treeNonce, node.index, node.depth, node.value);
     // This is the same as in the CONIKS paper:
     // H(k_leaf || nonce || index || depth || value)
     return shake256.update(e2e.coname.MERKLE_NODEID_LEAF).
-          update(treeNonce).
-          update(node.index).
-          update(e2e.coname.numberTo4ByteArray_(node.depth)).
-          update(node.value).
-          digest();
+        update(treeNonce).
+        update(node.index).
+        update(e2e.coname.numberTo4ByteArray_(node.depth)).
+        update(node.value).
+        digest();
 
   } else {
     for (var h, childHashes = [], i = 0; i < 2; i++) {
       h = node.children[i];
 
-      childHashes[i] = h.Omitted ? 
-                        h.Omitted : 
-                        e2e.coname.recomputeHash_(treeNonce, 
-                              prefixBits.concat(i === 1),
-                              h.Present);
+      childHashes[i] = h.Omitted ?
+          h.Omitted :
+          e2e.coname.recomputeHash_(treeNonce,
+          prefixBits.concat(i === 1),
+          h.Present);
     }
 
     // return HashInternalNode(prefixBits, childHashes);
@@ -440,12 +442,12 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
     //   collisions or bugs.
     // This gives H(k_internal || h_child0 || h_child1 || prefix || depth)
     return shake256.
-          update(e2e.coname.MERKLE_NODEID_INTERNAL).
-          update(childHashes[0] || []).
-          update(childHashes[1] || []).
-          update(e2e.coname.toBytes_(prefixBits)).
-          update(e2e.coname.numberTo4ByteArray_(prefixBits.length)).
-          digest();
+        update(e2e.coname.MERKLE_NODEID_INTERNAL).
+        update(childHashes[0] || []).
+        update(childHashes[1] || []).
+        update(e2e.coname.toBytes_(prefixBits)).
+        update(e2e.coname.numberTo4ByteArray_(prefixBits.length)).
+        digest();
   }
 
 };
@@ -470,7 +472,7 @@ e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
       };
     }
   } else {
-    var presentChild = lookupIndexBits[depth], 
+    var presentChild = lookupIndexBits[depth],
         children = [{}, {}];
 
     children[presentChild ? 1 : 0].Present =
@@ -509,7 +511,7 @@ e2e.coname.reconstructTreeAndLookup_ = function(
 
   // First, reconstruct the partial tree and root hash
   var reconstructed = e2e.coname.reconstructTree_(
-          proof, e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, index)),
+      proof, e2e.coname.toBits_(e2e.coname.MERKLE_INDEX_BITS, index)),
       reconstructedHash = e2e.coname.recomputeHash_(
           treeNonce, [], reconstructed);
 
@@ -586,11 +588,11 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
     }
 
     if (!e2e.coname.checkCommitment_(
-          pf.entry.profile_commitment, pf.profile)) {
+        pf.entry.profile_commitment, pf.profile)) {
       throw new e2e.error.InvalidArgumentsError(
           'VerifyLookup: profile does not match the hash in the entry');
     }
-    
+
     return pf.profile.keys;
   }
 };
