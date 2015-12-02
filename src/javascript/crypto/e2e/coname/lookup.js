@@ -565,13 +565,13 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
   verifiedEntryHash = e2e.coname.reconstructTreeAndLookup_(
       realm.tree_nonce || [], root, pf.index, pf.tree_proof);
 
-  if (verifiedEntryHash === null) {
-    if (pf.entry !== null) {
+  if (!verifiedEntryHash) {
+    if (!pf.entry) {
       throw new e2e.error.InvalidArgumentsError(
           'VerifyLookup: non-empty entry ' + pf.entry +
           ' did not match verified lookup result <null>');
     }
-    if (pf.profile !== null) {
+    if (!pf.profile) {
       throw new e2e.error.InvalidArgumentsError(
           'VerifyLookup: non-empty profile ' + pf.profile +
           ' did not match verified lookup result <null>');
