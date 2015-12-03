@@ -24,10 +24,11 @@
 goog.provide('e2e.ext.e2ebind');
 
 goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.constants.e2ebind.responseActions');
-goog.require('e2e.ext.keyserver');
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
@@ -40,6 +41,7 @@ goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.object');
 goog.require('goog.string');
+goog.require('goog.style');
 
 
 goog.scope(function() {
@@ -244,7 +246,8 @@ e2ebind.clickHandler_ = function(e) {
   if (elt.id === constants.ElementId.E2EBIND_ICON) {
     // The encryptr icon was clicked; initiate the compose glass
     e2ebind.initComposeGlass_(elt);
-  } else {
+  }
+  else {
     // Sometimes the focus event gets overriden by yahoo mail, so call it here
     e2ebind.focusHandler_(e);
   }
@@ -257,44 +260,47 @@ e2ebind.clickHandler_ = function(e) {
  * @private
  */
 e2ebind.focusHandler_ = function(e) {
-  var elt = e.target;
-  if (goog.dom.getAncestorByTagNameAndClass(elt,
-                                            'div',
-                                            constants.CssClass.COMPOSE_BODY)) {
-    // The user focused on the email body editor. If all the recipients have
-    // keys, initiate the compose glass
-    try {
-      e2ebind.getDraft(goog.bind(function(draft) {
-        draft.to = draft.to || [];
-        draft.cc = draft.cc || [];
-        draft.bcc = draft.bcc || [];
-        var recipients = draft.to.concat(draft.cc).concat(draft.bcc);
+  // Default it to require clicking the encryptr icon to install compose glass
+  // TODO: uncomment the following, and make this configurable
+  
+  // var elt = e.target;
+  // if (goog.dom.getAncestorByTagNameAndClass(elt,
+  //                                       'div',
+  //                                       constants.CssClass.COMPOSE_BODY)) {
+  //   // The user focused on the email body editor. If all the recipients have
+  //   // keys, initiate the compose glass
+  //   try {
+  //     e2ebind.getDraft(goog.bind(function(draft) {
+  //       draft.to = draft.to || [];
+  //       draft.cc = draft.cc || [];
+  //       draft.bcc = draft.bcc || [];
+  //       var recipients = draft.to.concat(draft.cc).concat(draft.bcc);
 
-        utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-          action: constants.Actions.LIST_ALL_UIDS,
-          content: 'public'
-        }), function(response) {
-          response.content = response.content || [];
-          var invalidRecipients = /** @type {!Array.<string>} */ ([]);
+  //       utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+  //         action: constants.Actions.LIST_ALL_UIDS,
+  //         content: 'public'
+  //       }), function(response) {
+  //         response.content = response.content || [];
+  //         var invalidRecipients = /** @type {!Array.<string>} */ ([]);
 
-          var emails = utils.text.getValidEmailAddressesFromArray(
-              response.content, true);
-          goog.array.forEach(recipients, function(recipient) {
-            var valid = goog.array.contains(emails, recipient);
-            if (!valid) {
-              invalidRecipients.push(recipient);
-            }
-          });
+  //         var emails = utils.text.getValidEmailAddressesFromArray(
+  //             response.content, true);
+  //         goog.array.forEach(recipients, function(recipient) {
+  //           var valid = goog.array.contains(emails, recipient);
+  //           if (!valid) {
+  //             invalidRecipients.push(recipient);
+  //           }
+  //         });
 
-          if (invalidRecipients.length === 0) {
-            e2ebind.initComposeGlass_(null);
-          }
-        });
-      }, this));
-    } catch (ex) {
-      console.error(ex);
-    }
-  }
+  //         if (invalidRecipients.length === 0) {
+  //           e2ebind.initComposeGlass_(null);
+  //         }
+  //       });
+  //     }, this));
+  //   } catch (ex) {
+  //     console.error(ex);
+  //   }
+  // }
 };
 
 
