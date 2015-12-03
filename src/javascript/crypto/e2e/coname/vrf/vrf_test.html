@@ -15,19 +15,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Unit Test of e2e.vrf.verify</title>
-<script src="../../../../../javascript/closure/base.js"></script>
+<title>Unit Test of e2e.coname.vrf.verify</title>
+<script src="../../../../../../javascript/closure/base.js"></script>
 <script src="test_js_deps-runfiles.js"></script>
 <script>
 goog.require('goog.testing.jsunit');
 
-goog.require('e2e.vrf.verify');
+goog.require('e2e.coname.vrf.verify');
 
 </script>
 <script>
 
 /**
- * Tests that e2e.vrf.verify() works
+ * Tests that e2e.coname.vrf.verify() works
  */
 function testVRFVerify() {
 
@@ -59,26 +59,26 @@ function testVRFVerify() {
 
 
 function sampleVectorTest(pk, aliceVRF, aliceProof) {
-  var alice = [97,108,105,99,101];
+  var vrfVerify = e2e.coname.vrf.verify, alice = [97,108,105,99,101];
 
   // Positive test case
-  assertTrue(e2e.vrf.verify(pk, alice, aliceVRF, aliceProof));
+  assertTrue(e2e.coname.vrf.verify(pk, alice, aliceVRF, aliceProof));
 
   // Negative test cases - try increment the first byte of every vector
   pk[0]++;
-  assertFalse(e2e.vrf.verify(pk, alice, aliceVRF, aliceProof));
+  assertFalse(e2e.coname.vrf.verify(pk, alice, aliceVRF, aliceProof));
   pk[0]--;
 
   alice[0]++;
-  assertFalse(e2e.vrf.verify(pk, alice, aliceVRF, aliceProof));
+  assertFalse(e2e.coname.vrf.verify(pk, alice, aliceVRF, aliceProof));
   alice[0]--;
 
   aliceVRF[0]++;
-  assertFalse(e2e.vrf.verify(pk, alice, aliceVRF, aliceProof));
+  assertFalse(e2e.coname.vrf.verify(pk, alice, aliceVRF, aliceProof));
   aliceVRF[0]--;
 
   aliceProof[0]++;
-  assertFalse(e2e.vrf.verify(pk, alice, aliceVRF, aliceProof));
+  assertFalse(e2e.coname.vrf.verify(pk, alice, aliceVRF, aliceProof));
   aliceProof[0]--;
 }
 </script>

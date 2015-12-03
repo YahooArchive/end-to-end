@@ -15,14 +15,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Unit Test of e2e.vrf.extra25519</title>
-<script src="../../../../../javascript/closure/base.js"></script>
+<title>Unit Test of e2e.coname.vrf.extra25519</title>
+<script src="../../../../../../javascript/closure/base.js"></script>
 <script src="test_js_deps-runfiles.js"></script>
 <script>
 goog.require('goog.testing.jsunit');
 
-goog.require('e2e.vrf.sha3');
-goog.require('e2e.vrf.extra25519');
+goog.require('e2e.coname.sha3');
+goog.require('e2e.coname.vrf.extra25519');
 
 goog.require('goog.crypt');
 
@@ -31,11 +31,11 @@ goog.require('goog.crypt');
 
 
 /**
- * Tests that e2e.vrf.extra25519.fromBytesBaseGroup works, and no assertion error is thrown
+ * Tests that e2e.coname.vrf.extra25519.fromBytesBaseGroup works, and no assertion error is thrown
  */
 function testFromBytesBaseGroup() {
 	var pk = [194, 191, 96, 139, 106, 249, 24, 253, 198, 131, 88, 169, 100, 231, 7, 211, 70, 171, 171, 207, 24, 30, 150, 114, 77, 124, 240, 123, 191, 14, 29, 111];
-	var P = e2e.vrf.extra25519.fromBytesBaseGroup(pk);
+	var P = e2e.coname.vrf.extra25519.fromBytesBaseGroup(pk);
 
 	assertEquals(goog.crypt.byteArrayToHex(pk),
 		goog.crypt.byteArrayToHex(P.toByteArray()));
@@ -44,8 +44,8 @@ function testFromBytesBaseGroup() {
 function testHashToEdwards() {
 	var alice = [97, 108, 105, 99, 101];
 
-	var hmb = e2e.vrf.sha3.shake256(32).update(alice).digest();
-	var out = e2e.vrf.extra25519.hashToEdwards(hmb);
+	var hmb = e2e.coname.sha3.shake256(32).update(alice).digest();
+	var out = e2e.coname.vrf.extra25519.hashToEdwards(hmb);
 
 	assertEquals('2d53cc5079f9f7e495d408c88f43c839c900fea065b38c7901a76289398e283e', 
 		goog.crypt.byteArrayToHex(out.toByteArray()));

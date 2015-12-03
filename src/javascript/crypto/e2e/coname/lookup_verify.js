@@ -23,11 +23,12 @@ goog.provide('e2e.coname.MerkleNode');
 goog.provide('e2e.coname.verifyLookup');
 
 goog.require('e2e');
+goog.require('e2e.coname.sha3');
+goog.require('e2e.coname.vrf');
 goog.require('e2e.ecc.Ed25519');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.error.InvalidArgumentsError');
-goog.require('e2e.vrf.sha3');
-goog.require('e2e.vrf.verify');
+goog.require('goog.array');
 
 
 /**
@@ -145,8 +146,8 @@ e2e.coname.getRealmByUser_ = function(cfg, user) {
  */
 e2e.coname.getRealmByDomain_ = function(cfg, domain) {
   var ret = null;
-  cfg.realms.forEach(function(realm) {
-    realm.domains.forEach(function(pattern) {
+  goog.array.forEach(cfg.realms, function(realm) {
+    goog.array.forEach(realm.domains, function(pattern) {
       if (pattern === domain) { // TODO: implement wildcards?
         if (ret !== null && ret !== realm) {
           throw new e2e.error.InvalidArgumentsError(
@@ -232,7 +233,7 @@ e2e.coname.getRealmByDomain_ = function(cfg, domain) {
 e2e.coname.checkCommitment_ = function(commitment, profile) {
   // The hash used here is modeled as a random oracle. This means that SHA3
   // is fine but SHA2 is not (consider HMAC-SHA2 instead).
-  var commitmentCheck = e2e.vrf.sha3.shake256(64).
+  var commitmentCheck = e2e.coname.sha3.shake256(64).
       update(profile.encoding). // includes a nonce
       digest();
 
@@ -254,11 +255,11 @@ e2e.coname.checkQuorum_ = function(want, have) {
   }
 
   var n = 0;
-  want.candidates && want.candidates.forEach(function(verifier) {
+  want.candidates && goog.array.forEach(want.candidates, function(verifier) {
     have[verifier] && n++;
   });
 
-  want.subexpressions && want.subexpressions.forEach(function(e) {
+  want.subexpressions && goog.array.forEach(want.subexpressions, function(e) {
     e2e.coname.checkQuorum_(e, have) && n++;
   });
 
@@ -284,9 +285,10 @@ e2e.coname.flattenQuorum_ = function(quorums, out) {
     out = out.concat(quorums.candidates);
   }
 
-  quorums.subexpressions && quorums.subexpressions.forEach(function(e) {
-    out = e2e.coname.flattenQuorum_(e, out);
-  });
+  quorums.subexpressions &&
+      goog.array.forEach(quorums.subexpressions, function(e) {
+        out = e2e.coname.flattenQuorum_(e, out);
+      });
 
   return out;
 };
@@ -352,8 +354,8 @@ e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
   // check that there are sufficiently many fresh signatures.
   pks = rcg.verification_policy.public_keys;
   want = rcg.verification_policy.quorum;
-  valid = e2e.coname.flattenQuorum_(want).some(function(id) {
-    ratifications.some(function(seh) {
+  valid = goog.array.some(e2e.coname.flattenQuorum_(want), function(id) {
+    goog.array.some(ratifications, function(seh) {
       var sig = seh.signatures[id];
       return (sig && verifyQuorumSignature_(pks[id], seh.head.encoding, sig)) ?
           (have[id] = true) :
@@ -401,7 +403,7 @@ e2e.coname.numberTo4ByteArray_ = function(value) {
  * @return {!e2e.ByteArray}
  */
 e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
-  var shake256 = e2e.vrf.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES);
+  var shake256 = e2e.coname.sha3.shake256(e2e.coname.MERKLE_HASH_BYTES);
   if (!node) {
     // return HashEmptyBranch(treeNonce, prefixBits);
     // This is the same as in the CONIKS paper.
@@ -531,14 +533,14 @@ e2e.coname.reconstructTreeAndLookup_ = function(
 
 
 /**
- * Returns the profile keys if the lookup is correctly validated
+ * Check if the lookup request and proof is correctly validated
  * Refer to https://github.com/yahoo/coname/blob/master/lookup.go#L49-L90
  *
  * @param {object} cfg The config object
  * @param {string} user The username
  * @param {object} pf The lookup proof retrieved from the keyserver
  * @param {Date} now The current time
- * @return {?object} the profile keys (map[string][]byte)
+ * @return {boolean} whether it is properly validated
  */
 e2e.coname.verifyLookup = function(cfg, user, pf, now) {
   var realm, root, verifiedEntryHash, entryHash;
@@ -551,7 +553,7 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
 
   realm = e2e.coname.getRealmByUser_(cfg, user);
 
-  if (!e2e.vrf.verify(realm.VRFPublic,
+  if (!e2e.coname.vrf.verify(realm.VRFPublic,
       // user is converted into a UTF-8 encoded byte array
       e2e.stringToByteArray(user),
       pf.index,
@@ -576,10 +578,12 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
           'VerifyLookup: non-empty profile ' + pf.profile +
           ' did not match verified lookup result <null>');
     }
-    return null;
+    return false;
+
   } else {
 
-    entryHash = e2e.vrf.sha3.shake256(32).update(pf.entry.encoding).digest();
+    entryHash = e2e.coname.sha3.shake256(32).
+                update(pf.entry.encoding).digest();
 
     if (!e2e.compareByteArray(entryHash, verifiedEntryHash)) {
       throw new e2e.error.InvalidArgumentsError(
@@ -593,6 +597,6 @@ e2e.coname.verifyLookup = function(cfg, user, pf, now) {
           'VerifyLookup: profile does not match the hash in the entry');
     }
 
-    return pf.profile.keys;
+    return true;
   }
 };

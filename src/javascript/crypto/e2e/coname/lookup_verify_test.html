@@ -203,7 +203,7 @@ function testVerifyLookup() {
     // lookupProof.profile = base64ToByteArray(lookupProof.profile);
 
 
-	assertEquals(e2e.coname.verifyLookup(clientconfig, "adon@yahoo-inc.com", lookupProof, new Date()), lookupProof.profile.keys);
+	assertTrue(e2e.coname.verifyLookup(clientconfig, "adon@yahoo-inc.com", lookupProof, new Date()));
 }
 
 
