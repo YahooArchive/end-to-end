@@ -261,10 +261,13 @@ e2e_config() {
   KAUTH_PUB="$GOPATH/src/github.com/yahoo/keyshop/data/kauth/kauth.pub.js"
   CONFIG_FILE="src/javascript/crypto/e2e/extension/config.js"
   MANIFEST_FILE="src/javascript/crypto/e2e/extension/manifest.json"
-  echo "Using keyserver public key from $KAUTH_PUB"
-  # Hack to make sed -i work consistently on GNU/Linux and OSX
-  sed -i.bak "s/\[.*\]/$(cat $KAUTH_PUB)/" "$CONFIG_FILE"
-  rm "$CONFIG_FILE.bak"
+  if [[ -f $KAUTH_PUB ]]
+  then 
+    echo "Using keyserver public key from $KAUTH_PUB"
+    # Hack to make sed -i work consistently on GNU/Linux and OSX
+    sed -i.bak "s/\[.*\]/$(cat $KAUTH_PUB)/" "$CONFIG_FILE"
+    rm "$CONFIG_FILE.bak"
+  fi
   if [ -n "$1" ]; then
     echo "Changing hosts to $1"
     sed -i.bak "s/localhost:25519/$1/" "$CONFIG_FILE" "$MANIFEST_FILE"
