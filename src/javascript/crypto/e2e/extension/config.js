@@ -31,5 +31,49 @@ e2e.ext.config = {
   /* Whether users need a valid auth cookie in order to use the keyserver */
   AUTH_ENABLED: false,
   /* Some location that has access to the auth cookie. */
-  AUTH_DEFAULT_ORIGIN: 'https://us-mg5.mail.yahoo.com'
+  AUTH_DEFAULT_ORIGIN: 'https://us-mg5.mail.yahoo.com',
+
+  /* The CONAME CONFIG */
+  CONAME: {
+    'realms': [{
+      'realm_name': 'yahoo',
+      'domains': ['yahoo-inc.com'],
+      'addr': 'https://localhost:25519',
+      'URL': 'https://mail.yahoo.com',
+      'VRFPublic': [
+        173, 87, 173, 65, 228, 26, 136, 105, 43, 83, 77, 76, 161, 218, 39, 33,
+        97, 50, 127, 195, 12, 229, 140, 60, 240, 87, 97, 1, 135, 45, 42, 179
+      ],
+      'verification_policy': {
+        'public_keys': {
+          '16574727844889599213': {
+            'ed25519': [
+              139, 247, 147, 143, 90, 107, 47, 34, 139, 129, 25, 121, 52, 78, 40,
+              154, 218, 194, 223, 24, 213, 127, 107, 40, 192, 156, 224, 118, 196,
+              151, 41, 75
+            ]
+          },
+          '1702327623518731708': {
+            'ed25519': [
+              182, 124, 135, 223, 177, 101, 145, 255, 103, 123, 76, 163, 240, 54,
+              209, 152, 104, 12, 131, 227, 3, 242, 150, 102, 101, 46, 201, 82,
+              84, 13, 95, 70
+            ]
+          },
+          '5004056709842995553': {
+            'ed25519': [
+              205, 132, 50, 39, 212, 81, 159, 117, 232, 176, 253, 41, 48, 137,
+              185, 124, 250, 169, 77, 128, 242, 1, 237, 94, 254, 140, 88, 182,
+              94, 141, 161, 129
+            ]
+          }
+        },
+        'quorum': {
+          'threshold': 2,
+          'candidates': ['5004056709842995553', '16574727844889599213', '1702327623518731708']
+        }
+      },
+      'epoch_time_to_live': 180
+    }]
+  }
 };

@@ -21,189 +21,47 @@
 <script>
 goog.require('goog.testing.jsunit');
 
+goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.coname.verifyLookup');
 </script>
 <script>
-
-function base64ToByteArray(string) {
-    string = atob(string);
-    for (var i = 0, n = string.length, ret = []; i < n; i++) {
-        ret[i] = string.charCodeAt(i);
-    }
-    return ret;
-}
-
-var clientconfig = {
-    "realms": [{
-        "domains": ["yahoo-inc.com"],
-        "addr": "ks1.paranoids.corp.bf1.yahoo.com:4625",
-        "URL": "",
-        "VRFPublic": base64ToByteArray("rVetQeQaiGkrU01ModonIWEyf8MM5Yw88FdhAYctKrM="),
-        "verification_policy": {
-            "public_keys": {
-                "16574727844889599213": {
-                    "ed25519": base64ToByteArray("i/eTj1prLyKLgRl5NE4omtrC3xjVf2sowJzgdsSXKUs=")
-                },
-                "1702327623518731708": {
-                    "ed25519": base64ToByteArray("tnyH37Flkf9ne0yj8DbRmGgMg+MD8pZmZS7JUlQNX0Y=")
-                },
-                "5004056709842995553": {
-                    "ed25519": base64ToByteArray("zYQyJ9RRn3XosP0pMIm5fPqpTYDyAe1e/oxYtl6NoYE=")
-                }
-            },
-            "quorum": {
-                "threshold": 2,
-                "subexpressions": [{
-                    "threshold": 1,
-                    "candidates": ["5004056709842995553"]
-                }, {
-                    "threshold": 1,
-                    "candidates": ["16574727844889599213"]
-                }, {
-                    "threshold": 1,
-                    "candidates": ["1702327623518731708"]
-                }]
-            }
-        },
-        "epoch_time_to_live": {
-            "seconds": "180",
-            "nanos": 0
-        },
-        "client_tls": {
-            "certificates": [{
-                "certificate": ["MIIBTDCB+6ADAgECAhEAiZG0EutuQ2fmf+54JzKDDzAKBggqhkjOPQQDAjAUMRIwEAYDVQQDEwl0ZXN0aW5nQ0EwHhcNMTUxMDA3MjMyMDM1WhcNMTcxMDA3MjMyMDM1WjARMQ8wDQYDVQQDEwZjbGllbnQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAARQ/VpiYFZjlilkwxDv5ECfULoolEVj2XP1Q8qRZG1HiKRqzev2Duo5X8teHX170PcuieVfctkCl82giFXlpILgozEwLzAOBgNVHQ8BAf8EBAMCAIAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAoGCCqGSM49BAMCA0AAMD0CHQCGlTQG0+qXWLCmcFJmVPYw1fSbPyJgoX8zCRfIAhw1pyS9ndYxC31CnMcEmh3QknYFSlfIpNd7WCh4"],
-                "key_id": "client.key.pem"
-            }],
-            "root_cas": ["MIIBODCB56ADAgECAhAZfpTyA7t/o8/UQFDuNnOEMAoGCCqGSM49BAMCMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTAeFw0xNTEwMDcyMzE5NTZaFw0yNzAzMDUxNTE5NTZaMBQxEjAQBgNVBAMTCXRlc3RpbmdDQTBOMBAGByqGSM49AgEGBSuBBAAhAzoABBXxzbQHSHyRxsunXjDrObkYocJiCYnFmaikAOrnRy7Z98Znl5nKkzHPkUvBpxJjlM2RBH54wGkcoyYwJDAOBgNVHQ8BAf8EBAMCAIQwEgYDVR0TAQH/BAgwBgEB/wIBBDAKBggqhkjOPQQDAgNAADA9Ah0AvLpfgaYS6JUNt361g7gZy2211JRUf+UFBeL9hAIcfyULPYBqUnNtyGqvJeYxZ66g1Rt1cB12QyvaLw=="],
-            "server_name": "",
-            "client_auth": 0,
-            "prefer_server_cipher_suites": false,
-            "session_tickets_enabled": false,
-            "session_ticket_key_id": "",
-            "min_version": 0,
-            "max_version": 0
-        }
-    }]
-};
-
-// clientconfig.realms[0].tree_nonce = null;
-
 /**
  * Tests that e2e.coname.verifyLookup works
  */
 function testVerifyLookup() {
-    var lookupProof = {
-        "user_id": "adon@yahoo-inc.com",
-        "index": "ajBsOaETPLW/TTSRlTDjSelmOxb97pahF73tC+QBqXY=",
-        "index_proof": "KjGw6JX/3h2fWsF4SlXyvtz6fF8y1JdYXhL7OhlM+wx5Nkvq+3pWP8ahgymUAfyWR1JREtEz3XZu8Nylvps5C1jUrWa9ZPnXeMJaFf9XOJ0t1lGn5GTDm0vUUh4HPGl9",
-        "ratifications": [{
-            head: {
-                // TimestampedEpochHead: TimestampedEpochHead {
-                    head: {
-                        // EpochHead: EpochHead {
-                            realm: "yahoo",
-                            epoch: 735,
-                            root_hash: [129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2],
-                            issue_time: {
-                                Seconds: 1448938709,
-                                Nanos: 206962788,
-                            },
-                            previous_summary_hash: [224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251],
-                            next_epoch_policy: {
-                                PublicKeys: {},
-                                PolicyType: null,
-                            },
-                        // },
-                        encoding: [10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0]
-                    },
-                    timestamp: {
-                        seconds: 1448938709,
-                        nanos: 206962788,
-                    },
-                // },
-                encoding: [10,125,10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0,18,11,8,213,153,244,178,5,16,228,128,216,98]
-            },
-            signatures: {
-                "5004056709842995553": [14,180,236,99,74,32,209,53,119,183,75,165,21,148,96,137,105,255,39,133,164,86,213,9,78,115,2,32,241,79,251,79,16,206,222,153,191,23,34,240,91,40,188,72,121,52,214,183,154,207,244,88,190,155,186,207,244,226,143,108,185,38,75,1],
-            },
-        },
-        {
-            head: {
-                // TimestampedEpochHead: TimestampedEpochHead {
-                    head: {
-                        // EpochHead: EpochHead {
-                            realm: "yahoo",
-                            epoch: 735,
-                            root_hash: [129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2],
-                            issue_time: {
-                                seconds: 1448938709,
-                                banos: 206962788,
-                            },
-                            previous_summary_hash: [224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251],
-                            next_epoch_policy: {
-                                PublicKeys: {},
-                                PolicyType: null,
-                            },
-                        // },
-                        encoding: [10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0]
-                    },
-                    timestamp: {
-                        seconds: 1448938709,
-                        nanos: 206962788,
-                    },
-                // },
-                encoding: [10,125,10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0,18,11,8,213,153,244,178,5,16,228,128,216,98]
-            },
-            signatures: {
-                "1702327623518731708": [174,42,7,210,122,152,244,125,152,22,0,187,56,159,115,60,138,91,179,61,236,44,130,178,51,102,39,128,12,198,60,106,155,65,26,191,36,79,73,44,112,31,6,214,222,121,95,187,100,140,46,155,141,103,144,109,217,236,101,213,74,92,34,8],
-            },
-        }],
-        "tree_proof": {
-            "neighbors": ["Aj2/iia09hdY9M15RG/mYwIJuuvo5uEzBGiu5WTsF1Q=", "uHZAo3zIZNmrlvCIVokRuMdBVHGqJ88qdDG4MnbJhpw="],
-            "existing_index": "ajBsOaETPLW/TTSRlTDjSelmOxb97pahF73tC+QBqXY=",
-            "existing_entry_hash": "Uw5tQi6D13ZLkHB42gOD6QYz1EbKf7KlRNpDMVatvTU="
-        },
-        "entry": {
-            index: [106,48,108,57,161,19,60,181,191,77,52,145,149,48,227,73,233,102,59,22,253,238,150,161,23,189,237,11,228,1,169,118],
-            version: 15,
-            update_policy: { /*
-                PublicKeys: map[uint64] * PublicKey {},
-                PolicyType: & AuthorizationPolicy_Quorum {
-                    Quorum: & QuorumExpr {
-                        Threshold: 0,
-                        Candidates: [],
-                        Subexpressions: [],
-                    },
-                },*/
-            },
-            profile_commitment: [159,242,116,67,5,139,228,17,60,243,80,171,8,117,27,93,98,174,151,165,118,118,164,199,69,143,146,9,98,232,21,112,16,58,51,128,100,38,96,45,199,223,81,146,82,136,116,49,29,194,133,89,92,254,254,189,205,46,82,22,138,30,96,229],
-            encoding: [10,32,106,48,108,57,161,19,60,181,191,77,52,145,149,48,227,73,233,102,59,22,253,238,150,161,23,189,237,11,228,1,169,118,16,15,26,2,18,0,34,64,159,242,116,67,5,139,228,17,60,243,80,171,8,117,27,93,98,174,151,165,118,118,164,199,69,143,146,9,98,232,21,112,16,58,51,128,100,38,96,45,199,223,81,146,82,136,116,49,29,194,133,89,92,254,254,189,205,46,82,22,138,30,96,229]
-        },
-        "profile": {
-            nonce: [183,191,68,13,155,58,238,136,117,1,218,12,94,156,7,95],
-            keys: {
-                abc: [102,111,111,32,98,97,114],
-                xyz: [84,69,83,84,32,52,53,54],
-            },
-            encoding: [10,16,
-                183,191,68,13,155,58,238,136,117,1,218,12,94,156,7,95,
-                18,14,10,3,97,98,99,18,7,
-                    102,111,111,32,98,97,114,
-                18,15,10,3,120,121,122,18,8,
-                    84,69,83,84,32,52,53,54]
-        }
-    };
 
-    lookupProof.index = base64ToByteArray(lookupProof.index);
-    lookupProof.index_proof = base64ToByteArray(lookupProof.index_proof);
-    lookupProof.tree_proof.neighbors = lookupProof.tree_proof.neighbors.map(function(n){return base64ToByteArray(n);});
-    lookupProof.tree_proof.existing_index = base64ToByteArray(lookupProof.tree_proof.existing_index);
-    lookupProof.tree_proof.existing_entry_hash = base64ToByteArray(lookupProof.tree_proof.existing_entry_hash);
-    // lookupProof.entry = base64ToByteArray(lookupProof.entry);
-    // lookupProof.profile = base64ToByteArray(lookupProof.profile);
+    // the following is extracted from e2e.coname.Client.prototype.decodeLookupMessage_()
+    var lookupProof = {"user_id":"adon@yahoo-inc.com","index":[106,48,108,57,161,19,60,181,191,77,52,145,149,48,227,73,233,102,59,22,253,238,150,161,23,189,237,11,228,1,169,118],"index_proof":[42,49,176,232,149,255,222,29,159,90,193,120,74,85,242,190,220,250,124,95,50,212,151,88,94,18,251,58,25,76,251,12,121,54,75,234,251,122,86,63,198,161,131,41,148,1,252,150,71,82,81,18,209,51,221,118,110,240,220,165,190,155,57,11,88,212,173,102,189,100,249,215,120,194,90,21,255,87,56,157,45,214,81,167,228,100,195,155,75,212,82,30,7,60,105,125],"ratifications":[{"head":{"head":{"realm":"yahoo","epoch":{"low":735,"high":0,"unsigned":true},"root_hash":{"0":129,"1":114,"2":26,"3":236,"4":236,"5":45,"6":92,"7":101,"8":204,"9":117,"10":108,"11":197,"12":170,"13":226,"14":163,"15":187,"16":225,"17":117,"18":113,"19":122,"20":90,"21":92,"22":38,"23":30,"24":180,"25":228,"26":139,"27":151,"28":216,"29":13,"30":52,"31":2},"issue_time":1448938709,"previous_summary_hash":{"0":224,"1":216,"2":31,"3":84,"4":81,"5":173,"6":197,"7":99,"8":34,"9":251,"10":103,"11":170,"12":42,"13":160,"14":58,"15":194,"16":90,"17":247,"18":6,"19":137,"20":194,"21":226,"22":33,"23":164,"24":11,"25":217,"26":7,"27":248,"28":224,"29":158,"30":4,"31":197,"32":74,"33":214,"34":80,"35":230,"36":254,"37":158,"38":192,"39":204,"40":78,"41":46,"42":214,"43":130,"44":218,"45":190,"46":23,"47":18,"48":174,"49":2,"50":45,"51":204,"52":149,"53":230,"54":240,"55":187,"56":11,"57":170,"58":55,"59":12,"60":64,"61":8,"62":234,"63":251},"next_epoch_policy":{"policy_type":null,"public_keys":{"field":{"builder":{"ns":{"parent":null,"name":"","className":"Namespace","children":[{"name":"proto","className":"Namespace","children":[{"name":"Timestamp","className":"Message","children":[{"name":"seconds","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"type":{"name":"int64","wireType":0,"defaultValue":{"low":0,"high":0,"unsigned":false}},"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"seconds","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"nanos","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"type":{"name":"int32","wireType":0,"defaultValue":0},"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"nanos","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null],"_fieldsById":{},"_fieldsByName":{}},{"name":"LookupRequest","className":"Message","children":[{"name":"epoch","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"type":{"name":"uint64","wireType":0,"defaultValue":{"low":0,"high":0,"unsigned":true}},"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"epoch","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"user_id","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"type":{"name":"string","wireType":2,"defaultValue":""},"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"user_id","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"quorum_requirement","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"type":{"name":"message","wireType":2,"defaultValue":null},"resolvedType":{"name":"QuorumExpr","className":"Message","children":[{"name":"threshold","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"type":{"name":"uint32","wireType":0,"defaultValue":0},"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"threshold","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"candidates","className":"Message.Field","required":false,"repeated":true,"map":false,"keyType":null,"type":{"name":"fixed64","wireType":1},"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"candidates","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"subexpressions","className":"Message.Field","required":false,"repeated":true,"map":false,"keyType":null,"id":3,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"subexpressions","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null,null],"_fieldsById":{},"_fieldsByName":{}},"id":4,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"quorum_requirement","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null,null],"_fieldsById":{},"_fieldsByName":{}},{"name":"UpdateRequest","className":"Message","children":[{"name":"update","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":{"name":"SignedEntryUpdate","className":"Message","children":[{"name":"new_entry","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":{"name":"Entry","className":"Message","children":[{"name":"index","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"type":{"name":"bytes","wireType":2,"defaultValue":null},"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"index","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"version","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"version","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"update_policy","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":{"name":"AuthorizationPolicy","className":"Message","children":[{"name":"policy_type","fields":[{"name":"quorum","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"id":2,"options":{},"defaultValue":null,"syntax":"proto2","originalName":"quorum","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null}]},null,null],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null],"_fieldsById":{},"_fieldsByName":{}},"id":3,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"update_policy","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"profile_commitment","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":4,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"profile_commitment","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null,null,null],"_fieldsById":{},"_fieldsByName":{}},"id":1,"options":{"(gogoproto.customtype)":"EncodedEntry","(gogoproto.nullable)":false},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"new_entry","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"signatures","className":"Message.Field","required":false,"repeated":false,"map":true,"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"signatures","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":{"isMapKey":true,"syntax":"proto2"}}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null],"_fieldsById":{},"_fieldsByName":{}},"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"update","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"profile","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":{"name":"Profile","className":"Message","children":[{"name":"nonce","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"nonce","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"keys","className":"Message.Field","required":false,"repeated":false,"map":true,"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"keys","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":{"isMapKey":true,"syntax":"proto2"}}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null],"_fieldsById":{},"_fieldsByName":{}},"id":2,"options":{"(gogoproto.customtype)":"EncodedProfile","(gogoproto.nullable)":false},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"profile","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"lookup_parameters","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"id":3,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"lookup_parameters","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"dkim_proof","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":1000,"options":{"(gogoproto.customname)":"DKIMProof"},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"dkim_proof","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null,null,null],"_fieldsById":{},"_fieldsByName":{}},{"name":"LookupProof","className":"Message","children":[{"name":"user_id","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"user_id","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"index","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"index","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"index_proof","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":3,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"index_proof","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"ratifications","className":"Message.Field","required":false,"repeated":true,"map":false,"keyType":null,"resolvedType":{"name":"SignedEpochHead","className":"Message","children":[{"name":"head","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":{"name":"TimestampedEpochHead","className":"Message","children":[{"name":"head","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":{"name":"EpochHead","className":"Message","children":[{"name":"realm","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"realm","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"epoch","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"epoch","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"root_hash","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":3,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"root_hash","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"issue_time","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"id":4,"options":{"(gogoproto.nullable)":false},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"issue_time","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"previous_summary_hash","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":5,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"previous_summary_hash","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"next_epoch_policy","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"id":6,"options":{"(gogoproto.nullable)":false},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"next_epoch_policy","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null,null,null,null,null],"_fieldsById":{},"_fieldsByName":{}},"id":1,"options":{"(gogoproto.customtype)":"EncodedEpochHead","(gogoproto.nullable)":false},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"head","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"timestamp","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"id":2,"options":{"(gogoproto.nullable)":false},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"timestamp","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null],"_fieldsById":{},"_fieldsByName":{}},"id":1,"options":{"(gogoproto.customtype)":"EncodedTimestampedEpochHead","(gogoproto.nullable)":false},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"head","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"signatures","className":"Message.Field","required":false,"repeated":false,"map":true,"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"signatures","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":{"isMapKey":true,"syntax":"proto2"}}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null],"_fieldsById":{},"_fieldsByName":{}},"id":4,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"ratifications","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"tree_proof","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":{"name":"TreeProof","className":"Message","children":[{"name":"neighbors","className":"Message.Field","required":false,"repeated":true,"map":false,"keyType":null,"resolvedType":null,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"neighbors","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"existing_index","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":2,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"existing_index","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"existing_entry_hash","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":3,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"existing_entry_hash","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null,null],"_fieldsById":{},"_fieldsByName":{}},"id":5,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"tree_proof","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"entry","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"id":6,"options":{"(gogoproto.customtype)":"EncodedEntry","(gogoproto.nullable)":true},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"entry","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null},{"name":"profile","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"id":7,"options":{"(gogoproto.customtype)":"EncodedProfile","(gogoproto.nullable)":true},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"profile","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":null}],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null,null,null,null,null,null,null],"_fieldsById":{},"_fieldsByName":{}},null,null,null,null,null,null,null,null,{"name":"PublicKey","className":"Message","children":[{"name":"pubkey_type","fields":[{"name":"ed25519","className":"Message.Field","required":false,"repeated":false,"map":false,"keyType":null,"resolvedType":null,"id":1,"options":{},"defaultValue":null,"syntax":"proto2","originalName":"ed25519","element":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"keyElement":null}]},null],"options":{},"syntax":"proto2","extensions":[1,536870911],"isGroup":false,"_fields":[null],"_fieldsById":{},"_fieldsByName":{}},null,{"name":"E2EKSPublic","className":"Service","children":[{"name":"Lookup","className":"Service.RPCMethod","options":{},"requestName":"LookupRequest","responseName":"LookupProof","requestStream":false,"responseStream":false},{"name":"Update","className":"Service.RPCMethod","options":{},"requestName":"UpdateRequest","responseName":"LookupProof","requestStream":false,"responseStream":false}],"options":{},"syntax":"proto2"}],"options":{},"syntax":"proto2"}],"options":{},"syntax":"proto2"},"resolved":true,"result":{"proto":{}},"files":{"/lib/protobufjs/coname-client.proto.json":true},"importRoot":null,"options":{"convertFieldsToCamelCase":false,"populateAccessors":true}},"name":"public_keys","className":"Message.Field","required":false,"repeated":false,"map":true,"id":1,"options":{},"defaultValue":null,"oneof":null,"syntax":"proto2","originalName":"public_keys","element":{"isMapKey":false,"syntax":"proto2"},"keyElement":{"isMapKey":true,"syntax":"proto2"}},"keyElem":{"resolvedType":null,"isMapKey":true,"syntax":"proto2"},"valueElem":{"isMapKey":false,"syntax":"proto2"},"map":{}},"quorum":null},"encoding":{"0":10,"1":5,"2":121,"3":97,"4":104,"5":111,"6":111,"7":16,"8":223,"9":5,"10":26,"11":32,"12":129,"13":114,"14":26,"15":236,"16":236,"17":45,"18":92,"19":101,"20":204,"21":117,"22":108,"23":197,"24":170,"25":226,"26":163,"27":187,"28":225,"29":117,"30":113,"31":122,"32":90,"33":92,"34":38,"35":30,"36":180,"37":228,"38":139,"39":151,"40":216,"41":13,"42":52,"43":2,"44":34,"45":11,"46":8,"47":213,"48":153,"49":244,"50":178,"51":5,"52":16,"53":228,"54":128,"55":216,"56":98,"57":42,"58":64,"59":224,"60":216,"61":31,"62":84,"63":81,"64":173,"65":197,"66":99,"67":34,"68":251,"69":103,"70":170,"71":42,"72":160,"73":58,"74":194,"75":90,"76":247,"77":6,"78":137,"79":194,"80":226,"81":33,"82":164,"83":11,"84":217,"85":7,"86":248,"87":224,"88":158,"89":4,"90":197,"91":74,"92":214,"93":80,"94":230,"95":254,"96":158,"97":192,"98":204,"99":78,"100":46,"101":214,"102":130,"103":218,"104":190,"105":23,"106":18,"107":174,"108":2,"109":45,"110":204,"111":149,"112":230,"113":240,"114":187,"115":11,"116":170,"117":55,"118":12,"119":64,"120":8,"121":234,"122":251,"123":50,"124":0}},"timestamp":{"seconds":{"low":1448938709,"high":0,"unsigned":false},"nanos":206962788},"encoding":[10,125,10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0,18,11,8,213,153,244,178,5,16,228,128,216,98]},"signatures":{"5004056709842995553":[14,180,236,99,74,32,209,53,119,183,75,165,21,148,96,137,105,255,39,133,164,86,213,9,78,115,2,32,241,79,251,79,16,206,222,153,191,23,34,240,91,40,188,72,121,52,214,183,154,207,244,88,190,155,186,207,244,226,143,108,185,38,75,1]}},{"head":{"head":{"realm":"yahoo","epoch":{"low":735,"high":0,"unsigned":true},"root_hash":{"0":129,"1":114,"2":26,"3":236,"4":236,"5":45,"6":92,"7":101,"8":204,"9":117,"10":108,"11":197,"12":170,"13":226,"14":163,"15":187,"16":225,"17":117,"18":113,"19":122,"20":90,"21":92,"22":38,"23":30,"24":180,"25":228,"26":139,"27":151,"28":216,"29":13,"30":52,"31":2},"issue_time":1448938709,"previous_summary_hash":{"0":224,"1":216,"2":31,"3":84,"4":81,"5":173,"6":197,"7":99,"8":34,"9":251,"10":103,"11":170,"12":42,"13":160,"14":58,"15":194,"16":90,"17":247,"18":6,"19":137,"20":194,"21":226,"22":33,"23":164,"24":11,"25":217,"26":7,"27":248,"28":224,"29":158,"30":4,"31":197,"32":74,"33":214,"34":80,"35":230,"36":254,"37":158,"38":192,"39":204,"40":78,"41":46,"42":214,"43":130,"44":218,"45":190,"46":23,"47":18,"48":174,"49":2,"50":45,"51":204,"52":149,"53":230,"54":240,"55":187,"56":11,"57":170,"58":55,"59":12,"60":64,"61":8,"62":234,"63":251},"next_epoch_policy":{"policy_type":null,"public_keys":{"keyElem":{"resolvedType":null,"isMapKey":true,"syntax":"proto2"},"valueElem":{"isMapKey":false,"syntax":"proto2"},"map":{}},"quorum":null},"encoding":{"0":10,"1":5,"2":121,"3":97,"4":104,"5":111,"6":111,"7":16,"8":223,"9":5,"10":26,"11":32,"12":129,"13":114,"14":26,"15":236,"16":236,"17":45,"18":92,"19":101,"20":204,"21":117,"22":108,"23":197,"24":170,"25":226,"26":163,"27":187,"28":225,"29":117,"30":113,"31":122,"32":90,"33":92,"34":38,"35":30,"36":180,"37":228,"38":139,"39":151,"40":216,"41":13,"42":52,"43":2,"44":34,"45":11,"46":8,"47":213,"48":153,"49":244,"50":178,"51":5,"52":16,"53":228,"54":128,"55":216,"56":98,"57":42,"58":64,"59":224,"60":216,"61":31,"62":84,"63":81,"64":173,"65":197,"66":99,"67":34,"68":251,"69":103,"70":170,"71":42,"72":160,"73":58,"74":194,"75":90,"76":247,"77":6,"78":137,"79":194,"80":226,"81":33,"82":164,"83":11,"84":217,"85":7,"86":248,"87":224,"88":158,"89":4,"90":197,"91":74,"92":214,"93":80,"94":230,"95":254,"96":158,"97":192,"98":204,"99":78,"100":46,"101":214,"102":130,"103":218,"104":190,"105":23,"106":18,"107":174,"108":2,"109":45,"110":204,"111":149,"112":230,"113":240,"114":187,"115":11,"116":170,"117":55,"118":12,"119":64,"120":8,"121":234,"122":251,"123":50,"124":0}},"timestamp":{"seconds":{"low":1448938709,"high":0,"unsigned":false},"nanos":206962788},"encoding":[10,125,10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0,18,11,8,213,153,244,178,5,16,228,128,216,98]},"signatures":{"16574727844889599213":[246,16,212,157,44,81,150,136,113,4,158,59,230,50,132,86,186,186,13,74,132,190,185,228,80,155,27,93,66,14,140,88,59,70,168,242,29,173,207,121,115,202,99,84,205,232,111,24,241,4,187,236,2,45,239,173,163,44,50,152,40,133,18,12]}},{"head":{"head":{"realm":"yahoo","epoch":{"low":735,"high":0,"unsigned":true},"root_hash":{"0":129,"1":114,"2":26,"3":236,"4":236,"5":45,"6":92,"7":101,"8":204,"9":117,"10":108,"11":197,"12":170,"13":226,"14":163,"15":187,"16":225,"17":117,"18":113,"19":122,"20":90,"21":92,"22":38,"23":30,"24":180,"25":228,"26":139,"27":151,"28":216,"29":13,"30":52,"31":2},"issue_time":1448938709,"previous_summary_hash":{"0":224,"1":216,"2":31,"3":84,"4":81,"5":173,"6":197,"7":99,"8":34,"9":251,"10":103,"11":170,"12":42,"13":160,"14":58,"15":194,"16":90,"17":247,"18":6,"19":137,"20":194,"21":226,"22":33,"23":164,"24":11,"25":217,"26":7,"27":248,"28":224,"29":158,"30":4,"31":197,"32":74,"33":214,"34":80,"35":230,"36":254,"37":158,"38":192,"39":204,"40":78,"41":46,"42":214,"43":130,"44":218,"45":190,"46":23,"47":18,"48":174,"49":2,"50":45,"51":204,"52":149,"53":230,"54":240,"55":187,"56":11,"57":170,"58":55,"59":12,"60":64,"61":8,"62":234,"63":251},"next_epoch_policy":{"policy_type":null,"public_keys":{"keyElem":{"resolvedType":null,"isMapKey":true,"syntax":"proto2"},"valueElem":{"isMapKey":false,"syntax":"proto2"},"map":{}},"quorum":null},"encoding":{"0":10,"1":5,"2":121,"3":97,"4":104,"5":111,"6":111,"7":16,"8":223,"9":5,"10":26,"11":32,"12":129,"13":114,"14":26,"15":236,"16":236,"17":45,"18":92,"19":101,"20":204,"21":117,"22":108,"23":197,"24":170,"25":226,"26":163,"27":187,"28":225,"29":117,"30":113,"31":122,"32":90,"33":92,"34":38,"35":30,"36":180,"37":228,"38":139,"39":151,"40":216,"41":13,"42":52,"43":2,"44":34,"45":11,"46":8,"47":213,"48":153,"49":244,"50":178,"51":5,"52":16,"53":228,"54":128,"55":216,"56":98,"57":42,"58":64,"59":224,"60":216,"61":31,"62":84,"63":81,"64":173,"65":197,"66":99,"67":34,"68":251,"69":103,"70":170,"71":42,"72":160,"73":58,"74":194,"75":90,"76":247,"77":6,"78":137,"79":194,"80":226,"81":33,"82":164,"83":11,"84":217,"85":7,"86":248,"87":224,"88":158,"89":4,"90":197,"91":74,"92":214,"93":80,"94":230,"95":254,"96":158,"97":192,"98":204,"99":78,"100":46,"101":214,"102":130,"103":218,"104":190,"105":23,"106":18,"107":174,"108":2,"109":45,"110":204,"111":149,"112":230,"113":240,"114":187,"115":11,"116":170,"117":55,"118":12,"119":64,"120":8,"121":234,"122":251,"123":50,"124":0}},"timestamp":{"seconds":{"low":1448938709,"high":0,"unsigned":false},"nanos":206962788},"encoding":[10,125,10,5,121,97,104,111,111,16,223,5,26,32,129,114,26,236,236,45,92,101,204,117,108,197,170,226,163,187,225,117,113,122,90,92,38,30,180,228,139,151,216,13,52,2,34,11,8,213,153,244,178,5,16,228,128,216,98,42,64,224,216,31,84,81,173,197,99,34,251,103,170,42,160,58,194,90,247,6,137,194,226,33,164,11,217,7,248,224,158,4,197,74,214,80,230,254,158,192,204,78,46,214,130,218,190,23,18,174,2,45,204,149,230,240,187,11,170,55,12,64,8,234,251,50,0,18,11,8,213,153,244,178,5,16,228,128,216,98]},"signatures":{"1702327623518731708":[174,42,7,210,122,152,244,125,152,22,0,187,56,159,115,60,138,91,179,61,236,44,130,178,51,102,39,128,12,198,60,106,155,65,26,191,36,79,73,44,112,31,6,214,222,121,95,187,100,140,46,155,141,103,144,109,217,236,101,213,74,92,34,8]}}],"tree_proof":{"neighbors":[[2,61,191,138,38,180,246,23,88,244,205,121,68,111,230,99,2,9,186,235,232,230,225,51,4,104,174,229,100,236,23,84],[184,118,64,163,124,200,100,217,171,150,240,136,86,137,17,184,199,65,84,113,170,39,207,42,116,49,184,50,118,201,134,156]],"existing_index":[106,48,108,57,161,19,60,181,191,77,52,145,149,48,227,73,233,102,59,22,253,238,150,161,23,189,237,11,228,1,169,118],"existing_entry_hash":[83,14,109,66,46,131,215,118,75,144,112,120,218,3,131,233,6,51,212,70,202,127,178,165,68,218,67,49,86,173,189,53]},"entry":{"index":{"buffer":{},"view":{"0":10,"1":32,"2":106,"3":48,"4":108,"5":57,"6":161,"7":19,"8":60,"9":181,"10":191,"11":77,"12":52,"13":145,"14":149,"15":48,"16":227,"17":73,"18":233,"19":102,"20":59,"21":22,"22":253,"23":238,"24":150,"25":161,"26":23,"27":189,"28":237,"29":11,"30":228,"31":1,"32":169,"33":118,"34":16,"35":15,"36":26,"37":2,"38":18,"39":0,"40":34,"41":64,"42":159,"43":242,"44":116,"45":67,"46":5,"47":139,"48":228,"49":17,"50":60,"51":243,"52":80,"53":171,"54":8,"55":117,"56":27,"57":93,"58":98,"59":174,"60":151,"61":165,"62":118,"63":118,"64":164,"65":199,"66":69,"67":143,"68":146,"69":9,"70":98,"71":232,"72":21,"73":112,"74":16,"75":58,"76":51,"77":128,"78":100,"79":38,"80":96,"81":45,"82":199,"83":223,"84":81,"85":146,"86":82,"87":136,"88":116,"89":49,"90":29,"91":194,"92":133,"93":89,"94":92,"95":254,"96":254,"97":189,"98":205,"99":46,"100":82,"101":22,"102":138,"103":30,"104":96,"105":229},"offset":2,"markedOffset":-1,"limit":34,"littleEndian":true,"noAssert":false},"version":{"low":15,"high":0,"unsigned":true},"update_policy":{"policy_type":"quorum","public_keys":{"keyElem":{"resolvedType":null,"isMapKey":true,"syntax":"proto2"},"valueElem":{"isMapKey":false,"syntax":"proto2"},"map":{}},"quorum":{"threshold":null,"candidates":[],"subexpressions":[]}},"profile_commitment":{"0":159,"1":242,"2":116,"3":67,"4":5,"5":139,"6":228,"7":17,"8":60,"9":243,"10":80,"11":171,"12":8,"13":117,"14":27,"15":93,"16":98,"17":174,"18":151,"19":165,"20":118,"21":118,"22":164,"23":199,"24":69,"25":143,"26":146,"27":9,"28":98,"29":232,"30":21,"31":112,"32":16,"33":58,"34":51,"35":128,"36":100,"37":38,"38":96,"39":45,"40":199,"41":223,"42":81,"43":146,"44":82,"45":136,"46":116,"47":49,"48":29,"49":194,"50":133,"51":89,"52":92,"53":254,"54":254,"55":189,"56":205,"57":46,"58":82,"59":22,"60":138,"61":30,"62":96,"63":229},"encoding":[10,32,106,48,108,57,161,19,60,181,191,77,52,145,149,48,227,73,233,102,59,22,253,238,150,161,23,189,237,11,228,1,169,118,16,15,26,2,18,0,34,64,159,242,116,67,5,139,228,17,60,243,80,171,8,117,27,93,98,174,151,165,118,118,164,199,69,143,146,9,98,232,21,112,16,58,51,128,100,38,96,45,199,223,81,146,82,136,116,49,29,194,133,89,92,254,254,189,205,46,82,22,138,30,96,229]},"profile":{"nonce":{"buffer":{},"view":{"0":10,"1":16,"2":183,"3":191,"4":68,"5":13,"6":155,"7":58,"8":238,"9":136,"10":117,"11":1,"12":218,"13":12,"14":94,"15":156,"16":7,"17":95,"18":18,"19":14,"20":10,"21":3,"22":97,"23":98,"24":99,"25":18,"26":7,"27":102,"28":111,"29":111,"30":32,"31":98,"32":97,"33":114,"34":18,"35":15,"36":10,"37":3,"38":120,"39":121,"40":122,"41":18,"42":8,"43":84,"44":69,"45":83,"46":84,"47":32,"48":52,"49":53,"50":54},"offset":2,"markedOffset":-1,"limit":18,"littleEndian":true,"noAssert":false},"keys":{"keyElem":{"resolvedType":null,"isMapKey":true,"syntax":"proto2"},"valueElem":{"resolvedType":null,"isMapKey":false,"syntax":"proto2"},"map":{"abc":{"key":"abc","value":{"offset":27,"markedOffset":-1,"limit":34,"littleEndian":true,"noAssert":false}},"xyz":{"key":"xyz","value":{"offset":43,"markedOffset":-1,"limit":51,"littleEndian":true,"noAssert":false}}}},"encoding":[10,16,183,191,68,13,155,58,238,136,117,1,218,12,94,156,7,95,18,14,10,3,97,98,99,18,7,102,111,111,32,98,97,114,18,15,10,3,120,121,122,18,8,84,69,83,84,32,52,53,54]}};
 
 
-	assertTrue(e2e.coname.verifyLookup(clientconfig, "adon@yahoo-inc.com", lookupProof, new Date()));
+    function obj2Array(obj, key) {
+        obj[key] = Object.keys(obj[key]).map(function(k){return obj[key][k]});
+    }
+
+    // JSON.stringify turned Uint8Array into an object like structure, convert it back to array
+    lookupProof.ratifications.forEach(function(r){
+        obj2Array(r.head, 'encoding');
+        obj2Array(r.head.head, 'root_hash');
+        obj2Array(r.head.head, 'previous_summary_hash');
+
+    });
+    obj2Array(lookupProof.entry, 'profile_commitment');
+
+
+    var email = 'adon@yahoo-inc.com',
+        realm = e2e.coname.getRealmByEmail(email);
+
+    realm.epoch_time_to_live = 3600 * 24 * 36500; // 100 years
+    assertTrue(e2e.coname.verifyLookup(realm, email, lookupProof));
+
+    try {
+        realm.epoch_time_to_live = 180;
+        e2e.coname.verifyLookup(realm, email, lookupProof);
+    } catch (e) {
+        assertTrue(e instanceof e2e.error.InvalidArgumentsError);
+        assertTrue(/epoch expired/.test(e.message));
+    }
+
 }
 
 

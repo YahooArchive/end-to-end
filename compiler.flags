@@ -27,6 +27,9 @@
 --jscomp_error=uselessCode
 --jscomp_error=visibility
 --externs=lib/closure-compiler/contrib/externs/chrome_extensions.js
+--externs=lib/protobufjs/externs/Long.js
+--externs=lib/protobufjs/externs/bytebuffer.js
+--externs=lib/protobufjs/externs/protobuf.js
 --only_closure_dependencies
 --manage_closure_dependencies
 --js lib/closure-library/closure/goog/deps.js

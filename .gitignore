@@ -2,4 +2,4 @@ build/*
 node_modules/*
 lib/closure-templates-compiler/*
 lib/typedarray/*
-pkg/*
+lib/protobufjs/*
