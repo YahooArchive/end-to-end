@@ -20,8 +20,8 @@
  */
 
 
-goog.provide('e2e.vrf.sha3');
-goog.provide('e2e.vrf.sha3.Keccak');
+goog.provide('e2e.coname.sha3');
+goog.provide('e2e.coname.sha3.Keccak');
 
 /*
  * js-sha3 v0.5.0
@@ -37,7 +37,7 @@ goog.provide('e2e.vrf.sha3.Keccak');
 /**
  * @private RC Constants for sha3
  */
-e2e.vrf.sha3.RC_ = [
+e2e.coname.sha3.RC_ = [
   1, 0, 32898, 0, 32906, 2147483648,
   2147516416, 2147483648, 32907, 0, 2147483649, 0,
   2147516545, 2147483648, 32777, 2147483648, 138, 0,
@@ -58,7 +58,7 @@ e2e.vrf.sha3.RC_ = [
  * @param {!Array.<number>} padding an array of padding
  * @param {!number} outputBits output bits
  */
-e2e.vrf.sha3.Keccak = function(bits, padding, outputBits) {
+e2e.coname.sha3.Keccak = function(bits, padding, outputBits) {
   this.blocks = [];
   this.s = [];
   this.padding = padding;
@@ -79,9 +79,9 @@ e2e.vrf.sha3.Keccak = function(bits, padding, outputBits) {
 
 /**
  * @param {!e2e.ByteArray} message a byte array to hash
- * @return {!e2e.vrf.sha3.Keccak} the Keccak instance
+ * @return {!e2e.coname.sha3.Keccak} the Keccak instance
  */
-e2e.vrf.sha3.Keccak.prototype.update = function(message) {
+e2e.coname.sha3.Keccak.prototype.update = function(message) {
   var SHIFT = [0, 8, 16, 24];
 
   // @adon we don't take ArrayBuffer/string as input
@@ -136,7 +136,7 @@ e2e.vrf.sha3.Keccak.prototype.update = function(message) {
       for (i = 0; i < blockCount; ++i) {
         s[i] ^= blocks[i];
       }
-      e2e.vrf.sha3.permute_(s);
+      e2e.coname.sha3.permute_(s);
       this.reset = true;
     } else {
       this.start = i;
@@ -149,7 +149,7 @@ e2e.vrf.sha3.Keccak.prototype.update = function(message) {
 /**
  * @private
  */
-e2e.vrf.sha3.Keccak.prototype.finalize_ = function() {
+e2e.coname.sha3.Keccak.prototype.finalize_ = function() {
   var blocks = this.blocks, i = this.lastByteIndex,
       blockCount = this.blockCount, s = this.s;
   blocks[i >> 2] |= this.padding[i & 3];
@@ -163,7 +163,7 @@ e2e.vrf.sha3.Keccak.prototype.finalize_ = function() {
   for (i = 0; i < blockCount; ++i) {
     s[i] ^= blocks[i];
   }
-  e2e.vrf.sha3.permute_(s);
+  e2e.coname.sha3.permute_(s);
 };
 
 
@@ -171,7 +171,7 @@ e2e.vrf.sha3.Keccak.prototype.finalize_ = function() {
  *
  * @return {!e2e.ByteArray} the output stored in an array of bytes
  */
-e2e.vrf.sha3.Keccak.prototype.digest = function() {
+e2e.coname.sha3.Keccak.prototype.digest = function() {
   this.finalize_();
 
   var blockCount = this.blockCount, s = this.s,
@@ -188,7 +188,7 @@ e2e.vrf.sha3.Keccak.prototype.digest = function() {
       array[offset + 3] = (block >> 24) & 0xFF;
     }
     if (j % blockCount == 0) {
-      e2e.vrf.sha3.permute_(s);
+      e2e.coname.sha3.permute_(s);
     }
   }
   if (extraBytes) {
@@ -212,7 +212,7 @@ e2e.vrf.sha3.Keccak.prototype.digest = function() {
  * @private the permute function
  * @param {!Array.<number>} s the state table
  */
-e2e.vrf.sha3.permute_ = function(s) {
+e2e.coname.sha3.permute_ = function(s) {
   var h, l, n, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9,
       b0, b1, b2, b3, b4, b5, b6, b7, b8, b9,
       b10, b11, b12, b13, b14, b15, b16, b17,
@@ -395,8 +395,8 @@ e2e.vrf.sha3.permute_ = function(s) {
     s[48] = b48 ^ (~b40 & b42);
     s[49] = b49 ^ (~b41 & b43);
 
-    s[0] ^= e2e.vrf.sha3.RC_[n];
-    s[1] ^= e2e.vrf.sha3.RC_[n + 1];
+    s[0] ^= e2e.coname.sha3.RC_[n];
+    s[1] ^= e2e.coname.sha3.RC_[n + 1];
   }
 };
 
@@ -406,10 +406,10 @@ e2e.vrf.sha3.permute_ = function(s) {
  * This is not necessarily constant time.
  * @param {number} outputByteLen A number, being a multiple of 4, for ouput
  * length
- * @return {!e2e.vrf.sha3.Keccak} the Keccak instance
+ * @return {!e2e.coname.sha3.Keccak} the Keccak instance
  */
-e2e.vrf.sha3.shake256 = function(outputByteLen) {
-  return new e2e.vrf.sha3.Keccak(
+e2e.coname.sha3.shake256 = function(outputByteLen) {
+  return new e2e.coname.sha3.Keccak(
       256,
       [31, 7936, 2031616, 520093696],
       outputByteLen * 8);

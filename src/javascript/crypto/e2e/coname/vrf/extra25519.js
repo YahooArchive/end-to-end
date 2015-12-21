@@ -19,7 +19,7 @@
  * This is ported from https://github.com/yahoo/coname/blob/master/vrf/vrf.go
  */
 
-goog.provide('e2e.vrf.extra25519');
+goog.provide('e2e.coname.vrf.extra25519');
 
 goog.require('e2e.BigNum');
 goog.require('e2e.ecc.DomainParam');
@@ -31,15 +31,15 @@ goog.require('e2e.error.InvalidArgumentsError');
 /**
  * @private Domain Params for ed25519
  */
-e2e.vrf.extra25519.ed25519_ = e2e.ecc.DomainParam.fromCurve(
-                                  e2e.ecc.PrimeCurve.ED_25519);
+e2e.coname.vrf.extra25519.ed25519_ = e2e.ecc.DomainParam.fromCurve(
+    e2e.ecc.PrimeCurve.ED_25519);
 
 
 /**
  * @private Domain Params for curve25519
  */
-e2e.vrf.extra25519.curve25519_ = e2e.ecc.DomainParam.fromCurve(
-                                     e2e.ecc.PrimeCurve.CURVE_25519);
+e2e.coname.vrf.extra25519.curve25519_ = e2e.ecc.DomainParam.fromCurve(
+    e2e.ecc.PrimeCurve.CURVE_25519);
 
 
 /**
@@ -53,9 +53,9 @@ e2e.vrf.extra25519.curve25519_ = e2e.ecc.DomainParam.fromCurve(
  * @param {!e2e.ByteArray} sBytes A byte array of length 32
  * @return {!e2e.ecc.point.Point|boolean}
  */
-e2e.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
+e2e.coname.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
 
-  var ed25519 = e2e.vrf.extra25519.ed25519_;
+  var ed25519 = e2e.coname.vrf.extra25519.ed25519_;
   var P = ed25519.curve.pointFromByteArray(sBytes);
 
   // P itself is not infinity
@@ -87,10 +87,10 @@ e2e.vrf.extra25519.fromBytesBaseGroup = function(sBytes) {
  * @param {!e2e.ecc.Element} r the representative coordinate
  * @return {!e2e.ecc.Element}
  */
-e2e.vrf.extra25519.representativeToMontgomeryX = function(r) {
+e2e.coname.vrf.extra25519.representativeToMontgomeryX = function(r) {
 
-  var ed25519Curve = e2e.vrf.extra25519.ed25519_.curve;
-  var A = e2e.vrf.extra25519.curve25519_.curve.A;
+  var ed25519Curve = e2e.coname.vrf.extra25519.ed25519_.curve;
+  var A = e2e.coname.vrf.extra25519.curve25519_.curve.A;
 
   // v = -A/(1+ur^2), where u = 2 (any non-square field element)
   r = r.square();
@@ -129,9 +129,9 @@ e2e.vrf.extra25519.representativeToMontgomeryX = function(r) {
  * @param {!e2e.ecc.Element} x the Curve25519 coordinate
  * @return {!e2e.ecc.Element}
  */
-e2e.vrf.extra25519.montgomeryXToEdwardsY = function(x) {
+e2e.coname.vrf.extra25519.montgomeryXToEdwardsY = function(x) {
 
-  var ed25519CurveOne = e2e.vrf.extra25519.ed25519_.curve.ONE;
+  var ed25519CurveOne = e2e.coname.vrf.extra25519.ed25519_.curve.ONE;
   // var t, tt edwards25519.FieldElement
   // edwards25519.FeOne(&t)
   // edwards25519.FeAdd(&tt, x, &t)   // u+1
@@ -156,9 +156,9 @@ e2e.vrf.extra25519.montgomeryXToEdwardsY = function(x) {
  * @param {!e2e.ByteArray} h A byte array of length 32
  * @return {!e2e.ecc.point.Ed25519}
  */
-e2e.vrf.extra25519.hashToEdwards = function(h) {
+e2e.coname.vrf.extra25519.hashToEdwards = function(h) {
 
-  var ed25519Curve = e2e.vrf.extra25519.ed25519_.curve;
+  var ed25519Curve = e2e.coname.vrf.extra25519.ed25519_.curve;
   // hh := *h
   // bit := hh[31] >> 7
   // hh[31] &= 127
@@ -169,14 +169,13 @@ e2e.vrf.extra25519.hashToEdwards = function(h) {
   // Here it is unsafe to use ed25519.curve.elementFromByteArray(),
   //  as it enforces byteArray to be within the modulus q
   var q = ed25519Curve.q;
-  var outY = new e2e.ecc.Element(q,
-      new e2e.BigNum(h.reverse()).mod(q));
+  var outY = new e2e.ecc.Element(q, new e2e.BigNum(h.reverse()).mod(q));
 
   // representativeToMongomeryX(&out.X, &out.Y)
-  var outX = e2e.vrf.extra25519.representativeToMontgomeryX(outY);
+  var outX = e2e.coname.vrf.extra25519.representativeToMontgomeryX(outY);
 
   // montgomeryXToEdwardsY(&out.Y, &out.X)
-  outY = e2e.vrf.extra25519.montgomeryXToEdwardsY(outX);
+  outY = e2e.coname.vrf.extra25519.montgomeryXToEdwardsY(outX);
 
   // if ok := out.FromParityAndY(bit, &out.Y); !ok {
   //  panic("HashToEdwards: point not on curve")
