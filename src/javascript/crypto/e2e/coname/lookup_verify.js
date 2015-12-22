@@ -342,7 +342,7 @@ e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
  * @return {boolean} whether it is properly validated
  */
 e2e.coname.verifyLookup = function(realm, user, pf) {
-  var tree, rootHash, entryHash, profileHash,
+  var tree, rootHash, entryHash, profileHash, verifiedEntryHash,
       SHA3Shake256 = e2e.coname.sha3.shake256;
 
   if (pf.user_id !== '' && pf.user_id !== user) {
@@ -382,13 +382,15 @@ e2e.coname.verifyLookup = function(realm, user, pf) {
         'VerifyLookup: failed to verify merkle tree: Root hashes mismatch!');
   }
 
-  if (!pf.tree_proof.existing_entry_hash) {
-    if (!pf.entry) {
+  // compare the entire index stored in the leaf node
+  if (!e2e.compareByteArray(pf.index, pf.tree_proof.existing_index)) {
+    // getting into this branch means no leaf with the requested index
+    if (pf.entry) {
       throw new e2e.error.InvalidArgumentsError(
           'VerifyLookup: non-empty entry ' + JSON.stringify(pf.entry) +
           ' did not match verified lookup result <null>');
     }
-    if (!pf.profile) {
+    if (pf.profile) {
       throw new e2e.error.InvalidArgumentsError(
           'VerifyLookup: non-empty profile ' + JSON.stringify(pf.profile) +
           ' did not match verified lookup result <null>');
