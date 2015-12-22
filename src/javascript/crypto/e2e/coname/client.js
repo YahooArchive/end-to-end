@@ -282,7 +282,6 @@ e2e.coname.Client.prototype.lookup = function(email, callback, errback) {
     }
 
     xhr.send(JSON.stringify({
-      epoch: realm.epoch_time_to_live.seconds,
       user_id: email,
       quorum_requirement: realm.verification_policy.quorum
     }));
