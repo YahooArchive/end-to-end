@@ -281,6 +281,27 @@ e2e_config() {
   fi
 }
 
+e2e_build_docs() {
+  DOSSIER_JAR="lib/js-dossier/bazel-bin/src/java/com/github/jsdossier/dossier_deploy.jar"
+  rm -rf docs/api/*
+  if [ ! -f $DOSSIER_JAR ]; then
+    if [ -z `which bazel` ]; then
+      echo "Bazel is not installed. Bazel is needed by js-dossier to build the documentation."
+      echo "Follow instructions at http://bazel.io/docs/install.html to install."
+      echo "Make sure 'bazel' command line tool is available."
+      RETVAL=1
+      exit
+    else
+      pushd lib/js-dossier
+      ./gendossier.sh -r
+      popd
+    fi
+  fi
+  e2e_build_templates
+  java -jar $DOSSIER_JAR -c lib/docs-build/dossier-config.json
+  RETVAL=$?
+}
+
 RETVAL=0
 
 CMD=$1
@@ -317,6 +338,9 @@ case "$CMD" in
   lint)
     e2e_lint $*;
     ;;
+  build_docs)
+    e2e_build_docs;
+    ;;
   deps)
     e2e_generate_deps;
     ;;
@@ -327,7 +351,7 @@ case "$CMD" in
     e2e_config $*;
     ;;
   *)
-    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|clean|check_deps|clean_deps|install_deps|testserver|lint|zip|config} [debug]"
+    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|build_docs|clean|check_deps|clean_deps|install_deps|testserver|lint|zip|config} [debug]"
     RETVAL=1
 esac
 
