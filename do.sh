@@ -35,6 +35,8 @@ e2e_assert_dependencies() {
     echo "Java 1.7 or higher is required to build End-To-End."
     exit 1
   fi
+  type node >/dev/null 2>&1 || { echo >&2 "NodeJS is required to build End-To-End."; exit 1; }
+  type npm >/dev/null 2>&1 || { echo >&2 "NPM is required to build End-To-End."; exit 1; }
   # Check if required files are present.
   files=(lib/closure-library \
     lib/closure-templates-compiler \

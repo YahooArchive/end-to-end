@@ -33,6 +33,14 @@ if [[ $jversion < "1.7" ]]; then
   echo "Java 1.7 or higher is required to build End-To-End."
   exit 1
 fi
+type node >/dev/null 2>&1 || {
+  echo >&2 "NodeJS is required to build End-To-End dependencies."
+  exit 1
+}
+type npm >/dev/null 2>&1 || {
+  echo >&2 "NPM is required to build End-To-End dependencies."
+  exit 1
+}
 
 if [ ! -d lib ]; then
   mkdir lib
