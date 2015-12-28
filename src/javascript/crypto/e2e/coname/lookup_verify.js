@@ -226,7 +226,7 @@ e2e.coname.numberTo4ByteArray_ = function(value) {
 
 /**
  * @private
- * assumes ownership of the array underlying prefixBits
+ * Recompute the root hash that represents the merkle tree
  * @param {!e2e.ByteArray} treeNonce The tree nonce
  * @param {Array.<boolean>} prefixBits The prefix bits
  * @param {object} node The ReconstructedNode
@@ -275,8 +275,8 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
     // This gives H(k_internal || h_child0 || h_child1 || prefix || depth)
     return shake256.
         update(e2e.coname.MERKLE_NODEID_INTERNAL).
-        update(childHashes[0] || []).
-        update(childHashes[1] || []).
+        update(childHashes[0]).
+        update(childHashes[1]).
         update(e2e.coname.toBytes_(prefixBits)).
         update(e2e.coname.numberTo4ByteArray_(prefixBits.length)).
         digest();
