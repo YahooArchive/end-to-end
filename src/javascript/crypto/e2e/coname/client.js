@@ -19,6 +19,9 @@
  */
 
 goog.provide('e2e.coname.Client');
+goog.provide('e2e.coname.QuorumRequirement');
+goog.provide('e2e.coname.RealmConfig');
+goog.provide('e2e.coname.VerificationPolicy');
 goog.provide('e2e.coname.getRealmByEmail');
 
 goog.require('e2e.coname.verifyLookup');
@@ -33,15 +36,54 @@ goog.require('goog.net.jsloader');
 
 /**
  * @private
+ * @type {Object<string, e2e.coname.RealmConfig>}
  * This cache serves as a map of domain to realm config
  */
 e2e.coname.realmConfig_ = {};
 
 
 /**
+ * The structure of Quorum Requirement
+ * @typedef {{
+ *    threshold: !Number,
+ *    candidates: ?Array.<string>,
+ *    subexpressions: ?e2e.coname.QuorumRequirement
+ * }}
+ */
+e2e.coname.QuorumRequirement;
+
+
+/**
+ * The structure of Verification Policy
+ * @typedef {{
+ *    public_keys: Object<string, Object<string, e2e.ByteArray>>,
+ *    quorum: e2e.coname.QuorumRequirement
+ * }}
+ */
+e2e.coname.VerificationPolicy;
+
+
+/**
+ * The structure of Realm Config
+ * @typedef {{
+ *    realm_name: !string,
+ *    domains: !Array.<string>,
+ *    addr: !string,
+ *    URL: !string,
+ *    VRFPublic: !e2e.ByteArray,
+ *    verification_policy: e2e.coname.VerificationPolicy,
+ *    epoch_time_to_live: number,
+ *    tree_nonce: (undefined|e2e.ByteArray)
+ * }}
+ */
+e2e.coname.RealmConfig;
+
+
+/**
  * flattenRealmQuorums_ puts all (nested) quorums into a flattened array
  * @private
- * @param {object} quorums The quorum requirement extracted from realm config
+ * @param {e2e.coname.QuorumRequirement} quorums The quorum requirement
+ *        extracted from realm config
  * @return {Array.<string>} an array of all quorum IDs
  */
 e2e.coname.flattenRealmQuorums_ = function(quorums) {
@@ -67,7 +109,7 @@ e2e.coname.flattenRealmQuorums_ = function(quorums) {
  * @private
  * Initialize and return the realm constants for the provided domain
  * @param {string} domain The domain name
- * @return {?object} ret The corresponding RealmConfig, null if not found
+ * @return {?e2e.coname.RealmConfig} ret The corresponding RealmConfig
  */
 e2e.coname.getRealmByDomain_ = function(domain) {
   var ret = e2e.coname.realmConfig_[domain] || null;
@@ -89,8 +131,10 @@ e2e.coname.getRealmByDomain_ = function(domain) {
       for (id in keys) {
         if (keys[id].ed25519) {
           keys[id].ed25519Verifier = new e2e.ecc.Ed25519(
-              e2e.ecc.PrimeCurve.ED_25519,
-              {'pubKey': keys[id].ed25519});
+              e2e.ecc.PrimeCurve.ED_25519, {
+                pubKey: keys[id].ed25519,
+                privKey: []
+              });
         }
       }
 
@@ -111,7 +155,7 @@ e2e.coname.getRealmByDomain_ = function(domain) {
 /**
  * Get the realm constants based on the domain of email address
  * @param {string} user The username
- * @return {object} ret The RealmConfig
+ * @return {?e2e.coname.RealmConfig} The RealmConfig
  */
 e2e.coname.getRealmByEmail = function(user) {
   var i = user.indexOf('@');
@@ -130,7 +174,7 @@ e2e.coname.getRealmByEmail = function(user) {
  */
 e2e.coname.Client = function() {
   /**
-   * @type {?{LookupRequest: Function}}
+   * @type {?Object<string,*>}
    */
   this.proto = null;
 
@@ -144,7 +188,7 @@ e2e.coname.Client = function() {
 /**
  * Initializes the external protobuf dependency.
  * @param {function()} callback The function to call when protobuf is loaded.
- * @param {function()} errback The error callback.
+ * @param {function(Error)} errback The error callback.
  */
 e2e.coname.Client.prototype.initialize = function(callback, errback) {
   var pbURL = chrome.runtime.getURL('protobuf-light.alldeps.js');
@@ -180,10 +224,10 @@ e2e.coname.Client.prototype.initialize = function(callback, errback) {
  * @private
  * Parse, decode, and transform a lookup response
  * @param {string} jsonString The lookup message to decode
- * @return {object} The lookup response
+ * @return {e2e.coname.LookupResponse} The lookup response
  */
 e2e.coname.Client.prototype.decodeLookupMessage_ = function(jsonString) {
-  var self = this;
+  var proto = this.proto;
   var lookupProof = JSON.parse(jsonString);
   var b64decode = goog.crypt.base64.decodeStringToByteArray;
 
@@ -203,7 +247,7 @@ e2e.coname.Client.prototype.decodeLookupMessage_ = function(jsonString) {
   goog.array.forEach(lookupProof.ratifications, function(r) {
     var id, encoding = b64decode(r.head), rHH;
 
-    r.head = self.proto.TimestampedEpochHead.decode(encoding);
+    r.head = proto['TimestampedEpochHead'].decode(encoding);
     rHH = r.head.head;
     rHH.encoding = new Uint8Array(rHH.encodeAB());
     rHH.previous_summary_hash = new Uint8Array(
@@ -219,26 +263,26 @@ e2e.coname.Client.prototype.decodeLookupMessage_ = function(jsonString) {
   });
 
   var entry = b64decode(lookupProof.entry);
-  lookupProof.entry = self.proto.Entry.decode(entry);
+  lookupProof.entry = proto['Entry'].decode(entry);
   lookupProof.entry.profile_commitment = new Uint8Array(
       lookupProof.entry.profile_commitment.toBuffer());
   lookupProof.entry.encoding = entry;
 
 
   var profile = b64decode(lookupProof.profile);
-  lookupProof.profile = self.proto.Profile.decode(profile);
+  lookupProof.profile = proto['Profile'].decode(profile);
   lookupProof.profile.encoding = profile;
 
-  return lookupProof;
+  return /** @type {e2e.coname.LookupResponse} */ (lookupProof);
 };
 
 
 /**
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
- * @param {function(email, keys)} callback The function to call when the email
- *  is associated with proper keys
- * @param {function(email, error)} errback The function to call when the email
+ * @param {function(string, Object)} callback The function to call with email
+ *  and pgp key as parameters
+ * @param {function(string, Error)} errback The function to call when the email
  *  lacks proper keys
  */
 e2e.coname.Client.prototype.lookup = function(email, callback, errback) {
@@ -263,8 +307,11 @@ e2e.coname.Client.prototype.lookup = function(email, callback, errback) {
         if (xhr.status === 200) {
           try {
             var lookupProof = this.decodeLookupMessage_(xhr.responseText);
-            if (e2e.coname.verifyLookup(realm, userid, lookupProof)) {
-              callback && callback(email, lookupProof.keys.map);
+            if (e2e.coname.verifyLookup(
+                /** @type {e2e.coname.RealmConfig} */ (realm),
+                email,
+                lookupProof)) {
+              callback && callback(email, lookupProof.keys);
               return;
             }
           } catch (e) {

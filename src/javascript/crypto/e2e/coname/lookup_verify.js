@@ -19,7 +19,13 @@
  * This is ported from https://github.com/yahoo/coname/blob/master/lookup.go
  */
 goog.provide('e2e.coname');
+goog.provide('e2e.coname.EpochHead');
+goog.provide('e2e.coname.LookupResponse');
+goog.provide('e2e.coname.MerkleLeaf');
 goog.provide('e2e.coname.MerkleNode');
+goog.provide('e2e.coname.SignedEpochHead');
+goog.provide('e2e.coname.Timestamp');
+goog.provide('e2e.coname.TreeProof');
 goog.provide('e2e.coname.verifyLookup');
 
 goog.require('e2e');
@@ -74,21 +80,90 @@ e2e.coname.MERKLE_NODEID_EMPTY_BRANCH = [69]; // ['E'.charCodeAt(0)]
 /**
  * Refer to https://github.com/yahoo/coname/blob/master/merkle.go#L31-L44
  * @typedef {{
- *    depth: number,
- *    index: ?e2e.ByteArray,
- *    value: ?e2e.ByteArray,
- *    children: ?Array.<object>
+ *  depth: !number,
+ *  children:!Array.<e2e.ByteArray|e2e.coname.MerkleNode|e2e.coname.MerkleLeaf>
  * }}
  */
 e2e.coname.MerkleNode;
 
 
 /**
+ * Refer to https://github.com/yahoo/coname/blob/master/merkle.go#L31-L44
+ * @typedef {{
+ *    depth: !number,
+ *    index: !e2e.ByteArray,
+ *    value: !e2e.ByteArray
+ * }}
+ */
+e2e.coname.MerkleLeaf;
+
+
+/**
+ * The structure of tree proof
+ * @typedef {{
+ *    neighbors: Array.<e2e.ByteArray>,
+ *    existing_index: e2e.ByteArray,
+ *    existing_entry_hash: e2e.ByteArray
+ * }}
+ */
+e2e.coname.TreeProof;
+
+
+/**
+ * The structure of tree proof
+ * @typedef {{
+ *    realm: !string,
+ *    epoch: !Long,
+ *    root_hash: !e2e.ByteArray,
+ *    issue_time: !number,
+ *    previous_summary_hash: !e2e.ByteArray,
+ *    next_epoch_policy: ProtoBuf.Builder.Message,
+ *    encoding: (e2e.ByteArray|Uint8Array)
+ * }}
+ */
+e2e.coname.EpochHead;
+
+
+/**
+ * The structure of Timestamp
+ * @typedef {{seconds: Long, nanos: number}}
+ */
+e2e.coname.Timestamp;
+
+
+/**
+ * The structure of Signed Epoch Head
+ * @typedef {{
+ *    head: e2e.coname.EpochHead,
+ *    timestamp: e2e.coname.Timestamp,
+ *    signatures: Object<string, e2e.ByteArray>,
+ *    encoding: (e2e.ByteArray|Uint8Array)
+ * }}
+ */
+e2e.coname.SignedEpochHead;
+
+
+/**
+ * The structure of Lookup response message
+ * @typedef {{
+ *    user_id: !string,
+ *    index: !e2e.ByteArray,
+ *    index_proof: !e2e.ByteArray,
+ *    ratifications: ?Array.<e2e.coname.SignedEpochHead>,
+ *    tree_proof: !e2e.coname.TreeProof,
+ *    entry: (undefined|ProtoBuf.Builder.Message),
+ *    profile: (undefined|ProtoBuf.Builder.Message)
+ * }}
+ */
+e2e.coname.LookupResponse;
+
+
+/**
  * @private
  * In each byte, the bits are ordered MSB to LSB
- * @param {number} num The number of bits
+ * @param {!number} num The number of bits
  * @param {!e2e.ByteArray} byteArray The byte array
- * @return {Array.<boolean>} The bit array
+ * @return {!Array.<boolean>} The bit array
  */
 e2e.coname.toBits_ = function(num, byteArray) {
   for (var bits = [], i = 0, b; i < num; i += 8) {
@@ -124,8 +199,8 @@ e2e.coname.toBytes_ = function(bits) {
  * CheckQuorum evaluates whether the quorum requirement want can be
  * satisfied by ratifications of the verifiers in have.
  * @private
- * @param {object} want The quorum requirement
- * @param {object} have The ratifications
+ * @param {e2e.coname.QuorumRequirement} want The quorum requirement
+ * @param {Object<string, boolean>} have The valid verifier ids
  * @return {boolean} whether the quorum is validated
  */
 e2e.coname.checkQuorum_ = function(want, have) {
@@ -148,20 +223,22 @@ e2e.coname.checkQuorum_ = function(want, have) {
 
 /**
  * @private
- * @param {object} rcg The RealmConfig
- * @param {object} ratifications The array of SignedEpochHead
- * @param {Date} now The current time
+ * @param {!e2e.coname.RealmConfig} rcg The realm config
+ * @param {Array.<e2e.coname.SignedEpochHead>} ratifications The array of
+ *        Signed Epoch Head
+ * @param {!Date} now The current time
  * @return {boolean} whether sufficient ratifications are in consensus
  */
 e2e.coname.verifyConsensus_ = function(rcg, ratifications, now) {
-  var i = 1, n = ratifications.length, have = {}, want, got, t, valid,
-      firstHeadHead = ratifications[0].head.head;
+  var i = 1, n, have = {}, want, got, t, valid, pks, firstHeadHead;
 
-  if (n === 0) {
+  if (!ratifications || (n = ratifications.length) === 0) {
     throw new e2e.error.InvalidArgumentsError(
         'VerifyConsensus: no signed epoch heads provided');
   }
+
   // check that all the SEHs have the same head
+  firstHeadHead = ratifications[0].head.head;
   want = firstHeadHead.encoding;
   for (; i < n; i++) {
     got = ratifications[i].head.head.encoding;
@@ -229,7 +306,8 @@ e2e.coname.numberTo4ByteArray_ = function(value) {
  * Recompute the root hash that represents the merkle tree
  * @param {!e2e.ByteArray} treeNonce The tree nonce
  * @param {Array.<boolean>} prefixBits The prefix bits
- * @param {object} node The ReconstructedNode
+ * @param {?e2e.coname.MerkleNode|e2e.coname.MerkleLeaf} node The reconstructed
+ *        node
  * @return {!e2e.ByteArray}
  */
 e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
@@ -259,11 +337,9 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
     for (var h, childHashes = [], i = 0; i < 2; i++) {
       h = node.children[i];
 
-      childHashes[i] = h.Omitted ?
-          h.Omitted :
-          e2e.coname.recomputeHash_(treeNonce,
-          prefixBits.concat(i === 1),
-          h.Present);
+      childHashes[i] = goog.isArray(h) ?
+          h :
+          e2e.coname.recomputeHash_(treeNonce, prefixBits.concat(i === 1), h);
     }
 
     // return HashInternalNode(prefixBits, childHashes);
@@ -287,10 +363,10 @@ e2e.coname.recomputeHash_ = function(treeNonce, prefixBits, node) {
 
 /**
  * @private
- * @param {object} trace The tree proof
- * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
- * @param {Number} depth The depth of the tree
- * @return {e2e.coname.MerkleNode}
+ * @param {!e2e.coname.TreeProof} trace The tree proof
+ * @param {!Array<boolean>} lookupIndexBits The bit array of the lookup index
+ * @param {!number} depth The depth of the tree
+ * @return {?e2e.coname.MerkleNode|e2e.coname.MerkleLeaf}
  */
 e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
 
@@ -305,14 +381,12 @@ e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
     return null;
   }
 
-  var children = [], presentChild = lookupIndexBits[depth];
+  var children = [], presentChild = lookupIndexBits[depth] ? 1 : 0;
 
-  children[presentChild ? 1 : 0] = {
-    Present: e2e.coname.reconstructBranch_(trace, lookupIndexBits, depth + 1)
-  };
-  children[presentChild ? 0 : 1] = {
-    Omitted: trace.neighbors[depth]
-  };
+  children[presentChild] = e2e.coname.reconstructBranch_(
+      trace, lookupIndexBits, depth + 1);
+  // xor 1 can flip the bit (i.e., switching bit 0 to 1, and vice versa)
+  children[presentChild ^ 1] = trace.neighbors[depth];
 
   return {
     depth: depth,
@@ -323,9 +397,9 @@ e2e.coname.reconstructBranch_ = function(trace, lookupIndexBits, depth) {
 
 /**
  * @private
- * @param {object} trace The tree proof
- * @param {!e2e.ByteArray} lookupIndexBits The bit array of the lookup index
- * @return {object} the ReconstructedNode
+ * @param {e2e.coname.TreeProof} trace The tree proof
+ * @param {!Array.<boolean>} lookupIndexBits The bit array of the lookup index
+ * @return {?e2e.coname.MerkleNode|e2e.coname.MerkleLeaf}
  */
 e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
   return e2e.coname.reconstructBranch_(trace, lookupIndexBits, 0);
@@ -336,10 +410,10 @@ e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
  * Check if the lookup request and proof is correctly validated
  * Refer to https://github.com/yahoo/coname/blob/master/lookup.go#L49-L90
  *
- * @param {object} realm The realm object
+ * @param {e2e.coname.RealmConfig} realm The realm config
  * @param {string} user The userid (typically email address)
- * @param {object} pf The lookup proof retrieved from the keyserver
- * @return {boolean} whether it is properly validated
+ * @param {e2e.coname.LookupResponse} pf The lookup proof from keyserver
+ * @return {boolean} whether the proof is properly validated
  */
 e2e.coname.verifyLookup = function(realm, user, pf) {
   var tree, rootHash, entryHash, profileHash, verifiedEntryHash,
