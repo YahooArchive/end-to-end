@@ -49,6 +49,9 @@ function setUp() {
     return 'chrome-extension://abcd';
   });
   stubs.replace(e2e.ext.utils, 'sendProxyRequest', goog.nullFunction);
+  stubs.setPath('window.setTimeout', function(callback) {
+    callback();
+  });
 }
 
 

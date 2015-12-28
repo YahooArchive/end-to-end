@@ -26,13 +26,15 @@ goog.provide('e2e.openpgp.FileOptions');
 goog.provide('e2e.openpgp.GenerateKeyResult');
 goog.provide('e2e.openpgp.ImportKeyResult');
 goog.provide('e2e.openpgp.Key');
+goog.provide('e2e.openpgp.KeyFingerprint');
+goog.provide('e2e.openpgp.KeyId');
 goog.provide('e2e.openpgp.KeyPacketInfo');
 goog.provide('e2e.openpgp.KeyResult');
 goog.provide('e2e.openpgp.KeyRingMap');
-goog.provide('e2e.openpgp.KeyRingType');
 goog.provide('e2e.openpgp.KeyringBackupInfo');
 goog.provide('e2e.openpgp.Keys');
 goog.provide('e2e.openpgp.SerializedKeyRing');
+goog.provide('e2e.openpgp.TransferableKeyMap');
 goog.provide('e2e.openpgp.VerifiedDecrypt');
 goog.provide('e2e.openpgp.VerifyDecryptResult');
 goog.provide('e2e.openpgp.VerifyResult');
@@ -120,7 +122,7 @@ e2e.openpgp.EncryptSignResult;
 
 /**
  * Single key packet information.
- * @typedef {?{fingerprint: !e2e.ByteArray, secret: boolean,
+ * @typedef {?{fingerprint: e2e.openpgp.KeyFingerprint, secret: boolean,
  *     algorithm: string, fingerprintHex: string}}
  */
 e2e.openpgp.KeyPacketInfo;
@@ -175,7 +177,7 @@ e2e.openpgp.SerializedKeyRing;
  * @typedef {goog.structs.Map.<string,
  *                            !Array.<!e2e.openpgp.block.TransferableKey>>}
  */
-e2e.openpgp.KeyRingType;
+e2e.openpgp.TransferableKeyMap;
 
 
 /**
@@ -183,3 +185,18 @@ e2e.openpgp.KeyRingType;
  * @typedef {goog.structs.Map.<string, !Array.<!e2e.openpgp.Key>>}
  */
 e2e.openpgp.KeyRingMap;
+
+
+/**
+ * OpenPGP fingerprint of the key.
+ * @typedef {!e2e.ByteArray}
+ */
+e2e.openpgp.KeyFingerprint;
+
+
+/**
+ * OpenPGP Key ID, as defined in
+ * https://tools.ietf.org/html/rfc4880#section-3.3.
+ * @typedef {!e2e.ByteArray}
+ */
+e2e.openpgp.KeyId;

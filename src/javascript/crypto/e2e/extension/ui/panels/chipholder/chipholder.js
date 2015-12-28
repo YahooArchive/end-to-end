@@ -22,6 +22,7 @@ goog.provide('e2e.ext.ui.panels.ChipHolder');
 
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.panels.Chip');
+goog.require('e2e.ext.ui.panels.ChipHolderInputHandler');
 goog.require('e2e.ext.ui.templates.panels.chipholder');
 goog.require('goog.array');
 goog.require('goog.dom.classlist');
@@ -32,8 +33,9 @@ goog.require('goog.string');
 goog.require('goog.structs.Map');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
-goog.require('goog.ui.ac');
+goog.require('goog.ui.ac.ArrayMatcher');
 goog.require('goog.ui.ac.AutoComplete');
+goog.require('goog.ui.ac.Renderer');
 goog.require('soy');
 
 goog.scope(function() {
@@ -109,10 +111,44 @@ panels.ChipHolder.prototype.decorateInternal = function(elem) {
   this.keyHandler_ = new goog.events.KeyHandler(elem, true);
 
   soy.renderElement(elem, templates.renderChipHolder, {
-    recipientsTitle: chrome.i18n.getMessage('promptRecipientsPlaceholder')
+    recipientsTitle: chrome.i18n.getMessage('promptRecipientsPlaceholder'),
+    passphraseEncryptionLinkTitle: chrome.i18n.getMessage(
+        'promptEncryptionPassphraseLink'),
+    passphraseEncryptionLinkTooltip: chrome.i18n.getMessage(
+        'promptEncryptionPassphraseLinkTooltip')
   });
 
   this.shadowInputElem_ = elem.querySelector('input');
+};
+
+
+/**
+ * Factory function for building an autocomplete widget for the Chips.
+ * @return {!goog.ui.ac.AutoComplete} A new autocomplete object.
+ * @private
+ */
+panels.ChipHolder.prototype.createAutoComplete_ = function() {
+  var matcher = new goog.ui.ac.ArrayMatcher(this.allUids_, false);
+  var renderer = new goog.ui.ac.Renderer();
+  var inputHandler = new panels.ChipHolderInputHandler(goog.bind(
+      this.handleNewChipValue_, this));
+  var autoComplete = new goog.ui.ac.AutoComplete(
+      matcher, renderer, inputHandler);
+  inputHandler.attachAutoComplete(autoComplete);
+  inputHandler.attachInputs(this.shadowInputElem_);
+  return autoComplete;
+};
+
+
+/**
+ * Handles the new chip value entered by the user, detecting whether the chip
+ * is valid or not.
+ * @param  {string} chipValue The value of the chip.
+ * @private
+ */
+panels.ChipHolder.prototype.handleNewChipValue_ = function(chipValue) {
+  var markChipBad = !goog.array.contains(this.allUids_, chipValue);
+  this.addAndMarkChip_(markChipBad);
 };
 
 
@@ -124,22 +160,14 @@ panels.ChipHolder.prototype.enterDocument = function() {
                        this.addChip(uid, true);
                      }, this);
 
-  this.autoComplete_ = goog.ui.ac.createSimpleAutoComplete(
-      this.allUids_, // values for the auto-complete box
-      this.shadowInputElem_,
-      true); // multi-line
+  this.autoComplete_ = this.createAutoComplete_();
 
   var renderer = this.autoComplete_.getRenderer();
   renderer.setAnchorElement(this.getElement());
   this.getHandler().listen(
-      renderer,
-      goog.ui.ac.AutoComplete.EventType.SELECT,
-      this.addChip);
-
-  this.getHandler().listen(
       this.getElement(),
       goog.events.EventType.CLICK,
-      this.refocus_,
+      this.focus,
       true);
 
   this.getHandler().listen(
@@ -255,9 +283,8 @@ panels.ChipHolder.prototype.getProvidedPassphrases = function() {
 
 /**
  * Changes focus to the input field.
- * @private
  */
-panels.ChipHolder.prototype.refocus_ = function() {
+panels.ChipHolder.prototype.focus = function() {
   this.shadowInputElem_.focus();
 };
 
@@ -275,27 +302,6 @@ panels.ChipHolder.prototype.handleKeyEvent_ = function(evt) {
   switch (evt.keyCode) {
     case goog.events.KeyCodes.BACKSPACE:
       this.removeChipOnBackspace_();
-      break;
-    case goog.events.KeyCodes.TAB:
-    case goog.events.KeyCodes.ENTER:
-    case goog.events.KeyCodes.SPACE:
-    case goog.events.KeyCodes.COMMA:
-      if (this.shadowInputElem_.value.length > 0) {
-        evt.preventDefault();
-        evt.stopPropagation();
-        this.refocus_();
-      }
-
-      var suggestion = this.autoComplete_.getSuggestion(0);
-      var markChipBad = false;
-      if (suggestion) {
-        this.shadowInputElem_.value = suggestion;
-      } else if (this.shadowInputElem_.value.length > 0) {
-        markChipBad = true;
-      }
-
-      this.addAndMarkChip_(markChipBad);
-
       break;
     default:
       if (goog.events.KeyCodes.isCharacterKey(evt.keyCode)) {
