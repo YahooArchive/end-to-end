@@ -24,11 +24,14 @@ goog.provide('e2e.coname.RealmConfig');
 goog.provide('e2e.coname.VerificationPolicy');
 goog.provide('e2e.coname.getRealmByEmail');
 
+goog.require('e2e');
+goog.require('e2e.coname.sha3');
 goog.require('e2e.coname.verifyLookup');
 goog.require('e2e.ecc.Ed25519');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.config');
+goog.require('e2e.random');
 goog.require('goog.array');
 goog.require('goog.crypt.base64');
 goog.require('goog.net.jsloader');
@@ -223,13 +226,14 @@ e2e.coname.Client.prototype.initialize = function(callback, errback) {
 /**
  * @private
  * Parse, decode, and transform a lookup response
+ * @param {object} proto The initialized protobuf object
  * @param {string} jsonString The lookup message to decode
  * @return {e2e.coname.LookupResponse} The lookup response
  */
-e2e.coname.Client.prototype.decodeLookupMessage_ = function(jsonString) {
-  var proto = this.proto;
+e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
   var lookupProof = JSON.parse(jsonString);
   var b64decode = goog.crypt.base64.decodeStringToByteArray;
+  var profile, entry;
 
   // a lot of convertions before they can be verified
   // TODO: except the use of encodeAB(), may be better to move them to server
@@ -262,26 +266,143 @@ e2e.coname.Client.prototype.decodeLookupMessage_ = function(jsonString) {
     }
   });
 
-  var entry = b64decode(lookupProof.entry);
-  lookupProof.entry = proto['Entry'].decode(entry);
-  lookupProof.entry.profile_commitment = new Uint8Array(
-      lookupProof.entry.profile_commitment.toBuffer());
-  lookupProof.entry.encoding = entry;
+  if (lookupProof.entry) {
+    entry = b64decode(lookupProof.entry);
+    lookupProof.entry = proto['Entry'].decode(entry);
+    lookupProof.entry.profile_commitment = new Uint8Array(
+        lookupProof.entry.profile_commitment.toBuffer());
+    lookupProof.entry.encoding = entry;
+  }
 
-
-  var profile = b64decode(lookupProof.profile);
-  lookupProof.profile = proto['Profile'].decode(profile);
-  lookupProof.profile.encoding = profile;
+  if (lookupProof.profile) {
+    profile = b64decode(lookupProof.profile);
+    lookupProof.profile = proto['Profile'].decode(profile);
+    lookupProof.profile.encoding = profile;
+  }
 
   return /** @type {e2e.coname.LookupResponse} */ (lookupProof);
 };
 
 
 /**
+ * @private
+ * Encode the update request message
+ * @param {object} proto The initialized protobuf object
+ * @param {string} email The email address
+ * @param {!e2e.ByteArray} key OpenPGP key to send
+ * @param {object} realm The RealmConfig
+ * @param {object} oldProof The lookup proof just obtained
+ * @return {object} The update message
+ */
+e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
+
+  var keys, hProfile, profile, entry;
+
+  // if a current profile exists
+  if (oldProof.profile) {
+    // clone the old key set
+    keys = proto.Profile.decode(oldProof.profile.encoding).keys;
+    // update only the pgp key
+    keys.set('pgp', goog.crypt.base64.encodeByteArray(key));
+  } else {
+    keys = {'pgp': new Uint8Array(key)};
+  }
+
+  profile = proto.Profile.encode({
+    nonce: new Uint8Array(e2e.random.getRandomBytes(16)),
+    keys: keys
+  });
+
+  hProfile = new Uint8Array(
+      e2e.coname.sha3.shake256(64).update(profile.toBuffer()).digest());
+
+  // if a current entry exists
+  if (oldProof.entry) {
+    entry = proto.Entry.decode(oldProof.entry.encoding); // clone
+    entry.version = entry.version.add(1);
+    entry.profile_commitment = hProfile;
+  } else {
+    entry = proto.Entry.encode({
+      index: new Uint8Array(oldProof.index),
+      version: 0, // version starts at 0 at registration
+      // TODO: support other update_policy
+      update_policy: {quorum: {}},
+      profile_commitment: hProfile
+    });
+  }
+
+  return {
+    update: {
+      new_entry: entry.toBase64(),
+      signatures: {}
+    },
+    profile: profile.toBase64(),
+    lookup_parameters: {
+      user_id: email,
+      quorum_requirement: realm.verification_policy.quorum
+    },
+    // TODO: disable DKIM for now
+    // dkim_proof: null
+  };
+
+};
+
+
+/**
+ * @private
+ * Send the data over AJAX
+ * @param {string} method The HTTP method to use, such as "GET", "POST", "PUT",
+ *                        "DELETE", etc. Ignored for non-HTTP(S) URLs
+ * @param {string} url The URL to send the request to
+ * @param {Number} timeout The number of milliseconds a request can take before
+ *                         automatically being terminated. A value of 0 (which
+ *                         is the default) means there is no timeout.
+ * @param {object} data The data to be JSON stringified and sent as the HTTP
+ *                      request body
+ * @param {function(responseText)} callback The function to call if the server
+ *                                          responds 200 OK
+ * @param {function(email, error)} errback The function to call when there is
+ *                                         any errors (incl. 401, 404 status)
+ */
+e2e.coname.getAJAX_ = function(method, url, timeout, data, callback, errback) {
+
+  var xhr = new XMLHttpRequest();
+  xhr.open(method, url, true);
+  timeout && (xhr.timeout = timeout);
+  // xhr.setRequestHeader('Content-Type', 'application/json');
+
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      var errMessage, status = xhr.status;
+      if (status === 200) {
+        try {
+          callback(xhr.responseText);
+        } catch (e) {
+          errback(e);
+        }
+      } else {
+        errMessage = (status === 401) ? 'Unauthorized Access:' :
+            (status >= 500) ? 'Server Error:' : 'Connection Error:';
+        errback(new Error(errMessage + url));
+      }
+    }
+  };
+
+  if (errback) {
+    xhr.ontimeout = errback;
+    xhr.onerror = errback;
+  }
+
+  xhr.send(JSON.stringify(data));
+};
+
+
+/**
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
- * @param {function(string, Object)} callback The function to call with email
- *  and pgp key as parameters
+ * @param {function(string, ?Uint8Array, e2e.coname.RealmConfig,
+ *  e2e.coname.LookupResponse, function(string, Error))} callback The function
+ *  to call if the email is associated with proper keys
  * @param {function(string, Error)} errback The function to call when the email
  *  lacks proper keys
  */
@@ -296,43 +417,85 @@ e2e.coname.Client.prototype.lookup = function(email, callback, errback) {
     throw new e2e.error.InvalidArgumentsError(
         'Lookup: no realm is found for ' + email);
   }
-
+  
+  // TODO: make this possible for polling/retries
   this.initialize(function() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', realm.addr + '/lookup', true);
-    xhr.timeout = 5000; // 5s
-    // xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          try {
-            var lookupProof = this.decodeLookupMessage_(xhr.responseText);
-            if (e2e.coname.verifyLookup(
-                /** @type {e2e.coname.RealmConfig} */ (realm),
-                email,
-                lookupProof)) {
-              callback && callback(email, lookupProof.keys);
-              return;
-            }
-          } catch (e) {
-            errback_(e);
+    var proto = this.proto;
+
+    e2e.coname.getAJAX_(
+        'POST',
+        realm.addr + '/lookup',
+        5000,   // 5 sec
+        {
+          user_id: email,
+          quorum_requirement: realm.verification_policy.quorum
+        },
+        function(responseText) {
+          var pf = e2e.coname.decodeLookupMessage_(proto, responseText),
+              profile = pf.profile,
+              key;
+
+          if (!e2e.coname.verifyLookup(
+              /** @type {e2e.coname.RealmConfig} */ (realm), email, pf)) {
+            errback_(new Error('profile/keys cannot be validated'));
+            return;
           }
 
-        }
-        errback_(new Error('Lookup: no keys found'));
-      }
-    }.bind(this);
+          key = profile &&
+                profile.keys &&
+                profile.keys.has('pgp') ?
+                  profile.keys.get('pgp').toBuffer() : null;
 
-    if (errback) {
-      xhr.ontimeout = errback_;
-      xhr.onerror = errback_;
-    }
+          callback(email, key, realm, pf, errback_);
+        },
+        errback_);
 
-    xhr.send(JSON.stringify({
-      user_id: email,
-      quorum_requirement: realm.verification_policy.quorum
-    }));
   }, errback_);
 
 };
 
+
+/**
+ * Update or add public keys for an email address
+ * @param {string} email The email address
+ * @param {object} key The public key to associate with the email address
+ * @param {function(email, pgpKey, realm, proof, errback)} callback The
+ *  function to call if the email is updated and verified with proper keys
+ * @param {function(email, error)} errback The function to call when the email
+ *  lacks proper keys
+ */
+e2e.coname.Client.prototype.update = function(email, key, callback, errback) {
+
+  // TODO: save persistently the key in case update fails in the mid way
+
+  function lookupCallback(oldKeys, email, realm, oldProof, errback_) {
+    var proto = this.proto,
+        data = e2e.coname.encodeUpdateRequest_(proto, email, realm, oldProof);
+
+    e2e.coname.getAJAX_(
+        'POST',
+        realm.addr + '/update',
+        60000,  // 1min
+        data,
+        function(responseText) {
+          var pf = e2e.coname.decodeLookupMessage_(proto, responseText),
+              profile = pf.profile,
+              key;
+
+          if (data.profile !== profile.toBase64() ||
+              !e2e.coname.verifyLookup(
+                  /** @type {e2e.coname.RealmConfig} */ (realm), email, pf)) {
+            // TODO: poll the server until the update can be verified
+            errback_(new Error('profile/keys cannot be validated'));
+            return;
+          }
+
+          key = profile.keys.get('pgp').toBuffer();
+
+          callback(email, key, realm, pf, errback_);
+        },
+        errback_);
+  };
+
+  this.lookup(email, goog.bind(lookupCallback, this), errback);
+};
