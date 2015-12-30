@@ -61,11 +61,6 @@
   margin-top: 15px;
 }
 
-#storedKeys tr>td:first-child {
-  padding: 5px;
-  width: 530px;
-}
-
 #storedKeys tr>td {
   vertical-align: top;
 }
@@ -86,8 +81,11 @@
   opacity: .6;
 }
 
-#storedKeys .key-meta {
-  opacity: .6;
+#errorDiv {
+  color: #dd4b39;
+  font-size: 1em;
+  margin-bottom: 7px;
+  text-align: center;
 }
 
 .passphrase {

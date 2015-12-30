@@ -83,6 +83,8 @@ function setUp() {
   document.body.appendChild(ad1);
   document.body.appendChild(ad2);
 
+
+  stubs.setPath('chrome.runtime.onMessage.addListener', goog.nullFunction);
   // Simulate the provider listener
   window.addEventListener('message', function(msg) {
     var data = window.JSON.parse(msg.data);
@@ -170,6 +172,8 @@ function testE2ebindIconClick() {
 }
 
 
+// @yahoo, auto install glass is disabled by default for now
+/* 
 function testAutoInstallGlass() {
   var div1 = document.createElement('div');
   div1.className = 'compose-message';
@@ -217,6 +221,7 @@ function testAutoInstallGlass() {
     asyncTestCase.continueTesting();
   }, 200);
 }
+*/
 
 
 function testSendRequest() {

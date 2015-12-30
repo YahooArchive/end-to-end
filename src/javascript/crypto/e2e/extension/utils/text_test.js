@@ -63,20 +63,18 @@ function testPrettyTextWrap() {
   assertEquals(expectedStr, utils.prettyTextWrap(inputStr, 10));
 }
 
-
 function testGetPgpAction() {
   assertEquals(e2e.ext.constants.Actions.ENCRYPT_SIGN,
-      utils.getPgpAction('some text', true));
-  assertEquals(e2e.ext.constants.Actions.USER_SPECIFIED,
-      utils.getPgpAction('some text', false));
+      utils.getPgpAction('some text'));
   assertEquals(e2e.ext.constants.Actions.DECRYPT_VERIFY,
-      utils.getPgpAction('-----BEGIN PGP MESSAGE-----', true));
+      utils.getPgpAction('-----BEGIN PGP MESSAGE-----'));
+  assertEquals(e2e.ext.constants.Actions.DECRYPT_VERIFY,
+      utils.getPgpAction('-----BEGIN PGP SIGNED MESSAGE-----'));
   assertEquals(e2e.ext.constants.Actions.IMPORT_KEY,
-      utils.getPgpAction('-----BEGIN PGP PUBLIC KEY BLOCK-----', true));
+      utils.getPgpAction('-----BEGIN PGP PUBLIC KEY BLOCK-----'));
   assertEquals(e2e.ext.constants.Actions.IMPORT_KEY,
-      utils.getPgpAction('-----BEGIN PGP PRIVATE KEY BLOCK-----', true));
+      utils.getPgpAction('-----BEGIN PGP PRIVATE KEY BLOCK-----'));
 }
-
 
 function testExtractValidEmail() {
   'test@example.com, "we <ird>>\'>, <a@a.com>, n<ess" <t2@example.com>' +

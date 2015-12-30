@@ -209,7 +209,7 @@ e2e.openpgp.asciiArmor.parseClearSign = function(text) {
 
 
 /**
- * Canonicalizes data by converting all line endings to <CR><LF> and removing
+ * Canonicalizes data by converting all line endings to CR+LF and removing
  * trailing whitespace.
  * @param {string} data The text to canonicalize.
  * @return {string} The canonicalized text.
@@ -230,18 +230,6 @@ e2e.openpgp.asciiArmor.isClearSign = function(text) {
   return Boolean(startMessage !== -1 &&
       startSignature !== -1 &&
       startSignature > startMessage);
-};
-
-
-/**
- * Checks if the message is a PGP encrypted message format
- * @param {string} text
- * @return {!boolean}
- */
-e2e.openpgp.asciiArmor.isEncrypted = function(text) {
-  var startMessage = text.indexOf('-----BEGIN PGP MESSAGE-----');
-  var endMessage = text.indexOf('-----END PGP MESSAGE-----');
-  return Boolean(startMessage !== -1 && endMessage > startMessage);
 };
 
 

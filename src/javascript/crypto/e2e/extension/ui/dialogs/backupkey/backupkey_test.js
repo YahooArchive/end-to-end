@@ -93,6 +93,7 @@ function testGetKeyCode() {
 }
 
 
+// @yahoo
 function testGetBackupPhrase() {
   asyncTestCase.waitForAsync('Waiting for dialog to be populated with key');
   dialog.getBackupPhrase_().addCallback(function(phrase) {

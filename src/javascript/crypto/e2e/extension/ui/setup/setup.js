@@ -437,7 +437,7 @@ ui.Setup.prototype.getBackupPhrase_ = function() {
     action: constants.Actions.GET_KEYRING_BACKUP_DATA
   }), this, /** @param {e2e.openpgp.KeyringBackupInfo} data */ function(data) {
     // Passphrase is a string of N words followed by the count
-    result.callback([e2e.ext.utils.passphrase.bytesToPhrase(data.seed),
+    result.callback([e2e.ext.utils.passphrase.bytesToPhrase(data.seed || []),
                      data.count / 2 & 0x7F].join(' '));
   });
   return result;

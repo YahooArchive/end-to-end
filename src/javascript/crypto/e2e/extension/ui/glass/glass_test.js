@@ -48,6 +48,11 @@ function setUp() {
   stubs.setPath('chrome.runtime.getURL', function() {
     return 'chrome-extension://abcd';
   });
+  // @yahoo
+  stubs.setPath('window.setTimeout', function(callback) {
+    callback();
+  });
+  // @yahoo
   stubs.replace(e2e.ext.utils, 'sendProxyRequest', goog.nullFunction);
 }
 

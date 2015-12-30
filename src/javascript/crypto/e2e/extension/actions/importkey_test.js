@@ -21,6 +21,7 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.actions.ImportKeyTest');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
@@ -32,6 +33,7 @@ goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
 goog.require('goog.testing.mockmatchers.SaveArgument');
+goog.require('goog.testing.storage.FakeMechanism');
 goog.require('goog.ui.Component');
 goog.setTestOnly();
 
@@ -39,6 +41,7 @@ var constants = e2e.ext.constants;
 var mockControl = null;
 var stubs = new goog.testing.PropertyReplacer();
 var testCase = goog.testing.AsyncTestCase.createAndInstall();
+var storage;
 
 var PUBLIC_KEY_ASCII =
     '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
@@ -65,6 +68,7 @@ var PUBLIC_KEY_ASCII =
 function setUp() {
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
+  storage = new goog.testing.storage.FakeMechanism();
 
   var dialogContainer = document.createElement('div');
   dialogContainer.id = constants.ElementId.CALLBACK_DIALOG;
@@ -82,8 +86,9 @@ function testExecute() {
   var parentUi = new goog.ui.Component();
   parentUi.render(document.body);
 
-  var pgpContext = new e2e.openpgp.ContextImpl();
-  pgpContext.setKeyRingPassphrase(''); // No passphrase.
+  var pgpContext = new e2e.openpgp.ContextImpl(storage);
+  // No passphrase.
+  e2e.async.Result.getValue(pgpContext.initializeKeyRing(''));
   var request = {
     content: PUBLIC_KEY_ASCII,
     passphraseCallback: goog.nullFunction

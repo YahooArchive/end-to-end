@@ -74,6 +74,7 @@ ui.Prompt = function() {
    * @type {!Array.<!Object.<constants.Actions,string>>}
    * @private
    */
+  // @yahoo
   this.selectableActions_ = [{
     value: constants.Actions.CONFIGURE_EXTENSION,
     title: chrome.i18n.getMessage('actionConfigureExtension')
@@ -114,7 +115,7 @@ ui.Prompt.prototype.decorateInternal = function(elem) {
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('prompt_styles.css');
 
-  utils.action.getExtensionLauncher(function(launcher) {
+  utils.action.getLauncher(function(launcher) {
     this.pgpLauncher_ = launcher || this.pgpLauncher_;
     this.processSelectedContent_();
   }, this.displayFailure_, this);
@@ -128,6 +129,7 @@ ui.Prompt.prototype.getContentElement = function() {
 
 
 /**
+ * // @yahoo shows a menu instead of the compose/decrypt window
  * Process the retrieved content blob and display it into the prompt UI.
  * @param {constants.Actions=} opt_action Optional. The PGP action to perform.
  *     Defaults to user-specified.

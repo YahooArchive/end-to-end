@@ -47,6 +47,9 @@ function setUp() {
 
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
+
+  // @yahoo
+  stubs.setPath('chrome.tabs.reload', goog.nullFunction);
 }
 
 
@@ -71,6 +74,7 @@ function testReset() {
 }
 
 
+// @yahoo
 function testSendKeys() {
   panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
   stubs.replace(panel.keyserverClient_, 'sendKey',
@@ -109,6 +113,7 @@ function testSendKeys() {
 }
 
 
+// @yahoo
 function testSendKeysFailure() {
   panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
   panel.render(document.body);

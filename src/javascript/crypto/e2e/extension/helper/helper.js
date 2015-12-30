@@ -297,7 +297,7 @@ ext.Helper.prototype.getSelectedContentGmonkey_ = function(selectionRequest,
               this.getActiveElement_().value || '';
         }
 
-        var action = utils.text.getPgpAction(selectionBody, true);
+        var action = utils.text.getPgpAction(selectionBody);
         if (selectionRequest.enableLookingGlass &&
             messageElem &&
             !goog.isDef(messageElem.lookingGlass) &&
@@ -383,7 +383,7 @@ ext.Helper.prototype.getSelectedContentE2ebind_ = function(selectionRequest,
           }
         }
 
-        var action = utils.text.getPgpAction(selectionBody, true);
+        var action = utils.text.getPgpAction(selectionBody);
 
         callback({
           action: action,
@@ -480,7 +480,7 @@ ext.Helper.prototype.enableLookingGlass_ = function() {
 
     var selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
         messageElem.innerText);
-    var action = utils.text.getPgpAction(selectionBody, true);
+    var action = utils.text.getPgpAction(selectionBody);
     if (action == constants.Actions.DECRYPT_VERIFY) {
       var glass = new ui.GlassWrapper(messageElem);
       this.registerDisposable(glass);

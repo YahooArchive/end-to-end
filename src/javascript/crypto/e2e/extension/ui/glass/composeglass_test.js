@@ -21,7 +21,7 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.ui.ComposeGlassTest');
 
-goog.require('e2e.ext.Launcher');
+goog.require('e2e.ext.ExtensionLauncher');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.testingstubs');
@@ -30,6 +30,7 @@ goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.factory');
+goog.require('e2e.openpgp.ContextImpl');
 /** @suppress {extraRequire} intentionally importing all signer functions */
 goog.require('e2e.signer.all');
 goog.require('goog.array');
@@ -41,6 +42,7 @@ goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
 goog.require('goog.testing.mockmatchers.ArgumentMatcher');
+goog.require('goog.testing.storage.FakeMechanism');
 
 goog.setTestOnly();
 
@@ -141,9 +143,19 @@ var PUBLIC_KEY_ASCII_2 =  // user ID of 'Drew Hintz <adhintz@google.com>'
 
 
 function setUp() {
-  window.localStorage.clear();
+  fakeStorage = new goog.testing.storage.FakeMechanism();
   mockControl = new goog.testing.MockControl();
+
+  context = new e2e.openpgp.ContextImpl(fakeStorage);
+  // No passphrase.
+  e2e.async.Result.getValue(context.initializeKeyRing(''));
+  
   e2e.ext.testingstubs.initStubs(stubs);
+  // @yahoo, the following are required by yExtensionLauncher
+  stubs.setPath('chrome.browserAction.setIcon', goog.nullFunction);
+  stubs.setPath('chrome.tabs.reload', goog.nullFunction);
+  stubs.setPath('chrome.runtime.onMessage.addListener', goog.nullFunction);
+
   var oldExtractValidEmail = e2e.ext.utils.text.extractValidEmail;
   var oldExtractValidYahooEmail = e2e.ext.utils.text.extractValidYahooEmail;
   stubs.replace(e2e.ext.utils.text, 'extractValidEmail', function(recipient) {
@@ -164,7 +176,7 @@ function setUp() {
 
 
   composeglass = new e2e.ext.ui.ComposeGlass(draft, 'resize', ORIGIN, 'foo');
-  launcher = new e2e.ext.Launcher();
+  launcher = new e2e.ext.ExtensionLauncher(context, fakeStorage);
   launcher.start();
 
   stubs.replace(e2e.ext.utils, 'sendProxyRequest', goog.nullFunction);
@@ -178,7 +190,7 @@ function setUp() {
     launcher.ctxApi_.executeAction_(cb, args);
   });
 
-  stubs.replace(e2e.ext.Launcher.prototype, 'hasPassphrase', function() {
+  stubs.replace(e2e.ext.ExtensionLauncher.prototype, 'hasPassphrase', function() {
     return true;
   });
 }
@@ -394,13 +406,20 @@ function testClose() {
 
 
 function populatePgpKeys(opt_key) {
-  var ctx = launcher.getContext();
-  ctx.importKey(function(uid) {
-    return e2e.async.Result.toResult('test');
-  }, PRIVATE_KEY_ASCII);
+  var pgpContext = launcher.getContext();
 
-  ctx.importKey(function() {}, PUBLIC_KEY_ASCII);
-  if (opt_key) {
-    ctx.importKey(function() {}, opt_key);
-  }
+  var TEST_PWD_CALLBACK = function(uid) {
+    return e2e.async.Result.toResult('test');
+  };
+
+  asyncTestCase.waitForAsync('Importing private key.');
+  pgpContext.importKey(TEST_PWD_CALLBACK, PRIVATE_KEY_ASCII).addCallback(function() {
+    asyncTestCase.waitForAsync('Importing public key.');
+    pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII).addCallback(function() {
+      if (opt_key) {
+        asyncTestCase.waitForAsync('Importing opt key.');
+        pgpContext.importKey(TEST_PWD_CALLBACK, opt_key);
+      }
+    });
+  });
 }

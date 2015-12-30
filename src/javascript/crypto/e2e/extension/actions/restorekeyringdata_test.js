@@ -40,7 +40,7 @@ var utils = e2e.ext.utils;
 var ui = null;
 
 function setUp() {
-  stubs.setPath('e2e.openpgp.KeyRing.ECC_SEED_SIZE', 6);
+  stubs.setPath('e2e.openpgp.KeyGenerator.ECC_SEED_SIZE', 6);
 
   ui = new goog.ui.Component();
   ui.render(document.body);

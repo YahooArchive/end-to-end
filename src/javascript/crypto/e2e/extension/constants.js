@@ -233,7 +233,8 @@ e2e.ext.constants.StorageKey = {
   ENABLE_AUTO_SAVE: 'enable-auto-save',
   ENABLE_LOOKING_GLASS: 'enable-looking-glass',
   LAST_SAVED_DRAFT: 'last-saved-draft',
-  KEYSERVER_SIGNED_RESPONSES: 'keyserver-signed-responses'
+  KEYSERVER_SIGNED_RESPONSES: 'keyserver-signed-responses',
+  PREFERENCES: 'PREF'
 };
 
 

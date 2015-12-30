@@ -73,17 +73,10 @@ utils.prettyTextWrap = function(str, maxlen) {
  * Determines the requested PGP action based on the content that the user has
  * selected.
  * @param {string} content The content that the user has selected.
- * @param {boolean=} opt_enableSniffing Optional. True if action sniffing is to
- *     be enabled. Defaults to false.
- * @param {constants.Actions=} opt_default Optional default action.
  * @return {constants.Actions} The requested PGP action.
  */
-utils.getPgpAction = function(content, opt_enableSniffing, opt_default) {
-  if (!Boolean(opt_enableSniffing)) {
-    return constants.Actions.USER_SPECIFIED;
-  }
-
-  if (/^-----BEGIN PGP (SIGNED )?MESSAGE-----/.test(content)) {
+utils.getPgpAction = function(content) {
+  if (/^-----BEGIN PGP (?:SIGNED )?MESSAGE-----/.test(content)) {
     return constants.Actions.DECRYPT_VERIFY;
   }
 
@@ -95,15 +88,15 @@ utils.getPgpAction = function(content, opt_enableSniffing, opt_default) {
     return constants.Actions.IMPORT_KEY;
   }
 
-  return opt_default || constants.Actions.ENCRYPT_SIGN;
+  return constants.Actions.ENCRYPT_SIGN;
 };
 
 
 /**
- * Extract a valid e-mail address from 'user id <email>' string. If no valid
- *   e-mail address can be extracted, returns null. Uses
- *   goog.format.EmailAddress, but also enforces stricter rules.
- * @param {string} recipient "username <email> string".
+ * Extract a valid e-mail address from 'user id &lt;email&gt;' string. If no
+ * valid e-mail address can be extracted, returns null. Uses
+ * {@link goog.format.EmailAddress}, but also enforces stricter rules.
+ * @param {string} recipient "username &lt;email&gt;" string.
  * @return {?string} Valid email address or null
  */
 utils.extractValidEmail = function(recipient) {

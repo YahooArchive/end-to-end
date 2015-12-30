@@ -159,7 +159,8 @@ ui.Glass.prototype.renderContents_ = function(response) {
   }
 
   // If the pgp message wasn't encrypted in the first place, it wasn't decrypted
-  if (!e2e.openpgp.asciiArmor.isEncrypted(this.pgpMessage_)) {
+  // if (!e2e.openpgp.asciiArmor.isEncrypted(this.pgpMessage_)) {
+  if (this.pgpMessage_.indexOf('-----BEGIN PGP MESSAGE-----') === -1) {
     decrypted = false;
     // If it wasn't encrypted or clear signed, it can't have been verified
     if (!e2e.openpgp.asciiArmor.isClearSign(this.pgpMessage_)) {

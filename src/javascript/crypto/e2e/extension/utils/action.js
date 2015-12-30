@@ -28,11 +28,8 @@ goog.require('goog.array');
 goog.require('goog.string');
 
 goog.scope(function() {
-var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
-var utils = e2e.ext.utils.action;
-var text = e2e.ext.utils.text;
-var baseUtils = e2e.ext.utils;
+var action = e2e.ext.utils.action;
 
 
 /**
@@ -40,7 +37,7 @@ var baseUtils = e2e.ext.utils;
  * @param {!Array.<!e2e.openpgp.Key>} keys
  * @return {string} All user IDs, separated by comma.
  */
-utils.extractUserIds = function(keys) {
+action.extractUserIds = function(keys) {
   var result = goog.array.flatten(goog.array.map(keys, function(key) {
     return key.uids;
   }));
@@ -50,7 +47,7 @@ utils.extractUserIds = function(keys) {
 
 
 /**
- * Gets the extension's launcher.
+ * Gets the End-to-End launcher.
  * @param {!function(!e2e.ext.Launcher)} callback The callback where
  *     the PGP context is to be passed.
  * @param {!function(Error)} errorCallback The callback to invoke if an error is
@@ -59,7 +56,7 @@ utils.extractUserIds = function(keys) {
  *     callbacks will be called.
  * @template T
  */
-utils.getExtensionLauncher = function(callback, errorCallback, opt_scope) {
+action.getLauncher = function(callback, errorCallback, opt_scope) {
   var scope = opt_scope || goog.global;
   chrome.runtime.getBackgroundPage(
       function(backgroundPage) {
@@ -76,7 +73,7 @@ utils.getExtensionLauncher = function(callback, errorCallback, opt_scope) {
 
 
 /**
- * Gets the PGP context.
+ * Gets the OpenPGP context.
  * @param {!function(!e2e.openpgp.ContextImpl)} callback The callback where
  *     the PGP context is to be passed.
  * @param {!function(Error)} errorCallback The callback to invoke if an error is
@@ -85,13 +82,34 @@ utils.getExtensionLauncher = function(callback, errorCallback, opt_scope) {
  *     callbacks will be called.
  * @template T
  */
-utils.getContext = function(callback, errorCallback, opt_scope) {
+action.getContext = function(callback, errorCallback, opt_scope) {
   var scope = opt_scope || goog.global;
-  utils.getExtensionLauncher(function(launcher) {
+  action.getLauncher(function(launcher) {
     callback.call(
         scope, /** @type {!e2e.openpgp.ContextImpl} */ (launcher.getContext()));
   }, errorCallback, opt_scope);
 };
+
+
+/**
+ * Gets the Preferences object.
+ * @param {!function(!e2e.ext.Preferences)} callback The callback where
+ *     the Preferences object is to be passed.
+ * @param {!function(Error)} errorCallback The callback to invoke if an error is
+ *     encountered.
+ * @param {T=} opt_scope Optional. The scope in which the function and the
+ *     callbacks will be called.
+ * @template T
+ */
+action.getPreferences = function(callback, errorCallback, opt_scope) {
+  var scope = opt_scope || goog.global;
+  action.getLauncher(function(launcher) {
+    callback.call(
+        scope, /** @type {!e2e.ext.Preferences} */ (launcher.getPreferences()));
+  }, errorCallback, opt_scope);
+};
+
+
 
 
 /**
@@ -104,10 +122,11 @@ utils.getContext = function(callback, errorCallback, opt_scope) {
  *     callbacks will be called.
  * @template T
  */
-utils.getSelectedContent = function(callback, errorCallback, opt_scope) {
+action.getSelectedContent = function(callback, errorCallback, opt_scope) {
   var scope = opt_scope || goog.global;
-  utils.getExtensionLauncher(function(launcher) {
-    launcher.getSelectedContent(goog.bind(callback, scope));
+  action.getLauncher(function(launcher) {
+    /** @type {!e2e.ext.yExtensionLauncher} */ (launcher).
+      getSelectedContent(goog.bind(callback, scope));
   }, errorCallback, opt_scope);
 };
 
@@ -130,11 +149,12 @@ utils.getSelectedContent = function(callback, errorCallback, opt_scope) {
  *     callbacks will be called.
  * @template T
  */
-utils.updateSelectedContent = function(content, recipients, origin,
+action.updateSelectedContent = function(content, recipients, origin,
     expectMoreUpdates, callback, errorCallback, opt_subject, opt_scope) {
   var scope = opt_scope || goog.global;
-  utils.getExtensionLauncher(function(launcher) {
-    launcher.updateSelectedContent(content, recipients, origin,
+  action.getLauncher(function(launcher) {
+    /** @type {!e2e.ext.yExtensionLauncher} */ (launcher).
+      updateSelectedContent(content, recipients, origin,
         expectMoreUpdates, goog.bind(callback, scope), opt_subject);
   }, errorCallback, opt_scope);
 };
@@ -145,8 +165,8 @@ utils.updateSelectedContent = function(content, recipients, origin,
  * due to potential security issues with exposing YBY.
  * @param {!function((string|undefined|null))} callback
  */
-utils.getUserYmailAddress = function(callback) {
-  var email;
+action.getUserYmailAddress = function(callback) {
+  var email, text = e2e.ext.utils.text;
   try {
     // If this is called in the context of a ymail page, get the email from
     // NeoConfig
@@ -156,12 +176,12 @@ utils.getUserYmailAddress = function(callback) {
       email = text.extractValidYahooEmail(window.NeoConfig.emailAddress);
       callback(email);
     } else {
-      utils.getAddressFromYBY_(callback);
+      action.getAddressFromYBY_(callback);
     }
   } catch (ex) {
     console.warn('Error getting ymail address from page', ex);
     try {
-      utils.getAddressFromYBY_(callback);
+      action.getAddressFromYBY_(callback);
     } catch (e) {
       console.warn('Error getting ymail address from YBY', e);
       callback(undefined);
@@ -176,8 +196,8 @@ utils.getUserYmailAddress = function(callback) {
  * @param {!function((string|undefined|null))} callback
  * @private
  */
-utils.getAddressFromYBY_ = function(callback) {
-  var email;
+action.getAddressFromYBY_ = function(callback) {
+  var email, constants = e2e.ext.constants;
 
   if (!chrome.cookies || !chrome.cookies.get) {
     // Someone tried to call this from a content script. Abort.
@@ -214,7 +234,7 @@ utils.getAddressFromYBY_ = function(callback) {
 /**
  * Refreshes active ymail tabs so e2ebind is reloaded.
  */
-utils.refreshYmail = function() {
+action.refreshYmail = function() {
   chrome.tabs.query({url: 'https://*.mail.yahoo.com/*'}, function(tabs) {
     goog.array.forEach(tabs, function(tab) {
       chrome.tabs.reload(tab.id);

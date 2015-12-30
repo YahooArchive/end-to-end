@@ -213,8 +213,10 @@ ui.ComposeGlass.prototype.getEmailMap_ = function(recipients) {
  */
 ui.ComposeGlass.prototype.renderEncrypt_ =
     function(elem, recipients, origin, subject, from, content) {
-  var sniffedAction = utils.text.getPgpAction(
-      content, this.preferences_.isActionSniffingEnabled);
+  // @yahoo isActionSniffingEnabled
+  var sniffedAction = this.preferences_.isActionSniffingEnabled ? 
+        utils.text.getPgpAction(content) : 
+        constants.Actions.USER_SPECIFIED;
 
   // Pre-populate the list of recipients during an encrypt/sign action.
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({

@@ -581,7 +581,7 @@ e2ebind.installReadGlass_ = function(elem, opt_text) {
 
   var selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
       opt_text ? opt_text : elem.innerText);
-  var action = utils.text.getPgpAction(selectionBody, true);
+  var action = utils.text.getPgpAction(selectionBody);
 
   if (action == constants.Actions.DECRYPT_VERIFY) {
     var glassWrapper = new ui.GlassWrapper(elem, selectionBody);
@@ -753,7 +753,8 @@ e2ebind.hideBlob_ = function(blob) {
   if (e2e.openpgp.asciiArmor.isClearSign(blob)) {
     hideMessage = chrome.i18n.getMessage('e2ebindHideSigned');
     showMessage = chrome.i18n.getMessage('e2ebindShowSigned');
-  } else if (e2e.openpgp.asciiArmor.isEncrypted(blob)) {
+  // } else if (e2e.openpgp.asciiArmor.isEncrypted(blob)) {
+  } else if (blob.indexOf('-----BEGIN PGP MESSAGE-----') !== -1) {
     hideMessage = chrome.i18n.getMessage('e2ebindHideEncrypted');
     showMessage = chrome.i18n.getMessage('e2ebindShowEncrypted');
   } else {

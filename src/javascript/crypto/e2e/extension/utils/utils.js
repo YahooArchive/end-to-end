@@ -23,6 +23,7 @@ goog.provide('e2e.ext.utils.Error');
 
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('goog.object');
 
 goog.scope(function() {
 var constants = e2e.ext.constants;
@@ -80,7 +81,7 @@ utils.readFile_ = function(asText, file, callback) {
   }
   var reader = new FileReader();
   reader.onload = function() {
-    if (reader.readyState !== reader.LOADING) {
+    if (reader.readyState != reader.LOADING) {
       reader.onload = null;
       callback(/** @type {string} */ (reader.result));
     }
@@ -98,7 +99,7 @@ utils.readFile_ = function(asText, file, callback) {
  * @param {*} error The error to log.
  */
 utils.errorHandler = function(error) {
-  window.console.error(error);
+  console.error(error);
 };
 
 
@@ -172,5 +173,68 @@ utils.sendProxyRequest = function(args) {
   chrome.runtime.sendMessage(args);
 };
 
-});  // goog.scope
+/**
+ * Checks if the given window runs as part of a Chrome App execution
+ * environment.
+ * @param {Window=} opt_window Window object to test. Defaults to current.
+ * @return {boolean} True iff the code runs in a Chrome App.
+ */
+utils.runsInChromeApp = function(opt_window) {
+  var win = opt_window ? opt_window : window;
+  return Boolean(win.chrome.runtime) &&
+      goog.isFunction(win.chrome.runtime.getManifest) &&
+      goog.object.containsKey(win.chrome.runtime.getManifest(), 'app');
+};
 
+
+/**
+ * Checks if the given window runs as part of a Chrome Extension execution
+ * environment.
+ * @param {Window=} opt_window Window object to test. Defaults to current.
+ * @return {boolean} True iff the code runs in a Chrome Extension.
+ */
+utils.runsInChromeExtension = function(opt_window) {
+  var win = opt_window ? opt_window : window;
+  return Boolean(win.chrome.runtime) &&
+      goog.isFunction(win.chrome.runtime.getManifest) &&
+      !goog.object.containsKey(win.chrome.runtime.getManifest(), 'app');
+};
+
+
+/**
+ * Checks if the given window is a Chrome App window. Defaults to checking
+ * current window.
+ * @param {Window=} opt_window Window object to test.
+ * @return {boolean}
+ */
+utils.isChromeAppWindow = function(opt_window) {
+  var win = opt_window ? opt_window : window;
+  return (utils.runsInChromeApp(opt_window) &&
+      win.location.protocol == 'chrome-extension:');
+};
+
+
+/**
+ * Checks if the given window is a view/background page of a Chrome extension.
+ * Defaults to checking current window. Will return false in a content script.
+ * @param {Window=} opt_window Window object to test.
+ * @return {boolean}
+ */
+utils.isChromeExtensionWindow = function(opt_window) {
+  var win = opt_window ? opt_window : window;
+  return (utils.runsInChromeExtension(opt_window) &&
+      win.location.protocol == 'chrome-extension:');
+};
+
+
+/**
+ * Returns true if the current execution context is a content script.
+ * @return {boolean}
+ */
+utils.isContentScript = function() {
+  return Boolean(chrome.runtime) &&
+      Boolean(chrome.runtime.getURL) && // Running as Chrome extension/app
+      !Boolean(chrome.runtime.getBackgroundPage); // Running in a content script
+};
+
+});  // goog.scope

@@ -23,11 +23,10 @@ goog.provide('e2e.ecc.Ecdsa');
 
 goog.require('e2e');
 goog.require('e2e.BigNum');
-goog.require('e2e.ecc.ByteLen');
-goog.require('e2e.ecc.JwsAlg');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.ecc.Protocol');
 goog.require('e2e.error.InvalidArgumentsError');
+goog.require('e2e.hash.Algorithm');
 goog.require('e2e.hash.Sha256');
 goog.require('e2e.hash.Sha384');
 goog.require('e2e.hash.Sha512');
@@ -36,7 +35,6 @@ goog.require('e2e.random');
 goog.require('e2e.signer.signature.Signature');
 goog.require('goog.array');
 goog.require('goog.asserts');
-goog.require('goog.crypt.base64');
 
 
 
@@ -65,9 +63,20 @@ e2e.ecc.Ecdsa = function(curveName, opt_key) {
       throw new e2e.error.InvalidArgumentsError(
           'Unknown algorithm for ECDSA: ' + curveName);
   }
-  this.curveName_ = curveName;
 };
 goog.inherits(e2e.ecc.Ecdsa, e2e.ecc.Protocol);
+
+
+/**
+ * List of Hash algorithms that are allowed to be used for ECDSA.
+ * @type {!Array<!e2e.hash.Algorithm>}
+ * @private
+ */
+e2e.ecc.Ecdsa.ALLOWED_HASHES_ = [
+  e2e.hash.Algorithm.SHA256,
+  e2e.hash.Algorithm.SHA384,
+  e2e.hash.Algorithm.SHA512
+];
 
 
 /**
@@ -84,17 +93,31 @@ e2e.ecc.Ecdsa.prototype.getHash = function() {
 
 
 /**
+ * Sets the appropriate hash algorithm. Used e.g. during signature verification
+ * in OpenPGP, where the signer specifies which algorithm was used.
+ * @param {!e2e.hash.Hash} hash The hash algorithm.
+ */
+e2e.ecc.Ecdsa.prototype.setHash = function(hash) {
+  if (!goog.array.contains(e2e.ecc.Ecdsa.ALLOWED_HASHES_, hash.algorithm)) {
+    throw new e2e.error.InvalidArgumentsError(
+        'Specified hash algorithm is disallowed for ECDSA: ' + hash.algorithm);
+  }
+  this.hash_ = hash;
+};
+
+
+/**
  * Applies the signing algorithm to the data.
  * @param {!Uint8Array|!e2e.ByteArray|string} message The data to sign.
  * @return {!e2e.signer.signature.Signature}
  */
 e2e.ecc.Ecdsa.prototype.sign = function(message) {
   var sig;
-  var digest = this.hash_.hash(message);
+  var digest = this.hashWithTruncation_(message);
   do {
     var k = this.generatePerMessageNonce_(digest);
     sig = this.signWithNonce_(digest, k);
-  } while (sig === null);
+  } while (sig == null);
   return sig;
 };
 
@@ -170,8 +193,8 @@ e2e.ecc.Ecdsa.prototype.verify = function(message, sig) {
       'Public key value should be defined.');
 
   var N = this.params.n;
-  var r = new e2e.BigNum(sig.r);
-  var s = new e2e.BigNum(sig.s);
+  var r = new e2e.BigNum(sig['r']);
+  var s = new e2e.BigNum(sig['s']);
   // r and s should be in [1, N-1].
   if (r.isGreaterOrEqual(N) ||
       r.isEqual(e2e.BigNum.ZERO) ||
@@ -180,7 +203,7 @@ e2e.ecc.Ecdsa.prototype.verify = function(message, sig) {
     return false;
   }
   // e = H(m)
-  var e = new e2e.BigNum(this.hash_.hash(message));
+  var e = new e2e.BigNum(this.hashWithTruncation_(message));
   // w = s^{-1} mod n
   var w = N.modInverse(s);
   // u1 = ew mod n
@@ -195,57 +218,6 @@ e2e.ecc.Ecdsa.prototype.verify = function(message, sig) {
   }
   var x = N.residue(X.getX().toBigNum());
   return x.isEqual(r);
-};
-
-
-/**
- * Applies the verification algorithm to JWS and returns the
- * verified message on success.
- * @param {string} jws The JWS, in compact serialization, to verify.
- * @return {Array.<number>} The verified message.
- */
-e2e.ecc.Ecdsa.prototype.verifyJws = function(jws) {
-  goog.asserts.assertObject(this.params, 'Domain params should be defined.');
-  goog.asserts.assertObject(this.getPublicKey(),
-      'Public key value should be defined.');
-  var parts = jws.split('.');
-  if (parts.length !== 3) {
-    throw new e2e.error.InvalidArgumentsError('Too many parts to be a JWS.');
-  }
-  var eheader = parts[0], emsg = parts[1], esig = parts[2];
-  var dsig = goog.crypt.base64.decodeStringToByteArray(esig, true),
-      msg = goog.crypt.base64.decodeStringToByteArray(emsg, true),
-      header = goog.crypt.base64.decodeString(eheader);
-
-  var expected_alg = e2e.ecc.JwsAlg[this.curveName_];
-  var parsedHeader;
-  var alg;
-  try {
-    parsedHeader = /** @type {{alg: string}} */ (JSON.parse(header));
-    alg = parsedHeader.alg;
-    if (alg !== expected_alg) {
-      throw new e2e.error.InvalidArgumentsError(
-          'unexpected JWS algorithm header for curve' +
-          this.curveName_ + ':' + alg);
-    }
-  } catch(e) {
-    throw new e2e.error.InvalidArgumentsError(
-        'unexpected JWS protected header for curve' +
-        this.curveName_ + ':' + header);
-  }
-
-  var bytelen = e2e.ecc.ByteLen[this.curveName_];
-  if (dsig.length !== (bytelen * 2)) {
-    throw new e2e.error.InvalidArgumentsError(
-        'Length of signature is wrong for the claimed type.');
-  }
-
-  var sig = {r: dsig.slice(0, bytelen), s: dsig.slice(bytelen, bytelen * 2)};
-  if (this.verify(eheader + '.' + emsg, sig)) {
-    return msg;
-  } else {
-    return null;
-  }
 };
 
 
@@ -272,7 +244,6 @@ e2e.ecc.Ecdsa.prototype.generatePerMessageNonce_ = function(digest) {
     privateKey.unshift(0);
   }
   var privateKeyDigest = hasher.hash(privateKey);
-  var nonce;
   do {
     var randomBytes = e2e.random.getRandomBytes(nonceLength);
     var nonceBytes = [];
@@ -288,8 +259,31 @@ e2e.ecc.Ecdsa.prototype.generatePerMessageNonce_ = function(digest) {
     } while (nonceBytes.length < nonceLength);
     nonceBytes = nonceBytes.slice(0, nonceLength);
     nonceBytes[0] >>= (8 * nonceLength - N.getBitLength());
+    var nonce = new e2e.BigNum(nonceBytes);
     // nonce must be in the range [1..N-1]
-    nonce = new e2e.BigNum(nonceBytes);
   } while (nonce.isEqual(e2e.BigNum.ZERO) || nonce.compare(N) >= 0);
   return nonce;
 };
+
+
+/**
+ * Creates a message digest, truncating it to the bit-length of the curve order.
+ * @param {Uint8Array|Array.<number>|string} message The message to hash.
+ * @return {!Array.<number>} The checksum.
+ * @private
+ */
+e2e.ecc.Ecdsa.prototype.hashWithTruncation_ = function(message) {
+  var hash = this.hash_.hash(message);
+
+  var bitLength = this.params.n.getBitLength();
+  // Use 512-bit hashes for P_521 curve.
+  if (bitLength == 521) {
+    bitLength = 512;
+  }
+  if (Math.ceil(bitLength / 8) > hash.length) {
+    throw new e2e.error.InvalidArgumentsError(
+        'Digest algorithm is too short for this curve.');
+  }
+  return goog.array.slice(hash, 0, Math.ceil(bitLength / 8));
+};
+

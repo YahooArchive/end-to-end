@@ -75,14 +75,22 @@ function testWrite() {
 
 function testRead() {
   var content = 'some content';
+  var readFile = false;
   var file = new Blob([content], {type: 'text/plain'});
   testCase.waitForAsync('waiting for file to be read');
   utils.readFile(file, function(readContents) {
+    readFile = true;
     assertEquals('Failed to read contents', content, readContents);
-    utils.readFile('hello', function(textContents) {
-      assertEquals('hello', textContents);
-      testCase.continueTesting();
-    });
+    testCase.continueTesting();
+  });
+}
+
+
+function testReadString() {
+  testCase.waitForAsync('waiting for string to be read');
+  utils.readFile('hello', function(textContents) {
+    assertEquals('hello', textContents);
+    testCase.continueTesting();
   });
 }
 
@@ -161,4 +169,86 @@ function testSendProxyRequest() {
   mockControl.$replayAll();
   utils.sendProxyRequest(args);
   mockControl.$verifyAll();
+}
+
+
+function testShowNotification() {
+  var delayedCb = new goog.testing.mockmatchers.SaveArgument(goog.isFunction);
+  stubs.replace(window, 'setTimeout', mockControl.createFunctionMock());
+  window.setTimeout(delayedCb, constants.NOTIFICATIONS_DELAY);
+
+  var notifiedCb = new goog.testing.mockmatchers.SaveArgument(goog.isFunction);
+  stubs.setPath(
+      'chrome.notifications.create', mockControl.createFunctionMock());
+  chrome.notifications.create(
+      constants.ElementId.NOTIFICATION_SUCCESS,
+      new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+        assertEquals('some text', arg.message);
+        return true;
+      }),
+      notifiedCb);
+
+  stubs.setPath('chrome.notifications.clear', mockControl.createFunctionMock());
+  chrome.notifications.clear(
+      constants.ElementId.NOTIFICATION_SUCCESS, goog.nullFunction);
+
+  var doneCb = mockControl.createFunctionMock();
+  doneCb();
+
+  mockControl.$replayAll();
+  utils.showNotification('some text', doneCb);
+  notifiedCb.arg();
+  delayedCb.arg();
+  mockControl.$verifyAll();
+}
+
+
+function testIsContentScript() {
+  stubs.setPath('chrome.runtime', {
+    getURL: goog.nullFunction
+  });
+
+  assertTrue(utils.isContentScript());
+
+  stubs.setPath('chrome.runtime', {
+    getURL: goog.nullFunction,
+    getBackgroundPage: goog.nullFunction
+  });
+
+  assertFalse(utils.isContentScript());
+}
+
+
+function testIsChromeExtensionWindow() {
+  var stubWindow = {};
+  stubs.set(stubWindow, 'chrome', {
+    runtime: {
+      getManifest: function() {return {}}
+    }
+  });
+
+  stubs.set(stubWindow, 'location', {
+    protocol: 'chrome-extension:'
+  });
+
+  assertTrue(utils.isChromeExtensionWindow(stubWindow));
+  assertFalse(utils.isChromeAppWindow(stubWindow));
+  assertFalse(utils.isContentScript());
+}
+
+function testIsChromeAppWindow() {
+  var stubWindow = {};
+  stubs.set(stubWindow, 'chrome', {
+    runtime: {
+      getManifest: function() {return {app: {}}}
+    }
+  });
+
+  stubs.set(stubWindow, 'location', {
+    protocol: 'chrome-extension:'
+  });
+
+  assertTrue(utils.isChromeAppWindow(stubWindow));
+  assertFalse(utils.isChromeExtensionWindow(stubWindow));
+  assertFalse(utils.isContentScript());
 }

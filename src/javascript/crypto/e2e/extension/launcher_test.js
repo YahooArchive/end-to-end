@@ -21,32 +21,38 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.LauncherTest');
 
-goog.require('e2e.ext.Launcher');
+goog.require('e2e.async.Result');
+goog.require('e2e.ext.ExtensionLauncher');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
-goog.require('e2e.ext.ui.preferences');
+goog.require('e2e.openpgp.ContextImpl');
+goog.require('e2e.openpgp.error.WrongPassphraseError');
+goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
+goog.require('goog.testing.storage.FakeMechanism');
 goog.setTestOnly();
 
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
 var constants = e2e.ext.constants;
 var launcher = null;
 var mockControl = null;
 var mockmatchers = goog.testing.mockmatchers;
-var preferences = e2e.ext.ui.preferences;
 var stubs = new goog.testing.PropertyReplacer();
-
+var fakeStorage;
+var context;
 
 function setUp() {
-  window.localStorage.clear();
+  fakeStorage = new goog.testing.storage.FakeMechanism();
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
+  context = new e2e.openpgp.ContextImpl(fakeStorage);
 
-  preferences.setWelcomePageEnabled(false);
-  launcher = new e2e.ext.Launcher();
+  launcher = new e2e.ext.ExtensionLauncher(context, fakeStorage);
+  launcher.getPreferences().setWelcomePageEnabled(false);
   launcher.start();
 }
 
@@ -58,85 +64,52 @@ function tearDown() {
 }
 
 
-function testGetSelectedContent() {
-  var injectedScript = false;
-  stubs.replace(chrome.tabs, 'executeScript', function(a, b, callback) {
-    injectedScript = true;
-    callback();
-  });
-
-  var sentMessage = false;
-  stubs.replace(chrome.tabs, 'sendMessage', function(tabId) {
-    assertNotUndefined(tabId);
-    sentMessage = true;
-  });
-
-  launcher.getSelectedContent(function() {});
-  assertTrue('Failed to inject content script', injectedScript);
-  assertTrue(
-      'Failed to query content script for selected content', sentMessage);
-
-}
-
-
-function testUpdateSelectedContent() {
-  var content = 'some text';
-  var origin = 'http://www.example.com';
-  var executeScriptArg = new mockmatchers.SaveArgument(goog.isFunction);
-  stubs.setPath('chrome.tabs.executeScript',
-      mockControl.createFunctionMock('executeScript'));
-  chrome.tabs.executeScript(mockmatchers.ignoreArgument,
-      mockmatchers.ignoreArgument, executeScriptArg);
-
-  var messageArg = new mockmatchers.SaveArgument();
-  var tabIdArg = new mockmatchers.ArgumentMatcher(goog.isNumber);
-  stubs.setPath('chrome.tabs.sendMessage',
-      mockControl.createFunctionMock('sendMessage'));
-  chrome.tabs.sendMessage(tabIdArg, messageArg);
-
-  var callbackMock = mockControl.createFunctionMock('callbackMock');
-  callbackMock();
-
-  mockControl.$replayAll();
-
-  launcher.updateSelectedContent(content, [], origin, false, callbackMock);
-  executeScriptArg.arg();
-  assertEquals('Sending incorrect content', content, messageArg.arg.value);
-  mockControl.$verifyAll();
-}
-
-
 function testBadPassphrase() {
-  var l1 = new e2e.ext.Launcher();
-  l1.start('somesecret');
-  // generate a key to ensure the keyring isn't empty.
-  l1.getContext().generateKey(
-      'ECDSA', 256, 'ECDH', 256, 'name', '', 'n@e.c', 253402243200);
-  assertThrows('Wrong passphrase should throw exception.', function() {
-    var l2 = new e2e.ext.Launcher();
-    l2.start('fail');
+  asyncTestCase.waitForAsync('Waiting for start (1).');
+  var prefStorage = new goog.testing.storage.FakeMechanism();
+  var keyringStorage = new goog.testing.storage.FakeMechanism();
+  var context1 = new e2e.openpgp.ContextImpl(keyringStorage);
+  var l1 = new e2e.ext.ExtensionLauncher(context1, prefStorage);
+  l1.start().addCallbacks(function() {
+    asyncTestCase.waitForAsync('Waiting for passphrase change.');
+    return context1.changeKeyRingPassphrase('some');
+  }, fail).addCallbacks(function() {
+    asyncTestCase.waitForAsync('Waiting for key generation.');
+    // generate a key to ensure the keyring isn't empty.
+    return l1.getContext().generateKey(
+        'ECDSA', 256, 'ECDH', 256, 'name', '', 'n@e.c', 253402243200);
+  }, fail).addCallbacks(function() {
+    asyncTestCase.waitForAsync('Waiting for start (2).');
+    // Simulate a new launcher, with a new context, reusing the encrypted
+    // storage.
+    var l2 = new e2e.ext.ExtensionLauncher(
+        new e2e.openpgp.ContextImpl(keyringStorage), prefStorage);
+    return l2.start('fail');
+  }, fail).addCallbacks(fail, function(e) {
+    assertTrue(e instanceof e2e.openpgp.error.WrongPassphraseError);
+    asyncTestCase.continueTesting();
   });
 }
 
 
 function testStart() {
   var passphrase = 'test';
-  stubs.set(launcher.pgpContext_, 'setKeyRingPassphrase',
-      mockControl.createFunctionMock('setKeyRingPassphrase'));
-  launcher.pgpContext_.setKeyRingPassphrase(passphrase);
+  stubs.set(launcher.pgpContext_, 'initializeKeyRing', function(p) {
+    assertEquals(passphrase, p);
+    return e2e.async.Result.toResult(undefined);
+  });
 
-  stubs.setPath('e2e.ext.ui.preferences.initDefaults',
+  stubs.set(launcher.preferences_, 'initDefaults',
       mockControl.createFunctionMock('initDefaults'));
-  e2e.ext.ui.preferences.initDefaults();
+  launcher.preferences_.initDefaults();
 
-  stubs.set(launcher, 'showWelcomeScreen_',
-      mockControl.createFunctionMock('showWelcomeScreen_'));
-  launcher.showWelcomeScreen_();
+  stubs.set(launcher, 'showWelcomeScreen',
+      mockControl.createFunctionMock('showWelcomeScreen'));
+  launcher.showWelcomeScreen();
 
-  stubs.set(launcher, 'updatePassphraseWarning_',
-      mockControl.createFunctionMock('updatePassphraseWarning_'));
-  launcher.updatePassphraseWarning_();
-  launcher.updatePassphraseWarning_();
+  stubs.set(launcher, 'updatePassphraseWarning',
+      mockControl.createFunctionMock('updatePassphraseWarning'));
+  launcher.updatePassphraseWarning();
 
   stubs.set(launcher.ctxApi_, 'installApi',
       mockControl.createFunctionMock('installApi'));
@@ -151,42 +124,13 @@ function testStart() {
 }
 
 
-function testGetLastTab() {
-  var tabId = 123;
-  var tabs = [{id: tabId}];
-
-  stubs.replace(chrome.tabs, 'query', function(req, callback) {
-    callback(tabs);
-  });
-
-  stubs.replace(chrome.tabs, 'executeScript', function(a, b, callback) {
-    callback();
-  });
-
-  var returnedIds = 0;
-  launcher.getActiveTab_(function(returnedId) {
-    assertEquals(tabId, returnedId);
-    returnedIds++;
-    tabs.splice(0, tabs.length);
-  });
-
-  launcher.getActiveTab_(function(returnedId) {
-    assertEquals(tabId, returnedId);
-    returnedIds++;
-  });
-
-  assertEquals(2, returnedIds);
-}
-
-
 function testShowWelcomeScreenEnabled() {
   var openedWindow = false;
-  stubs.replace(window, 'open', function() {
+  stubs.replace(launcher, 'createWindow', function() {
     openedWindow = true;
   });
 
-  window.localStorage.removeItem(constants.StorageKey.DISABLE_WELCOME_SCREEN);
-  preferences.setWelcomePageEnabled(true);
+  launcher.getPreferences().setWelcomePageEnabled(true);
   launcher.start();
   assertTrue('Failed to open the welcome screen', openedWindow);
 }
@@ -194,54 +138,11 @@ function testShowWelcomeScreenEnabled() {
 
 function testShowWelcomeScreenDisabled() {
   var openedWindow = false;
-  stubs.replace(window, 'open', function() {
+  stubs.replace(launcher, 'createWindow', function() {
     openedWindow = true;
   });
 
-  preferences.setWelcomePageEnabled(false);
+  launcher.getPreferences().setWelcomePageEnabled(false);
   launcher.start();
   assertFalse('Incorrectly opening the welcome screen', openedWindow);
-}
-
-
-function testStop() {
-  stubs.set(launcher.ctxApi_, 'removeApi',
-      mockControl.createFunctionMock('removeApi'));
-  launcher.ctxApi_.removeApi();
-  mockControl.$replayAll();
-
-  launcher.start('test');
-  launcher.stop();
-  assertFalse(launcher.started_);
-  assertNull(launcher.pgpContext_.keyring_);
-  mockControl.$verifyAll();
-}
-
-
-function testProxyMessage() {
-  var message = {
-    action: constants.Actions.GLASS_CLOSED,
-    content: 'irrelevant',
-    proxy: true};
-
-  stubs.set(chrome.tabs, 'sendMessage',
-            mockControl.createFunctionMock('sendMessage'));
-  chrome.tabs.sendMessage(new goog.testing.mockmatchers.ArgumentMatcher(
-      function(arg) {
-        return goog.isNumber(arg);
-      }
-                          ),
-                          new goog.testing.mockmatchers.ArgumentMatcher(
-                              function(arg) {
-                                assertObjectEquals({
-                                  action: constants.Actions.GLASS_CLOSED,
-                                  content: 'irrelevant'
-                                }, arg);
-                                return true;
-                              }
-                          ));
-  mockControl.$replayAll();
-  launcher.start('test');
-  launcher.proxyMessage(message);
-  mockControl.$verifyAll();
 }

@@ -21,11 +21,11 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.utils.actionTest');
 
-goog.require('e2e.ext.Launcher');
+goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.ext.testingstubs');
-goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
+goog.require('e2e.openpgp.ContextImpl');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.testing.AsyncTestCase');
@@ -33,15 +33,13 @@ goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
-goog.require('goog.testing.mockmatchers.SaveArgument');
+goog.require('goog.testing.storage.FakeMechanism');
 goog.setTestOnly();
 
 var launcher = null;
 var mockControl = null;
 var stubs = new goog.testing.PropertyReplacer();
 var utils = e2e.ext.utils.action;
-var text = e2e.ext.utils.text;
-var baseUtils = e2e.ext.utils;
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
 
 var PUBLIC_KEY_ASCII =
@@ -67,11 +65,17 @@ var PUBLIC_KEY_ASCII =
 
 
 function setUp() {
-  window.localStorage.clear();
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
 
-  launcher = new e2e.ext.Launcher();
+  // @yahoo, the following are required by yExtensionLauncher
+  stubs.setPath('chrome.browserAction.setIcon', goog.nullFunction);
+  stubs.setPath('chrome.tabs.reload', goog.nullFunction);
+  stubs.setPath('chrome.runtime.onMessage.addListener', goog.nullFunction);
+
+  launcher = new e2e.ext.yExtensionLauncher(
+      new e2e.openpgp.ContextImpl(new goog.testing.storage.FakeMechanism()),
+      new goog.testing.storage.FakeMechanism());
   launcher.start();
   stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
     callback({launcher: launcher});
@@ -89,6 +93,7 @@ function tearDown() {
 function testExtractUserIds() {
   var byteData = e2e.openpgp.asciiArmor.parse(PUBLIC_KEY_ASCII).data;
   var key = e2e.openpgp.block.factory.parseByteArrayMulti(byteData)[0];
+  key.processSignatures();
   assertEquals('test 4', utils.extractUserIds([key.toKeyObject()]));
 }
 
@@ -151,7 +156,7 @@ function testGetUserYmailAddressFromPage() {
     emailAddress: 'yzhu@yahoo-inc.com'
   };
 
-  stubs.set(text, 'isYmailOrigin', function() {return true;});
+  stubs.set(e2e.ext.utils.text, 'isYmailOrigin', function() {return true;});
 
   asyncTestCase.waitForAsync('Waiting to get email address from page');
   utils.getUserYmailAddress(function(result) {

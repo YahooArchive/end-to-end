@@ -29,12 +29,20 @@ goog.require('e2e.ext.testingstubs');
 goog.require('goog.crypt.base64');
 goog.require('goog.dom');
 goog.require('goog.object');
+
+goog.require('e2e.async.Result');
+goog.require('e2e.ext.yExtensionLauncher');
+goog.require('e2e.ext.constants');
+goog.require('e2e.ext.testingstubs');
+goog.require('e2e.openpgp.ContextImpl');
+goog.require('e2e.openpgp.error.WrongPassphraseError');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
+goog.require('goog.testing.storage.FakeMechanism');
 goog.setTestOnly();
 
 var constants = e2e.ext.constants;
@@ -133,10 +141,25 @@ var PUBLIC_KEY_ASCII_2 =  // user ID of 'Drew Hintz <adhintz@google.com>'
 
 function setUp() {
   document.body.appendChild(div);
-  window.localStorage.clear();
+
+  fakeStorage = new goog.testing.storage.FakeMechanism();
+  mockControl = new goog.testing.MockControl();
+
+  context = new e2e.openpgp.ContextImpl(fakeStorage);
+  // No passphrase.
+  e2e.async.Result.getValue(context.initializeKeyRing(''));
+  
   e2e.ext.testingstubs.initStubs(stubs);
-  launcher = new e2e.ext.Launcher();
+  // @yahoo, the following are required by yExtensionLauncher
+  stubs.setPath('chrome.browserAction.setIcon', goog.nullFunction);
+  stubs.setPath('chrome.tabs.reload', goog.nullFunction);
+  stubs.setPath('chrome.runtime.onMessage.addListener', goog.nullFunction);
+
+  launcher = new e2e.ext.yExtensionLauncher(context, fakeStorage);
+  launcher.getPreferences().setWelcomePageEnabled(false);
   launcher.start();
+
+  
   stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
     callback({launcher: launcher});
   });
@@ -282,13 +305,20 @@ function testRefreshKeyring() {
 }
 
 function populatePgpKeys(opt_key) {
-  var ctx = launcher.getContext();
-  ctx.importKey(function(uid) {
-    return e2e.async.Result.toResult('test');
-  }, PRIVATE_KEY_ASCII);
+  var pgpContext = launcher.getContext();
 
-  ctx.importKey(function() {}, PUBLIC_KEY_ASCII);
-  if (opt_key) {
-    ctx.importKey(function() {}, opt_key);
-  }
+  var TEST_PWD_CALLBACK = function(uid) {
+    return e2e.async.Result.toResult('test');
+  };
+
+  asyncTestCase.waitForAsync('Importing private key.');
+  pgpContext.importKey(TEST_PWD_CALLBACK, PRIVATE_KEY_ASCII).addCallback(function() {
+    asyncTestCase.waitForAsync('Importing public key.');
+    pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII).addCallback(function() {
+      if (opt_key) {
+        asyncTestCase.waitForAsync('Importing opt key.');
+        pgpContext.importKey(TEST_PWD_CALLBACK, opt_key);
+      }
+    });
+  });
 }

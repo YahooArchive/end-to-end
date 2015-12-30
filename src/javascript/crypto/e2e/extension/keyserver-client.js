@@ -348,16 +348,109 @@ ext.keyserver.Client.prototype.cacheKeyData = function(response) {
 
 
 /**
+ * Applies the verification algorithm to JWS and returns the
+ * verified message on success.
+ * @param {string} jws The JWS, in compact serialization, to verify.
+ * @param {!e2e.ecc.PrimeCurve} curveName The curve used for
+ *     this protocol.
+ * @param {{pubKey: !e2e.ByteArray, privKey: (!e2e.ByteArray|undefined)}=}
+ *     opt_key The public and/or private key used in this protocol.
+ * @return {Array.<number>} The verified message.
+ */
+ext.keyserver.Client.prototype.verifyJws = function(jws, curveName, opt_key) {
+
+  var ecdsa = new e2e.ecc.Ecdsa(curveName, opt_key);
+
+  /**
+   * Algorithm names in JWS header.
+   * @enum {string}
+   */
+  var JwsAlg = {
+    P_256: 'ES256',
+    P_384: 'ES384',
+    P_512: 'ES512'
+  };
+
+  /**
+   * Prime curve OIDs (including the one-byte length prefix), as defined in
+   *     section 11 in RFC 6637.
+   * @enum {string}.
+   */
+  var JwsHeader = {
+    P_256: 'eyJhbGciOiJFUzI1NiJ9',
+    P_384: 'eyJhbGciOiJFUzM4NCJ9',
+    P_521: 'eyJhbGciOiJFUzUxMiJ9'
+  };
+
+
+  /**
+   * Prime curve byte-lengths.
+   * @enum {number}.
+   */
+  var ByteLen = {
+    // First byte is the length of what comes next.
+    P_256: 32,
+    P_384: 48,
+    P_521: 65
+  };
+
+
+  // goog.asserts.assertObject(this.params, 'Domain params should be defined.');
+  // goog.asserts.assertObject(this.getPublicKey(),
+  //     'Public key value should be defined.');
+  var parts = jws.split('.');
+  if (parts.length !== 3) {
+    throw new e2e.error.InvalidArgumentsError('Too many parts to be a JWS.');
+  }
+  var eheader = parts[0], emsg = parts[1], esig = parts[2];
+  var dsig = goog.crypt.base64.decodeStringToByteArray(esig, true),
+      msg = goog.crypt.base64.decodeStringToByteArray(emsg, true),
+      header = goog.crypt.base64.decodeString(eheader);
+
+  var expected_alg = JwsAlg[curveName];
+  var parsedHeader;
+  var alg;
+  try {
+    parsedHeader = /** @type {{alg: string}} */ (JSON.parse(header));
+    alg = parsedHeader.alg;
+    if (alg !== expected_alg) {
+      throw new e2e.error.InvalidArgumentsError(
+          'unexpected JWS algorithm header for curve' +
+          curveName + ':' + alg);
+    }
+  } catch(e) {
+    throw new e2e.error.InvalidArgumentsError(
+        'unexpected JWS protected header for curve' +
+        curveName + ':' + header);
+  }
+
+  var bytelen = ByteLen[curveName];
+  if (dsig.length !== (bytelen * 2)) {
+    throw new e2e.error.InvalidArgumentsError(
+        'Length of signature is wrong for the claimed type.');
+  }
+
+  var sig = {r: dsig.slice(0, bytelen), s: dsig.slice(bytelen, bytelen * 2)};
+  if (ecdsa.verify(eheader + '.' + emsg, sig)) {
+    return msg;
+  } else {
+    return null;
+  }
+};
+
+
+/**
  * Validates a response from the keyserver is correctly signed.
  * @param {string} response Response from keyserver.
  * @return {?(messages.KeyserverKeyInput|messages.KeyserverKeyOutput)}
  * @private
  */
 ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
-  var ecdsa = new e2e.ecc.Ecdsa(
+  var verified = this.verifyJws(
+      response, 
       e2e.ecc.PrimeCurve.P_256,
       {pubKey: e2e.ext.constants.Keyserver.KAUTH_PUB});
-  var verified = ecdsa.verifyJws(response);
+
   return verified ?
       /** @type {?(messages.KeyserverKeyInput|messages.KeyserverKeyOutput)} */ (
           JSON.parse(goog.crypt.byteArrayToString(verified))) :

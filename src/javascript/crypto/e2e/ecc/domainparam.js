@@ -20,10 +20,7 @@
  * @author thaidn@google.com (Thai Duong)
  */
 
-goog.provide('e2e.ecc.ByteLen');
 goog.provide('e2e.ecc.DomainParam');
-goog.provide('e2e.ecc.JwsAlg');
-goog.provide('e2e.ecc.JwsHeader');
 goog.provide('e2e.ecc.PrimeCurve');
 goog.provide('e2e.ecc.PrimeCurveOid');
 
@@ -34,6 +31,7 @@ goog.require('e2e.ecc.constant');
 goog.require('e2e.ecc.constant.ed_25519.G_FAST_MULTIPLY_TABLE');
 goog.require('e2e.ecc.constant.p_256.G_FAST_MULTIPLY_TABLE');
 goog.require('e2e.ecc.constant.p_384.G_FAST_MULTIPLY_TABLE');
+goog.require('e2e.ecc.constant.p_521.G_FAST_MULTIPLY_TABLE');
 goog.require('e2e.ecc.curve.Curve25519');
 goog.require('e2e.ecc.curve.Ed25519');
 goog.require('e2e.ecc.curve.Nist');
@@ -52,51 +50,17 @@ goog.require('goog.asserts');
  * @enum {string}
  */
 e2e.ecc.PrimeCurve = {
-  P_256: 'P_256',
-  P_384: 'P_384',
-  P_521: 'P_521',
-  CURVE_25519: 'CURVE_25519',
-  ED_25519: 'ED_25519'
-};
-
-
-/**
- * Algorithm names in JWS header.
- * @enum {string}
- */
-e2e.ecc.JwsAlg = {
-  P_256: 'ES256',
-  P_384: 'ES384',
-  P_512: 'ES512'
+  'P_256': 'P_256',
+  'P_384': 'P_384',
+  'P_521': 'P_521',
+  'CURVE_25519': 'CURVE_25519',
+  'ED_25519': 'ED_25519'
 };
 
 
 /**
  * Prime curve OIDs (including the one-byte length prefix), as defined in
  *     section 11 in RFC 6637.
- * @enum {string}.
- */
-e2e.ecc.JwsHeader = {
-  P_256: 'eyJhbGciOiJFUzI1NiJ9',
-  P_384: 'eyJhbGciOiJFUzM4NCJ9',
-  P_521: 'eyJhbGciOiJFUzUxMiJ9'
-};
-
-
-/**
- * Prime curve byte-lengths.
- * @enum {number}.
- */
-e2e.ecc.ByteLen = {
-  // First byte is the length of what comes next.
-  P_256: 32,
-  P_384: 48,
-  P_521: 65
-};
-
-
-/**
- * Prime curve OIDs.
  * @enum {!e2e.ByteArray}.
  */
 e2e.ecc.PrimeCurveOid = {
@@ -152,11 +116,11 @@ e2e.ecc.DomainParam.curveNameFromCurveOid = function(curveOid) {
  * @return {?e2e.ecc.PrimeCurveOid}
  */
 e2e.ecc.DomainParam.curveOidFromCurveName = function(curveName) {
-  if (curveName === e2e.ecc.PrimeCurve.P_256) {
+  if (curveName == e2e.ecc.PrimeCurve.P_256) {
     return e2e.ecc.PrimeCurveOid.P_256;
-  } else if (curveName === e2e.ecc.PrimeCurve.P_384) {
+  } else if (curveName == e2e.ecc.PrimeCurve.P_384) {
     return e2e.ecc.PrimeCurveOid.P_384;
-  } else if (curveName === e2e.ecc.PrimeCurve.P_521) {
+  } else if (curveName == e2e.ecc.PrimeCurve.P_521) {
     return e2e.ecc.PrimeCurveOid.P_521;
   }
   // TODO(thaidn): figure out the curve OID for Curve25519 and Ed25519.
@@ -281,22 +245,31 @@ goog.inherits(e2e.ecc.DomainParam.NIST, e2e.ecc.DomainParam);
  */
 e2e.ecc.DomainParam.NIST.fromCurve = function(curveName) {
   var constants, fastModulus, fastMultiplyTable;
-  if (curveName === e2e.ecc.PrimeCurve.P_256) {
+  if (curveName == e2e.ecc.PrimeCurve.P_256) {
     constants = e2e.ecc.constant.P_256;
     fastModulus = e2e.ecc.fastModulus.Nist.P_256;
     fastMultiplyTable = e2e.ecc.constant.p_256.G_FAST_MULTIPLY_TABLE;
-  } else {
+  } else if (curveName == e2e.ecc.PrimeCurve.P_384) {
     constants = e2e.ecc.constant.P_384;
     fastModulus = e2e.ecc.fastModulus.Nist.P_384;
     fastMultiplyTable = e2e.ecc.constant.p_384.G_FAST_MULTIPLY_TABLE;
+  } else if (curveName == e2e.ecc.PrimeCurve.P_521) {
+    constants = e2e.ecc.constant.P_521;
+    fastMultiplyTable = e2e.ecc.constant.p_521.G_FAST_MULTIPLY_TABLE;
+  } else {
+    throw new e2e.error.InvalidArgumentsError('Unknown curve.');
   }
   var q = new e2e.BigPrimeNum(constants.Q);  // prime field
   var b = new e2e.BigPrimeNum(constants.B);  // parameter of curve
-  q.setFastModulusType(fastModulus);
+  if (fastModulus) {
+    q.setFastModulusType(fastModulus);
+  }
   var curve = new e2e.ecc.curve.Nist(q, b);
 
   var g = curve.pointFromByteArray(constants.G);
-  g.setFastMultiplyTable(fastMultiplyTable);
+  if (fastMultiplyTable) {
+    g.setFastMultiplyTable(fastMultiplyTable);
+  }
   var n = new e2e.BigPrimeNum(constants.N);  // order of group
   n.setFastModulusType(e2e.FastModulus.FFFFFF);
   return new e2e.ecc.DomainParam.NIST(curve, g, n);
@@ -316,11 +289,11 @@ e2e.ecc.DomainParam.NIST.prototype.generateKeyPair = function(
   var count = 0;
   do {
     if (goog.isDefAndNotNull(opt_privateKey)) {
-      if (count++ !== 0) {
+      if (count++ != 0) {
         throw new e2e.error.InvalidArgumentsError(
             'Bad private key');
       }
-      goog.asserts.assert(opt_privateKey.length === expectedKeyLength,
+      goog.asserts.assert(opt_privateKey.length == expectedKeyLength,
           'Private key length must be ' + expectedKeyLength + ' bytes');
       privateKey = opt_privateKey;
     } else {
@@ -349,7 +322,13 @@ e2e.ecc.DomainParam.NIST.prototype.calculateSharedSecret = function(
     throw new e2e.error.InvalidArgumentsError(
         'ECDH: Cannot derive shared secret.');
   }
-  return S.getX().toBigNum().toByteArray();
+  var Xbytes = S.getX().toBigNum().toByteArray();
+  var fieldSize = Math.ceil(this.curve.keySizeInBits() / 8);
+  // Pads X if needed.
+  while (Xbytes.length < fieldSize) {
+    goog.array.insertAt(Xbytes, 0x00, 0);
+  }
+  return Xbytes;
 };
 
 
@@ -381,7 +360,7 @@ goog.inherits(e2e.ecc.DomainParam.Curve25519,
  * @return {!e2e.ecc.DomainParam.Curve25519}
  */
 e2e.ecc.DomainParam.Curve25519.fromCurve = function(curveName) {
-  goog.asserts.assert(curveName === e2e.ecc.PrimeCurve.CURVE_25519);
+  goog.asserts.assert(curveName == e2e.ecc.PrimeCurve.CURVE_25519);
   var constants = e2e.ecc.constant.CURVE_25519;
 
   var q = new e2e.BigPrimeNum(constants.Q);  // prime field
@@ -401,7 +380,7 @@ e2e.ecc.DomainParam.Curve25519.prototype.generateKeyPair = function(
   // A private key is any sequence of 32 bytes
   var privateKey;
   if (goog.isDefAndNotNull(opt_privateKey)) {
-    goog.asserts.assert(opt_privateKey.length === 32,
+    goog.asserts.assert(opt_privateKey.length == 32,
         'Private key length must be 32 bytes');
     privateKey = opt_privateKey;
   } else {
@@ -464,7 +443,7 @@ goog.inherits(e2e.ecc.DomainParam.Ed25519, e2e.ecc.DomainParam);
  * @return {!e2e.ecc.DomainParam.Ed25519}
  */
 e2e.ecc.DomainParam.Ed25519.fromCurve = function(curveName) {
-  goog.asserts.assert(curveName === e2e.ecc.PrimeCurve.ED_25519);
+  goog.asserts.assert(curveName == e2e.ecc.PrimeCurve.ED_25519);
   var constants = e2e.ecc.constant.CURVE_25519;
 
   var q = new e2e.BigPrimeNum(constants.Q);  // prime field
@@ -484,7 +463,7 @@ e2e.ecc.DomainParam.Ed25519.prototype.generateKeyPair = function(
     opt_privateKey) {
   var privateKey;
   if (goog.isDefAndNotNull(opt_privateKey)) {
-    goog.asserts.assert(opt_privateKey.length === 32,
+    goog.asserts.assert(opt_privateKey.length == 32,
         'Private key length must be 32 bytes');
     privateKey = opt_privateKey;
   } else {
@@ -536,7 +515,7 @@ e2e.ecc.DomainParam.Ed25519.prototype.bigNumFromPrivateKey =
 e2e.ecc.DomainParam.Ed25519.prototype.expandPrivateKey = function(hash,
     privateKey) {
   var digest = hash.hash(privateKey);
-  goog.asserts.assert(digest.length === 64, 'Digest length must be 64 bytes');
+  goog.asserts.assert(digest.length == 64, 'Digest length must be 64 bytes');
 
   // Clamp the low 32 bytes of the expanded private key to use as a multiplier
   var bytes = digest.slice(0, 32);
