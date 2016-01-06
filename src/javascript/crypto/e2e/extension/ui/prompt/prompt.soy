@@ -17,10 +17,37 @@
 
 /**
  * Renders the base layout for the Prompt UI.
+ * @param extName The name of the extension.
+ * @param menuLabel The label for the menu icon.
+ */
+{template .main}
+  <html>
+    <head>
+      <title>{$extName}</title>
+      <link rel="stylesheet"/>
+    </head>
+    <body>
+      <div id="{e2e.ext.constants.ElementId.HEADER}">
+        <div>
+          <h1 id="{e2e.ext.constants.ElementId.TITLE}"></h1>
+        </div>
+      </div>
+      <div id="{e2e.ext.constants.ElementId.MENU_CONTAINER}">
+        <img src="images/down_arrow.png" title="{$menuLabel}">
+      </div>
+      <div id="{e2e.ext.constants.ElementId.ERROR_DIV}"></div>
+      <div id="{e2e.ext.constants.ElementId.BODY}"></div>
+      <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
+    </body>
+  </html>
+{/template}
+
+/**
+ * Renders the base layout for the Prompt UI.
  * @param menuLabel The label for the menu icon.
  * @param popoutLabel The label for the popout icon.
  */
-{template .main}
+{template .newPromptMain}
     <div class="{e2e.ext.constants.CssClass.PROMPT_HEADER}">
       <div>
         <div class="{e2e.ext.constants.CssClass.BUTTONS_CONTAINER}{sp}

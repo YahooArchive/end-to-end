@@ -78,12 +78,15 @@ if (e2e.ext.utils.isChromeExtensionWindow() ||
     }
 
     /** @type {e2e.ext.ui.Prompt} */
-    window.promptPage = new e2e.ext.ui.Prompt(helperProxy, isPopout);
+    // @yahoo use the legacy Prompt()
+    // window.promptPage = new e2e.ext.ui.Prompt(helperProxy, isPopout);
+    window.promptPage = new e2e.ext.ui.Prompt();
     window.promptPage.addOnDisposeCallback(promptCompleteHandler);
 
     if (isPopout) {
       // Popouts are initialized by an event from the extension popup.
-      window.promptPage.startMessageListener();
+      // @yahoo no popout is supported by the legacy Prompt()
+      // window.promptPage.startMessageListener();
     } else {
       window.promptPage.decorate(document.body);
     }

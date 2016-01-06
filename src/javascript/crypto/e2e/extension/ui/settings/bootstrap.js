@@ -18,7 +18,7 @@
  * @fileoverview Starts the settings page.
  */
 
-goog.require('e2e.ext.ui.Settings');
+goog.require('e2e.ext.ui.ySettings'); // @yahoo
 goog.require('e2e.ext.utils');
 
 goog.provide('e2e.ext.ui.settings.bootstrap');
@@ -34,7 +34,7 @@ e2e.ext.ui.settings.bootstrap = false;
 if (e2e.ext.utils.isChromeExtensionWindow() ||
     e2e.ext.utils.isChromeAppWindow()) {
   /** @type {e2e.ext.ui.Settings} */
-  window.settingsPage = new e2e.ext.ui.Settings();
+  window.settingsPage = new e2e.ext.ui.ySettings(); // @yahoo
   window.settingsPage.decorate(document.documentElement);
   e2e.ext.ui.settings.bootstrap = true;
 }

@@ -166,8 +166,9 @@ e2e_build_extension() {
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.Helper" --js_output_file "$BUILD_EXT_DIR/helper_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.bootstrap" --js_output_file "$BUILD_EXT_DIR/glass_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.compose.bootstrap" --js_output_file "$BUILD_EXT_DIR/composeglass_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Prompt" --js_output_file "$BUILD_EXT_DIR/prompt_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Settings" --js_output_file "$BUILD_EXT_DIR/settings_binary.js"
+  # echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.webview.bootstrap" --js_output_file "$BUILD_EXT_DIR/webview_binary.js"
+  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.prompt.bootstrap" --js_output_file "$BUILD_EXT_DIR/prompt_binary.js"
+  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.settings.bootstrap" --js_output_file "$BUILD_EXT_DIR/settings_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Setup" --js_output_file "$BUILD_EXT_DIR/setup_binary.js"
   echo ""
   # compile css files

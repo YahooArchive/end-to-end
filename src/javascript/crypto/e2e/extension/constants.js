@@ -92,6 +92,7 @@ e2e.ext.constants.ElementId = {
   PREFERENCES: 'pgpPreferences',
   SIGN_MESSAGE_CHECK: 'pgpSignMessage',
   SIGNER_SELECT: 'pgpSignerSelect',
+  SIGNUP_PROMPT: 'signupPrompt',
   KEYRING_DIV: 'storedKeys',
   KEYRING_IMPORT_DIV: 'keyringImportDiv',
   FB_IMPORT_DIV: 'fbImportDiv',
@@ -150,7 +151,11 @@ e2e.ext.constants.ElementId = {
 
   // glass
   LOCK_ICON: 'lock-icon',
-  CHECK_ICON: 'check-icon'
+  CHECK_ICON: 'check-icon',
+
+  // Website container
+  WEBVIEW: 'webview',
+  PROMPT: 'prompt'
 };
 
 

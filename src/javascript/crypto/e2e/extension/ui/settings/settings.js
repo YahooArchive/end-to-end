@@ -19,12 +19,14 @@
  */
 
 goog.provide('e2e.ext.ui.Settings');
+goog.provide('e2e.ext.ui.ySettings'); // @yahoo
 
 goog.require('e2e.async.Result');
 goog.require('e2e.cipher.Algorithm');
 goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
@@ -35,14 +37,14 @@ goog.require('e2e.ext.ui.templates');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.action');
-goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.signer.Algorithm');
 goog.require('goog.array');
+goog.require('goog.asserts');
 goog.require('goog.crypt');
 goog.require('goog.dom');
+goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
-goog.require('goog.structs.Map');
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -52,7 +54,6 @@ var constants = e2e.ext.constants;
 var dialogs = e2e.ext.ui.dialogs;
 var messages = e2e.ext.messages;
 var panels = e2e.ext.ui.panels;
-var preferences = e2e.ext.ui.preferences;
 var templates = e2e.ext.ui.templates;
 var ui = e2e.ext.ui;
 var utils = e2e.ext.utils;
@@ -74,17 +75,24 @@ ui.Settings = function() {
    */
   this.actionExecutor_ = new e2e.ext.actions.Executor(
       goog.bind(this.displayFailure_, this));
-
 };
 goog.inherits(ui.Settings, goog.ui.Component);
 
 
 /**
  * The PGP context used by the extension.
- * @type {e2e.openpgp.ContextImpl}
+ * @type {e2e.openpgp.Context}
  * @private
  */
 ui.Settings.prototype.pgpContext_ = null;
+
+
+/**
+ * User preferences.
+ * @type {e2e.ext.Preferences}
+ * @private
+ */
+ui.Settings.prototype.preferences_ = null;
 
 
 /**
@@ -105,17 +113,24 @@ ui.Settings.prototype.getContentElement = function() {
 ui.Settings.prototype.decorateInternal = function(elem) {
   this.setElementInternal(elem);
 
-  utils.action.getContext(function(pgpCtx) {
-    this.pgpContext_ = pgpCtx;
-    if (!this.pgpContext_.hasPassphrase()) {
-      window.alert(chrome.i18n.getMessage('settingsKeyringLockedError'));
-      window.close();
-    } else {
-      // TODO(radi): Move to an E2E action.
-      this.pgpContext_.getAllKeys().
-          addCallback(this.renderTemplate_, this).
-          addErrback(this.displayFailure_, this);
-    }
+  utils.action.getPreferences(function(preferences) {
+    this.preferences_ = preferences;
+    utils.action.getContext(function(pgpCtx) {
+      this.pgpContext_ = pgpCtx;
+      this.pgpContext_.hasPassphrase().addCallback(/** @this {ui.Settings} */ (
+          function(hasPassphrase) {
+            if (!hasPassphrase) {
+              window.alert(
+                  chrome.i18n.getMessage('settingsKeyringLockedError'));
+              window.close();
+            } else {
+              // TODO(radi): Move to an E2E action.
+              this.pgpContext_.getAllKeys().
+              addCallback(this.renderTemplate_, this).
+              addErrback(this.displayFailure_, this);
+            }
+          }), this);
+    }, this.displayFailure_, this);
   }, this.displayFailure_, this);
 };
 
@@ -135,9 +150,13 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('settings_styles.css');
 
-  var generateKeyPanel =
-      new panels.GenerateKey(goog.bind(this.generateKey_, this));
-  this.addChild(generateKeyPanel, true);
+  this.addChild(new panels.PreferencesPanel(
+      goog.asserts.assert(this.preferences_)), true);
+
+  this.generateKeyPanel_ = new panels.GenerateKey(
+      goog.bind(this.generateKey_, this));
+
+  this.addChild(this.generateKeyPanel_, true);
 
   this.keyringMgmtPanel_ = new panels.KeyringMgmtFull(
       pgpKeys,
@@ -148,55 +167,51 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
       goog.bind(this.renderNewKey_, this),
       goog.bind(this.exportKey_, this),
       goog.bind(this.removeKey_, this));
-  this.addChild(this.keyringMgmtPanel_, true);
-  this.keyringMgmtPanel_.setKeyringEncrypted(
-      this.pgpContext_.isKeyRingEncrypted());
 
-  var advancedLinkDiv = goog.dom.createElement(goog.dom.TagName.DIV);
-  var advancedLink = goog.dom.createElement(goog.dom.TagName.A);
-  advancedLink.href = '#';
-  advancedLink.textContent = chrome.i18n.getMessage('showPreferencesLink');
-  advancedLinkDiv.appendChild(advancedLink);
-  this.getContentElement().appendChild(advancedLinkDiv);
+  this.pgpContext_.isKeyRingEncrypted().addCallback(function(isEncrypted) {
+    this.addChild(this.keyringMgmtPanel_, true);
+    this.keyringMgmtPanel_.setKeyringEncrypted(isEncrypted);
+  }, this);
 
-  this.preferencesPanel_ = new panels.PreferencesPanel();
-  this.addChild(this.preferencesPanel_, true);
-  this.preferencesPanel_.getElement().style.display = 'none';
+  this.renderPanels_();
 
-  this.getHandler().listen(advancedLink, goog.events.EventType.CLICK,
-      goog.bind(function() {
-        var prefs = this.preferencesPanel_.getElement();
-        if (prefs.style.display === 'none') {
-          advancedLink.textContent =
-              chrome.i18n.getMessage('hidePreferencesLink');
-          prefs.style.display = 'inherit';
-        } else {
-          advancedLink.textContent =
-              chrome.i18n.getMessage('showPreferencesLink');
-          prefs.style.display = 'none';
-        }
-      }, this));
-  this.getHandler().listen(
-      this.getElement(), goog.events.EventType.CLICK, this.clearFailure_);
+  this.getHandler().
+      listen(
+          this.getElement(),
+          goog.events.EventType.CLICK,
+          this.clearFailure_);
+
 };
 
 
 /**
- * Gets lists of email addresses for keys in the keyring.
- * @param {string} type 'public' or 'private'
- * @param {!function(Array.<string>)} callback
+ * Renders the panels.
  * @private
  */
-ui.Settings.prototype.getEmails_ = function(type, callback) {
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-    action: constants.Actions.LIST_ALL_UIDS,
-    content: type
-  }), function(response) {
-    response.content = response.content || [];
-    var emails = utils.text.getValidEmailAddressesFromArray(response.content,
-                                                            true);
-    callback(emails);
-  });
+ui.Settings.prototype.renderPanels_ = function() {
+  this.pgpContext_.getAllKeys(true)
+      .addCallback(function(keysObj) {
+        var privateKeys = Object.keys(keysObj);
+        var hiddenClass = constants.CssClass.HIDDEN;
+        var signupForm = goog.dom.getElement(
+            constants.ElementId.GENERATE_KEY_FORM);
+        var cancelButton = goog.dom.getElementByClass(
+            constants.CssClass.CANCEL, signupForm);
+        var signupPrompt = goog.dom.getElement(
+            constants.ElementId.SIGNUP_PROMPT);
+
+        goog.dom.classlist.add(cancelButton, hiddenClass);
+
+        if (privateKeys.length) {
+          goog.dom.classlist.remove(signupPrompt, hiddenClass);
+          goog.dom.classlist.add(signupForm, hiddenClass);
+        }
+        else {
+          goog.dom.classlist.add(signupPrompt, hiddenClass);
+          goog.dom.classlist.remove(signupForm, hiddenClass);
+        }
+      })
+      .addErrback(this.displayFailure_, this);
 };
 
 
@@ -209,34 +224,19 @@ ui.Settings.prototype.getEmails_ = function(type, callback) {
  * @param {string} comments The comments to use.
  * @param {number} expDate The expiration date to use.
  * @private
+ * @return {goog.async.Deferred}
  */
 ui.Settings.prototype.generateKey_ =
     function(panel, name, email, comments, expDate) {
-  var normalizedEmail = utils.text.extractValidYahooEmail(email);
-  if (!normalizedEmail) {
-    alert(chrome.i18n.getMessage('invalidEmailWarning'));
-    return null;
-  }
 
-  this.getEmails_('private', goog.bind(function(emails) {
-    if (goog.array.contains(emails,
-                            normalizedEmail.toLowerCase())) {
-      alert(chrome.i18n.getMessage('duplicateKeyWarning'));
-      return null;
-    }
-
-    var defaults = constants.KEY_DEFAULTS;
-    return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
-        defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
-        defaults.subkeyLength, name, comments, email, expDate)
-        .addCallback(goog.bind(function(key) {
-          // Key should be an array of exactly size 2 (one public, one private)
-          panel.sendKeys(key, goog.bind(function(response) {
-            this.renderNewKey_(key[0].uids[0]);
-            panel.reset();
-          }, this), this.pgpContext_);
-        }, this)).addErrback(this.displayFailure_, this);
-  }, this));
+  var defaults = constants.KEY_DEFAULTS;
+  return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
+      defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
+      defaults.subkeyLength, name, comments, email, expDate)
+      .addCallback(goog.bind(function(key) {
+        this.renderNewKey_(key[0].uids[0]);
+        panel.reset();
+      }, this)).addErrback(this.displayFailure_, this);
 };
 
 
@@ -248,17 +248,19 @@ ui.Settings.prototype.generateKey_ =
 ui.Settings.prototype.removeKey_ = function(keyUid) {
   this.pgpContext_
       .searchPrivateKey(keyUid)
-      .addCallback(function(privateKeys) {
+      .addCallback(/** @this {ui.Settings} */ (function(privateKeys) {
         // TODO(evn): This message should be localized.
         var prompt = 'Deleting all keys for ' + keyUid;
         if (privateKeys && privateKeys.length > 0) {
           prompt += '\n\nWARNING: This will delete some private keys!';
         }
         if (window.confirm(prompt)) {
-          this.pgpContext_.deleteKey(keyUid);
-          this.keyringMgmtPanel_.removeKey(keyUid);
+          this.pgpContext_.deleteKey(keyUid).addCallback(function() {
+            this.keyringMgmtPanel_.removeKey(keyUid);
+            this.renderPanels_();
+          }, this);
         }
-      }, this)
+      }), this)
       .addErrback(this.displayFailure_, this);
 };
 
@@ -299,6 +301,7 @@ ui.Settings.prototype.renderNewKey_ = function(keyUid) {
       .searchKey(keyUid)
       .addCallback(function(pgpKeys) {
         this.keyringMgmtPanel_.addNewKey(keyUid, pgpKeys);
+        this.renderPanels_();
       }, this)
       .addErrback(this.displayFailure_, this);
 };
@@ -306,6 +309,7 @@ ui.Settings.prototype.renderNewKey_ = function(keyUid) {
 
 /**
  * Imports a keyring from a file and appends it to the current keyring.
+ * //@yahoo let it accept string, required by FB key import
  * @param {(!File|string)} file The file to import.
  * @private
  */
@@ -369,20 +373,23 @@ ui.Settings.prototype.renderPassphraseCallback_ = function(uid) {
  * @private
  */
 ui.Settings.prototype.exportKeyring_ = function() {
-  var filename = (this.pgpContext_.isKeyRingEncrypted() ? '' : 'UNENCRYPTED-') +
-      'keyring-private.asc';
-  this.pgpContext_.exportKeyring(true).addCallback(function(armoredKey) {
-    if (typeof armoredKey != 'string') {
-      armoredKey = goog.crypt.byteArrayToString(armoredKey);
-    }
-    utils.writeToFile(
-        armoredKey, function(fileUrl) {
-          var anchor = document.createElement('a');
-          anchor.download = filename;
-          anchor.href = fileUrl;
-          anchor.click();
-        });
-  }, this).addErrback(this.displayFailure_, this);
+  this.pgpContext_.isKeyRingEncrypted().addCallback(/** @this ui.Settings */ (
+      function(isEncrypted) {
+        var filename = (isEncrypted ? '' : 'UNENCRYPTED-') +
+            'keyring-private.asc';
+        this.pgpContext_.exportKeyring(true).addCallback(function(armoredKey) {
+          if (typeof armoredKey != 'string') {
+            armoredKey = goog.crypt.byteArrayToString(armoredKey);
+          }
+          utils.writeToFile(
+          armoredKey, function(fileUrl) {
+            var anchor = document.createElement('a');
+            anchor.download = filename;
+            anchor.href = fileUrl;
+            anchor.click();
+          });
+        }, this).addErrback(this.displayFailure_, this);
+      }), this);
 };
 
 
@@ -392,12 +399,14 @@ ui.Settings.prototype.exportKeyring_ = function() {
  * @private
  */
 ui.Settings.prototype.updateKeyringPassphrase_ = function(passphrase) {
-  this.pgpContext_.changeKeyRingPassphrase(passphrase);
-  utils.showNotification(
-      chrome.i18n.getMessage('keyMgmtChangePassphraseSuccessMsg'),
-      goog.nullFunction);
-  this.keyringMgmtPanel_.setKeyringEncrypted(
-      this.pgpContext_.isKeyRingEncrypted());
+  this.pgpContext_.changeKeyRingPassphrase(passphrase).addCallback(
+      /** @this ui.Settings */ (function() {
+        utils.showNotification(
+            chrome.i18n.getMessage('keyMgmtChangePassphraseSuccessMsg'),
+            goog.nullFunction);
+        this.pgpContext_.isKeyRingEncrypted().addCallback(
+            this.keyringMgmtPanel_.setKeyringEncrypted, this.keyringMgmtPanel_);
+      }), this);
 };
 
 
@@ -425,12 +434,63 @@ ui.Settings.prototype.clearFailure_ = function() {
 };
 
 
+
+
+
+/**
+ * Constructor for the yahoo settings page.
+ * @constructor
+ * @extends {e2e.ext.ui.Settings}
+ */
+ui.ySettings = function() {
+  goog.base(this);
+};
+goog.inherits(ui.ySettings, ui.Settings);
+
+
+/**
+ * //@yahoo override to add email validity and priv key duplicate check
+ * @override
+ */
+ui.ySettings.prototype.generateKey_ =
+    function(panel, name, email, comments, expDate) {
+
+  var normalizedEmail = utils.text.extractValidYahooEmail(email);
+
+  var result = new e2e.async.Result();
+  result.addCallback(function(){
+    ui.ySettings.superClass_.generateKey_.call(this, 
+        panel, name, email, comments, expDate);
+  }, this).addErrback(this.displayFailure_, this);
+
+  if (normalizedEmail) {
+    this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
+        action: e2e.ext.constants.Actions.LIST_KEYS,
+        content: 'private'
+      }), this, goog.bind(function(privateKeyResult) {
+        var email = normalizedEmail.toLowerCase();
+        var emailLabels = goog.object.getKeys(privateKeyResult);
+        var privKeyExisted = goog.array.some(emailLabels, function(label){
+          return utils.text.extractValidEmail(label).toLowerCase() === email;
+        });
+
+        if (privKeyExisted) {
+          result.errback(new utils.Error(
+              'There is already a key for this address in the keyring', 
+              'duplicateKeyWarning'));
+        } else {
+          result.callback();
+        }
+
+    }, this), goog.bind(this.displayFailure_, this));
+
+  } else {
+    result.errback(new utils.Error(
+        'Please enter a valid email address', 'invalidEmailWarning'));
+  }
+
+  return result;
+};
+
+
 });  // goog.scope
-
-
-// Create the settings page.
-if (Boolean(chrome.extension)) {
-  /** @type {!e2e.ext.ui.Settings} */
-  window.settingsPage = new e2e.ext.ui.Settings();
-  window.settingsPage.decorate(document.documentElement);
-}
