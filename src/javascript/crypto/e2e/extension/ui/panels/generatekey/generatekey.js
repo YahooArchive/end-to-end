@@ -72,6 +72,7 @@ panels.GenerateKey = function(callback, opt_hideTitle, opt_actionBtnTitle) {
   this.callback_ = callback;
 
   /**
+   * //@yahoo
    * The keyserver client component associated with this panel.
    * @type {!e2e.ext.keyserver.Client}
    * @private
@@ -173,8 +174,6 @@ panels.GenerateKey.prototype.generate_ = function() {
  * Resets the key generation form.
  */
 panels.GenerateKey.prototype.reset = function() {
-  // @yahoo
-  this.clearFailure_();
   var inputs = this.getElement().querySelectorAll('input');
   goog.array.forEach(inputs, function(input) {
     input.value = '';
@@ -185,7 +184,6 @@ panels.GenerateKey.prototype.reset = function() {
 /**
  * //@yahoo 
  * Sends an OpenPGP public key(s) to the keyserver. 
- * TODO: move it to keyserver-client.js
  * @param {!e2e.openpgp.Keys} keys
  * @param {function(string)} callback
  * @param {e2e.openpgp.ContextImpl} ctx

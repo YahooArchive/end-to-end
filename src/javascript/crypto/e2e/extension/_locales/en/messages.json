@@ -7,16 +7,28 @@
     "message": "Helps you send end-to-end protected messages in Yahoo mail.",
     "description": "Description of the extension."
   },
+  "promptDismissActionLabel": {
+    "message": "Dismiss",
+    "description": "A verb prompting the user to dismiss the current action."
+  },
   "promptOkActionLabel": {
     "message": "OK",
     "description": "A verb prompting the user to accept the current action."
   },
+  "promptDecryptionSuccessMsg": {
+    "message": "Decryption successful!",
+    "description": "Message informing about a successful decryption of a message."
+  },
+  "promptMessageNotEncryptedMsg": {
+    "message": "Message was not encrypted.",
+    "description": "Message informing that the message was not encrypted."
+  },
   "promptVerificationSuccessMsg": {
-    "message": "Good signature(s) from $1",
+    "message": "Good signature(s) from $1.",
     "description": "Message informing about a successful signature verification."
   },
   "promptVerificationFailureMsg": {
-    "message": "BAD signature(s) from ",
+    "message": "BAD signature(s) from $1!",
     "description": "Message informing about failure in signature verification."
   },
   "promptEncryptSignTitle": {
@@ -27,16 +39,48 @@
     "message": "Send protected message",
     "description": "A verb prompting the user to encrypt and/or sign a message."
   },
+  "promptEncryptSignInsertLabel": {
+    "message": "Insert into the page",
+    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into the page."
+  },
+  "promptEncryptSignInsertIntoGmailLabel": {
+    "message": "Insert into the compose window",
+    "description": "A sentence fragment prompting the user whether to insert the encrypted/decrypted text into Gmail."
+  },
+  "promptEncryptSignSendLabel": {
+    "message": "Send protected message",
+    "description": "A sentence fragment prompting the user to send a protected message."
+  },
+  "promptEncryptSignSaveDraftLabel": {
+    "message": "Save encrypted draft",
+    "description": "A sentence fragment prompting the user to save the working draft into the visiting page."
+  },
   "promptEncryptSignReplyHeader": {
     "message": "Original message",
     "description": "A sentence fragment indicating where the original message begins."
   },
-  "promptImportKeyButtonLabel": {
+  "promptDecryptVerifyTitle": {
+    "message": "Read a protected message",
+    "description": "A friendly title for the decrypt&verify action."
+  },
+  "promptDecryptVerifyPlaceholder": {
+    "message": "Paste here the protected message that you would like to read.",
+    "description": "A sentence prompting the user to paste an encrypted PGP message."
+  },
+  "promptDecryptVerifyActionLabel": {
+    "message": "Read",
+    "description": "A verb prompting the user to encrypt and/or sign a message."
+  },
+  "promptImportKeyTitle": {
+    "message": "Import an OpenPGP Key",
+    "description": "A friendly title for the key import action."
+  },
+  "promptImportKeyActionLabel": {
     "message": "Import",
-    "description": "A verb prompting the user to import keys."
+    "description": "A verb prompting the user to import an OpenPGP key into End-To-End."
   },
   "promptImportKeyConfirmLabel": {
-    "message": "Do you want to import the following keys?",
+    "message": "Do you want to import the following keys?\n\nYou should verify (e.g. with a phone call) that the key owners displayed below use the same key fingerprints.",
     "description": "A sentence asking the user to confirm the key import."
   },
   "promptImportKeyVerifyLabel": {
@@ -56,12 +100,16 @@
     "description": "A sentence notifying that user needs to chose a passphrase or recipients in order to encrypt and sign a message."
   },
   "glassKeyringLockedError": {
-    "message": "Please unlock the KeyRing to use End to End. Click the End-To-End icon in the URL bar, then reload this message.",
-    "description": "An error message indicating that the user must unlock their KeyRing."
+    "message": "Please unlock the KeyRing before reading messages inline. To do this, please click the End-To-End icon in the upper-right area of the screen.",
+    "description": "An error message indicating that the user must unlock their KeyRing before reading messages inline."
   },
   "glassCannotDecrypt": {
-    "message": "Unable to decrypt or verify contents. Is the keyring unlocked?",
+    "message": "Unable to decrypt contents. Please try unlocking the keyring and reloading the page.",
     "description": "A generic error message indicating that something went wrong while reading messages inline."
+  },
+  "actionLoading": {
+    "message": "Loading...",
+    "description": "A phrase inditating a loading process."
   },
   "actionUserSpecified": {
     "message": "Select an action...",
@@ -99,6 +147,10 @@
     "message": "Menu",
     "description": "A noun describing where the menu is located."
   },
+  "actionOpenPopout": {
+    "message": "Open in a new window",
+    "description": "A short phrase describing opening a new window."
+  },
   "keyMgmtTitle": {
     "message": "Keyring management",
     "description": "A section title signaling that the displayed PGP keys are stored by the extension."
@@ -115,12 +167,16 @@
     "message": "None",
     "description": "A noun indicating that there are no PGP keys to display."
   },
+  "keyMgmtSignupPromptLabel": {
+      "message": "Generate a new key",
+      "description": "A sentence prompting the user sign up with a new key."
+  },
   "keyMgmtImportKeyringLabel": {
-    "message": "Import key from file",
+    "message": "Import a keyring",
     "description": "A sentence prompting the user to import an existing PGP keyring."
   },
   "keyMgmtExportKeyringLabel": {
-    "message": "Backup keys to file",
+    "message": "Export local keyring",
     "description": "A sentence prompting the user to export the existing PGP keyring."
   },
   "keyMgmtBackupKeyringLabel": {
@@ -146,11 +202,11 @@
     "description": "A word prompting the user for their email."
   },
   "keyMgmtRestoreKeyringBackupCodeLabel": {
-    "message": "Backup Code",
+    "message": "Backup Code\nAnyone who knows the code will be able to read your messages.",
     "description": "A word prompting the user for their backup code."
   },
   "keyMgmtChangePassphraseLabel": {
-    "message": "Set keyring passphrase",
+    "message": "Change the keyring's passphrase",
     "description": "A sentence prompting the user to change the passphrase of the existing PGP keyring."
   },
   "keyMgmtAddPassphraseLabel": {
@@ -158,11 +214,11 @@
     "description": "A sentence prompting the user to change the passphrase of the existing PGP keyring."
   },
   "keyMgmtChangePassphrasePlaceholder": {
-    "message": "Enter a new passphrase.",
+    "message": "Enter a new passphrase for the existing keyring.",
     "description": "A sentence prompting the user to enter a new passphrase for the existing PGP keyring."
   },
   "keyMgmtConfirmPassphrasePlaceholder": {
-    "message": "Confirm the new passphrase.",
+    "message": "Confirm the new passphrase for the existing keyring.",
     "description": "A sentence prompting the user to confirm the new passphrase for the existing PGP keyring."
   },
   "keyMgmtPassphraseMismatchLabel": {
@@ -198,11 +254,11 @@
     "description": "Ask the user to enter a valid username."
   },
   "genKeyTitle": {
-    "message": "Generate a new PGP key",
+    "message": "Sign up to receive secret messages",
     "description": "A section title indicating where the user can generate a new PGP key."
   },
   "genKeyEmailLabel": {
-    "message": "Please enter your Yahoo email address so we can make your keys:",
+    "message": "Please enter your name@yahoo-inc.com email address you will use to receive secret messages.\nNote that everyone will know you can receive secret messages here.",
     "description": "A sentence fragment prompting the user to provide his/her email address."
   },
   "genKeyPassphraseLabel": {
@@ -210,15 +266,15 @@
     "description": "A noun indicating where the user needs to specify a passphrase for her new PGP key."
   },
   "genKeyGenerateButtonLabel": {
-    "message": "Make key",
-    "description": "A verb prompting the user to generate a new PGP key."
+    "message": "Sign Up",
+    "description": "A verb prompting the user to register to receive secret messages."
   },
   "settingsTitle": {
     "message": "End-To-End Keys and Settings",
     "description": "A page title indicating to the user that the current page will allow her to modify the extension's settings."
   },
   "settingsKeyringLockedError": {
-    "message": "Please unlock the keyring or set an initial keyring passphrase before using the Options page.",
+    "message": "Please unlock the KeyRing or set an initial KeyRing passphrase before using the Options page. To do this, please click the lock icon in the upper-right area of the screen.",
     "description": "An error message indicating that the user must unlock their KeyRing and/or choose an initial passphrase for the KeyRing before using the Options page."
   },
   "promptRecipientsPlaceholder": {
@@ -254,7 +310,7 @@
     "description": "The label to describe who is the author of the message."
   },
   "promptSubjectLabel": {
-    "message": "WARNING: Message subject is NOT encrypted!",
+    "message": "Subject: (Warning: Subject is NOT protected)",
     "description": "The label to describe the subject of the message."
   },
   "promptNoPrivateKeysFound": {
@@ -262,7 +318,7 @@
     "description": "The label to inform the user that he needs a private key to use signing/decryption functionality"
   },
   "promptEncryptionPassphraseMessage": {
-    "message": "Please enter a passphrase for this message.",
+    "message": "Please enter a passphrase for this message.\nAnyone who knows the passphrase will be able to read the message.",
     "description": "A sentence prompting the user to specify a passphrase for symmetric encryption."
   },
   "promptEncryptionPassphraseConfirmMessage": {
@@ -272,6 +328,10 @@
   "promptEncryptionPassphraseLink": {
     "message": "Protect with a passphrase",
     "description": "A sentence notifying the user where to enter passphrases for symmetric encryption."
+  },
+  "promptEncryptionPassphraseLinkTooltip": {
+    "message": "Protect the message with a passhrase. Anyone who knows the passphrase will be able to read the message.",
+    "description": "A sentence notifying the user what passphrase encryption does."
   },
   "promptPassphraseMask": {
     "message": "(passphrase)",
@@ -298,14 +358,15 @@
     "description": "A welcome message to new users."
   },
   "welcomeBasicsTitle": {
-    "message": "You're all set!"
+    "message": "Tutorial",
+    "description": "A section title, can be a sentence fragment"
   },
   "welcomeBasicsLine1": {
-    "message": "Send encrypted and verified messages to friends in Yahoo Mail.",
+    "message": "This extension allows you to create encrypted messages and decrypt encrypted messages sent to you.",
     "description": "A sentence describing instructions."
   },
   "welcomeBasicsLine2": {
-    "message": "Learn how to use the extension in Yahoo Mail in 15 seconds:",
+    "message": "Here's a short demonstration how you could use the extension in GMail:",
     "description": "A sentence describing a link to an instruction video or screenshot."
   },
   "welcomeBasicsLine3": {
@@ -317,23 +378,20 @@
     "description": "Link to a demonstration on how to use the extension."
   },
   "welcomeNoviceTitle": {
-    "message": "I'm new to End-to-End",
+    "message": "I'm new to OpenPGP",
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeGenKeyConfirm": {
-    "message": "You are all set. A new End-to-End key has been created for you to use.",
-    "description": "The message to display when the user has created his/her End-to-End key."
+    "message": "You are all set. A new OpenPGP key has been created for you to use.",
+    "description": "The message to display when the user has created his/her OpenPGP key."
   },
   "welcomeAdvancedTitle": {
-    "message": "Use my existing End-to-End keys",
+    "message": "I want to import a keyring",
     "description": "A section title, can be a sentence fragment"
   },
   "welcomeKeyImport": {
-    "message": "You are all set. Your End-to-End keyring has been imported and is ready for you to use.",
+    "message": "You are all set. Your OpenPGP keyring has been imported and is ready for you to use.",
     "description": "The message to display when the user has imported his/her existing keyring."
-  },
-  "welcomeKeyRestore": {
-    "message": "You're all set. The keys for $1 have been restored."
   },
   "welcomeAcceptanceButton": {
     "message": "Done",
@@ -343,29 +401,9 @@
     "message": "Unable to open keyring. Please enter your keyring's passphrase.",
     "description": "A message describing keyring access problems and prompting the user to enter passphrase."
   },
-  "passphraseIncorrectWarning": {
-    "message": "Passphrase is incorrect.",
-    "description": "A message informing the user that passphrase validation failed."
-  },
   "preferencesSectionTitle": {
     "message": "Extension preferences",
     "description": "A section title, can be a sentence fragment"
-  },
-  "showPreferencesLink": {
-    "message": "Show advanced preferences >>",
-    "description": "Text to show advanced prefs"
-  },
-  "hidePreferencesLink": {
-    "message": "Hide advanced preferences <<",
-    "description": "Text to hide advanced prefs"
-  },
-  "duplicateKeyWarning": {
-    "message": "There is already a key for this address in the keyring. Please remove it before generating a new one.",
-    "description": "Warning that a key already exists for the given email address"
-  },
-  "invalidEmailWarning": {
-    "message": "Please enter a valid Yahoo email address.",
-    "description": "Warning that an email is not valid."
   },
   "preferenceWelcomeScreen": {
     "message": "Show the welcome window when the extension loads the next time.",
@@ -398,10 +436,6 @@
   "dialogSelectAll": {
     "message": "Select all",
     "description": "A fragment indicating to the user to select all items in the dialog."
-  },
-  "lookingGlassTitle": {
-    "message": "Secure message",
-    "description": "Text that appears at the top of a looking glass."
   },
   "composeGlassTitle": {
     "message": "Composing an end-to-end encrypted message",
@@ -498,7 +532,33 @@
   "sendKeySuccess": {
     "message": "Successfully registered key!"
   },
-  "passphraseError": {
-    "message": "Wrong passphrase"
+  "interactionSuppressed": {
+    "message": "To start typing, tap left Ctrl-key. Everything you type will not be encrypted.",
+    "description": "A sentence explaining that the interaction with the web application is suppressed."
+  },
+  "interactionEnabled": {
+    "message": "Everything you type is now unencrypted. Tap left Ctrl-key to reenable secure mode.",
+    "description": "A sentence explaining that the interaction with the web application is enabled."
+  },
+  "keyFingerprintLabel": {
+    "message": "Key fingerprint",
+    "description": "The OpenPGP key fingerprint"
+  },
+
+  "duplicateKeyWarning": {
+    "message": "There is already a key for this address in the keyring. Please remove it before generating a new one.",
+    "description": "Warning that a key already exists for the given email address"
+  },
+  "invalidEmailWarning": {
+    "message": "Please enter a valid Yahoo email address.",
+    "description": "Warning that an email is not valid."
+  },
+  "passphraseIncorrectWarning": {
+    "message": "Passphrase is incorrect.",
+    "description": "A message informing the user that passphrase validation failed."
+  },
+  "lookingGlassTitle": {
+    "message": "Secure message",
+    "description": "Text that appears at the top of a looking glass."
   }
 }

@@ -231,7 +231,7 @@ ui.Prompt.prototype.renderKeyringPassphrase_ = function(elem) {
           this.close();
         } catch (e) { // Incorrect passphrase, so ask again.
           this.displayFailure_(
-              new Error(chrome.i18n.getMessage('passphraseError')));
+              new Error(chrome.i18n.getMessage('passphraseIncorrectWarning')));
           this.processSelectedContent_(
               ext.constants.Actions.GET_PASSPHRASE);
         }

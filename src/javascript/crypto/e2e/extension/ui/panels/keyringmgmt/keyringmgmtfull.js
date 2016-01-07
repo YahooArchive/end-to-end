@@ -46,7 +46,7 @@ var templates = e2e.ext.ui.templates.panels.keyringmgmt;
  * @param {!function()} exportKeyringCallback The callback to invoke when the
  *     keyring is to be exported.
  * @param {!function((string|!File))} importKeyringCallback The callback to
- *     invoke when an existing keyring is to be imported.
+ *     invoke when an existing keyring is to be imported. @yahoo allows string
  * @param {!function(string)} updateKeyringPassphraseCallback The callback to
  *     invoke when the passphrase to the keyring is to be updated.
  * @param {!function(string)} restoreKeyringCallback The callback to invoke when
@@ -142,8 +142,12 @@ panels.KeyringMgmtFull.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
   var keyringTable = this.getElement().querySelector('table');
-  this.getHandler().listen(
-      keyringTable, goog.events.EventType.CLICK, this.handleClick_, true);
+  this.getHandler()
+      .listen(
+          keyringTable,
+          goog.events.EventType.CLICK,
+          this.handleClick_,
+          true);
 };
 
 

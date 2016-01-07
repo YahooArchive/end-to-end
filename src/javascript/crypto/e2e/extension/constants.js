@@ -199,6 +199,7 @@ e2e.ext.constants.CssClass = {
   KEY_TYPE_DESC: 'key-type-description',
   KEY_UID: 'key-uid',
   KEY_SUBKEY: 'key-sub',
+  SIGNUP_PROMPT: 'keyring-signup',
   FB_IMPORT: 'fb-import',
   KEYRING_IMPORT: 'keyring-import',
   KEYRING_EXPORT: 'keyring-export',
@@ -214,6 +215,15 @@ e2e.ext.constants.CssClass = {
   /** Used in the welcome page */
   WELCOME_MENU_ICON: 'welcome-menu-icon',
   WELCOME_SUBSECTION_HEADER: 'welcome-subsection-header',
+
+  /** Used in prompt. */
+  PROMPT_HEADER: 'pgpHead',
+  PROMPT_TITLE: 'pgpTitle',
+  PROMPT_ACTIONS: 'pgpActions',
+  BUTTONS_CONTAINER: 'buttons-container',
+  MENU_BUTTON: 'menu-button',
+  POPOUT_BUTTON: 'popout-button',
+  PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
 
   /** Error messages **/
   ERROR: 'error',

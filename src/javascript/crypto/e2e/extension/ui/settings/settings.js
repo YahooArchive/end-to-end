@@ -459,8 +459,20 @@ ui.ySettings.prototype.generateKey_ =
 
   var result = new e2e.async.Result();
   result.addCallback(function(){
-    ui.ySettings.superClass_.generateKey_.call(this, 
-        panel, name, email, comments, expDate);
+
+    // almost same as the base generateKey_ except using panel.sendKeys()
+    var defaults = constants.KEY_DEFAULTS;
+    return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
+        defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
+        defaults.subkeyLength, name, comments, email, expDate)
+        .addCallback(function(key){
+          panel.sendKeys(key, goog.bind(function(resp){
+            this.renderNewKey_(key[0].uids[0]);
+            panel.reset();
+          }, this), this.pgpContext_);
+        }, this).addErrback(this.displayFailure_, this);
+
+
   }, this).addErrback(this.displayFailure_, this);
 
   if (normalizedEmail) {
@@ -471,7 +483,8 @@ ui.ySettings.prototype.generateKey_ =
         var email = normalizedEmail.toLowerCase();
         var emailLabels = goog.object.getKeys(privateKeyResult);
         var privKeyExisted = goog.array.some(emailLabels, function(label){
-          return utils.text.extractValidEmail(label).toLowerCase() === email;
+          label = utils.text.extractValidEmail(label);
+          return goog.isDefAndNotNull(label) && label.toLowerCase() === email;
         });
 
         if (privKeyExisted) {

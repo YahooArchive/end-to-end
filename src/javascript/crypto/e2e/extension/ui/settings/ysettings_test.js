@@ -62,11 +62,6 @@ function setUp() {
     callback({launcher: launcher});
   });
 
-  stubs.replace(e2e.ext.keyserver.Client.prototype, 'sendKey',
-                function(userid, key, cb, eb) {
-                  this.cacheKeyData('foo');
-                  cb({userid: userid, key: key});
-                });
   stubs.replace(window, 'alert', goog.nullFunction);
 
   page = new e2e.ext.ui.ySettings();
@@ -111,17 +106,20 @@ function testGenerateKeyDuplicated() {
 }
 
 
-function testGenerateKeySucessful() {
+function testGenerateKeySuccessful() {
   page.decorate(document.documentElement);
   testCase.waitForAsync('waiting for key to be generated and uploaded to keyserver');
 
   var email = 'Test3@yahoo-inc.com';
 
-  fakeGenerateKey('Test3', email).addCallback(function() {
-    assertNotEquals(-1, document.body.textContent.indexOf(
-        '<' + email.toLowerCase() + '>'));
-    testCase.continueTesting();
-  });
+  page.generateKey_(
+        {reset: function() {}, sendKeys: function(keys, cb, ctx){cb({})}}, 
+        'Test3', email, 'comment')
+    .addCallback(function() {
+      assertNotEquals(-1, document.body.textContent.indexOf(
+          '<' + email + '>'));
+      testCase.continueTesting();
+    });
 }
 
 function fakeGenerateKey(opt_fullname, opt_email) {

@@ -117,8 +117,12 @@ function testSendKeys() {
 function testSendKeysFailure() {
   panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
   panel.render(document.body);
+
+  var errorThrown = false;
+
   stubs.replace(panel.keyserverClient_, 'sendKey', function(userid, key, cb,
                                                             eb) {
+    errorThrown = true;
     // Return an unsuccessful key export
     eb(new Error('foo'));
   });
@@ -143,9 +147,7 @@ function testSendKeysFailure() {
   panel.sendKeys(keys, goog.nullFunction, ctx);
 
   window.setTimeout(function() {
-    var errorDiv = panel.getElement().getElementsByClassName(
-        constants.CssClass.ERROR)[0];
-    assertEquals('foo', errorDiv.textContent);
+    assertTrue(errorThrown);
     mockControl.$verifyAll();
     testCase.continueTesting();
   }, 100);

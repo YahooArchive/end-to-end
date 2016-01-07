@@ -82,7 +82,11 @@ button.back > img {
   opacity: 0.6;
 }
 
-#pgpHead {
+#pgpBody {
+  padding: 0;
+}
+
+.pgpHead {
   background: YCOLOR_GREY_3;
   border: solid YCOLOR_GREY_4;
   border-width: 0 0 1px;
@@ -92,11 +96,11 @@ button.back > img {
   z-index: 60;
 }
 
-#pgpHead > div {
+.pgpHead > div {
    padding: 0 15px;
 }
 
-#pgpHead h1 {
+.pgpHead h1 {
   color: YCOLOR_GREY_8;
   font-size: 1.53846154em;
   font-weight: normal;
@@ -176,6 +180,23 @@ input:focus {
 .key-type-description {
   display: inline-block;
   min-width: 140px;
+}
+
+.keyring-signup {
+  position: relative;
+  padding-left: 10px;
+}
+
+.keyring-signup:before {
+  content: '+';
+  position: absolute;
+  left: 0;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.keyring-signup:hover {
+  text-decoration: underline;
 }
 
 .key-fingerprint {
