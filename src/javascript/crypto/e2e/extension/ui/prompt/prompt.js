@@ -293,7 +293,7 @@ ui.Prompt.prototype.getTitle_ = function(action) {
  */
 ui.Prompt.prototype.selectAction_ = function(evt) {
   var menuContainer = goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
-  goog.dom.classlist.remove(menuContainer, constants.CssClass.HIDDEN);
+  // goog.dom.classlist.remove(menuContainer, constants.CssClass.HIDDEN);
   this.removeChildren();
 
   this.processSelectedContent_(
