@@ -473,7 +473,11 @@ ui.ySettings.prototype.generateKey_ =
         }, this).addErrback(this.displayFailure_, this);
 
 
-  }, this).addErrback(this.displayFailure_, this);
+  }, this).addErrback(function(e){
+    window.setTimeout(goog.bind(function(){
+      this.displayFailure_(e);
+    }, this), 5);
+  }, this);
 
   if (normalizedEmail) {
     this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
@@ -495,7 +499,7 @@ ui.ySettings.prototype.generateKey_ =
           result.callback();
         }
 
-    }, this), goog.bind(this.displayFailure_, this));
+    }, this));
 
   } else {
     result.errback(new utils.Error(
