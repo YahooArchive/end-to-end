@@ -107,6 +107,7 @@ e2e.ext.constants.ElementId = {
   FROM_LABEL: 'fromLabel',
   TO_LABEL: 'toLabel',
   SUBJECT_HOLDER: 'subjectHolder',
+  SUBJECT: 'subject',
 
   /* Used to display menus in the UI. */
   MENU_CONTAINER: 'menu-container',
