@@ -329,10 +329,3 @@ ui.Prompt.prototype.clearFailure_ = function() {
 
 
 });  // goog.scope
-
-// Create the settings page.
-if (Boolean(chrome.extension)) {
-  /** @type {!e2e.ext.ui.Prompt} */
-  window.promptPage = new e2e.ext.ui.Prompt();
-  window.promptPage.decorate(document.documentElement);
-}
