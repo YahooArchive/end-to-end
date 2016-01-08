@@ -27,6 +27,7 @@ goog.provide('e2e.ext.Launcher');
 
 goog.require('e2e.ext.Preferences');
 goog.require('e2e.ext.api.Api');
+goog.require('e2e.openpgp.error.PassphraseError');
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -95,7 +96,7 @@ ext.Launcher.prototype.start = function(opt_passphrase) {
  * @private
  */
 ext.Launcher.prototype.start_ = function(passphrase) {
-  return this.pgpContext_.initializeKeyRing(passphrase).addCallback(
+  return this.pgpContext_.initializeKeyRing(passphrase).addCallbacks(
       function() {
         if (goog.global.chrome &&
         goog.global.chrome.runtime &&
@@ -104,6 +105,11 @@ ext.Launcher.prototype.start_ = function(passphrase) {
           return this.pgpContext_.setArmorHeader(
           'Version',
           manifest.name + ' v' + manifest.version);
+        }
+      }, function(e) {
+        this.updatePassphraseWarning();
+        if (!(e instanceof e2e.openpgp.error.PassphraseError)) {
+          throw e;
         }
       }, this).addCallback(this.completeStart_, this);
 };
@@ -294,10 +300,10 @@ goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 /** @override */
 ext.yExtensionLauncher.prototype.start = function(opt_passphrase) {
 
-  // All ymail tabs need to be reloaded for the e2ebind API to work
-  e2e.ext.utils.action.refreshYmail();
-
   return goog.base(this, 'start', opt_passphrase).addCallback(function(){
+
+    // All ymail tabs need to be reloaded for the e2ebind API to work
+    e2e.ext.utils.action.refreshYmail();
 
     // add message listener
     chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
