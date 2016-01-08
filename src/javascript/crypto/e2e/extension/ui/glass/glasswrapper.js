@@ -87,18 +87,20 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   goog.style.setSize(glassFrame, goog.style.getSize(this.targetElem_));
   glassFrame.style.border = 0;
 
-  var pgpMessage =
-      e2e.openpgp.asciiArmor.extractPgpBlock(this.targetElem_.innerText);
-  var surroundings = this.targetElem_.innerText.split(pgpMessage);
+  var originalContent = this.getOriginalContent();
+  var pgpMessage = e2e.openpgp.asciiArmor.extractPgpBlock(originalContent);
+  var surroundings = originalContent.split(pgpMessage);
 
   this.targetElem_.textContent = '';
   var before = surroundings[0] || '';
   var after = surroundings[1] || '';
 
   var p1 = this.targetElem_.appendChild(document.createElement('pre'));
+  p1.style.fontFamily = 'inherit';
   p1.appendChild(document.createTextNode(before));
   this.targetElem_.appendChild(glassFrame);
   var p2 = this.targetElem_.appendChild(document.createElement('pre'));
+  p2.style.fontFamily = 'inherit';
   p2.appendChild(document.createTextNode(after));
 
   glassFrame.addEventListener('load', goog.bind(function() {
