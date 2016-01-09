@@ -579,12 +579,18 @@ e2ebind.installReadGlass_ = function(elem, opt_text) {
     return;
   }
 
-  var selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
-      opt_text ? opt_text : elem.innerText);
-  var action = utils.text.getPgpAction(selectionBody);
+  var firstValidArmor, originalContent = opt_text ? opt_text : elem.innerText;
 
-  if (action == constants.Actions.DECRYPT_VERIFY) {
-    var glassWrapper = new ui.GlassWrapper(elem, selectionBody);
+  // any parsing error will simply skip installing read glass
+  try {
+    firstValidArmor = e2e.openpgp.asciiArmor.parse(originalContent);
+  } catch(e) {}
+
+  if (firstValidArmor && firstValidArmor.type !== 'BINARY' &&
+      constants.Actions.DECRYPT_VERIFY === utils.text.getPgpAction(
+        '-----BEGIN PGP ' + firstValidArmor.type + '-----')) {
+
+    var glassWrapper = new ui.GlassWrapper(elem, originalContent);
     window.helper.registerDisposable(glassWrapper);
     glassWrapper.installGlass();
 
