@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
+#errorDiv {
+  color: #dd4b39;
+  font-size: 1em;
+  margin-bottom: 7px;
+  text-align: center;
+}
 
+/* @yahoo let text be selectable. solved https://github.com/yahoo/end-to-end/issues/40
 body > fieldset {
   position: absolute;
   width: 95%;
@@ -25,24 +32,16 @@ body > div {
   top: 0;
   width: 100%;
 }
-
-#errorDiv {
-  color: #dd4b39;
-  font-size: 1em;
-  margin-bottom: 7px;
-  text-align: center;
-}
+*/
 
 /* @yahoo */
 #legend-text {
-  position: relative;
   bottom: 5px;
   font-weight: bold;
 }
 
 /* @yahoo */
 legend img {
-  display: inline;
   height: 25px;
   padding-left: 5px;
 }
