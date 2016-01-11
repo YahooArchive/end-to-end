@@ -22,13 +22,14 @@
 goog.provide('e2e.ext.ui.Glass');
 
 goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.ElementId');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.ui.templates.glass');
 goog.require('e2e.ext.utils');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.random');
-goog.require('goog.events.MouseWheelHandler');
+goog.require('goog.dom');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('soy');

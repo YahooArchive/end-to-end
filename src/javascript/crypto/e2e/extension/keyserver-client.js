@@ -18,7 +18,6 @@
  * @fileoverview The Yahoo E2E keyserver client component.
  */
 
-goog.provide('e2e.ext.keyserver');
 goog.provide('e2e.ext.keyserver.AuthError');
 goog.provide('e2e.ext.keyserver.Client');
 goog.provide('e2e.ext.keyserver.RequestError');
@@ -26,12 +25,9 @@ goog.provide('e2e.ext.keyserver.ResponseError');
 
 goog.require('e2e.ecc.Ecdsa');
 goog.require('e2e.ecc.PrimeCurve');
-goog.require('e2e.ext.constants');
+goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.Keyserver');
-goog.require('e2e.ext.constants.StorageKey');
-goog.require('e2e.ext.messages.KeyserverKeyInput');
-goog.require('e2e.ext.messages.KeyserverKeyOutput');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.random');
@@ -418,7 +414,7 @@ ext.keyserver.Client.prototype.verifyJws = function(jws, curveName, opt_key) {
           'unexpected JWS algorithm header for curve' +
           curveName + ':' + alg);
     }
-  } catch(e) {
+  } catch (e) {
     throw new e2e.error.InvalidArgumentsError(
         'unexpected JWS protected header for curve' +
         curveName + ':' + header);
@@ -447,7 +443,7 @@ ext.keyserver.Client.prototype.verifyJws = function(jws, curveName, opt_key) {
  */
 ext.keyserver.Client.prototype.verifyResponse_ = function(response) {
   var verified = this.verifyJws(
-      response, 
+      response,
       e2e.ecc.PrimeCurve.P_256,
       {pubKey: e2e.ext.constants.Keyserver.KAUTH_PUB});
 

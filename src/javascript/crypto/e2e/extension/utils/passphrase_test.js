@@ -21,8 +21,8 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.utils.passphraseTest');
 
+goog.require('e2e.ext');
 goog.require('e2e.ext.testingstubs');
-goog.require('e2e.ext.utils.passphrase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');

@@ -22,12 +22,10 @@
 goog.provide('e2e.ext.actions.RestoreKeyringDataTest');
 
 goog.require('e2e.error.InvalidArgumentsError');
+goog.require('e2e.ext');
 goog.require('e2e.ext.actions.GetKeyringBackupData');
 goog.require('e2e.ext.actions.RestoreKeyringData');
 goog.require('e2e.ext.constants');
-goog.require('e2e.ext.utils.passphrase');
-goog.require('goog.crypt.base64');
-goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
@@ -116,13 +114,15 @@ function testBackupThenRestore() {
 
   stubs.replace(e2e.ext.actions.GetKeyringBackupData.prototype, 'execute',
                 function(ctx, request, requestor, cb) {
-    cb({seed: [1, 2, 3, 4, 5, 6], count: 4});
-  });
+        cb({seed: [1, 2, 3, 4, 5, 6], count: 4});
+      });
 
   new e2e.ext.actions.GetKeyringBackupData().execute(ctx, {
     action: constants.Actions.GET_KEYRING_BACKUP_DATA
   }, ui, function(data) {
-    var phrase = [utils.passphrase.bytesToPhrase(data.seed), data.count/2].join(' ');
+    var phrase = [
+      utils.passphrase.bytesToPhrase(data.seed),
+      data.count / 2].join(' ');
     new e2e.ext.actions.RestoreKeyringData().execute(ctx, {
       action: constants.Actions.RESTORE_KEYRING_DATA,
       content: {

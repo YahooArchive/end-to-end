@@ -97,12 +97,12 @@ function testSendKeys() {
   mockControl.$replayAll();
 
   var keys = [{key: {secret: false},
-      serialized: 'irrelevant',
-      uids: ['testing <test@yahoo-inc.com>']
-    }, {key: {secret: true},
-      serialized: 'foobar',
-      uids: ['foo@yahoo-inc.com']
-    }];
+          serialized: 'irrelevant',
+          uids: ['testing <test@yahoo-inc.com>']
+        }, {key: {secret: true},
+          serialized: 'foobar',
+          uids: ['foo@yahoo-inc.com']
+        }];
 
   testCase.waitForAsync();
   panel.sendKeys(keys, function(arg) {
@@ -122,10 +122,10 @@ function testSendKeysFailure() {
 
   stubs.replace(panel.keyserverClient_, 'sendKey', function(userid, key, cb,
                                                             eb) {
-    errorThrown = true;
-    // Return an unsuccessful key export
-    eb(new Error('foo'));
-  });
+        errorThrown = true;
+        // Return an unsuccessful key export
+        eb(new Error('foo'));
+      });
 
   var ctx = {};
   ctx.deleteKey = mockControl.createFunctionMock('deleteKey');
@@ -136,12 +136,12 @@ function testSendKeysFailure() {
   mockControl.$replayAll();
 
   var keys = [{key: {secret: false},
-      serialized: 'irrelevant',
-      uids: ['testing <test@yahoo-inc.com>']
-    }, {key: {secret: true},
-      serialized: 'foobar',
-      uids: ['foo@yahoo-inc.com']
-    }];
+          serialized: 'irrelevant',
+          uids: ['testing <test@yahoo-inc.com>']
+        }, {key: {secret: true},
+          serialized: 'foobar',
+          uids: ['foo@yahoo-inc.com']
+        }];
 
   testCase.waitForAsync();
   panel.sendKeys(keys, goog.nullFunction, ctx);

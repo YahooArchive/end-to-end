@@ -157,8 +157,8 @@ panels.ChipHolder.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
   goog.array.forEach(this.selectedUids_, function(uid) {
-                       this.addChip(uid, true);
-                     }, this);
+    this.addChip(uid, true);
+  }, this);
 
   this.autoComplete_ = this.createAutoComplete_();
 

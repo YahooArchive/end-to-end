@@ -110,8 +110,6 @@ action.getPreferences = function(callback, errorCallback, opt_scope) {
 };
 
 
-
-
 /**
  * Retrieves the content that the user has selected.
  * @param {!function(!messages.BridgeMessageRequest)} callback The callback
@@ -126,7 +124,7 @@ action.getSelectedContent = function(callback, errorCallback, opt_scope) {
   var scope = opt_scope || goog.global;
   action.getLauncher(function(launcher) {
     /** @type {!e2e.ext.yExtensionLauncher} */ (launcher).
-      getSelectedContent(goog.bind(callback, scope));
+        getSelectedContent(goog.bind(callback, scope));
   }, errorCallback, opt_scope);
 };
 
@@ -154,7 +152,7 @@ action.updateSelectedContent = function(content, recipients, origin,
   var scope = opt_scope || goog.global;
   action.getLauncher(function(launcher) {
     /** @type {!e2e.ext.yExtensionLauncher} */ (launcher).
-      updateSelectedContent(content, recipients, origin,
+        updateSelectedContent(content, recipients, origin,
         expectMoreUpdates, goog.bind(callback, scope), opt_subject);
   }, errorCallback, opt_scope);
 };
@@ -170,7 +168,7 @@ action.getUserYmailAddress = function(callback) {
   try {
     // If this is called in the context of a ymail page, get the email from
     // NeoConfig
-    if (text.isYmailOrigin(window.location.href)  &&
+    if (text.isYmailOrigin(window.location.href) &&
         typeof window.NeoConfig === 'object' &&
         window.NeoConfig.emailAddress) {
       email = text.extractValidYahooEmail(window.NeoConfig.emailAddress);
@@ -206,8 +204,8 @@ action.getAddressFromYBY_ = function(callback) {
   }
 
   chrome.cookies.get({url: constants.Keyserver.DEFAULT_LOCATION,
-                      name: constants.Keyserver.AUTH_COOKIE},
-                     function(cookie) {
+    name: constants.Keyserver.AUTH_COOKIE},
+  function(cookie) {
     var params;
     var param;
     var i;

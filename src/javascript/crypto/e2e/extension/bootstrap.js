@@ -20,10 +20,10 @@
 goog.provide('e2e.ext.bootstrap');
 
 goog.require('e2e.ext.AppLauncher');
-goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.ext.constants.StorageKey');
 goog.require('e2e.ext.util.ChromeStorageLocal');
 goog.require('e2e.ext.utils');
+goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.openpgp.ContextImpl');
 goog.require('goog.storage.mechanism.HTML5LocalStorage');
 goog.require('goog.storage.mechanism.PrefixedMechanism');

@@ -27,7 +27,6 @@ goog.provide('e2e.ext.ui.glass.compose.bootstrap');
 var initComposeGlass = function(evt) {
   window.removeEventListener('message', initComposeGlass);
   if (!e2e.ext.utils.text.isYmailOrigin(evt.origin)) {
-    console.log('Got message from unsafe origin', evt.origin);
     return false;
   }
   var data = evt.data;

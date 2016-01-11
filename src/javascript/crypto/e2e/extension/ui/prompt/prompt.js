@@ -34,7 +34,6 @@ goog.require('e2e.ext.utils.action');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
-goog.require('goog.events.EventType');
 goog.require('goog.positioning.Corner');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
@@ -129,7 +128,7 @@ ui.Prompt.prototype.getContentElement = function() {
 
 
 /**
- * // @yahoo shows a menu instead of the compose/decrypt window
+ * //@yahoo shows a menu instead of the compose/decrypt window
  * Process the retrieved content blob and display it into the prompt UI.
  * @param {constants.Actions=} opt_action Optional. The PGP action to perform.
  *     Defaults to user-specified.

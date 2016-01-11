@@ -262,7 +262,7 @@ e2ebind.clickHandler_ = function(e) {
 e2ebind.focusHandler_ = function(e) {
   // Default it to require clicking the encryptr icon to install compose glass
   // TODO: uncomment the following, and make this configurable
-  
+
   // var elt = e.target;
   // if (goog.dom.getAncestorByTagNameAndClass(elt,
   //                                       'div',
@@ -318,7 +318,7 @@ e2ebind.start = function() {
   }
 
   // Initialize the message-passing hash table between e2e and the provider
-  e2ebind.messagingTable = new e2ebind.MessagingTable_();
+  e2ebind.messagingTable_ = new e2ebind.MessagingTable_();
 
   // Initialize the client for the keyserver
   e2ebind.keyserverClient_ = new e2e.ext.keyserver.Client(
@@ -355,7 +355,7 @@ e2ebind.start = function() {
 e2ebind.stop = function() {
   window.removeEventListener('message', goog.bind(e2ebind.messageHandler_,
                                                   this));
-  e2ebind.messagingTable = undefined;
+  e2ebind.messagingTable_ = undefined;
   e2ebind.keyserverClient_ = undefined;
   e2ebind.started_ = false;
   window.config = {};
@@ -382,11 +382,11 @@ e2ebind.stop = function() {
 *   callback with the response
 */
 e2ebind.sendRequest = function(action, args, opt_callback) {
-  if (!e2ebind.messagingTable) {
+  if (!e2ebind.messagingTable_) {
     return;
   }
 
-  var hash = e2ebind.messagingTable.add(action, opt_callback);
+  var hash = e2ebind.messagingTable_.add(action, opt_callback);
 
   var reqObj = /** @type {messages.e2ebindRequest} */ ({
     api: 'e2ebind',
@@ -428,11 +428,11 @@ e2ebind.sendResponse_ = function(result, request, success) {
 * @private
 */
 e2ebind.handleProviderResponse_ = function(response) {
-  if (!e2ebind.messagingTable) {
+  if (!e2ebind.messagingTable_) {
     return;
   }
 
-  var request = e2ebind.messagingTable.get(response.hash, response.action);
+  var request = e2ebind.messagingTable_.get(response.hash, response.action);
 
   if (!request) {
     return;
@@ -584,11 +584,11 @@ e2ebind.installReadGlass_ = function(elem, opt_text) {
   // any parsing error will simply skip installing read glass
   try {
     firstValidArmor = e2e.openpgp.asciiArmor.parse(originalContent);
-  } catch(e) {}
+  } catch (e) {}
 
   if (firstValidArmor && firstValidArmor.type !== 'BINARY' &&
       constants.Actions.DECRYPT_VERIFY === utils.text.getPgpAction(
-        '-----BEGIN PGP ' + firstValidArmor.type + '-----')) {
+      '-----BEGIN PGP ' + firstValidArmor.type + '-----')) {
 
     var glassWrapper = new ui.GlassWrapper(elem, originalContent);
     window.helper.registerDisposable(glassWrapper);
@@ -620,7 +620,7 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
     return;
   }
 
-  var hash = e2ebind.messagingTable.getRandomString();
+  var hash = e2ebind.messagingTable_.getRandomString();
   var glassWrapper = new ui.ComposeGlassWrapper(elem, draft, hash);
   window.helper.registerDisposable(glassWrapper);
   glassWrapper.installGlass();

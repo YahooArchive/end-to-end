@@ -100,10 +100,10 @@ function testSetValueForGmonkey() {
   stubs.set(gmonkey, 'setActiveDraft', mockControl.createFunctionMock());
   var setActiveDraftArg =
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-    assertTrue(goog.array.equals(recipients, arg));
+        assertTrue(goog.array.equals(recipients, arg));
 
-    return true;
-  });
+        return true;
+      });
   gmonkey.setActiveDraft(setActiveDraftArg, message);
 
   stubs.setPath('chrome.runtime.onMessage.removeListener',
@@ -307,10 +307,10 @@ function testInstallLookingGlass() {
   var callbackMock = mockControl.createFunctionMock();
   var callbackArg =
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-    assertEquals(constants.Actions.NO_OP, arg.action);
+        assertEquals(constants.Actions.NO_OP, arg.action);
 
-    return true;
-  });
+        return true;
+      });
   callbackMock(callbackArg);
 
   mockControl.$replayAll();
@@ -368,12 +368,12 @@ function testDisplayDuringReadGmonkey() {
   var callbackMock = mockControl.createFunctionMock();
   var callbackArg =
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-    assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
-    assertEquals(selectionBody, arg.selection);
-    assertEquals(0, arg.recipients.length);
+        assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
+        assertEquals(selectionBody, arg.selection);
+        assertEquals(0, arg.recipients.length);
 
-    return true;
-  });
+        return true;
+      });
   callbackMock(callbackArg);
 
   stubs.set(helper, 'getOrigin_', function() {
@@ -417,12 +417,12 @@ function testDisplayDuringWriteGmonkey() {
   var callbackMock = mockControl.createFunctionMock();
   var callbackArg =
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-    assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
-    assertEquals(selectionBody, arg.selection);
-    assertTrue(goog.array.equals(recipients, arg.recipients));
+        assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
+        assertEquals(selectionBody, arg.selection);
+        assertTrue(goog.array.equals(recipients, arg.recipients));
 
-    return true;
-  });
+        return true;
+      });
   callbackMock(callbackArg);
 
   stubs.set(helper, 'getOrigin_', function() {
@@ -461,12 +461,12 @@ function testDisplayDuringReadE2ebind() {
   var callbackMock = mockControl.createFunctionMock();
   var callbackArg =
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-    assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
-    assertEquals(selectionBody, arg.selection);
-    assertEquals(0, arg.recipients.length);
+        assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
+        assertEquals(selectionBody, arg.selection);
+        assertEquals(0, arg.recipients.length);
 
-    return true;
-  });
+        return true;
+      });
   callbackMock(callbackArg);
 
   stubs.set(helper, 'getOrigin_', function() {
@@ -512,12 +512,12 @@ function testDisplayDuringWriteE2ebind() {
   var callbackMock = mockControl.createFunctionMock();
   var callbackArg =
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-    assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
-    assertEquals(selectionBody, arg.selection);
-    assertTrue(goog.array.equals(recipients, arg.recipients));
+        assertEquals(constants.Actions.ENCRYPT_SIGN, arg.action);
+        assertEquals(selectionBody, arg.selection);
+        assertTrue(goog.array.equals(recipients, arg.recipients));
 
-    return true;
-  });
+        return true;
+      });
   callbackMock(callbackArg);
 
   stubs.set(helper, 'getOrigin_', function() {

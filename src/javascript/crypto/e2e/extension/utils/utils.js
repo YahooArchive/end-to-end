@@ -173,6 +173,7 @@ utils.sendProxyRequest = function(args) {
   chrome.runtime.sendMessage(args);
 };
 
+
 /**
  * Checks if the given window runs as part of a Chrome App execution
  * environment.

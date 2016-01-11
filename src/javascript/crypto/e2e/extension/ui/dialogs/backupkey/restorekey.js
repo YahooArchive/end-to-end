@@ -71,7 +71,7 @@ dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
 
   e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
     var input =
-      this.getElementByClass(constants.CssClass.KEYRING_RESTORE_EMAIL);
+        this.getElementByClass(constants.CssClass.KEYRING_RESTORE_EMAIL);
     if (input) {
       input.value = email || '';
     }

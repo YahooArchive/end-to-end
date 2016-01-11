@@ -24,7 +24,6 @@ goog.provide('e2e.ext.ui.panels.PreferencesPanelTest');
 goog.require('e2e.ext.Preferences');
 goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.panels.PreferencesPanel');
-goog.require('goog.array');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
@@ -55,7 +54,7 @@ function tearDown() {
 function testRender() {
   panel.render(document.body);
 
-  /* @yahoo disable the testwelcome 
+  /* @yahoo disable the testwelcome
   assertContains('preferencesSectionTitle', document.body.textContent);
 
   goog.array.forEach(document.querySelectorAll('input'), function(elem) {

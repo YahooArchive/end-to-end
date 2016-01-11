@@ -21,11 +21,12 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.e2ebindTest');
 
+goog.require('e2e.ext');
 goog.require('e2e.ext.Helper');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.e2ebind');
-goog.require('e2e.ext.keyserver');
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.testingstubs');
 goog.require('goog.array');
 goog.require('goog.asserts');
@@ -71,8 +72,8 @@ function setUp() {
   });
   stubs.setPath('chrome.runtime.connect', function() {
     return {postMessage: goog.nullFunction,
-        onMessage: {addListener: goog.nullFunction},
-        onDisconnect: {addListener: goog.nullFunction}};
+      onMessage: {addListener: goog.nullFunction},
+      onDisconnect: {addListener: goog.nullFunction}};
   });
   document.documentElement.id = 'test_id';
 
@@ -173,7 +174,7 @@ function testE2ebindIconClick() {
 
 
 // @yahoo, auto install glass is disabled by default for now
-/* 
+/*
 function testAutoInstallGlass() {
   var div1 = document.createElement('div');
   div1.className = 'compose-message';

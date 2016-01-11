@@ -21,7 +21,6 @@
 goog.provide('e2e.ext.ui.ComposeGlassWrapper');
 goog.provide('e2e.ext.ui.GlassWrapper');
 
-goog.require('e2e.ext.messages.e2ebindDraft');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Disposable');
 goog.require('goog.array');
@@ -30,14 +29,16 @@ goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.style');
 
-// Read glass
 goog.scope(function() {
 var ui = e2e.ext.ui;
+var messages = e2e.ext.messages;
+
+// Read glass
 
 
 
 /**
- * Constructor for the looking glass wrapper.
+ * Constructor for the looking glass wrapper. //@yahoo adds opt_text
  * @param {Element} targetElem The element that will host the looking glass.
  * @param {string=} opt_text Optional text to be decrypted in the glass.
  * @constructor
@@ -74,7 +75,7 @@ ui.GlassWrapper.prototype.disposeInternal = function() {
 
 
 /**
- * Installs the looking glass into the hosting page.
+ * Installs the looking glass into the hosting page. //@yahoo
  * @param {function()=} opt_callback Callback function to call when the glass
  *     frame was loaded.
  */
@@ -146,23 +147,19 @@ ui.GlassWrapper.prototype.getOriginalContent = function() {
   return this.targetElem_.getAttribute('original_content');
 };
 
-});  // goog.scope
-
 
 // Compose glass. Unlike read glass, does not preserve children.
 
-goog.scope(function() {
-var ui = e2e.ext.ui;
-var messages = e2e.ext.messages;
+
 
 /**
-   * Constructor for the compose glass wrapper.
-   * @param {Element} targetElem Element that hosts the looking glass.
-   * @param {messages.e2ebindDraft} draft Draft data
-   * @param {string} hash Hash to uniquely identify this wrapper
-   * @constructor
-   * @extends {goog.Disposable}
-   */
+ * Constructor for the compose glass wrapper.
+ * @param {Element} targetElem Element that hosts the looking glass.
+ * @param {messages.e2ebindDraft} draft Draft data
+ * @param {string} hash Hash to uniquely identify this wrapper
+ * @constructor
+ * @extends {goog.Disposable}
+ */
 ui.ComposeGlassWrapper = function(targetElem, draft, hash) {
   goog.base(this);
 
@@ -174,15 +171,17 @@ ui.ComposeGlassWrapper = function(targetElem, draft, hash) {
 };
 goog.inherits(ui.ComposeGlassWrapper, goog.Disposable);
 
+
 /** @override */
 ui.ComposeGlassWrapper.prototype.disposeInternal = function() {
   this.removeGlass();
   goog.base(this, 'disposeInternal');
 };
 
+
 /**
-   * Installs compose glass
-   */
+ * Installs compose glass
+ */
 ui.ComposeGlassWrapper.prototype.installGlass = function() {
   this.targetElem_.composeGlass = this;
 
@@ -216,9 +215,10 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   }, this), false);
 };
 
+
 /**
-   * Removes compose glass
-   */
+ * Removes compose glass
+ */
 ui.ComposeGlassWrapper.prototype.removeGlass = function() {
   this.targetElem_.composeGlass = undefined;
   if (this.glassFrame) {

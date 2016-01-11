@@ -21,21 +21,17 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.KeyserverClientTest');
 
+goog.require('e2e');
+goog.require('e2e.async.Result');
+goog.require('e2e.ext');
 goog.require('e2e.ext.Launcher');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.testingstubs');
-
-goog.require('goog.crypt.base64');
+goog.require('e2e.ext.yExtensionLauncher');
+goog.require('e2e.openpgp.ContextImpl');
 goog.require('goog.dom');
 goog.require('goog.object');
-
-goog.require('e2e.async.Result');
-goog.require('e2e.ext.yExtensionLauncher');
-goog.require('e2e.ext.constants');
-goog.require('e2e.ext.testingstubs');
-goog.require('e2e.openpgp.ContextImpl');
-goog.require('e2e.openpgp.error.WrongPassphraseError');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
@@ -57,9 +53,9 @@ var div = goog.dom.createElement('div');
 div.id = constants.ElementId.CALLBACK_DIALOG;
 var launcher = null;
 
-var TEST_NOBODY = "eyJhbGciOiJFUzI1NiJ9.eyJ0IjoxNDI1MDg2Nzc5LCJ1c2VyaWQiOiJ5emh1QHlhaG9vLWluYy5jb20iLCJrZXlzIjpudWxsfQ.5R1DfmLZERb-9sZE0OdSuak4f_PieVQbxXHVde6ukDwevRVLONYc1No2-YcMldCDzL5FjYOJi36faX7p3GoIOQ";
+var TEST_NOBODY = 'eyJhbGciOiJFUzI1NiJ9.eyJ0IjoxNDI1MDg2Nzc5LCJ1c2VyaWQiOiJ5emh1QHlhaG9vLWluYy5jb20iLCJrZXlzIjpudWxsfQ.5R1DfmLZERb-9sZE0OdSuak4f_PieVQbxXHVde6ukDwevRVLONYc1No2-YcMldCDzL5FjYOJi36faX7p3GoIOQ';
 
-var TEST_DGIL = "eyJhbGciOiJFUzI1NiJ9.eyJ0IjoxNDI1MDg2NjMzLCJ1c2VyaWQiOiJjbmhAeWFob28taW5jLmNvbSIsImtleXMiOnsiMGp0R0xuYkkxSTJ6dE54V3NET2YiOiJleUpoYkdjaU9pSkZVekkxTmlKOS5leUprWlhacFkyVnBaQ0k2SWpCcWRFZE1ibUpKTVVreWVuUk9lRmR6UkU5bUlpd2lhMlY1SWpvaWVIWTRRVUZCUWxOQ1FVRkJRVUZCVkVORGNVZFRUVFE1UVhkRlNFRm5UVVZpUm5sSFgwaEhZa1ZTVGswemNIQnFSRTFGUTNWWU1WQXpTMUZqY2xaVmFHa3RZVE0wZEU5RFpXTjJaRlpKYW1sS1VuWklka1ZSVlRscUxXdDFZemR2UVRrM2RFOVRhWFF5YzIxUGMyb3hZbXR5TjFWTFl6TmZRVUZCUVVWNmVHcGliV2hCWlZkR2IySXlPSFJoVnpWcVRHMU9kbUpVTjBOZmQwRkJRVWt3UlVWQ1RVbEJSRjlmUVVGQlFVSlpTbFU0VVRkU1gzZEJRVUZCUzB4RFpqaEJRVUZCU210UWFtZGFlSFZtVTBsYWNWOTNRVUZCUVZkV1EwRnJTME5mT0VGQlFVRkViR2RGUTE5M1FVRkJRVXRpUVY4NFFVRkJRVU51WjBWQlFVVXlhMEZRT1c0eVVIRkJRazVqYkVkNVdtNU9jVFpqV2xJMVdtNXZUMko0TURGbVUwNVFVV2szTFdVMGFuTnBUVUZGUVdsRFdUZGhUWEJCZDNCaFpUUldWVkUxUTJKemNHaFJVa28yUzFWVGMzSkNjV1IzY2xKVFZFSnFSM0pQWDNkQlFVRkdXVVZCUVVGQlFVSkpTVXR2V2tsNmFqQkVRVkZqUTBGM1VVa3pNbTh6TjJsUVVGbHpUWEpWWTJkelFrUmxTMWh6ZGxNd1JITTFTVTl5WjNGTE5tSlZla1pVTkV0bGNucGxMV1JKWnpsVWJVOHdTVW80YVhOaVJFOHhkRnBXU3pOdmFETTNaSEJ5VVRNeWFqRTRiSEpCZDBWSlFqaE1YMEZCUVVGaVVWRlpSWGRuUVVoZk9FRkJRVUZHWjJ4VWVFUjBTRjlCUVVGQlExcEVORFJIWTJKdU1HbEhZWFk0UVVGQlFVTnRkM2RCUVVnNVYwRlFNRmx5U1dnMlVFMWtYMFpuVUVwR2JrMURXWFpETlhoMlF6TnVSRzVzUW5oRVRXNXZVMjFDUTB0MWFHZEZRWFp3U3pkWlNUbEhhMVpSY1drM2JtSm9Va3BQTUZWaFRtUkhNVXRTZEdsc09GOWlUbUZuYW5NM2RuYzlJaXdpZENJNk1UUXlOVEE0TkRFeE1pd2lkWE5sY21sa0lqb2lZMjVvUUhsaGFHOXZMV2x1WXk1amIyMGlmUS5LX0lLcG9JVm5NeWtaWUhRRWEydXZfUWUwNnF2OEp6NV9qNHpmekpkN2lONkh2cHNoVjBXQWVBaWtndXF1LTZKX05ldGdMM204SlZKV0Utb01tLURYZyJ9fQ.wTubu9k95o7GMFIMp2-Hmt3Eh7qRSpDFyxi_PVftW5D-_vi73X1n2cFTRbegBv_lu2TmwcgDzAKOfQe-4YZ2VA";
+var TEST_DGIL = 'eyJhbGciOiJFUzI1NiJ9.eyJ0IjoxNDI1MDg2NjMzLCJ1c2VyaWQiOiJjbmhAeWFob28taW5jLmNvbSIsImtleXMiOnsiMGp0R0xuYkkxSTJ6dE54V3NET2YiOiJleUpoYkdjaU9pSkZVekkxTmlKOS5leUprWlhacFkyVnBaQ0k2SWpCcWRFZE1ibUpKTVVreWVuUk9lRmR6UkU5bUlpd2lhMlY1SWpvaWVIWTRRVUZCUWxOQ1FVRkJRVUZCVkVORGNVZFRUVFE1UVhkRlNFRm5UVVZpUm5sSFgwaEhZa1ZTVGswemNIQnFSRTFGUTNWWU1WQXpTMUZqY2xaVmFHa3RZVE0wZEU5RFpXTjJaRlpKYW1sS1VuWklka1ZSVlRscUxXdDFZemR2UVRrM2RFOVRhWFF5YzIxUGMyb3hZbXR5TjFWTFl6TmZRVUZCUVVWNmVHcGliV2hCWlZkR2IySXlPSFJoVnpWcVRHMU9kbUpVTjBOZmQwRkJRVWt3UlVWQ1RVbEJSRjlmUVVGQlFVSlpTbFU0VVRkU1gzZEJRVUZCUzB4RFpqaEJRVUZCU210UWFtZGFlSFZtVTBsYWNWOTNRVUZCUVZkV1EwRnJTME5mT0VGQlFVRkViR2RGUTE5M1FVRkJRVXRpUVY4NFFVRkJRVU51WjBWQlFVVXlhMEZRT1c0eVVIRkJRazVqYkVkNVdtNU9jVFpqV2xJMVdtNXZUMko0TURGbVUwNVFVV2szTFdVMGFuTnBUVUZGUVdsRFdUZGhUWEJCZDNCaFpUUldWVkUxUTJKemNHaFJVa28yUzFWVGMzSkNjV1IzY2xKVFZFSnFSM0pQWDNkQlFVRkdXVVZCUVVGQlFVSkpTVXR2V2tsNmFqQkVRVkZqUTBGM1VVa3pNbTh6TjJsUVVGbHpUWEpWWTJkelFrUmxTMWh6ZGxNd1JITTFTVTl5WjNGTE5tSlZla1pVTkV0bGNucGxMV1JKWnpsVWJVOHdTVW80YVhOaVJFOHhkRnBXU3pOdmFETTNaSEJ5VVRNeWFqRTRiSEpCZDBWSlFqaE1YMEZCUVVGaVVWRlpSWGRuUVVoZk9FRkJRVUZHWjJ4VWVFUjBTRjlCUVVGQlExcEVORFJIWTJKdU1HbEhZWFk0UVVGQlFVTnRkM2RCUVVnNVYwRlFNRmx5U1dnMlVFMWtYMFpuVUVwR2JrMURXWFpETlhoMlF6TnVSRzVzUW5oRVRXNXZVMjFDUTB0MWFHZEZRWFp3U3pkWlNUbEhhMVpSY1drM2JtSm9Va3BQTUZWaFRtUkhNVXRTZEdsc09GOWlUbUZuYW5NM2RuYzlJaXdpZENJNk1UUXlOVEE0TkRFeE1pd2lkWE5sY21sa0lqb2lZMjVvUUhsaGFHOXZMV2x1WXk1amIyMGlmUS5LX0lLcG9JVm5NeWtaWUhRRWEydXZfUWUwNnF2OEp6NV9qNHpmekpkN2lONkh2cHNoVjBXQWVBaWtndXF1LTZKX05ldGdMM204SlZKV0Utb01tLURYZyJ9fQ.wTubu9k95o7GMFIMp2-Hmt3Eh7qRSpDFyxi_PVftW5D-_vi73X1n2cFTRbegBv_lu2TmwcgDzAKOfQe-4YZ2VA';
 
 var PRIVATE_KEY_ASCII = // userid of test 4
     '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
@@ -148,7 +144,7 @@ function setUp() {
   context = new e2e.openpgp.ContextImpl(fakeStorage);
   // No passphrase.
   e2e.async.Result.getValue(context.initializeKeyRing(''));
-  
+
   e2e.ext.testingstubs.initStubs(stubs);
   // @yahoo, the following are required by yExtensionLauncher
   stubs.setPath('chrome.browserAction.setIcon', goog.nullFunction);
@@ -159,7 +155,7 @@ function setUp() {
   launcher.getPreferences().setWelcomePageEnabled(false);
   launcher.start();
 
-  
+
   stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
     callback({launcher: launcher});
   });
@@ -231,14 +227,14 @@ function testSendKey() {
 
 function testFetchAndImportKeys() {
   var userId = 'adhintz@google.com';
-  var time = (new Date().getTime())/1000;
-  var rawkey = "xv8AAABSBFP3bHYTCCqGSM49AwEHAgMECt6MVqa43Ab248CosK_cy664pkL_9XvC0O2K0O1Jh2qau7ll3Q9vssdObSwX0EaiMm4Dvegxr1z-SblWSFV4x83_AAAAH0RyZXcgSGludHogPGFkaGludHpAZ29vZ2xlLmNvbT7C_wAAAGYEEBMIABj_AAAABYJT92x2_wAAAAmQ8eznwfj7hkMAADA9AQCWE4jmpmA5XRN1tZduuz8QwtxGZOFurpAK6RCzKDqS8wEAx9eBxXLhKB4xm9xwPdh0-W6rbsvf58FzKjlxrkUfuxTO_wAAAFYEU_dsdhIIKoZIzj0DAQcCAwQ0M6kFa7VaVmt2PRdOUdZWrHp6CZZglTVQi1eyiXB_nnUUbH-qrreWTD7W9RxRtr0IqAYssLG5ZoWsXa5jQC3DAwEIB8L_AAAAZgQYEwgAGP8AAAAFglP3bHf_AAAACZDx7OfB-PuGQwAAkO4BALMuXsta-bCOvzSn7InOs7wA-OmDN5cv1cR_SsN5-FkLAQCmmBa_Fe76gmDd0RjvpQW7pWK2zXj3il6HYQ2NsWlIbQ==";
+  var time = (new Date().getTime()) / 1000;
+  var rawkey = 'xv8AAABSBFP3bHYTCCqGSM49AwEHAgMECt6MVqa43Ab248CosK_cy664pkL_9XvC0O2K0O1Jh2qau7ll3Q9vssdObSwX0EaiMm4Dvegxr1z-SblWSFV4x83_AAAAH0RyZXcgSGludHogPGFkaGludHpAZ29vZ2xlLmNvbT7C_wAAAGYEEBMIABj_AAAABYJT92x2_wAAAAmQ8eznwfj7hkMAADA9AQCWE4jmpmA5XRN1tZduuz8QwtxGZOFurpAK6RCzKDqS8wEAx9eBxXLhKB4xm9xwPdh0-W6rbsvf58FzKjlxrkUfuxTO_wAAAFYEU_dsdhIIKoZIzj0DAQcCAwQ0M6kFa7VaVmt2PRdOUdZWrHp6CZZglTVQi1eyiXB_nnUUbH-qrreWTD7W9RxRtr0IqAYssLG5ZoWsXa5jQC3DAwEIB8L_AAAAZgQYEwgAGP8AAAAFglP3bHf_AAAACZDx7OfB-PuGQwAAkO4BALMuXsta-bCOvzSn7InOs7wA-OmDN5cv1cR_SsN5-FkLAQCmmBa_Fe76gmDd0RjvpQW7pWK2zXj3il6HYQ2NsWlIbQ==';
   // Keyserver key input
   var keydata = {
-      t: time - 1,
-      deviceid: '99999',
-      userid: userId,
-      key: rawkey
+    t: time - 1,
+    deviceid: '99999',
+    userid: userId,
+    key: rawkey
   };
   // The fake JWS signature over keydata
   var jws = 'irrelevant';
@@ -248,9 +244,9 @@ function testFetchAndImportKeys() {
                   if (path === userId) {
                     // Fake 200 response
                     cb({userid: userId,
-                        t: time,
-                        keys: {'99999': jws}
-                      });
+            t: time,
+            keys: {'99999': jws}
+          });
                   } else {
                     // Fake 404 response
                     cb(null);

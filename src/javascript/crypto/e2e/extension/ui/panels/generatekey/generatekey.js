@@ -20,18 +20,16 @@
 
 goog.provide('e2e.ext.ui.panels.GenerateKey');
 
-// @yahoo added 2 requires
-goog.require('e2e.ext.constants');
-goog.require('e2e.ext.keyserver.Client');
-
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('e2e.ext.constants.Keyserver');
+//@yahoo added 2 requires
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
-// @yahoo added 3 requires
+//@yahoo added 3 requires
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
-
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
@@ -77,8 +75,8 @@ panels.GenerateKey = function(callback, opt_hideTitle, opt_actionBtnTitle) {
    * @type {!e2e.ext.keyserver.Client}
    * @private
    */
-  this.keyserverClient_ =
-    new e2e.ext.keyserver.Client(e2e.ext.constants.Keyserver.DEFAULT_LOCATION);
+  this.keyserverClient_ = new e2e.ext.keyserver.Client(
+      e2e.ext.constants.Keyserver.DEFAULT_LOCATION);
 
   /**
    * The title for the generate key section. If empty, it will not be displayed.
@@ -119,7 +117,7 @@ panels.GenerateKey.prototype.decorateInternal = function(elem) {
     signupCancelButtonTitle: chrome.i18n.getMessage('actionCancelPgpAction')
   });
 
-  // @yahoo Prefill the input with the user's email if possible
+  //@yahoo Prefill the input with the user's email if possible
   e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
     var input = this.getElementByClass(constants.CssClass.EMAIL);
     if (input) {
@@ -157,7 +155,7 @@ panels.GenerateKey.prototype.enterDocument = function() {
  * @private
  */
 panels.GenerateKey.prototype.generate_ = function() {
-  // @yahoo
+  //@yahoo
   this.clearFailure_();
   var name = '';
   var email = this.getElementByClass(constants.CssClass.EMAIL).value;
@@ -182,8 +180,8 @@ panels.GenerateKey.prototype.reset = function() {
 
 
 /**
- * //@yahoo 
- * Sends an OpenPGP public key(s) to the keyserver. 
+ * //@yahoo
+ * Sends an OpenPGP public key(s) to the keyserver.
  * @param {!e2e.openpgp.Keys} keys
  * @param {function(string)} callback
  * @param {e2e.openpgp.ContextImpl} ctx
@@ -220,6 +218,10 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
 };
 
 
+/**
+ * Hides the signup form.
+ * @private
+ */
 panels.GenerateKey.prototype.hideSignupForm_ = function() {
   var signupForm = goog.dom.getElement(
       e2e.ext.constants.ElementId.GENERATE_KEY_FORM);
@@ -239,7 +241,7 @@ panels.GenerateKey.prototype.hideSignupForm_ = function() {
 
 
 /**
- * // @yahoo 
+ * //@yahoo
  * Displays error message.
  * @param {Error} error The error to display.
  * @private
@@ -263,7 +265,7 @@ panels.GenerateKey.prototype.displayFailure_ = function(error) {
 
 
 /**
- * // @yahoo
+ * //@yahoo
  * Clears error messages.
  * @private
  */

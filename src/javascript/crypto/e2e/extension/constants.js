@@ -30,6 +30,7 @@ goog.provide('e2e.ext.constants.e2ebind.responseActions');
 
 goog.require('e2e.ext.config');
 
+
 /**
  * The actions that the End-To-End extension can perform.
  * @enum {string}

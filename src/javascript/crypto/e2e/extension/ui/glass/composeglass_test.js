@@ -21,16 +21,16 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.ui.ComposeGlassTest');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.ext.ExtensionLauncher');
 goog.require('e2e.ext.constants');
-goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.ComposeGlass');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
+goog.require('e2e.openpgp.ContextImpl');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.factory');
-goog.require('e2e.openpgp.ContextImpl');
 /** @suppress {extraRequire} intentionally importing all signer functions */
 goog.require('e2e.signer.all');
 goog.require('goog.array');
@@ -62,7 +62,7 @@ var USER_ID = 'test 4';
 
 // The draft sent by the provider. Note that it uses email addresses, not uids.
 var draft = {body: 'plaintext message',
-    to: ['test 4', 'adhintz@google.com'], from: USER_ID};
+  to: ['test 4', 'adhintz@google.com'], from: USER_ID};
 
 var PRIVATE_KEY_ASCII = // userid of test 4
     '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
@@ -149,7 +149,7 @@ function setUp() {
   context = new e2e.openpgp.ContextImpl(fakeStorage);
   // No passphrase.
   e2e.async.Result.getValue(context.initializeKeyRing(''));
-  
+
   e2e.ext.testingstubs.initStubs(stubs);
   // @yahoo, the following are required by yExtensionLauncher
   stubs.setPath('chrome.browserAction.setIcon', goog.nullFunction);
@@ -167,12 +167,12 @@ function setUp() {
   });
   stubs.replace(e2e.ext.utils.text, 'extractValidYahooEmail',
                 function(recipient) {
-    if (recipient == USER_ID) {
-      return null;
-    } else {
-      return oldExtractValidYahooEmail(recipient);
-    }
-  });
+        if (recipient == USER_ID) {
+          return null;
+        } else {
+          return oldExtractValidYahooEmail(recipient);
+        }
+      });
 
 
   composeglass = new e2e.ext.ui.ComposeGlass(draft, 'resize', ORIGIN, 'foo');
@@ -190,9 +190,10 @@ function setUp() {
     launcher.ctxApi_.executeAction_(cb, args);
   });
 
-  stubs.replace(e2e.ext.ExtensionLauncher.prototype, 'hasPassphrase', function() {
-    return true;
-  });
+  stubs.replace(e2e.ext.ExtensionLauncher.prototype, 'hasPassphrase',
+      function() {
+        return true;
+      });
 }
 
 
@@ -229,7 +230,7 @@ function testRenderWithMissingRecipient() {
       function(arg) {
         arg([], ['adhintz@google.com']);
         return true;
-  }));
+      }));
   mockControl.$replayAll();
 
   composeglass.decorate(document.documentElement);
@@ -315,11 +316,11 @@ function testSendUnsignedPlaintext() {
   stubs.replace(composeglass, 'handleMissingPublicKeys_',
                 mockControl.createFunctionMock('handleMissingPublicKeys_'));
   composeglass.handleMissingPublicKeys_(
-    goog.testing.mockmatchers.ignoreArgument,
-    new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-      arg();
-      return true;
-    })
+      goog.testing.mockmatchers.ignoreArgument,
+      new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+        arg();
+        return true;
+      })
   );
   mockControl.$replayAll();
 
@@ -356,11 +357,11 @@ function testSendSignedPlaintext() {
   stubs.replace(composeglass, 'handleMissingPublicKeys_',
                 mockControl.createFunctionMock('handleMissingPublicKeys_'));
   composeglass.handleMissingPublicKeys_(
-    goog.testing.mockmatchers.ignoreArgument,
-    new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-      arg();
-      return true;
-    })
+      goog.testing.mockmatchers.ignoreArgument,
+      new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+        arg();
+        return true;
+      })
   );
   mockControl.$replayAll();
 
@@ -413,13 +414,15 @@ function populatePgpKeys(opt_key) {
   };
 
   asyncTestCase.waitForAsync('Importing private key.');
-  pgpContext.importKey(TEST_PWD_CALLBACK, PRIVATE_KEY_ASCII).addCallback(function() {
-    asyncTestCase.waitForAsync('Importing public key.');
-    pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII).addCallback(function() {
-      if (opt_key) {
-        asyncTestCase.waitForAsync('Importing opt key.');
-        pgpContext.importKey(TEST_PWD_CALLBACK, opt_key);
-      }
-    });
-  });
+  pgpContext.importKey(TEST_PWD_CALLBACK, PRIVATE_KEY_ASCII)
+      .addCallback(function() {
+        asyncTestCase.waitForAsync('Importing public key.');
+        pgpContext.importKey(TEST_PWD_CALLBACK, PUBLIC_KEY_ASCII)
+            .addCallback(function() {
+              if (opt_key) {
+                asyncTestCase.waitForAsync('Importing opt key.');
+                pgpContext.importKey(TEST_PWD_CALLBACK, opt_key);
+              }
+            });
+      });
 }

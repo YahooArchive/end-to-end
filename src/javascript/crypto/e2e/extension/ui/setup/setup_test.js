@@ -21,18 +21,25 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.ui.SetupTest');
 
+goog.require('e2e.ext');
 goog.require('e2e.ext.Launcher');
+goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
+goog.require('e2e.ext.ui');
 goog.require('e2e.ext.ui.Setup');
-goog.require('e2e.ext.ui.panels.GenerateKey');
-goog.require('e2e.ext.ui.panels.KeyringMgmtMini');
+goog.require('e2e.ext.ui.dialogs.Generic');
+goog.require('e2e.ext.utils');
+goog.require('goog.array');
+goog.require('goog.dom');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
+goog.require('goog.testing.mockmatchers.ArgumentMatcher');
+goog.require('goog.testing.mockmatchers.SaveArgument');
 goog.setTestOnly();
 
 var constants = e2e.ext.constants;
@@ -44,20 +51,20 @@ var stubs = new goog.testing.PropertyReplacer();
 var testCase = goog.testing.AsyncTestCase.createAndInstall();
 
 var PUBLIC_KEY_ASCII = ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
-'Charset: UTF-8',
-'',
-'xv8AAABSBAAAAAATCCqGSM49AwEHAgMES1pZWXzDJ6KuifGWGevDXVkOBa3EKEWp',
-'g3YJd19BLLqE1MWIxTDf1WTDWk3wUB12EhFd8+JJlWSWjjIs7Wswuc3/AAAAEDx0',
-'ZXN0QHlhaG9vLmNvbT7C/wAAAI0EEBMIAD//AAAABYJU1Akm/wAAAAKLCf8AAAAJ',
-'kP2DcLsRCyVE/wAAAAWVCAkKC/8AAAADlgEC/wAAAAKbA/8AAAACngEAAPsQAQDN',
-'P13mfGKy4VeAn1XBPCXsb6a3on8to79weltl74iXiwD/e6dVB19ZnoevA8/hFMQD',
-'2tzCsQoej/DCtVdnsZgK5HbO/wAAAFYEAAAAABIIKoZIzj0DAQcCAwQXmzc0537b',
-'BA6NL5Ceqgh7QmCnKCVZV0IvvK3zzddpWnTOJhs4etrlDrXzbvTCDIz6oqEGvgDO',
-'Rgy21aXu/GZ/AwEIB8L/AAAAbQQYEwgAH/8AAAAFglTUCSb/AAAACZD9g3C7EQsl',
-'RP8AAAACmwwAABtgAP0WuM3nw/U/mzS6ccSr29J8d3C8W1HjUrmtSInG9kAY8QD/',
-'XDI3oj1PnelBgEM0OpgkQExVHPNBgC0wQhN1q7jIM8Q=',
-'=DnTP',
-'-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+  'Charset: UTF-8',
+  '',
+  'xv8AAABSBAAAAAATCCqGSM49AwEHAgMES1pZWXzDJ6KuifGWGevDXVkOBa3EKEWp',
+  'g3YJd19BLLqE1MWIxTDf1WTDWk3wUB12EhFd8+JJlWSWjjIs7Wswuc3/AAAAEDx0',
+  'ZXN0QHlhaG9vLmNvbT7C/wAAAI0EEBMIAD//AAAABYJU1Akm/wAAAAKLCf8AAAAJ',
+  'kP2DcLsRCyVE/wAAAAWVCAkKC/8AAAADlgEC/wAAAAKbA/8AAAACngEAAPsQAQDN',
+  'P13mfGKy4VeAn1XBPCXsb6a3on8to79weltl74iXiwD/e6dVB19ZnoevA8/hFMQD',
+  '2tzCsQoej/DCtVdnsZgK5HbO/wAAAFYEAAAAABIIKoZIzj0DAQcCAwQXmzc0537b',
+  'BA6NL5Ceqgh7QmCnKCVZV0IvvK3zzddpWnTOJhs4etrlDrXzbvTCDIz6oqEGvgDO',
+  'Rgy21aXu/GZ/AwEIB8L/AAAAbQQYEwgAH/8AAAAFglTUCSb/AAAACZD9g3C7EQsl',
+  'RP8AAAACmwwAABtgAP0WuM3nw/U/mzS6ccSr29J8d3C8W1HjUrmtSInG9kAY8QD/',
+  'XDI3oj1PnelBgEM0OpgkQExVHPNBgC0wQhN1q7jIM8Q=',
+  '=DnTP',
+  '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
 function setUp() {
   mockControl = new goog.testing.MockControl();
@@ -87,14 +94,14 @@ function tearDown() {
 function testRender() {
   page.decorate(document.documentElement);
   goog.array.forEach(
-    ['SETUP_TUTORIAL', 'SETUP_TUTORIAL_BUTTON', 'SETUP_PASSPHRASE_TUTORIAL',
-     'SETUP_GENERATE_KEY', 'SETUP_RESTORE_KEY', 'SETUP_INTRO',
-     'SETUP_BACKUP_KEY', 'SETUP_PASSPHRASE', 'WELCOME_CONTENT_INTRO',
-     'WELCOME_CONTENT_BACKUP', 'WELCOME_CONTENT_NOVICE',
-     'WELCOME_CONTENT_ADVANCED', 'WELCOME_CONTENT_PASSPHRASE', 'SETUP_BUTTON',
-     'CALLBACK_DIALOG'], function(elem) {
-      assertNotNull(goog.dom.getElement(constants.ElementId[elem]));
-     });
+      ['SETUP_TUTORIAL', 'SETUP_TUTORIAL_BUTTON', 'SETUP_PASSPHRASE_TUTORIAL',
+       'SETUP_GENERATE_KEY', 'SETUP_RESTORE_KEY', 'SETUP_INTRO',
+       'SETUP_BACKUP_KEY', 'SETUP_PASSPHRASE', 'WELCOME_CONTENT_INTRO',
+       'WELCOME_CONTENT_BACKUP', 'WELCOME_CONTENT_NOVICE',
+       'WELCOME_CONTENT_ADVANCED', 'WELCOME_CONTENT_PASSPHRASE', 'SETUP_BUTTON',
+       'CALLBACK_DIALOG'], function(elem) {
+        assertNotNull(goog.dom.getElement(constants.ElementId[elem]));
+      });
 }
 
 function testIntroDefault() {
@@ -107,7 +114,7 @@ function testIntroDefault() {
 
   page.decorate(document.documentElement);
   goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_INTRO).querySelector(
-    'button.action').click();
+      'button.action').click();
   mockControl.$verifyAll();
 }
 
@@ -121,15 +128,15 @@ function testIntroRestore() {
 
   page.decorate(document.documentElement);
   goog.dom.getElement(constants.ElementId.WELCOME_CONTENT_INTRO).querySelector(
-    'button.cancel').click();
+      'button.cancel').click();
   mockControl.$verifyAll();
 }
 
 function testRestoreKey() {
   stubs.replace(panels.KeyringMgmtMini.prototype, 'showRestoreWindow_',
                 function() {
-    page.keyringMgmt_.restoreKeyringCallback_('yan@mit.edu');
-  });
+        page.keyringMgmt_.restoreKeyringCallback_('yan@mit.edu');
+      });
 
   stubs.replace(page, 'afterRestoreKeyring_',
                 mockControl.createFunctionMock('afterRestoreKeyring'));
@@ -137,7 +144,7 @@ function testRestoreKey() {
       function(arg) {
         assertEquals('yan@mit.edu', arg);
         return true;
-  }));
+      }));
 
   mockControl.$replayAll();
 
@@ -233,7 +240,7 @@ function testShowPassphraseTutorial() {
   page.decorate(document.documentElement);
 
   goog.dom.getElement('setup-passphrase').querySelector(
-    'button.keyring-cancel').click();
+      'button.keyring-cancel').click();
   mockControl.$verifyAll();
 }
 

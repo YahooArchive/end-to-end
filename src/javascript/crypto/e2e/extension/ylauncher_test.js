@@ -21,17 +21,16 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.yExtensionLauncherTest');
 
-goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
+goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.openpgp.ContextImpl');
-goog.require('e2e.openpgp.error.WrongPassphraseError');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
+goog.require('goog.testing.mockmatchers.ArgumentMatcher');
 goog.require('goog.testing.storage.FakeMechanism');
 
 goog.setTestOnly();

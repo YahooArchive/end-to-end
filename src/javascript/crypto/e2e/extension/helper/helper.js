@@ -350,7 +350,7 @@ ext.Helper.prototype.getSelectedContentE2ebind_ = function(selectionRequest,
       // We have a draft, get_draft from it
       e2ebind.getDraft(goog.bind(function(get_draft_result) {
         var selectionBody = e2e.openpgp.asciiArmor
-          .extractPgpBlock(get_draft_result.body);
+            .extractPgpBlock(get_draft_result.body);
         recipients = recipients.concat(get_draft_result.to,
                                        get_draft_result.cc,
                                        get_draft_result.bcc);
@@ -444,7 +444,6 @@ ext.Helper.prototype.getSelectedContent_ = function(req, sender, callback) {
   if (!isYmail) {
     chrome.runtime.onMessage.removeListener(this.getValueHandler_);
   }
-  return true;
 };
 
 

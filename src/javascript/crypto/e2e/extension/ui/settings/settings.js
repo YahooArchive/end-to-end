@@ -19,7 +19,6 @@
  */
 
 goog.provide('e2e.ext.ui.Settings');
-goog.provide('e2e.ext.ui.ySettings'); // @yahoo
 
 goog.require('e2e.async.Result');
 goog.require('e2e.cipher.Algorithm');
@@ -431,82 +430,6 @@ ui.Settings.prototype.displayFailure_ = function(error) {
 ui.Settings.prototype.clearFailure_ = function() {
   var errorDiv = goog.dom.getElement(constants.ElementId.ERROR_DIV);
   errorDiv.textContent = '';
-};
-
-
-
-
-
-/**
- * Constructor for the yahoo settings page.
- * @constructor
- * @extends {e2e.ext.ui.Settings}
- */
-ui.ySettings = function() {
-  goog.base(this);
-};
-goog.inherits(ui.ySettings, ui.Settings);
-
-
-/**
- * //@yahoo override to add email validity and priv key duplicate check
- * @override
- */
-ui.ySettings.prototype.generateKey_ =
-    function(panel, name, email, comments, expDate) {
-
-  var normalizedEmail = utils.text.extractValidYahooEmail(email);
-
-  var result = new e2e.async.Result();
-  result.addCallback(function(){
-
-    // almost same as the base generateKey_ except using panel.sendKeys()
-    var defaults = constants.KEY_DEFAULTS;
-    return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
-        defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
-        defaults.subkeyLength, name, comments, email, expDate)
-        .addCallback(function(key){
-          panel.sendKeys(key, goog.bind(function(resp){
-            this.renderNewKey_(key[0].uids[0]);
-            panel.reset();
-          }, this), this.pgpContext_);
-        }, this).addErrback(this.displayFailure_, this);
-
-
-  }, this).addErrback(function(e){
-    window.setTimeout(goog.bind(function(){
-      this.displayFailure_(e);
-    }, this), 5);
-  }, this);
-
-  if (normalizedEmail) {
-    this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
-        action: e2e.ext.constants.Actions.LIST_KEYS,
-        content: 'private'
-      }), this, goog.bind(function(privateKeyResult) {
-        var email = normalizedEmail.toLowerCase();
-        var emailLabels = goog.object.getKeys(privateKeyResult);
-        var privKeyExisted = goog.array.some(emailLabels, function(label){
-          label = utils.text.extractValidEmail(label);
-          return goog.isDefAndNotNull(label) && label.toLowerCase() === email;
-        });
-
-        if (privKeyExisted) {
-          result.errback(new utils.Error(
-              'There is already a key for this address in the keyring', 
-              'duplicateKeyWarning'));
-        } else {
-          result.callback();
-        }
-
-    }, this));
-
-  } else {
-    result.errback(new utils.Error(
-        'Please enter a valid email address', 'invalidEmailWarning'));
-  }
-
-  return result;
 };
 
 

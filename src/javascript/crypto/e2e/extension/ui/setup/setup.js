@@ -213,13 +213,13 @@ ui.Setup.prototype.decorateInternal = function(elem) {
 
   // Render the "set a keyring passphrase" page
   var passphraseDialog = new ui.panels.KeyringMgmtMini(
-    goog.nullFunction, goog.nullFunction,
-    goog.bind(this.updateKeyringPassphrase_, this), goog.nullFunction,
-    goog.bind(function() {
-      this.showPage_(constants.ElementId.SETUP_TUTORIAL);
-    }, this),
-    chrome.i18n.getMessage('setupPassphraseText'),
-    chrome.i18n.getMessage('setupSkip'));
+      goog.nullFunction, goog.nullFunction,
+      goog.bind(this.updateKeyringPassphrase_, this), goog.nullFunction,
+      goog.bind(function() {
+        this.showPage_(constants.ElementId.SETUP_TUTORIAL);
+      }, this),
+      chrome.i18n.getMessage('setupPassphraseText'),
+      chrome.i18n.getMessage('setupSkip'));
   this.addChild(passphraseDialog, false);
   passphraseDialog.render(goog.dom.getElement(
       constants.ElementId.WELCOME_CONTENT_PASSPHRASE));
@@ -261,19 +261,19 @@ ui.Setup.prototype.enterDocument = function() {
 
   var button = goog.dom.getElement(constants.ElementId.SETUP_BUTTON);
   this.getHandler().
-    listen(
-        button,
-        goog.events.EventType.CLICK,
-        goog.bind(function() {
-          goog.style.setElementShown(button, false);
-          this.showPage_(constants.ElementId.SETUP_INTRO);
-        }, this)).
-    listen(
-        goog.dom.getElement(constants.ElementId.SETUP_TUTORIAL_BUTTON),
-        goog.events.EventType.CLICK,
-        goog.bind(function() {
-          this.showPage_(constants.ElementId.SETUP_TUTORIAL);
-        }, this));
+      listen(
+      button,
+      goog.events.EventType.CLICK,
+      goog.bind(function() {
+        goog.style.setElementShown(button, false);
+        this.showPage_(constants.ElementId.SETUP_INTRO);
+      }, this)).
+      listen(
+      goog.dom.getElement(constants.ElementId.SETUP_TUTORIAL_BUTTON),
+      goog.events.EventType.CLICK,
+      goog.bind(function() {
+        this.showPage_(constants.ElementId.SETUP_TUTORIAL);
+      }, this));
 };
 
 
@@ -306,7 +306,7 @@ ui.Setup.prototype.generateKey_ =
   var normalizedEmail = utils.text.extractValidYahooEmail(email);
   if (!normalizedEmail) {
     alert(chrome.i18n.getMessage('invalidEmailWarning'));
-    return null;
+    return;
   }
   var defaults = constants.KEY_DEFAULTS;
   utils.action.getContext(/** @type {!function(!e2e.openpgp.ContextImpl)} */
@@ -370,8 +370,9 @@ ui.Setup.prototype.updateKeyringPassphrase_ = function(passphrase) {
 /**
  * Renders the UI elements needed for requesting the passphrase of an individual
  * PGP key.
- * @param {string} uid The UID of the PGP key.
  * @private
+ * @param {string} uid The UID of the PGP key.
+ * @return {e2e.async.Result.<string>} The passphrase
  */
 ui.Setup.prototype.renderPassphraseCallback_ = function(uid) {
   var result = new e2e.async.Result();

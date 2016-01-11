@@ -24,7 +24,6 @@ goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.actions.Action');
 goog.require('e2e.ext.utils.passphrase');
 goog.require('e2e.openpgp.KeyGenerator');
-goog.require('goog.crypt.base64');
 
 goog.scope(function() {
 var actions = e2e.ext.actions;

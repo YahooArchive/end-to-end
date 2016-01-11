@@ -21,10 +21,10 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.utils.actionTest');
 
-goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
+goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.openpgp.ContextImpl');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.factory');
@@ -33,6 +33,7 @@ goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
+goog.require('goog.testing.mockmatchers.SaveArgument');
 goog.require('goog.testing.storage.FakeMechanism');
 goog.setTestOnly();
 
@@ -169,9 +170,9 @@ function testGetUserYmailAddressFromYBY() {
   var expected = 'yzhu@yahoo-inc.com';
   var yby = 'YBY=id%3Dfoo%26userid%3Dyzhu%26sign%3Dbar%7Cip0.0.0.0%7C;';
 
- stubs.setPath('chrome.cookies.get', function(request, cb) {
-   cb({value: yby});
- });
+  stubs.setPath('chrome.cookies.get', function(request, cb) {
+    cb({value: yby});
+  });
 
   asyncTestCase.waitForAsync('Waiting to get email address from YBY');
   utils.getUserYmailAddress(function(result) {

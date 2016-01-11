@@ -82,7 +82,7 @@ gmonkey.callGmonkey_ = function(code, callback, opt_args) {
  */
 gmonkey.isAvailable = function(callback) {
   if (goog.isDefAndNotNull(gmonkey.available_)) {
-    return callback(/** @type {boolean} */ (gmonkey.available_));
+    callback(/** @type {boolean} */ (gmonkey.available_));
   }
   gmonkey.callGmonkey_('isGmonkeyAvailable', function(result) {
     gmonkey.available_ = /** @type {boolean} */ (result);

@@ -22,11 +22,14 @@
 
 goog.provide('e2e.ext.AppLauncher');
 goog.provide('e2e.ext.ExtensionLauncher');
-goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 goog.provide('e2e.ext.Launcher');
+goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
 goog.require('e2e.ext.Preferences');
 goog.require('e2e.ext.api.Api');
+goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.utils.action');
+goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.error.PassphraseError');
 
 goog.scope(function() {
@@ -300,7 +303,7 @@ goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 /** @override */
 ext.yExtensionLauncher.prototype.start = function(opt_passphrase) {
 
-  return goog.base(this, 'start', opt_passphrase).addCallback(function(){
+  return goog.base(this, 'start', opt_passphrase).addCallback(function() {
 
     // All ymail tabs need to be reloaded for the e2ebind API to work
     e2e.ext.utils.action.refreshYmail();
@@ -342,7 +345,7 @@ ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
 
 
 /**
- * TODO: @yahoo use WebsiteApi
+ * TODO: //@yahoo use WebsiteApi
  * Sets the provided content into the element on the page that the user has
  * selected.
  * Note: This function might not work while debugging the extension.
@@ -397,7 +400,8 @@ ext.yExtensionLauncher.prototype.getSelectedContent = function(callback) {
  * @param {boolean=} opt_runHelper Whether the helper script must be run first.
  * @private
  */
-ext.yExtensionLauncher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
+ext.yExtensionLauncher.prototype.getActiveTab_ = function(
+    callback, opt_runHelper) {
   var runHelper = opt_runHelper || false;
   chrome.tabs.query({
     active: true,
@@ -430,6 +434,7 @@ ext.yExtensionLauncher.prototype.getActiveTab_ = function(callback, opt_runHelpe
     }
   }, this));
 };
+
 
 /**
  * Proxies a message to the active tab.

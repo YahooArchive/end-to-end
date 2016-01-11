@@ -21,24 +21,16 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.ui.ySettingsTest');
 
-goog.require('e2e.async.Result');
 goog.require('e2e.ext.ExtensionLauncher');
-goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.ySettings');
-goog.require('e2e.ext.ui.dialogs.Generic');
-goog.require('e2e.ext.ui.panels.KeyringMgmtFull');
-goog.require('e2e.ext.utils');
 goog.require('e2e.openpgp.ContextImpl');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
-goog.require('goog.testing.mockmatchers');
-goog.require('goog.testing.mockmatchers.ArgumentMatcher');
-goog.require('goog.testing.mockmatchers.SaveArgument');
 goog.require('goog.testing.storage.FakeMechanism');
 goog.setTestOnly();
 
@@ -71,7 +63,7 @@ function setUp() {
         callback({
           'Test1 <test1@yahoo-inc.com>': 'privKey1',
           'Test2 <test2@yahoo-inc.com>': 'privKey2'});
-  });
+      });
 }
 
 
@@ -86,7 +78,7 @@ function tearDown() {
 
 function testGenerateKeyInvalidEmail() {
   page.decorate(document.documentElement);
-  testCase.waitForAsync('waiting for key to be generated and uploaded to keyserver');
+  testCase.waitForAsync('waiting for key generation failure');
   fakeGenerateKey().addErrback(function() {
     assertNotEquals(-1, document.body.textContent.indexOf(
         'invalidEmailWarning'));
@@ -97,7 +89,7 @@ function testGenerateKeyInvalidEmail() {
 
 function testGenerateKeyDuplicated() {
   page.decorate(document.documentElement);
-  testCase.waitForAsync('waiting for key to be generated and uploaded to keyserver');
+  testCase.waitForAsync('waiting for key generation failure');
   fakeGenerateKey('Test1', 'Test1@yahoo-inc.com').addErrback(function() {
     assertNotEquals(-1, document.body.textContent.indexOf(
         'duplicateKeyWarning'));
@@ -108,18 +100,18 @@ function testGenerateKeyDuplicated() {
 
 function testGenerateKeySuccessful() {
   page.decorate(document.documentElement);
-  testCase.waitForAsync('waiting for key to be generated and uploaded to keyserver');
+  testCase.waitForAsync('waiting for key generation and upload');
 
   var email = 'Test3@yahoo-inc.com';
 
   page.generateKey_(
-        {reset: function() {}, sendKeys: function(keys, cb, ctx){cb({})}}, 
-        'Test3', email, 'comment')
-    .addCallback(function() {
-      assertNotEquals(-1, document.body.textContent.indexOf(
-          '<' + email + '>'));
-      testCase.continueTesting();
-    });
+      {reset: function() {}, sendKeys: function(keys, cb, ctx) {cb({})}},
+      'Test3', email, 'comment')
+      .addCallback(function() {
+        assertNotEquals(-1, document.body.textContent.indexOf(
+            '<' + email + '>'));
+        testCase.continueTesting();
+      });
 }
 
 function fakeGenerateKey(opt_fullname, opt_email) {
