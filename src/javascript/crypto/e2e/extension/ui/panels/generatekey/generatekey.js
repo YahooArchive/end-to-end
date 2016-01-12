@@ -20,13 +20,19 @@
 
 goog.provide('e2e.ext.ui.panels.GenerateKey');
 
-goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.CssClass');
+goog.require('e2e.ext.constants.ElementId');
+goog.require('e2e.ext.constants.Keyserver');
+//@yahoo added 2 requires
 goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
+//@yahoo added 3 requires
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
+goog.require('goog.dom');
+goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
 goog.require('goog.ui.Component');
@@ -37,7 +43,6 @@ goog.scope(function() {
 var constants = e2e.ext.constants;
 var panels = e2e.ext.ui.panels;
 var templates = e2e.ext.ui.templates.panels.generatekey;
-var utils = e2e.ext.utils;
 
 
 
@@ -65,12 +70,13 @@ panels.GenerateKey = function(callback, opt_hideTitle, opt_actionBtnTitle) {
   this.callback_ = callback;
 
   /**
+   * //@yahoo
    * The keyserver client component associated with this panel.
    * @type {!e2e.ext.keyserver.Client}
    * @private
    */
-  this.keyserverClient_ =
-      new e2e.ext.keyserver.Client(constants.Keyserver.DEFAULT_LOCATION);
+  this.keyserverClient_ = new e2e.ext.keyserver.Client(
+      e2e.ext.constants.Keyserver.DEFAULT_LOCATION);
 
   /**
    * The title for the generate key section. If empty, it will not be displayed.
@@ -101,16 +107,18 @@ panels.GenerateKey.prototype.createDom = function() {
 /** @override */
 panels.GenerateKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
+  elem.id = constants.ElementId.GENERATE_KEY_FORM;
 
   soy.renderElement(elem, templates.generateKeyForm, {
     sectionTitle: this.sectionTitle_,
     emailLabel: chrome.i18n.getMessage('genKeyEmailLabel'),
     commentsLabel: chrome.i18n.getMessage('genKeyCommentsLabel'),
-    actionButtonTitle: this.actionButtonTitle_
+    actionButtonTitle: this.actionButtonTitle_,
+    signupCancelButtonTitle: chrome.i18n.getMessage('actionCancelPgpAction')
   });
 
-  // Prefill the input with the user's email if possible
-  utils.action.getUserYmailAddress(goog.bind(function(email) {
+  //@yahoo Prefill the input with the user's email if possible
+  e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
     var input = this.getElementByClass(constants.CssClass.EMAIL);
     if (input) {
       input.value = email || '';
@@ -132,6 +140,10 @@ panels.GenerateKey.prototype.enterDocument = function() {
           goog.events.EventType.CLICK,
           this.generate_).
       listen(
+          this.getElementByClass(constants.CssClass.CANCEL),
+          goog.events.EventType.CLICK,
+          this.hideSignupForm_).
+      listen(
           keyboardHandler,
           goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
           this.generate_);
@@ -143,6 +155,7 @@ panels.GenerateKey.prototype.enterDocument = function() {
  * @private
  */
 panels.GenerateKey.prototype.generate_ = function() {
+  //@yahoo
   this.clearFailure_();
   var name = '';
   var email = this.getElementByClass(constants.CssClass.EMAIL).value;
@@ -159,7 +172,6 @@ panels.GenerateKey.prototype.generate_ = function() {
  * Resets the key generation form.
  */
 panels.GenerateKey.prototype.reset = function() {
-  this.clearFailure_();
   var inputs = this.getElement().querySelectorAll('input');
   goog.array.forEach(inputs, function(input) {
     input.value = '';
@@ -168,6 +180,7 @@ panels.GenerateKey.prototype.reset = function() {
 
 
 /**
+ * //@yahoo
  * Sends an OpenPGP public key(s) to the keyserver.
  * @param {!e2e.openpgp.Keys} keys
  * @param {function(string)} callback
@@ -176,13 +189,13 @@ panels.GenerateKey.prototype.reset = function() {
 panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
   goog.array.forEach(keys, goog.bind(function(key) {
     if (!key.key.secret) {
-      var email = utils.text.extractValidYahooEmail(key.uids[0]);
+      var email = e2e.ext.utils.text.extractValidYahooEmail(key.uids[0]);
       if (email) {
         try {
           this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
               function(response) {
                 // Key was successfully registered, and response is valid
-                utils.action.refreshYmail();
+                e2e.ext.utils.action.refreshYmail();
                 callback(response);
                 window.alert(chrome.i18n.getMessage('sendKeySuccess'));
               }, this),
@@ -206,17 +219,39 @@ panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
 
 
 /**
+ * Hides the signup form.
+ * @private
+ */
+panels.GenerateKey.prototype.hideSignupForm_ = function() {
+  var signupForm = goog.dom.getElement(
+      e2e.ext.constants.ElementId.GENERATE_KEY_FORM);
+  var cancelButton = goog.dom.getElementByClass(
+      e2e.ext.constants.CssClass.CANCEL, signupForm);
+  var signupPrompt = goog.dom.getElement(
+      e2e.ext.constants.ElementId.SIGNUP_PROMPT);
+  var keyringOptions = goog.dom.getElement(
+      e2e.ext.constants.ElementId.KEYRING_OPTIONS_DIV);
+
+  goog.dom.classlist.add(signupForm, e2e.ext.constants.CssClass.HIDDEN);
+  goog.dom.classlist.add(cancelButton, e2e.ext.constants.CssClass.HIDDEN);
+  goog.dom.classlist.remove(signupPrompt, e2e.ext.constants.CssClass.HIDDEN);
+  goog.dom.classlist.remove(keyringOptions, e2e.ext.constants.CssClass.HIDDEN);
+
+};
+
+
+/**
+ * //@yahoo
  * Displays error message.
  * @param {Error} error The error to display.
  * @private
  */
 panels.GenerateKey.prototype.displayFailure_ = function(error) {
-  var errorDiv = this.getElement().getElementsByClassName(
-      constants.CssClass.ERROR)[0];
+  var errorDiv = goog.dom.getElementByClass(constants.CssClass.ERROR);
   if (error) {
     var errorMsg = goog.isDef(error.messageId) ?
         chrome.i18n.getMessage(error.messageId) : error.message;
-    utils.errorHandler(error);
+    e2e.ext.utils.errorHandler(error);
     if (errorDiv) {
       errorDiv.textContent = errorMsg;
     } else {
@@ -230,6 +265,7 @@ panels.GenerateKey.prototype.displayFailure_ = function(error) {
 
 
 /**
+ * //@yahoo
  * Clears error messages.
  * @private
  */

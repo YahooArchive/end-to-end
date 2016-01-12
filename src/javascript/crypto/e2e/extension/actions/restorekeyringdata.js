@@ -23,8 +23,7 @@ goog.provide('e2e.ext.actions.RestoreKeyringData');
 goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.actions.Action');
 goog.require('e2e.ext.utils.passphrase');
-goog.require('e2e.openpgp.KeyRing');
-goog.require('goog.crypt.base64');
+goog.require('e2e.openpgp.KeyGenerator');
 
 goog.scope(function() {
 var actions = e2e.ext.actions;
@@ -50,7 +49,7 @@ actions.RestoreKeyringData.prototype.execute =
     return;
   }
 
-  if (data.length != e2e.openpgp.KeyRing.ECC_SEED_SIZE + 1) {
+  if (data.length != e2e.openpgp.KeyGenerator.ECC_SEED_SIZE + 1) {
     errorCallback(
         new e2e.error.InvalidArgumentsError('Backup data has invalid length'));
     return;

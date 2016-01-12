@@ -28,8 +28,9 @@ goog.require('e2e.openpgp.Context');
 
 /**
  * OpenPGP Context implementation, that relays all operations to a
- * {@link ContextService} available over a {@link MessagePort}. Use to create
- * a WebWorker and unblock the UI thread when using OpenPGP Context.
+ * {@link e2e.openpgp.ContextService} available over a {@link MessagePort}.
+ * Use to create a WebWorker and unblock the UI thread when using OpenPGP
+ * Context.
  * @implements {e2e.openpgp.Context}
  * @param {!MessagePort} port Port to use to communicate with the
  *     ContextService.
@@ -99,6 +100,14 @@ e2e.openpgp.WorkerContextImpl.prototype.setKeyRingPassphrase = function(
     passphrase) {
   return /** @type {!e2e.async.Result.<undefined>} */ (
       this.deferredCall('setKeyRingPassphrase', [passphrase]));
+};
+
+
+/** @inheritDoc */
+e2e.openpgp.WorkerContextImpl.prototype.initializeKeyRing = function(
+    passphrase) {
+  return /** @type {!e2e.async.Result.<undefined>} */ (
+      this.deferredCall('initializeKeyRing', [passphrase]));
 };
 
 

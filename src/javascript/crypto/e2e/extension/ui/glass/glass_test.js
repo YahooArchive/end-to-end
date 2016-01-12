@@ -21,6 +21,7 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.ui.GlassTest');
 
+goog.require('e2e.ext');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.testingstubs');
 goog.require('e2e.ext.ui.Glass');
@@ -48,6 +49,11 @@ function setUp() {
   stubs.setPath('chrome.runtime.getURL', function() {
     return 'chrome-extension://abcd';
   });
+  // @yahoo
+  stubs.setPath('window.setTimeout', function(callback) {
+    callback();
+  });
+  // @yahoo
   stubs.replace(e2e.ext.utils, 'sendProxyRequest', goog.nullFunction);
 }
 

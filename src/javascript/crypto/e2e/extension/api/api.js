@@ -27,9 +27,9 @@ goog.require('e2e.async.Result');
 goog.require('e2e.ext.actions.Executor');
 goog.require('e2e.ext.api.RequestThrottle');
 goog.require('e2e.ext.constants.Actions');
-goog.require('e2e.ext.constants.Keyserver');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
+// @yahoo
 goog.require('e2e.ext.utils');
 goog.require('goog.ui.Component');
 
@@ -37,7 +37,6 @@ goog.scope(function() {
 var api = e2e.ext.api;
 var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
-var utils = e2e.ext.utils;
 
 
 
@@ -127,18 +126,17 @@ api.Api.prototype.openPort_ = function(port) {
  * @private
  */
 api.Api.prototype.executeAction_ = function(callback, req) {
-  var incoming =
-      /** @type {!messages.ApiRequest.<(string|undefined|!e2e.ByteArray)>} */
-      (req);
-  var outgoing = /** @type {!messages.ApiResponse} */ ({
+  var incoming = /** @type {!messages.ApiRequest.<string>} */ (req);
+  var outgoing = {
     completedAction: incoming.action
-  });
+  };
   var content;
 
   // Ensure that only certain actions are exposed via the API.
   switch (incoming.action) {
     case constants.Actions.ENCRYPT_SIGN:
     case constants.Actions.DECRYPT_VERIFY:
+    // @yahoo, the following 4 actions are now yahoo-specific
     case constants.Actions.LIST_ALL_UIDS:
     case constants.Actions.LIST_KEYS:
     case constants.Actions.IMPORT_KEY:
@@ -149,16 +147,18 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         return e2e.async.Result.toResult(incoming.decryptPassphrase || '');
       };
       break;
+    // @yahoo
     case constants.Actions.SHOW_NOTIFICATION:
       if (typeof incoming.content === 'string') {
         content = incoming.content;
       } else {
         content = '';
       }
-      utils.showNotification(content, function() {
+      e2e.ext.utils.showNotification(content, function() {
         callback(outgoing);
       });
       return;
+    // @yahoo
     case constants.Actions.OPEN_OPTIONS:
       chrome.tabs.create({
         url: 'settings.html',
@@ -172,9 +172,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       return;
   }
 
-  var hasPassphrase = window.launcher ? window.launcher.hasPassphrase() : false;
-
-  if (!hasPassphrase) {
+  if (window.launcher && !window.launcher.hasPassphrase()) {
     callback({
       error: chrome.i18n.getMessage('glassKeyringLockedError')
     });
@@ -195,8 +193,8 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     outgoing.content = resp;
     callback(outgoing);
   }, function(error) {
-    outgoing.error = error.messageId ? chrome.i18n.getMessage(error.messageId) :
-        error.message;
+    outgoing.error = goog.isDef(error.messageId) ?
+        chrome.i18n.getMessage(error.messageId) : error.message;
     callback(outgoing);
   });
 };

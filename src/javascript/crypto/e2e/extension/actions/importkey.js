@@ -22,7 +22,9 @@ goog.provide('e2e.ext.actions.ImportKey');
 
 goog.require('e2e.ext.actions.Action');
 goog.require('e2e.ext.actions.GetKeyDescription');
+goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.utils.Error');
+goog.require('goog.dom');
 
 
 goog.scope(function() {
@@ -35,7 +37,7 @@ var utils = e2e.ext.utils;
 /**
  * Constructor for the action.
  * @constructor
- * @implements {e2e.ext.actions.Action.<(string|!e2e.ByteArray), !Array.<string>>}
+ * @implements {e2e.ext.actions.Action.<string, !Array.<string>>}
  */
 actions.ImportKey = function() {};
 
@@ -49,24 +51,28 @@ actions.ImportKey.prototype.execute =
     return;
   }
 
-  if (typeof request.content === 'string') {
-    var r = /** @type {!e2e.ext.messages.ApiRequest.<string>} */ (request);
-    new actions.GetKeyDescription().
-        execute(ctx, r, requestor, function(result) {
-          if (goog.isDef(result)) {
-            ctx.importKey(
-                /** @type {!function(string): !e2e.async.Result<string>} */
-                (request.passphraseCallback), request.content).
-                addCallback(callback).addErrback(errorCallback);
-          }
-        }, errorCallback);
-  } else {
+  // @yahoo
+  if (typeof request.content !== 'string') {
     // TODO(yan): Show a dialog in this case as well.
     ctx.importKey(
         /** @type {!function(string): !e2e.async.Result<string>} */
         (request.passphraseCallback), request.content).
         addCallback(callback).addErrback(errorCallback);
+    return;
   }
+
+  new actions.GetKeyDescription().
+      execute(ctx, request, requestor, function(result) {
+        if (goog.isDef(result)) {
+          var dialogContainer = goog.dom.getElement(
+              constants.ElementId.CALLBACK_DIALOG);
+
+          ctx.importKey(
+              /** @type {!function(string): !e2e.async.Result<string>} */
+              (request.passphraseCallback), request.content).
+              addCallback(callback).addErrback(errorCallback);
+        }
+      }, errorCallback);
 };
 
 });  // goog.scope

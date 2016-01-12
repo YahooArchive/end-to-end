@@ -22,6 +22,7 @@
  * @param exportLabel The label to use for the export link.
  * @param removeLabel The label to use for the remove link.
  * @param noneLabel The label to display when there are no keys.
+ * @param keyFingerprintLabel Text to display as a fingerprint label.
  */
 {template .listKeys}
   <h1>{$sectionTitle}</h1>
@@ -32,6 +33,7 @@
           {param keyMeta: $keyMeta /}
           {param exportLabel: $exportLabel /}
           {param removeLabel: $removeLabel /}
+          {param keyFingerprintLabel: $keyFingerprintLabel /}
         {/call}
       </tr>
     {ifempty}
@@ -55,13 +57,17 @@
  * @param keyMeta The metadata of the key that must be displayed.
  * @param exportLabel The label to use for the export link.
  * @param removeLabel The label to use for the remove link.
+ * @param keyFingerprintLabel Text to display as a fingerprint label.
  */
 {template .keyEntry}
-  <td>
+  <td class="{e2e.ext.constants.CssClass.KEY_INFO}">
     <div class="{e2e.ext.constants.CssClass.KEY_UID}">{$keyMeta.userId}</div>
     {foreach $key in $keyMeta.keys}
       <div class="{e2e.ext.constants.CssClass.KEY_META}">
-        {$key.type} {$key.algorithm} {$key.fingerprint}
+        <span class="{e2e.ext.constants.CssClass.KEY_FINGERPRINT}" title="{$keyFingerprintLabel}">
+          {$key.fingerprint}
+        </span>{sp}(
+        {$key.type} {$key.algorithm})
       </div>
     {/foreach}
   </td>
@@ -76,6 +82,7 @@
 
 /**
  * A form that allows the user to manage the collection of PGP keys stored by the extension.
+ * @param signupPromptLabel The label to use when prompting the user to show the signup form.
  * @param importKeyringLabel The label to use when asking the user to import a keyring.
  * @param exportKeyringLabel The label to use when asking the user to export the existing keyring.
  * @param changePassphraseLabel The label to use when asking the user to change the passphrase to
@@ -88,19 +95,20 @@
  * @param passphraseChangeActionButtonTitle The title for the passphrase change submit button.
  * @param passphraseConfirmActionButtonTitle The title for the passphrase confirm submit button.
  * @param passphraseChangeCancelButtonTitle The title for the passphrase change cancel button.
- * @param content content to show at the top of the panel.
- * @param cancelLabel Label for the 'cancel' button
- * @param fbImportLabel Label for the 'Facebook import' button
- * @param fbDescription Description for the 'Facebook import' feature
- * @param importButtonLabel Label for the import button.
+ * @param content content to show at the top of the panel. @yahoo
+ * @param cancelLabel Label for the 'cancel' button @yahoo
+ * @param fbImportLabel Label for the 'Facebook import' button @yahoo
+ * @param fbDescription Description for the 'Facebook import' feature @yahoo
+ * @param importButtonLabel Label for the import button. @yahoo
  */
 {template .manageKeyring}
-  <div>{$content}</div>
+  <!-- @yahoo--><div>{$content}</div>
   <div id="{e2e.ext.constants.ElementId.KEYRING_IMPORT_DIV}"
        class="{e2e.ext.constants.CssClass.HIDDEN}">
     <input type="file" class="{e2e.ext.constants.CssClass.ACTION}"/>
     <button class="{e2e.ext.constants.CssClass.CANCEL}">{$importCancelButtonTitle}</button>
   </div>
+  <!-- @yahoo fb import avail only in yahoo build -->
   <div id="{e2e.ext.constants.ElementId.FB_IMPORT_DIV}"
        class="{e2e.ext.constants.CssClass.HIDDEN}">
     <div>{$fbDescription}</div>
@@ -133,10 +141,12 @@
     </button>
   </div>
   <div id="{e2e.ext.constants.ElementId.KEYRING_OPTIONS_DIV}">
-    <button class="{e2e.ext.constants.CssClass.KEYRING_RESTORE}{sp}
-                   {e2e.ext.constants.CssClass.CANCEL}">{$restoreKeyringLabel}</button>
+    <p id="{e2e.ext.constants.ElementId.SIGNUP_PROMPT}"
+       class="{e2e.ext.constants.CssClass.SIGNUP_PROMPT}
+              {sp}{e2e.ext.constants.CssClass.HIDDEN}">{$signupPromptLabel}</p>
     <button class="{e2e.ext.constants.CssClass.KEYRING_IMPORT}
                    {sp}{e2e.ext.constants.CssClass.CANCEL}">{$importKeyringLabel}</button>
+    <!-- @yahoo fb import avail only in yahoo build -->
     <button class="{e2e.ext.constants.CssClass.FB_IMPORT}
                    {sp}{e2e.ext.constants.CssClass.CANCEL}">{$fbImportLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_EXPORT}
@@ -145,6 +155,8 @@
                    {e2e.ext.constants.CssClass.CANCEL}">{$changePassphraseLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_BACKUP}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$backupKeyringLabel}</button>
+    <button class="{e2e.ext.constants.CssClass.KEYRING_RESTORE}{sp}
+                   {e2e.ext.constants.CssClass.CANCEL}">{$restoreKeyringLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_CANCEL}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$cancelLabel}</button>
   </div>

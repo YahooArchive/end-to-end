@@ -47,6 +47,9 @@ function setUp() {
 
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
+
+  // @yahoo
+  stubs.setPath('chrome.tabs.reload', goog.nullFunction);
 }
 
 
@@ -71,6 +74,7 @@ function testReset() {
 }
 
 
+// @yahoo
 function testSendKeys() {
   panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
   stubs.replace(panel.keyserverClient_, 'sendKey',
@@ -93,12 +97,12 @@ function testSendKeys() {
   mockControl.$replayAll();
 
   var keys = [{key: {secret: false},
-      serialized: 'irrelevant',
-      uids: ['testing <test@yahoo-inc.com>']
-    }, {key: {secret: true},
-      serialized: 'foobar',
-      uids: ['foo@yahoo-inc.com']
-    }];
+          serialized: 'irrelevant',
+          uids: ['testing <test@yahoo-inc.com>']
+        }, {key: {secret: true},
+          serialized: 'foobar',
+          uids: ['foo@yahoo-inc.com']
+        }];
 
   testCase.waitForAsync();
   panel.sendKeys(keys, function(arg) {
@@ -109,14 +113,19 @@ function testSendKeys() {
 }
 
 
+// @yahoo
 function testSendKeysFailure() {
   panel = new e2e.ext.ui.panels.GenerateKey(function() {}, false);
   panel.render(document.body);
+
+  var errorThrown = false;
+
   stubs.replace(panel.keyserverClient_, 'sendKey', function(userid, key, cb,
                                                             eb) {
-    // Return an unsuccessful key export
-    eb(new Error('foo'));
-  });
+        errorThrown = true;
+        // Return an unsuccessful key export
+        eb(new Error('foo'));
+      });
 
   var ctx = {};
   ctx.deleteKey = mockControl.createFunctionMock('deleteKey');
@@ -127,20 +136,18 @@ function testSendKeysFailure() {
   mockControl.$replayAll();
 
   var keys = [{key: {secret: false},
-      serialized: 'irrelevant',
-      uids: ['testing <test@yahoo-inc.com>']
-    }, {key: {secret: true},
-      serialized: 'foobar',
-      uids: ['foo@yahoo-inc.com']
-    }];
+          serialized: 'irrelevant',
+          uids: ['testing <test@yahoo-inc.com>']
+        }, {key: {secret: true},
+          serialized: 'foobar',
+          uids: ['foo@yahoo-inc.com']
+        }];
 
   testCase.waitForAsync();
   panel.sendKeys(keys, goog.nullFunction, ctx);
 
   window.setTimeout(function() {
-    var errorDiv = panel.getElement().getElementsByClassName(
-        constants.CssClass.ERROR)[0];
-    assertEquals('foo', errorDiv.textContent);
+    assertTrue(errorThrown);
     mockControl.$verifyAll();
     testCase.continueTesting();
   }, 100);

@@ -83,7 +83,7 @@ e2e.openpgp.ContextService.prototype.bindContextMethods_ = function(context) {
 /**
  * Name of the service in a static context.
  * @type {string}
- * @expose
+ * @export
  */
 e2e.openpgp.ContextService.NAME = 'e2e.openpgp.ContextService';
 
@@ -111,6 +111,7 @@ e2e.openpgp.ContextService.allowedMethods_ = [
   'getKeyringBackupData',
   'hasPassphrase',
   'isKeyRingEncrypted',
+  'initializeKeyRing',
   'restoreKeyring',
   'searchKey',
   'searchPrivateKey',

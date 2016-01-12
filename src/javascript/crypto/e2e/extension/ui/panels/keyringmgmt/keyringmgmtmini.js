@@ -33,6 +33,7 @@ goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
 goog.require('goog.object');
+goog.require('goog.string');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('goog.ui.KeyboardShortcutHandler');
@@ -156,6 +157,7 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
   soy.renderElement(elem, templates.manageKeyring, {
+    signupPromptLabel: chrome.i18n.getMessage('keyMgmtSignupPromptLabel'),
     importKeyringLabel: chrome.i18n.getMessage('keyMgmtImportKeyringLabel'),
     exportKeyringLabel: chrome.i18n.getMessage('keyMgmtExportKeyringLabel'),
     backupKeyringLabel: chrome.i18n.getMessage('keyMgmtBackupKeyringLabel'),
@@ -177,59 +179,11 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
     cancelLabel: this.cancelLabel_,
     fbImportLabel: chrome.i18n.getMessage('keyMgmtFbImportLabel'),
     fbDescription: chrome.i18n.getMessage('keyMgmtFbImport'),
-    importButtonLabel: chrome.i18n.getMessage('promptImportKeyButtonLabel')
+    importButtonLabel: chrome.i18n.getMessage('promptImportKeyActionLabel')
   });
 
-  var refreshOptions = true;
-
-  // Only show buttons if they have defined callbacks
-  if (this.exportCallback_ === goog.nullFunction) {
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_EXPORT),
-        constants.CssClass.HIDDEN);
-    // If keyring export is hidden, this is probably rendered in a context
-    // where the user hasn't yet set up a private key. Hence, hide the facebook
-    // key import functionality as well.
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.FB_IMPORT),
-        constants.CssClass.HIDDEN);
-  }
-  if (this.updatePassphraseCallback_ === goog.nullFunction) {
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_PASSPHRASE_CHANGE),
-        constants.CssClass.HIDDEN);
-  }
-  if (this.importCallback_ === goog.nullFunction) {
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_IMPORT),
-        constants.CssClass.HIDDEN);
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.FB_IMPORT),
-        constants.CssClass.HIDDEN);
-  }
-  if (this.cancelCallback_ === goog.nullFunction) {
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_CANCEL),
-        constants.CssClass.HIDDEN);
-  }
-  if (this.restoreKeyringCallback_ === goog.nullFunction) {
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_RESTORE),
-        constants.CssClass.HIDDEN);
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_BACKUP),
-        constants.CssClass.HIDDEN);
-    refreshOptions = false;
-  }
-
-  if (refreshOptions) {
-    this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
-      action: constants.Actions.LIST_KEYS,
-      content: 'public'
-    }), this, goog.bind(function(keys) {
-      this.refreshOptions(!goog.object.isEmpty(keys));
-    }, this));
-  }
+  // for display on welcome page
+  this.refreshOptions();
 
   if (!panels.KeyringMgmtMini.ENABLE_BACKUP_CODE) {
     goog.style.setElementShown(
@@ -244,19 +198,25 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
 panels.KeyringMgmtMini.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  var importDiv = this.getChildById_(
-      constants.ElementId.KEYRING_IMPORT_DIV);
-  var fbImportDiv = this.getChildById_(
-      constants.ElementId.FB_IMPORT_DIV);
-  var passphraseChangeDiv = this.getChildById_(
+  var signupPrompt = goog.dom.getElement(
+      constants.ElementId.SIGNUP_PROMPT);
+  var importDiv = goog.dom.getElement(constants.ElementId.KEYRING_IMPORT_DIV);
+  var fbImportDiv = goog.dom.getElement(constants.ElementId.FB_IMPORT_DIV);
+  var passphraseChangeDiv = goog.dom.getElement(
       constants.ElementId.KEYRING_PASSPHRASE_CHANGE_DIV);
-  var passphraseConfirmDiv = this.getChildById_(
+  var passphraseConfirmDiv = goog.dom.getElement(
       constants.ElementId.KEYRING_PASSPHRASE_CONFIRM_DIV);
 
   var keyboardHandler = new goog.ui.KeyboardShortcutHandler(fbImportDiv);
   keyboardHandler.registerShortcut('enter', goog.events.KeyCodes.ENTER);
 
   this.getHandler().
+      listen(
+          this.getElementByClass(constants.CssClass.SIGNUP_PROMPT),
+          goog.events.EventType.CLICK,
+          goog.partial(
+              this.showKeyringMgmtForm_,
+              constants.ElementId.GENERATE_KEY_FORM)).
       listen(
           this.getElementByClass(constants.CssClass.KEYRING_IMPORT),
           goog.events.EventType.CLICK,
@@ -267,8 +227,8 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           this.getElementByClass(constants.CssClass.FB_IMPORT),
           goog.events.EventType.CLICK,
           goog.partial(
-            this.showKeyringMgmtForm_,
-            constants.ElementId.FB_IMPORT_DIV)).
+              this.showKeyringMgmtForm_,
+              constants.ElementId.FB_IMPORT_DIV)).
       listen(
           this.getElementByClass(constants.CssClass.KEYRING_EXPORT),
           goog.events.EventType.CLICK,
@@ -340,17 +300,6 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           keyboardHandler,
           goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
           this.fbImportKey_);
-
-      // Hide overlays when user clicks outside them
-      window.document.addEventListener('click', goog.bind(function(e) {
-        if (e.target.nodeName === 'BUTTON') {
-          return;
-        }
-        var overlays = goog.dom.getElementsByClass('overlayDialog');
-        goog.array.forEach(overlays, function(elem) {
-          goog.style.setElementShown(elem, false);
-        });
-      }, this));
 };
 
 
@@ -366,11 +315,26 @@ panels.KeyringMgmtMini.prototype.showKeyringMgmtForm_ = function(formId) {
       });
 
   goog.dom.classlist.remove(
-      this.getChildById_(formId), constants.CssClass.HIDDEN);
+      goog.dom.getElement(formId), constants.CssClass.HIDDEN);
+
+  if (formId == constants.ElementId.GENERATE_KEY_FORM) {
+    var signupForm = goog.dom.getElement(
+        constants.ElementId.GENERATE_KEY_FORM);
+    var signupPrompt = goog.dom.getElement(
+        constants.ElementId.SIGNUP_PROMPT);
+    var cancelButton = goog.dom.getElementByClass(
+        constants.CssClass.HIDDEN, signupForm);
+    var keyringOptions = goog.dom.getElement(
+        constants.ElementId.KEYRING_OPTIONS_DIV);
+
+    goog.dom.classlist.add(signupPrompt, constants.CssClass.HIDDEN);
+    goog.dom.classlist.remove(cancelButton, constants.CssClass.HIDDEN);
+    goog.dom.classlist.remove(keyringOptions, constants.CssClass.HIDDEN);
+  }
 
   if (formId == constants.ElementId.KEYRING_PASSPHRASE_CHANGE_DIV ||
       formId == constants.ElementId.KEYRING_PASSPHRASE_CONFIRM_DIV) {
-    var inputElem = this.getChildById_(formId).querySelector('input');
+    var inputElem = goog.dom.getElement(formId).querySelector('input');
     inputElem.value = '';
     inputElem.focus();
 
@@ -391,8 +355,7 @@ panels.KeyringMgmtMini.prototype.showKeyringMgmtForm_ = function(formId) {
  * @private
  */
 panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
-  var importDiv = this.getChildById_(
-      constants.ElementId.KEYRING_IMPORT_DIV);
+  var importDiv = goog.dom.getElement(constants.ElementId.KEYRING_IMPORT_DIV);
   var fileInput = importDiv.querySelector('input');
 
   if (fileInput.files.length > 0) {
@@ -407,7 +370,7 @@ panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
  * @private
  */
 panels.KeyringMgmtMini.prototype.fbImportKey_ = function(event) {
-  var importDiv = this.getChildById_(
+  var importDiv = goog.dom.getElement(
       constants.ElementId.FB_IMPORT_DIV);
   var username = goog.string.trim(importDiv.querySelector('input').value);
   var errDiv = document.getElementById(constants.ElementId.ERROR_DIV);
@@ -520,7 +483,7 @@ panels.KeyringMgmtMini.prototype.showBackupWindow_ = function() {
  */
 panels.KeyringMgmtMini.prototype.showRestoreWindow_ = function() {
   new dialogs.RestoreKey(goog.bind(function() {
-    this.refreshOptions.apply(this, arguments);
+    this.refreshOptions();
     this.restoreKeyringCallback_.apply(this, arguments);
   }, this)).setVisible(true);
 };
@@ -544,46 +507,89 @@ panels.KeyringMgmtMini.prototype.setKeyringEncrypted = function(encrypted) {
  * Resets the appearance of the panel.
  */
 panels.KeyringMgmtMini.prototype.reset = function() {
-  this.getChildById_(constants.ElementId.KEYRING_IMPORT_DIV)
+  goog.dom.getElement(constants.ElementId.KEYRING_IMPORT_DIV)
       .querySelector('input').value = '';
   this.showKeyringMgmtForm_(constants.ElementId.KEYRING_OPTIONS_DIV);
 };
 
 
 /**
- * Refresh options when available keys have been updated
- * @param {boolean} hasKeys Whether there are keys in the keyring
+ * Refresh keyring backup/restore options.
  */
-panels.KeyringMgmtMini.prototype.refreshOptions = function(hasKeys) {
-  this.getElementByClass(constants.CssClass.KEYRING_EXPORT).disabled = !hasKeys;
-  if (hasKeys) {
-    goog.dom.classlist.remove(
-        this.getElementByClass(constants.CssClass.KEYRING_BACKUP),
-        e2e.ext.constants.CssClass.HIDDEN);
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_RESTORE),
-        e2e.ext.constants.CssClass.HIDDEN);
-  } else {
-    goog.dom.classlist.add(
-        this.getElementByClass(constants.CssClass.KEYRING_BACKUP),
-        e2e.ext.constants.CssClass.HIDDEN);
-    goog.dom.classlist.remove(
-        this.getElementByClass(constants.CssClass.KEYRING_RESTORE),
-        e2e.ext.constants.CssClass.HIDDEN);
-  }
+panels.KeyringMgmtMini.prototype.refreshOptions = function() {
+  // Query for public keys.
+  this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
+    action: constants.Actions.LIST_KEYS,
+    content: 'public'
+  }), this, goog.bind(function(publicKeys) {
+    // Query for private keys.
+    var hasPublicKeys = !goog.object.isEmpty(publicKeys);
+    this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
+      action: constants.Actions.LIST_KEYS,
+      content: 'private'
+    }), this, goog.bind(function(privateKeys) {
+      var hasPrivateKeys = !goog.object.isEmpty(privateKeys);
+      this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
+        action: constants.Actions.GET_KEYRING_BACKUP_DATA
+      }), this, goog.bind(/** @param {e2e.openpgp.KeyringBackupInfo} data */ (
+          function(data) {
+            var hasBackupData = Boolean(data) && Boolean(data.seed),
+                getElementByClass_ = goog.bind(this.getElementByClass, this);
+            /**
+             * Hides an element if a condition is met, shows it otherwise.
+             * @param  {string} elementName
+             * @param  {boolean} condition
+             */
+            function showElementOnlyIf(elementName, condition) {
+              goog.dom.classlist.enable(
+                  getElementByClass_(elementName),
+                  e2e.ext.constants.CssClass.HIDDEN,
+                  !condition);
+            }
+
+            // Show keyring backup only if we have a way to backup data.
+            showElementOnlyIf(
+                constants.CssClass.KEYRING_BACKUP,
+                hasBackupData && hasPrivateKeys);
+            // Allow export only if keys are present.
+            showElementOnlyIf(
+                constants.CssClass.KEYRING_EXPORT,
+                (this.exportCallback_ !== goog.nullFunction) &&
+                (hasPrivateKeys || hasPublicKeys)
+            );
+
+            // @yahoo useful in the yahoo welcome page (setup.html)
+            // Show Restore only if we have a way to restore keys
+            showElementOnlyIf(
+                constants.CssClass.KEYRING_RESTORE,
+                (this.restoreKeyringCallback_ !== goog.nullFunction)
+            );
+            // Show Import only if we can do so
+            showElementOnlyIf(
+                constants.CssClass.KEYRING_IMPORT,
+                (this.importCallback_ !== goog.nullFunction)
+            );
+            // Show Facebook key import if we already have private keys
+            showElementOnlyIf(
+                constants.CssClass.FB_IMPORT,
+                (this.importCallback_ !== goog.nullFunction && hasPrivateKeys)
+            );
+            // Show PASSPHRASE_CHANGE only if we can update passphrases for
+            // private keys
+            showElementOnlyIf(
+                constants.CssClass.KEYRING_PASSPHRASE_CHANGE,
+                (this.updatePassphraseCallback_ !== goog.nullFunction)
+            );
+            // Show Cancel/SkipPassphrase button only if we can do so
+            showElementOnlyIf(
+                constants.CssClass.KEYRING_CANCEL,
+                (this.cancelCallback_ !== goog.nullFunction)
+            );
+
+          }), this));
+    }, this), goog.nullFunction); // Disable errorCallback for private keys .
+  }, this));
+
 };
-
-
-/**
- * Gets a child by its ID or null if none is found. Useful because this
- * component may be rendered twice in the same document. :(
- * @param {string} id The ID to get
- * @return {Element}
- * @private
- */
-panels.KeyringMgmtMini.prototype.getChildById_ = function(id) {
-  return this.getElement().querySelector('#' + id);
-};
-
 
 });  // goog.scope

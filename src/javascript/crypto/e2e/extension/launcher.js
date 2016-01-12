@@ -20,44 +20,55 @@
  * that allow the user to interact with the extension.
  */
 
+goog.provide('e2e.ext.AppLauncher');
+goog.provide('e2e.ext.ExtensionLauncher');
 goog.provide('e2e.ext.Launcher');
+goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
+goog.require('e2e.ext.Preferences');
 goog.require('e2e.ext.api.Api');
-goog.require('e2e.ext.constants');
-goog.require('e2e.ext.ui.preferences');
+goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
-goog.require('e2e.openpgp.Context');
-goog.require('e2e.openpgp.ContextImpl');
-goog.require('goog.array');
+goog.require('e2e.openpgp.error.PassphraseError');
 
 goog.scope(function() {
 var ext = e2e.ext;
-var preferences = e2e.ext.ui.preferences;
-var utils = e2e.ext.utils;
 var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
 
 
 
 /**
- * Constructor for the End-To-End extension launcher.
+ * Base class for the End-To-End launcher.
+ * @param {!e2e.openpgp.Context} pgpContext The OpenPGP context to use.
+ * @param {!goog.storage.mechanism.IterableMechanism} preferencesStorage
+ *    Storage mechanism for user preferences.
  * @constructor
  */
-ext.Launcher = function() {
-  /**
-   * The ID of the last used tab.
-   * @type {number}
-   * @private
-   */
-  this.lastTabId_ = window.NaN;
+ext.Launcher = function(pgpContext, preferencesStorage) {
 
   /**
-   * The PGP context used by the extension.
-   * @type {e2e.openpgp.Context}
+   * Whether the launcher was started correctly.
+   * @type {boolean}
    * @private
    */
-  this.pgpContext_ = new e2e.openpgp.ContextImpl();
+  this.started_ = false;
+
+  /**
+   * The OpenPGP context used by the extension.
+   * @type {!e2e.openpgp.Context}
+   * @private
+   */
+  this.pgpContext_ = pgpContext;
+
+  /**
+   * Object for accessing user preferences.
+   * @type {!e2e.ext.Preferences}
+   * @private
+   */
+  this.preferences_ = new e2e.ext.Preferences(preferencesStorage);
+
 
   /**
    * The context API that the rest of the extension can use to communicate with
@@ -66,17 +77,275 @@ ext.Launcher = function() {
    * @private
    */
   this.ctxApi_ = new ext.api.Api();
-
-  /**
-   * Whether the launcher was started correctly.
-   * @type {boolean}
-   * @private
-   */
-  this.started_ = false;
 };
 
 
 /**
+ * Asks for the keyring passphrase and start the launcher.
+ * @param {string=} opt_passphrase The passphrase of the keyring.
+ * @return {!goog.async.Deferred} Async result. If the passphrase is wrong, an
+ * errback of that result will be executed.
+ * @export
+ */
+ext.Launcher.prototype.start = function(opt_passphrase) {
+  return this.start_(opt_passphrase || '');
+};
+
+
+/**
+ * Starts the launcher.
+ * @param {string} passphrase The passphrase of the keyring.
+ * @return {!goog.async.Deferred} Async result.
+ * @private
+ */
+ext.Launcher.prototype.start_ = function(passphrase) {
+  return this.pgpContext_.initializeKeyRing(passphrase).addCallbacks(
+      function() {
+        if (goog.global.chrome &&
+        goog.global.chrome.runtime &&
+        goog.global.chrome.runtime.getManifest) {
+          var manifest = chrome.runtime.getManifest();
+          return this.pgpContext_.setArmorHeader(
+          'Version',
+          manifest.name + ' v' + manifest.version);
+        }
+      }, function(e) {
+        this.updatePassphraseWarning();
+        if (!(e instanceof e2e.openpgp.error.PassphraseError)) {
+          throw e;
+        }
+      }, this).addCallback(this.completeStart_, this);
+};
+
+
+/** @private */
+ext.Launcher.prototype.completeStart_ = function() {
+  this.ctxApi_.installApi();
+  this.started_ = true;
+  this.preferences_.initDefaults();
+
+  this.showWelcomeScreen();
+  this.updatePassphraseWarning();
+};
+
+
+/**
+ * Returns the PGP context used within the extension.
+ * @return {e2e.openpgp.Context} The PGP context.
+ * @export
+ */
+ext.Launcher.prototype.getContext = function() {
+  return this.pgpContext_;
+};
+
+
+/**
+ * Returns the Preferences object used within the extension.
+ * @return {e2e.ext.Preferences} The Preferences object.
+ * @export
+ */
+ext.Launcher.prototype.getPreferences = function() {
+  return this.preferences_;
+};
+
+
+/**
+ * Indicates if the keyring was loaded with the correct passphrase.
+ * @return {boolean} True if the keyring was loaded with the correct passphrase.
+ * @export
+ */
+ext.Launcher.prototype.hasPassphrase = function() {
+  return this.started_;
+};
+
+
+/**
+ * Display a warning to the user if there is no available passphrase to access
+ * the keyring.
+ * @protected
+ */
+ext.Launcher.prototype.updatePassphraseWarning = goog.abstractMethod;
+
+
+/**
+ * Creates a window displaying a document from an internal End-To-End URL.
+ * @param {string} url URL of the document.
+ * @param {boolean} isForeground Should the focus be moved to the new window.
+ * @param {!function(...)} callback Function to call once the window has been
+ *     created.
+ * @protected
+ */
+ext.Launcher.prototype.createWindow = goog.abstractMethod;
+
+
+/**
+ * Shows the welcome screen to first-time users.
+ * @protected
+ */
+ext.Launcher.prototype.showWelcomeScreen = function() {
+  if (this.preferences_.isWelcomePageEnabled()) {
+    this.createWindow('welcome.html', true, goog.nullFunction);
+  }
+};
+
+
+
+/**
+ * Constructor to use in End-To-End Chrome extension.
+ * @param {!e2e.openpgp.Context} pgpContext The OpenPGP context to use.
+ * @param {!goog.storage.mechanism.IterableMechanism} preferencesStorage Storage
+ * mechanism for user preferences.
+ * @constructor
+ * @extends {ext.Launcher}
+ */
+ext.ExtensionLauncher = function(pgpContext, preferencesStorage) {
+  ext.ExtensionLauncher.base(this, 'constructor', pgpContext,
+      preferencesStorage);
+};
+goog.inherits(ext.ExtensionLauncher, ext.Launcher);
+
+
+/** @override */
+ext.ExtensionLauncher.prototype.updatePassphraseWarning = function() {
+  if (this.hasPassphrase()) {
+    chrome.browserAction.setBadgeText({text: ''});
+    chrome.browserAction.setTitle({
+      title: chrome.i18n.getMessage('extName')
+    });
+  } else {
+    chrome.browserAction.setBadgeText({text: '!'});
+    chrome.browserAction.setTitle({
+      title: chrome.i18n.getMessage('passphraseEmptyWarning')
+    });
+  }
+};
+
+
+/** @override */
+ext.ExtensionLauncher.prototype.createWindow = function(url, isForeground,
+    callback) {
+  chrome.tabs.create({
+    url: url,
+    active: isForeground
+  }, callback);
+};
+
+
+
+/**
+ * Constructor to use in End-To-End Chrome app.
+ * @param {!e2e.openpgp.Context} pgpContext The OpenPGP context to use.
+ * @param {!goog.storage.mechanism.IterableMechanism} preferencesStorage Storage
+ * mechanism for user preferences.
+ * @constructor
+ * @extends {ext.Launcher}
+ */
+ext.AppLauncher = function(pgpContext, preferencesStorage) {
+  ext.AppLauncher.base(this, 'constructor', pgpContext, preferencesStorage);
+  chrome.app.runtime.onLaunched.addListener(function() {
+    chrome.app.window.create(
+        'webview.html',
+        /** @type {!chrome.app.window.CreateWindowOptions} */ ({
+          innerBounds: {
+            width: 960,
+            height: 580
+          }
+        }));
+  });
+};
+goog.inherits(ext.AppLauncher, ext.Launcher);
+
+
+/** @override */
+ext.AppLauncher.prototype.updatePassphraseWarning = function() {
+  // TODO(evn): Implement.
+};
+
+
+/** @override */
+ext.AppLauncher.prototype.createWindow = function(url, isForeground, callback) {
+  chrome.app.window.create(
+      url,
+      /** @type {!chrome.app.window.CreateWindowOptions} */ ({
+        focused: isForeground,
+        innerBounds: {
+          width: 900,
+          height: 700
+        }
+      }),
+      callback);
+};
+
+
+
+/**
+ * Constructor to use in End-To-End Chrome extension.
+ * @param {!e2e.openpgp.Context} pgpContext The OpenPGP context to use.
+ * @param {!goog.storage.mechanism.IterableMechanism} preferencesStorage Storage
+ * mechanism for user preferences.
+ * @constructor
+ * @extends {ext.ExtensionLauncher}
+ */
+ext.yExtensionLauncher = function(pgpContext, preferencesStorage) {
+  /**
+   * The ID of the last used tab.
+   * @type {number}
+   * @private
+   */
+  this.lastTabId_ = window.NaN;
+
+  ext.yExtensionLauncher.base(this, 'constructor', pgpContext,
+      preferencesStorage);
+};
+goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
+
+
+/** @override */
+ext.yExtensionLauncher.prototype.start = function(opt_passphrase) {
+
+  return goog.base(this, 'start', opt_passphrase).addCallback(function() {
+
+    // All ymail tabs need to be reloaded for the e2ebind API to work
+    e2e.ext.utils.action.refreshYmail();
+
+    // add message listener
+    chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
+      this.proxyMessage(message, sender);
+    }, this));
+
+  }, this);
+};
+
+
+/**
+ * Stops the launcher. Called to lock keyring in extension/ui/prompt/prompt.js
+ */
+ext.yExtensionLauncher.prototype.stop = function() {
+  this.started_ = false;
+  // Unset the passphrase on the keyring
+  // TODO: add unsetKeyringPassphrase() into Context
+  this.getContext().keyring_ = null;
+  // Remoeve the API
+  this.ctxApi_.removeApi();
+  this.updatePassphraseWarning();
+  this.getActiveTab_(goog.bind(function(tabId) {
+    chrome.tabs.reload(tabId);
+  }, this));
+};
+
+
+/** @override */
+ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
+  var preferences = this.getPreferences();
+  if (preferences.isWelcomePageEnabled()) {
+    this.createWindow('setup.html', true, goog.nullFunction);
+    preferences.setWelcomePageEnabled(false);
+  }
+};
+
+
+/**
+ * TODO: //@yahoo use WebsiteApi
  * Sets the provided content into the element on the page that the user has
  * selected.
  * Note: This function might not work while debugging the extension.
@@ -88,9 +357,9 @@ ext.Launcher = function() {
  * @param {!function(...)} callback The function to invoke once the content has
  *     been updated.
  * @param {string=} opt_subject The subject of the message if applicable.
- * @expose
+ * @export
  */
-ext.Launcher.prototype.updateSelectedContent =
+ext.yExtensionLauncher.prototype.updateSelectedContent =
     function(content, recipients, origin, expectMoreUpdates,
              callback, opt_subject) {
   this.getActiveTab_(goog.bind(function(tabId) {
@@ -111,13 +380,13 @@ ext.Launcher.prototype.updateSelectedContent =
  * Retrieves the content that the user has selected.
  * @param {!function(...)} callback The callback where the selected content will
  *     be passed.
- * @expose
+ * @export
  */
-ext.Launcher.prototype.getSelectedContent = function(callback) {
+ext.yExtensionLauncher.prototype.getSelectedContent = function(callback) {
   this.getActiveTab_(goog.bind(function(tabId) {
     chrome.tabs.sendMessage(tabId, {
       editableElem: true,
-      enableLookingGlass: preferences.isLookingGlassEnabled(),
+      enableLookingGlass: this.getPreferences().isLookingGlassEnabled(),
       hasDraft: false
     }, callback);
   }, this), true);
@@ -131,7 +400,8 @@ ext.Launcher.prototype.getSelectedContent = function(callback) {
  * @param {boolean=} opt_runHelper Whether the helper script must be run first.
  * @private
  */
-ext.Launcher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
+ext.yExtensionLauncher.prototype.getActiveTab_ = function(
+    callback, opt_runHelper) {
   var runHelper = opt_runHelper || false;
   chrome.tabs.query({
     active: true,
@@ -149,7 +419,7 @@ ext.Launcher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
     }
 
     // NOTE(yan): The helper script is executed automaticaly on ymail pages.
-    if (utils.text.isYmailOrigin(tab.url) || !runHelper) {
+    if (e2e.ext.utils.text.isYmailOrigin(tab.url) || !runHelper) {
       callback(tab.id);
     } else {
       try {
@@ -167,55 +437,11 @@ ext.Launcher.prototype.getActiveTab_ = function(callback, opt_runHelper) {
 
 
 /**
- * Asks for the keyring passphrase and start the launcher. Will throw an
- * exception if the password is wrong.
- * @param {string=} opt_passphrase The passphrase of the keyring.
- * @expose
- */
-ext.Launcher.prototype.start = function(opt_passphrase) {
-  this.start_(opt_passphrase || '');
-};
-
-
-/**
- * Starts the launcher.
- * @param {string} passphrase The passphrase of the keyring.
- * @private
- */
-ext.Launcher.prototype.start_ = function(passphrase) {
-  this.updatePassphraseWarning_();
-  this.pgpContext_.setKeyRingPassphrase(passphrase);
-
-  // All ymail tabs need to be reloaded for the e2ebind API to work
-  utils.action.refreshYmail();
-
-  if (goog.global.chrome &&
-      goog.global.chrome.runtime &&
-      goog.global.chrome.runtime.getManifest) {
-    var manifest = chrome.runtime.getManifest();
-    this.pgpContext_.setArmorHeader(
-        'Version',
-        manifest.name + ' v' + manifest.version);
-  }
-  this.ctxApi_.installApi();
-  this.started_ = true;
-  this.updatePassphraseWarning_();
-  preferences.initDefaults();
-
-  this.showWelcomeScreen_();
-
-  chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
-    this.proxyMessage(message, sender);
-  }, this));
-};
-
-
-/**
  * Proxies a message to the active tab.
  * @param {messages.proxyMessage} incoming
  * @param {!MessageSender} sender
  */
-ext.Launcher.prototype.proxyMessage = function(incoming, sender) {
+ext.yExtensionLauncher.prototype.proxyMessage = function(incoming, sender) {
   if (incoming.proxy === true) {
     var message = /** @type {messages.proxyMessage} */ (incoming);
     this.getActiveTab_(goog.bind(function(tabId) {
@@ -231,22 +457,6 @@ ext.Launcher.prototype.proxyMessage = function(incoming, sender) {
 
 
 /**
- * Stops the launcher. Called to lock the keyring.
- */
-ext.Launcher.prototype.stop = function() {
-  this.started_ = false;
-  // Unset the passphrase on the keyring
-  this.pgpContext_.unsetKeyringPassphrase();
-  // Remoeve the API
-  this.ctxApi_.removeApi();
-  this.updatePassphraseWarning_();
-  this.getActiveTab_(goog.bind(function(tabId) {
-    chrome.tabs.reload(tabId);
-  }, this));
-};
-
-
-/**
 * Executes an action from a proxy request.
 * @param {messages.proxyMessage} args The message request
 * @param {number} tabId The ID of the active tab
@@ -254,7 +464,7 @@ ext.Launcher.prototype.stop = function() {
 *           messages.GetSelectionRequest)}
 * @private
 */
-ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
+ext.yExtensionLauncher.prototype.executeRequest_ = function(args, tabId) {
   if (args.action === constants.Actions.GLASS_CLOSED ||
       args.action === constants.Actions.SET_GLASS_SIZE) {
     return /** @type {messages.proxyMessage} */ ({
@@ -276,7 +486,7 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
     return /** @type {messages.GetSelectionRequest} */ ({
       editableElem: true,
       hasDraft: true,
-      enableLookingGlass: preferences.isLookingGlassEnabled()
+      enableLookingGlass: this.getPreferences().isLookingGlassEnabled()
     });
   } else if (args.action === constants.Actions.CHANGE_PAGEACTION) {
     chrome.browserAction.setTitle({
@@ -300,58 +510,5 @@ ext.Launcher.prototype.executeRequest_ = function(args, tabId) {
     return null;
   }
 };
-
-
-/**
- * Returns the PGP context used within the extension.
- * @return {e2e.openpgp.Context} The PGP context.
- * @expose
- */
-ext.Launcher.prototype.getContext = function() {
-  return this.pgpContext_;
-};
-
-
-/**
- * Indicates if the keyring was loaded with the correct passphrase.
- * @return {boolean} True if the keyring was loaded with the correct passphrase.
- * @expose
- */
-ext.Launcher.prototype.hasPassphrase = function() {
-  return this.started_;
-};
-
-
-/**
- * Display a warning to the user if there is no available passphrase to access
- * the keyring.
- * @private
- */
-ext.Launcher.prototype.updatePassphraseWarning_ = function() {
-  if (this.hasPassphrase()) {
-    chrome.browserAction.setBadgeText({text: ''});
-    chrome.browserAction.setTitle({
-      title: chrome.i18n.getMessage('extName')
-    });
-  } else {
-    chrome.browserAction.setBadgeText({text: '!'});
-    chrome.browserAction.setTitle({
-      title: chrome.i18n.getMessage('passphraseEmptyWarning')
-    });
-  }
-};
-
-
-/**
- * Shows the welcome screen to first-time users.
- * @private
- */
-ext.Launcher.prototype.showWelcomeScreen_ = function() {
-  if (preferences.isWelcomePageEnabled()) {
-    window.open('setup.html');
-    preferences.setWelcomePageEnabled(false);
-  }
-};
-
 
 });  // goog.scope

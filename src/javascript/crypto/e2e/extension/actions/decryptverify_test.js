@@ -35,12 +35,13 @@ goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers.ArgumentMatcher');
+goog.require('goog.testing.storage.FakeMechanism');
 goog.setTestOnly();
 
 var constants = e2e.ext.constants;
 var mockControl = null;
 var stubs = new goog.testing.PropertyReplacer();
-var testCase = goog.testing.AsyncTestCase.createAndInstall();
+var testCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
 
 var PUBLIC_KEY_ASCII =
     '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
@@ -104,7 +105,6 @@ var USER_ID = 'test 4';
 
 
 function setUp() {
-  window.localStorage.clear();
   mockControl = new goog.testing.MockControl();
 
   e2e.ext.testingstubs.initStubs(stubs);
@@ -119,8 +119,10 @@ function tearDown() {
 
 
 function testExecute() {
-  var pgpContext = new e2e.openpgp.ContextImpl();
-  pgpContext.setKeyRingPassphrase(''); // No passphrase.
+  var pgpContext = new e2e.openpgp.ContextImpl(
+      new goog.testing.storage.FakeMechanism());
+  // No passphrase.
+  e2e.async.Result.getValue(pgpContext.initializeKeyRing(''));
 
   var pwdCallback = function(uid) {
     return e2e.async.Result.toResult('test');
@@ -128,7 +130,6 @@ function testExecute() {
   var plaintext = 'some secret message.';
 
   var errorCallback = mockControl.createFunctionMock('errorCallback');
-  var fail = errorCallback;
   var callback = mockControl.createFunctionMock('callback');
   callback(plaintext);
 
@@ -141,6 +142,7 @@ function testExecute() {
       mockControl.createFunctionMock('showNotification'));
   e2e.ext.utils.showNotification(
       new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+        assertContains('promptDecryptionSuccessMsg', arg);
         assertContains('promptVerificationSuccessMsg', arg);
         assertContains(USER_ID, arg);
         return true;
@@ -176,3 +178,59 @@ function testExecute() {
   }).addErrback(fail);
 }
 
+function testExecuteClearsign() {
+  var pgpContext = new e2e.openpgp.ContextImpl(
+      new goog.testing.storage.FakeMechanism());
+  // No passphrase.
+  e2e.async.Result.getValue(pgpContext.initializeKeyRing(''));
+
+  var pwdCallback = function(uid) {
+    return e2e.async.Result.toResult('test');
+  };
+  var plaintext = 'some clearsign message.';
+
+  var errorCallback = mockControl.createFunctionMock('errorCallback');
+  var callback = mockControl.createFunctionMock('callback');
+  callback(plaintext);
+
+  var action = new e2e.ext.actions.DecryptVerify();
+  var encryptionKey = e2e.openpgp.block.factory.parseByteArrayMulti(
+      e2e.openpgp.asciiArmor.parse(PUBLIC_KEY_ASCII).data)[0];
+
+  // Ensure that the signers of the message are verified.
+  stubs.setPath('e2e.ext.utils.showNotification',
+      mockControl.createFunctionMock('showNotification'));
+  e2e.ext.utils.showNotification(
+      new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
+        assertContains('promptMessageNotEncryptedMsg', arg);
+        assertContains('promptVerificationSuccessMsg', arg);
+        assertContains(USER_ID, arg);
+        return true;
+      }), goog.nullFunction);
+
+  mockControl.$replayAll();
+
+  testCase.waitForAsync('Importing private key.');
+  pgpContext.importKey(pwdCallback, PRIVATE_KEY_ASCII).addCallback(function() {
+    testCase.waitForAsync('Importing public key.');
+    pgpContext.importKey(pwdCallback, PUBLIC_KEY_ASCII).addCallback(function() {
+      testCase.waitForAsync('Fetching signing keys.');
+      pgpContext.searchPrivateKey(USER_ID).addCallback(function(signingKeys) {
+        testCase.waitForAsync('Encrypting message.');
+        pgpContext.encryptSign(
+            plaintext, [], [], [], signingKeys[0]).
+            addCallback(function(result) {
+              testCase.waitForAsync('Verifying clearsign message.');
+              action.execute(pgpContext, {
+                content: result,
+                passphraseCallback: pwdCallback
+              }, null, function(result) {
+                callback(result);
+                mockControl.$verifyAll();
+                testCase.continueTesting();
+              }, errorCallback);
+            }).addErrback(fail);
+      }).addErrback(fail);
+    }).addErrback(fail);
+  }).addErrback(fail);
+}

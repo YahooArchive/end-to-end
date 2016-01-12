@@ -34,7 +34,6 @@ goog.require('e2e.ext.utils.action');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
-goog.require('goog.events.EventType');
 goog.require('goog.positioning.Corner');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
@@ -74,6 +73,7 @@ ui.Prompt = function() {
    * @type {!Array.<!Object.<constants.Actions,string>>}
    * @private
    */
+  // @yahoo
   this.selectableActions_ = [{
     value: constants.Actions.CONFIGURE_EXTENSION,
     title: chrome.i18n.getMessage('actionConfigureExtension')
@@ -114,7 +114,7 @@ ui.Prompt.prototype.decorateInternal = function(elem) {
   var styles = elem.querySelector('link');
   styles.href = chrome.runtime.getURL('prompt_styles.css');
 
-  utils.action.getExtensionLauncher(function(launcher) {
+  utils.action.getLauncher(function(launcher) {
     this.pgpLauncher_ = launcher || this.pgpLauncher_;
     this.processSelectedContent_();
   }, this.displayFailure_, this);
@@ -128,6 +128,7 @@ ui.Prompt.prototype.getContentElement = function() {
 
 
 /**
+ * //@yahoo shows a menu instead of the compose/decrypt window
  * Process the retrieved content blob and display it into the prompt UI.
  * @param {constants.Actions=} opt_action Optional. The PGP action to perform.
  *     Defaults to user-specified.
@@ -229,7 +230,7 @@ ui.Prompt.prototype.renderKeyringPassphrase_ = function(elem) {
           this.close();
         } catch (e) { // Incorrect passphrase, so ask again.
           this.displayFailure_(
-              new Error(chrome.i18n.getMessage('passphraseError')));
+              new Error(chrome.i18n.getMessage('passphraseIncorrectWarning')));
           this.processSelectedContent_(
               ext.constants.Actions.GET_PASSPHRASE);
         }
@@ -291,7 +292,7 @@ ui.Prompt.prototype.getTitle_ = function(action) {
  */
 ui.Prompt.prototype.selectAction_ = function(evt) {
   var menuContainer = goog.dom.getElement(constants.ElementId.MENU_CONTAINER);
-  goog.dom.classlist.remove(menuContainer, constants.CssClass.HIDDEN);
+  // goog.dom.classlist.remove(menuContainer, constants.CssClass.HIDDEN);
   this.removeChildren();
 
   this.processSelectedContent_(
@@ -327,10 +328,3 @@ ui.Prompt.prototype.clearFailure_ = function() {
 
 
 });  // goog.scope
-
-// Create the settings page.
-if (Boolean(chrome.extension)) {
-  /** @type {!e2e.ext.ui.Prompt} */
-  window.promptPage = new e2e.ext.ui.Prompt();
-  window.promptPage.decorate(document.documentElement);
-}

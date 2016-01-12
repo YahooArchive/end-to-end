@@ -30,6 +30,7 @@ goog.provide('e2e.ext.constants.e2ebind.responseActions');
 
 goog.require('e2e.ext.config');
 
+
 /**
  * The actions that the End-To-End extension can perform.
  * @enum {string}
@@ -92,6 +93,7 @@ e2e.ext.constants.ElementId = {
   PREFERENCES: 'pgpPreferences',
   SIGN_MESSAGE_CHECK: 'pgpSignMessage',
   SIGNER_SELECT: 'pgpSignerSelect',
+  SIGNUP_PROMPT: 'signupPrompt',
   KEYRING_DIV: 'storedKeys',
   KEYRING_IMPORT_DIV: 'keyringImportDiv',
   FB_IMPORT_DIV: 'fbImportDiv',
@@ -106,6 +108,7 @@ e2e.ext.constants.ElementId = {
   FROM_LABEL: 'fromLabel',
   TO_LABEL: 'toLabel',
   SUBJECT_HOLDER: 'subjectHolder',
+  SUBJECT: 'subject',
 
   /* Used to display menus in the UI. */
   MENU_CONTAINER: 'menu-container',
@@ -150,7 +153,11 @@ e2e.ext.constants.ElementId = {
 
   // glass
   LOCK_ICON: 'lock-icon',
-  CHECK_ICON: 'check-icon'
+  CHECK_ICON: 'check-icon',
+
+  // Website container
+  WEBVIEW: 'webview',
+  PROMPT: 'prompt'
 };
 
 
@@ -193,6 +200,7 @@ e2e.ext.constants.CssClass = {
   KEY_TYPE_DESC: 'key-type-description',
   KEY_UID: 'key-uid',
   KEY_SUBKEY: 'key-sub',
+  SIGNUP_PROMPT: 'keyring-signup',
   FB_IMPORT: 'fb-import',
   KEYRING_IMPORT: 'keyring-import',
   KEYRING_EXPORT: 'keyring-export',
@@ -208,6 +216,15 @@ e2e.ext.constants.CssClass = {
   /** Used in the welcome page */
   WELCOME_MENU_ICON: 'welcome-menu-icon',
   WELCOME_SUBSECTION_HEADER: 'welcome-subsection-header',
+
+  /** Used in prompt. */
+  PROMPT_HEADER: 'pgpHead',
+  PROMPT_TITLE: 'pgpTitle',
+  PROMPT_ACTIONS: 'pgpActions',
+  BUTTONS_CONTAINER: 'buttons-container',
+  MENU_BUTTON: 'menu-button',
+  POPOUT_BUTTON: 'popout-button',
+  PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
 
   /** Error messages **/
   ERROR: 'error',
@@ -233,7 +250,8 @@ e2e.ext.constants.StorageKey = {
   ENABLE_AUTO_SAVE: 'enable-auto-save',
   ENABLE_LOOKING_GLASS: 'enable-looking-glass',
   LAST_SAVED_DRAFT: 'last-saved-draft',
-  KEYSERVER_SIGNED_RESPONSES: 'keyserver-signed-responses'
+  KEYSERVER_SIGNED_RESPONSES: 'keyserver-signed-responses',
+  PREFERENCES: 'PREF'
 };
 
 

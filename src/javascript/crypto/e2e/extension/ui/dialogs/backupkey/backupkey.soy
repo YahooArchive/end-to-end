@@ -75,6 +75,7 @@
  * @param backupCodeLabel The label for the backup code input.
  */
 {template .restoreKey}
+  <span class="error">&nbsp;</span>
   /* TODO(rcc): Remove when we can use keyserver for lookups */
   <div>
     <label>
@@ -88,9 +89,8 @@
     <label>
       <div>{$backupCodeLabel}</div>
       <div>
-      <input type="text" class="{e2e.ext.constants.CssClass.KEYRING_RESTORE_INPUT}">
+      <textarea class="{e2e.ext.constants.CssClass.KEYRING_RESTORE_INPUT}"></textarea>
       </div>
     </label>
   </div>
-  <span class="error">&nbsp;</span>
 {/template}

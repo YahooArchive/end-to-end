@@ -53,25 +53,17 @@ textarea:focus,
   outline: none;
 }
 
-#pgpHead {
+.pgpHead {
   margin-bottom: 2px;
   padding: 1px;
+  background: YCOLOR_GREY_3;
 }
 
-#pgpHead > div {
-   padding: 0 3px;
-}
-
-#pgpHead h1 {
-  position: relative;
+.pgpHead h1 {
+  line-height: 34px;
   color: YCOLOR_PURPLE_14C;
   font-size: 18px;
   font-weight: normal;
-  margin-left: 2px;
-}
-
-#pgpHead img {
-  float: left;
 }
 
 #pgpBody input[type="checkbox"],
@@ -228,4 +220,10 @@ textarea:focus,
 
 .ac-row {
   padding: 5px;
+}
+
+
+
+#pgpSignerSelect, #pgpKeySelect input, #subjectHolder input, textarea {
+  font-size: .9em;
 }

@@ -25,7 +25,6 @@ goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.panels.KeyringMgmtMini');
 goog.require('e2e.ext.ui.templates.panels.keyringmgmt');
 goog.require('goog.array');
-goog.require('goog.crypt');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
@@ -46,8 +45,8 @@ var templates = e2e.ext.ui.templates.panels.keyringmgmt;
  * @param {!Object} pgpKeys A collection of raw PGP keys.
  * @param {!function()} exportKeyringCallback The callback to invoke when the
  *     keyring is to be exported.
- * @param {!function((string|!File))} importKeyringCallback The callback to invoke when
- *     an existing keyring is to be imported.
+ * @param {!function((string|!File))} importKeyringCallback The callback to
+ *     invoke when an existing keyring is to be imported. //@yahoo allows string
  * @param {!function(string)} updateKeyringPassphraseCallback The callback to
  *     invoke when the passphrase to the keyring is to be updated.
  * @param {!function(string)} restoreKeyringCallback The callback to invoke when
@@ -128,7 +127,8 @@ panels.KeyringMgmtFull.prototype.decorateInternal = function(elem) {
     sectionTitle: chrome.i18n.getMessage('keyMgmtTitle'),
     exportLabel: chrome.i18n.getMessage('keyMgmtExportLabel'),
     removeLabel: chrome.i18n.getMessage('keyMgmtRemoveLabel'),
-    noneLabel: chrome.i18n.getMessage('keyMgmtNoneLabel')
+    noneLabel: chrome.i18n.getMessage('keyMgmtNoneLabel'),
+    keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel')
   });
 
   var keyringTable = this.getElement().querySelector('table');
@@ -142,8 +142,12 @@ panels.KeyringMgmtFull.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
   var keyringTable = this.getElement().querySelector('table');
-  this.getHandler().listen(
-      keyringTable, goog.events.EventType.CLICK, this.handleClick_, true);
+  this.getHandler()
+      .listen(
+          keyringTable,
+          goog.events.EventType.CLICK,
+          this.handleClick_,
+          true);
 };
 
 
@@ -178,7 +182,7 @@ panels.KeyringMgmtFull.prototype.addNewKey = function(userId, pgpKeys) {
     removeLabel: chrome.i18n.getMessage('keyMgmtRemoveLabel')
   });
   keyringTable.appendChild(tr);
-  this.keyringMgmtControls_.refreshOptions(true);
+  this.keyringMgmtControls_.refreshOptions();
 };
 
 
@@ -208,10 +212,8 @@ panels.KeyringMgmtFull.prototype.removeKey = function(userId) {
         templates.noneEntry, {
           'noneLabel': chrome.i18n.getMessage('keyMgmtNoneLabel')
         });
-    this.keyringMgmtControls_.refreshOptions(false);
-  } else {
-    this.keyringMgmtControls_.refreshOptions(true);
   }
+  this.keyringMgmtControls_.refreshOptions();
 };
 
 
@@ -247,17 +249,8 @@ panels.KeyringMgmtFull.prototype.getKeysDescription_ = function(keys) {
     return [{
       type: type,
       algorithm: key.key.algorithm,
-      fingerprint: goog.crypt.byteArrayToHex(key.key.fingerprint)
-    }].concat(goog.array.map(key.subKeys, function(subKey) {
-      var type = (subKey.secret ?
-          chrome.i18n.getMessage('secretSubKeyDescription') :
-          chrome.i18n.getMessage('publicSubKeyDescription'));
-      return {
-        type: type,
-        algorithm: subKey.algorithm,
-        fingerprint: goog.crypt.byteArrayToHex(subKey.fingerprint)
-      };
-    }));
+      fingerprint: key.key.fingerprintHex
+    }];
   }));
 };
 

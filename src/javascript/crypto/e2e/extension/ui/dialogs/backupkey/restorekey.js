@@ -36,7 +36,6 @@ var constants = e2e.ext.constants;
 var dialogs = e2e.ext.ui.dialogs;
 var messages = e2e.ext.messages;
 var templates = e2e.ext.ui.templates.dialogs.backupkey;
-var utils = e2e.ext.utils;
 
 
 
@@ -63,15 +62,16 @@ dialogs.RestoreKey.prototype.createDom = function() {
 /** @override */
 dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
+  this.setTitle(chrome.i18n.getMessage('keyMgmtRestoreKeyringLabel'));
   soy.renderElement(this.getContentElement(), templates.restoreKey, {
     emailLabel: chrome.i18n.getMessage('keyMgmtRestoreKeyringEmailLabel'),
     backupCodeLabel:
         chrome.i18n.getMessage('keyMgmtRestoreKeyringBackupCodeLabel')
   });
 
-  utils.action.getUserYmailAddress(goog.bind(function(email) {
+  e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
     var input =
-      this.getElementByClass(constants.CssClass.KEYRING_RESTORE_EMAIL);
+        this.getElementByClass(constants.CssClass.KEYRING_RESTORE_EMAIL);
     if (input) {
       input.value = email || '';
     }
@@ -90,10 +90,12 @@ dialogs.RestoreKey.prototype.enterDocument = function() {
 /**
  * Parses the user input into a base64 encoded string.
  * @private
- * @return {string} The backup code.
+ * @return {string} The base 64 encoded backup code.
  */
 dialogs.RestoreKey.prototype.getInputValue_ = function() {
-  return this.getElementByClass(constants.CssClass.KEYRING_RESTORE_INPUT).value;
+  var inputs = goog.array.toArray(
+      goog.dom.getElementsByClass(constants.CssClass.KEYRING_RESTORE_INPUT));
+  return inputs.reduce(function(a, e) { return a + e.value; }, '');
 };
 
 
@@ -110,6 +112,7 @@ dialogs.RestoreKey.prototype.getEmailInput_ = function() {
 /**
  * Executes the action for restoring keyring data
  * @private
+ * @return {boolean}
  */
 dialogs.RestoreKey.prototype.executeRestore_ = function() {
   /* TODO(rcc): Remove email when we can use keyserver for lookups */

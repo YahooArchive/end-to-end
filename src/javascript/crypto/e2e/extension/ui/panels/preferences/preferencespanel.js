@@ -22,7 +22,6 @@ goog.provide('e2e.ext.ui.panels.PreferencesPanel');
 
 goog.require('e2e.ext.constants.StorageKey');
 goog.require('e2e.ext.ui.panels.PreferenceEntry');
-goog.require('e2e.ext.ui.preferences');
 goog.require('e2e.ext.ui.templates.panels.preferences');
 goog.require('goog.array');
 goog.require('goog.ui.Component');
@@ -31,18 +30,25 @@ goog.require('soy');
 goog.scope(function() {
 var constants = e2e.ext.constants;
 var panels = e2e.ext.ui.panels;
-var preferences = e2e.ext.ui.preferences;
 var templates = e2e.ext.ui.templates.panels.preferences;
 
 
 
 /**
  * Constructor for the preferences list.
+ * @param {!e2e.ext.Preferences} preferences User preferences.
  * @constructor
  * @extends {goog.ui.Component}
  */
-panels.PreferencesPanel = function() {
+panels.PreferencesPanel = function(preferences) {
   goog.base(this);
+
+  /**
+   * User preferences.
+   * @type {!e2e.ext.Preferences}
+   * @private
+   */
+  this.preferences_ = preferences;
 };
 goog.inherits(panels.PreferencesPanel, goog.ui.Component);
 
@@ -63,6 +69,8 @@ panels.PreferencesPanel.prototype.decorateInternal = function(elem) {
   });
 
   var prefs = [
+    // @yahoo commenting out action sniffing and looking glass for now
+    /*
     {
       name: constants.StorageKey.ENABLE_ACTION_SNIFFING,
       description: chrome.i18n.getMessage('preferenceActionSniffing'),
@@ -74,6 +82,14 @@ panels.PreferencesPanel.prototype.decorateInternal = function(elem) {
       description: chrome.i18n.getMessage('preferenceLookingGlass'),
       setterCallback: preferences.setLookingGlassEnabled,
       isSet: preferences.isLookingGlassEnabled()
+    },
+    */
+    {
+      name: constants.StorageKey.ENABLE_WELCOME_SCREEN,
+      description: chrome.i18n.getMessage('preferenceWelcomeScreen'),
+      setterCallback: goog.bind(this.preferences_.setWelcomePageEnabled,
+          this.preferences_),
+      isSet: this.preferences_.isWelcomePageEnabled()
     }
   ];
   goog.array.forEach(prefs, function(pref) {

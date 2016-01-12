@@ -19,11 +19,11 @@
 
 goog.provide('e2e.ext.ui.ComposeGlass');
 
-goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
-goog.require('e2e.ext.keyserver');
+goog.require('e2e.ext.keyserver.AuthError');
+goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.ChipHolder');
@@ -38,6 +38,7 @@ goog.require('goog.events.EventType');
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
+goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -87,6 +88,7 @@ ui.ComposeGlass = function(draft, mode, origin, hash, opt_height) {
   /**
    * Placeholder for calling out to preferences.js.
    * TODO: Switch preferences.js to chrome.storage.sync
+   * @private
    */
   this.preferences_ = {
     isActionSniffingEnabled: true
@@ -108,16 +110,11 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
   soy.renderElement(elem, templates.main, {
-    extName: chrome.i18n.getMessage('extName')
+    pageTitle: chrome.i18n.getMessage('promptEncryptSignTitle')
   });
 
-  var titleText = chrome.i18n.getMessage('promptEncryptSignTitle');
-
-  var title = elem.querySelector('h1');
-  title.textContent = titleText;
-
-  var headerImg = elem.querySelector('img');
-  headerImg.title = titleText;
+  var styles = elem.querySelector('link');
+  styles.href = chrome.runtime.getURL('composeglass_styles.css');
 
   // This tells the helper to attach the set_draft handler in e2ebind
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
@@ -213,8 +210,10 @@ ui.ComposeGlass.prototype.getEmailMap_ = function(recipients) {
  */
 ui.ComposeGlass.prototype.renderEncrypt_ =
     function(elem, recipients, origin, subject, from, content) {
-  var sniffedAction = utils.text.getPgpAction(
-      content, this.preferences_.isActionSniffingEnabled);
+  // @yahoo isActionSniffingEnabled
+  var sniffedAction = this.preferences_.isActionSniffingEnabled ?
+      utils.text.getPgpAction(content) :
+      constants.Actions.USER_SPECIFIED;
 
   // Pre-populate the list of recipients during an encrypt/sign action.
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
@@ -280,33 +279,33 @@ ui.ComposeGlass.prototype.renderEncrypt_ =
         try {
           this.fetchKeys_(goog.bind(function(validRecipients,
                                              invalidRecipients) {
-            // Add the valid recipients to the lists of all avail recipients
-            goog.array.forEach(validRecipients,
+                // Add the valid recipients to the lists of all avail recipients
+                goog.array.forEach(validRecipients,
                                goog.bind(function(recipient) {
-              // For now, keyserver entries have uid === email
-              goog.object.add(this.recipientsEmailMap_, recipient,
+                  // For now, keyserver entries have uid === email
+                  goog.object.add(this.recipientsEmailMap_, recipient,
                               ['<' + recipient + '>']);
-            }, this));
-            this.allAvailableRecipients_ = goog.object.getKeys(
+                }, this));
+                this.allAvailableRecipients_ = goog.object.getKeys(
                 this.recipientsEmailMap_);
 
-            // Show them as good in the UI
-            if (this.chipHolder_) {
-              this.chipHolder_.markGoodChips(validRecipients);
-            }
+                // Show them as good in the UI
+                if (this.chipHolder_) {
+                  this.chipHolder_.markGoodChips(validRecipients);
+                }
 
-            // Tell the user we've imported some keys
-            if (validRecipients.length > 0) {
-              utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */
+                // Tell the user we've imported some keys
+                if (validRecipients.length > 0) {
+                  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */
                                          ({
-                action: constants.Actions.SHOW_NOTIFICATION,
-                content: chrome.i18n.getMessage(
+                    action: constants.Actions.SHOW_NOTIFICATION,
+                    content: chrome.i18n.getMessage(
                     'promptImportKeyNotificationLabel',
                     validRecipients.toString())
-              }));
-            }
-          }, this));
-        } catch(e) {
+                  }));
+                }
+              }, this));
+        } catch (e) {
           this.displayFailure_(e);
         }
       }, this);
@@ -446,6 +445,7 @@ ui.ComposeGlass.prototype.getRecipientUids_ = function() {
  * Sends the request to encrypt the message, then inserts and sends the result
  * @param {!messages.ApiRequest} request The request to send
  * @param {string} origin The origin of the page
+ * @private
  */
 ui.ComposeGlass.prototype.sendRequestToInsert_ = function(request, origin) {
   utils.sendExtensionRequest(
@@ -458,6 +458,7 @@ ui.ComposeGlass.prototype.sendRequestToInsert_ = function(request, origin) {
 
 /**
  * Checks whether the message should be signed.
+ * @return {boolean} whether the message should be signed
  * @private
  */
 ui.ComposeGlass.prototype.shouldSignMessage_ = function() {
