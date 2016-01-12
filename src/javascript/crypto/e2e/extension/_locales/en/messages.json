@@ -202,7 +202,7 @@
     "description": "A word prompting the user for their email."
   },
   "keyMgmtRestoreKeyringBackupCodeLabel": {
-    "message": "Backup Code\nAnyone who knows the code will be able to read your messages.",
+    "message": "Backup Code. (Anyone who knows the code will be able to read your messages.)",
     "description": "A word prompting the user for their backup code."
   },
   "keyMgmtChangePassphraseLabel": {

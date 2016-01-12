@@ -87,13 +87,14 @@ button.back > img {
 }
 
 .pgpHead {
-  background: YCOLOR_GREY_3;
-  border: solid YCOLOR_GREY_4;
+  border: solid #404040;
   border-width: 0 0 1px;
   margin-bottom: 5px;
   padding: 1px 0;
-  width: 100%;
   z-index: 60;
+  background: url('images/icon-48.png') #404040 8px 50% no-repeat;
+  padding-left: 40px;
+  background-size: 32px;
 }
 
 .pgpHead > div {
@@ -101,9 +102,10 @@ button.back > img {
 }
 
 .pgpHead h1 {
-  color: YCOLOR_GREY_8;
+  color: #ffffff;
   font-size: 1.53846154em;
   font-weight: normal;
+  white-space: nowrap;
 }
 
 #callbackDialog > div,
@@ -261,4 +263,31 @@ input:focus {
 
 .select-all-link:hover {
   color: #0c0c0c;
+}
+
+
+
+.modal-dialog-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.pgpHead {
+  /* fujigradient from Yahoo Messenger */
+  border-bottom: 0 solid;
+  background: linear-gradient(45deg,#3cb1bd 0,#4e72d0 50%,#5f2ae1 100%);
+  padding-left: 0;
+}
+
+.pgpHead h1 {
+  background: url(images/yahoo/icon-128.png) no-repeat;
+  background-size: 32px;
+  padding-left: 48px;
+  color: YCOLOR_WHITE;
+}
+
+.overlayDialog textarea {
+  width: 98%;
+  height: 80px;
 }

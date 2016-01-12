@@ -300,17 +300,6 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           keyboardHandler,
           goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
           this.fbImportKey_);
-
-      // Hide overlays when user clicks outside them
-      window.document.addEventListener('click', goog.bind(function(e) {
-        if (e.target.nodeName === 'BUTTON') {
-          return;
-        }
-        var overlays = goog.dom.getElementsByClass('overlayDialog');
-        goog.array.forEach(overlays, function(elem) {
-          goog.style.setElementShown(elem, false);
-        });
-      }, this));
 };
 
 

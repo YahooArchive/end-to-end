@@ -16,20 +16,19 @@
 
 
 /**
- * Renders the base layout for the Compose Glass UI.
- * @param extName The name of the extension.
+ * The base layout for the compose glass page.
+ * @param pageTitle The title for the compose glass page.
  */
 {template .main}
   <html>
     <head>
-      <title>{$extName}</title>
-      <link rel="stylesheet" href="composeglass_styles.css"/>
+      <title>{$pageTitle}</title>
+      <link rel="stylesheet"/>
     </head>
     <body>
-      <div id="{e2e.ext.constants.ElementId.HEADER}">
+      <div class="{e2e.ext.constants.CssClass.PROMPT_HEADER}">
         <div>
-          <img src="images/yahoo/icon-32.png"></img>
-          <h1 id="{e2e.ext.constants.ElementId.TITLE}"></h1>
+          <h1>{$pageTitle}</h1>
         </div>
       </div>
       <div id="{e2e.ext.constants.ElementId.ERROR_DIV}"></div>

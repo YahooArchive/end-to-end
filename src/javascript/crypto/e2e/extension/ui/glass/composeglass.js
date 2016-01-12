@@ -110,16 +110,11 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
   soy.renderElement(elem, templates.main, {
-    extName: chrome.i18n.getMessage('extName')
+    pageTitle: chrome.i18n.getMessage('promptEncryptSignTitle')
   });
 
-  var titleText = chrome.i18n.getMessage('promptEncryptSignTitle');
-
-  var title = elem.querySelector('h1');
-  title.textContent = titleText;
-
-  var headerImg = elem.querySelector('img');
-  headerImg.title = titleText;
+  var styles = elem.querySelector('link');
+  styles.href = chrome.runtime.getURL('composeglass_styles.css');
 
   // This tells the helper to attach the set_draft handler in e2ebind
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
