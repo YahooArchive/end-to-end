@@ -45,10 +45,11 @@ type npm >/dev/null 2>&1 || {
 if [ ! -d lib ]; then
   mkdir lib
 fi
-cd lib
 
 git submodule init
 git submodule update
+
+cd lib
 
 # symlink typedarray
 if [ ! -d typedarray ]; then
