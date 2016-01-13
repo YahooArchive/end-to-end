@@ -23,6 +23,7 @@ goog.provide('e2e.ext.Helper');
 
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.e2ebind');
+goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Disposable');
@@ -116,14 +117,6 @@ ext.Helper.prototype.handleMessage_ = function(req, sender, sendResponse) {
 };
 
 
-/**
- * A flag indicating whether the helper has already executed or not.
- * @type {boolean}
- * @private
- */
-ext.Helper.prototype.executed_ = false;
-
-
 /** @override */
 ext.Helper.prototype.disposeInternal = function() {
   chrome.runtime.onMessage.removeListener(this.boundMessageHandler_);
@@ -153,8 +146,9 @@ ext.Helper.prototype.setValue_ = function(msg, sendResponse) {
 
 
 /**
+ * //@yahoo
  * Sets recipients and message body into provider's compose window via e2ebind.
-  * @param {e2e.ext.messages.BridgeMessageResponse} msg The response bridge
+ * @param {e2e.ext.messages.BridgeMessageResponse} msg The response bridge
  *     message from the extension.
  * @param {!function(boolean)|!function(Error)} sendResponse Function sending
  *     back the response.
@@ -235,6 +229,7 @@ ext.Helper.prototype.getSelectedContent_ = function(req, sendResponse) {
 
 
 /**
+ * //@yahoo
  * Retrieves OpenPGP content selected by the user.
  * @param {!e2e.ext.messages.GetSelectionRequest} req The request to get the
  *     user-selected content.
@@ -249,23 +244,20 @@ ext.Helper.prototype.getE2ebindSelectedContent_ = function(req, sendResponse) {
     return;
   }
 
-  var recipients = [];
-
   // Check if we have a draft
   e2ebind.hasDraft(goog.bind(function(has_draft_result) {
     if (has_draft_result) {
       // We have a draft, get_draft from it
       e2ebind.getDraft(goog.bind(function(get_draft_result) {
-        var selectionBody = e2e.openpgp.asciiArmor
-            .extractPgpBlock(get_draft_result.body);
-        recipients = recipients.concat(get_draft_result.to,
-                                       get_draft_result.cc,
-                                       get_draft_result.bcc);
+        var selectionBody = e2e.openpgp.asciiArmor.
+                              extractPgpBlock(get_draft_result.body);
 
         sendResponse({
           action: constants.Actions.ENCRYPT_SIGN,
           selection: selectionBody,
-          recipients: recipients,
+          recipients: [].concat(get_draft_result.to,
+                                get_draft_result.cc,
+                                get_draft_result.bcc),
           subject: get_draft_result.subject,
           from: '<' + window.config.signer + '>',
           request: true,
@@ -287,13 +279,14 @@ ext.Helper.prototype.getE2ebindSelectedContent_ = function(req, sendResponse) {
               DOMelem.lookingGlass.getOriginalContent() :
               DOMelem.innerText);
         } else {
+          // no support to get selection text, as in google's
           return;
         }
 
         sendResponse({
           action: utils.text.getPgpAction(selectionBody),
           selection: selectionBody,
-          recipients: recipients,
+          recipients: [],
           from: '<' + window.config.signer + '>',
           request: true,
           origin: this.getOrigin_(),
