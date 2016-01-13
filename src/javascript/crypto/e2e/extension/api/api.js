@@ -130,13 +130,12 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   var outgoing = {
     completedAction: incoming.action
   };
-  var content;
 
   // Ensure that only certain actions are exposed via the API.
   switch (incoming.action) {
     case constants.Actions.ENCRYPT_SIGN:
     case constants.Actions.DECRYPT_VERIFY:
-    // @yahoo, the following 4 actions are now yahoo-specific
+    //@yahoo, the following 4 actions are now yahoo-specific
     case constants.Actions.LIST_ALL_UIDS:
     case constants.Actions.LIST_KEYS:
     case constants.Actions.IMPORT_KEY:
@@ -147,24 +146,13 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         return e2e.async.Result.toResult(incoming.decryptPassphrase || '');
       };
       break;
-    // @yahoo
+    //@yahoo
     case constants.Actions.SHOW_NOTIFICATION:
       if (typeof incoming.content === 'string') {
-        content = incoming.content;
-      } else {
-        content = '';
+        e2e.ext.utils.showNotification(incoming.content, function() {
+          callback(outgoing);
+        });
       }
-      e2e.ext.utils.showNotification(content, function() {
-        callback(outgoing);
-      });
-      return;
-    // @yahoo
-    case constants.Actions.OPEN_OPTIONS:
-      chrome.tabs.create({
-        url: 'settings.html',
-        active: true
-      });
-      callback(outgoing);
       return;
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
@@ -177,7 +165,9 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       error: chrome.i18n.getMessage('glassKeyringLockedError')
     });
     return;
-  } else if (incoming.action === constants.Actions.GET_KEYRING_UNLOCKED) {
+  }
+  //@yahoo
+  else if (incoming.action === constants.Actions.GET_KEYRING_UNLOCKED) {
     outgoing.content = true;
     callback(outgoing);
     return;

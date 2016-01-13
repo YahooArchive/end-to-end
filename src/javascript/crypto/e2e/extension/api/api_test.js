@@ -317,6 +317,7 @@ function testWithAppLauncher() {
 }
 
 
+//@yahoo
 function testLockedKeyring() {
   stubs.setPath(
       'window.launcher.hasPassphrase', mockControl.createFunctionMock());
@@ -337,7 +338,7 @@ function testLockedKeyring() {
   mockControl.$verifyAll();
 }
 
-// @yahoo
+//@yahoo
 function testUnlockedKeyring() {
   stubs.setPath(
       'window.launcher.hasPassphrase', mockControl.createFunctionMock());
