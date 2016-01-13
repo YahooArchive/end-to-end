@@ -20,7 +20,7 @@
  */
 goog.provide('e2e.coname');
 goog.provide('e2e.coname.EpochHead');
-goog.provide('e2e.coname.LookupResponse');
+goog.provide('e2e.coname.ServerResponse');
 goog.provide('e2e.coname.MerkleLeaf');
 goog.provide('e2e.coname.MerkleNode');
 goog.provide('e2e.coname.SignedEpochHead');
@@ -155,7 +155,7 @@ e2e.coname.SignedEpochHead;
  *    profile: (undefined|ProtoBuf.Builder.Message)
  * }}
  */
-e2e.coname.LookupResponse;
+e2e.coname.ServerResponse;
 
 
 /**
@@ -412,7 +412,7 @@ e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
  *
  * @param {e2e.coname.RealmConfig} realm The realm config
  * @param {string} user The userid (typically email address)
- * @param {e2e.coname.LookupResponse} pf The lookup proof from keyserver
+ * @param {e2e.coname.ServerResponse} pf The lookup proof from keyserver
  * @return {boolean} whether the proof is properly validated
  */
 e2e.coname.verifyLookup = function(realm, user, pf) {

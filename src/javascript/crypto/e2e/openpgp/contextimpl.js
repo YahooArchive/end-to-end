@@ -41,6 +41,7 @@ goog.require('e2e.openpgp.error.InvalidArgumentsError');
 goog.require('e2e.openpgp.error.ParseError');
 goog.require('e2e.openpgp.error.PassphraseError');
 goog.require('e2e.openpgp.error.WrongPassphraseError');
+goog.require('e2e.openpgp.yKeyRing');
 /** @suppress {extraRequire} force loading of all signers */
 goog.require('e2e.signer.all');
 goog.require('goog.array');
@@ -146,13 +147,13 @@ e2e.openpgp.ContextImpl.prototype.setKeyRingPassphrase = function(
 };
 
 
-/** @override */
+/** @override //@yahoo use the conamed yKeyRing */
 e2e.openpgp.ContextImpl.prototype.initializeKeyRing = function(passphrase) {
   var asyncResult = this.keyRingStorageMechanism_.unlockWithPassphrase(
       passphrase).
       addCallbacks(/** @this e2e.openpgp.ContextImpl */ (function() {
         // Correct passphrase, initialize keyring.
-        return e2e.openpgp.KeyRing.launch(this.keyRingStorageMechanism_,
+        return e2e.openpgp.yKeyRing.launch(this.keyRingStorageMechanism_,
             this.keyServerUrl);
       }), function() {
         throw new e2e.openpgp.error.WrongPassphraseError();
