@@ -50,19 +50,19 @@ e2e.ext.constants.Actions = {
   GET_KEYRING_BACKUP_DATA: 'get_keyring_backup_data',
   RESTORE_KEYRING_DATA: 'restore_keyring_data',
   IMPORT_KEY: 'import_key',
-  SHARE_KEY: 'share_key',
   LIST_KEYS: 'list_keys',
+
+  //@yahoo
   LIST_ALL_UIDS: 'list_all_uids',
   GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',
   LOCK_KEYRING: 'lock_keyring',
 
-  // Actions needed for the glasses.
+  //@yahoo Actions needed for the glasses.
   SHOW_NOTIFICATION: 'show_notification',
   GLASS_CLOSED: 'glass_closed',
   SET_DRAFT: 'set_draft',
   SET_AND_SEND_DRAFT: 'set_and_send_draft',
   GET_SELECTED_CONTENT: 'get_selected_content',
-  OPEN_OPTIONS: 'open_options',
   CHANGE_PAGEACTION: 'change_pageaction',
   RESET_PAGEACTION: 'reset_pageaction',
   SET_GLASS_SIZE: 'set_glass_size',
