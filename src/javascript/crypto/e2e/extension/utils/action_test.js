@@ -21,19 +21,17 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.utils.actionTest');
 
+goog.require('e2e.ext.ExtensionLauncher');
 goog.require('e2e.ext.testingstubs');
+goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.action');
-goog.require('e2e.ext.utils.text');
-goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.openpgp.ContextImpl');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.factory');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
-goog.require('goog.testing.mockmatchers.SaveArgument');
 goog.require('goog.testing.storage.FakeMechanism');
 goog.setTestOnly();
 
@@ -41,7 +39,6 @@ var launcher = null;
 var mockControl = null;
 var stubs = new goog.testing.PropertyReplacer();
 var utils = e2e.ext.utils.action;
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
 
 var PUBLIC_KEY_ASCII =
     '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +
@@ -69,12 +66,7 @@ function setUp() {
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
 
-  // @yahoo, the following are required by yExtensionLauncher
-  stubs.setPath('chrome.browserAction.setIcon', goog.nullFunction);
-  stubs.setPath('chrome.tabs.reload', goog.nullFunction);
-  stubs.setPath('chrome.runtime.onMessage.addListener', goog.nullFunction);
-
-  launcher = new e2e.ext.yExtensionLauncher(
+  launcher = new e2e.ext.ExtensionLauncher(
       new e2e.openpgp.ContextImpl(new goog.testing.storage.FakeMechanism()),
       new goog.testing.storage.FakeMechanism());
   launcher.start();
@@ -113,44 +105,7 @@ function testGetContext() {
 }
 
 
-function testGetSelectedContent() {
-  var callback = mockControl.createFunctionMock();
-  callback();
-
-  var callbackArg = new goog.testing.mockmatchers.SaveArgument(goog.isFunction);
-  stubs.set(launcher, 'getSelectedContent', mockControl.createFunctionMock());
-  launcher.getSelectedContent(callbackArg);
-
-  mockControl.$replayAll();
-  utils.getSelectedContent(callback);
-  callbackArg.arg();
-  mockControl.$verifyAll();
-}
-
-
-function testUpdateSelectedContent() {
-  var content = 'irrelevant';
-  var recipients = [];
-  var origin = 'irrelevant';
-  var subject = 'irrelevant';
-  var expectMoreUpdates = false;
-  var callback = mockControl.createFunctionMock();
-  callback();
-
-  var callbackArg = new goog.testing.mockmatchers.SaveArgument(goog.isFunction);
-  stubs.set(
-      launcher, 'updateSelectedContent', mockControl.createFunctionMock());
-  launcher.updateSelectedContent(
-      content, recipients, origin, expectMoreUpdates, callbackArg, subject);
-
-  mockControl.$replayAll();
-  utils.updateSelectedContent(
-      content, recipients, origin, expectMoreUpdates, callback,
-      goog.nullFunction, subject);
-  callbackArg.arg();
-  mockControl.$verifyAll();
-}
-
+//@yahoo
 function testGetUserYmailAddressFromPage() {
   var expected = 'yzhu@yahoo-inc.com';
   window.NeoConfig = {
@@ -166,6 +121,7 @@ function testGetUserYmailAddressFromPage() {
   });
 }
 
+//@yahoo
 function testGetUserYmailAddressFromYBY() {
   var expected = 'yzhu@yahoo-inc.com';
   var yby = 'YBY=id%3Dfoo%26userid%3Dyzhu%26sign%3Dbar%7Cip0.0.0.0%7C;';
