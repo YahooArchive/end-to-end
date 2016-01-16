@@ -163,7 +163,7 @@ e2e_build_extension() {
   fi
   echo "Compiling JS files..."
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.bootstrap" --js_output_file "$BUILD_EXT_DIR/launcher_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.Helper" --js_output_file "$BUILD_EXT_DIR/helper_binary.js"
+  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.helper.bootstrap" --js_output_file "$BUILD_EXT_DIR/helper_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.ybootstrap" --js_output_file "$BUILD_EXT_DIR/glass_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.compose.bootstrap" --js_output_file "$BUILD_EXT_DIR/composeglass_binary.js"
   # echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.webview.bootstrap" --js_output_file "$BUILD_EXT_DIR/webview_binary.js"
@@ -178,7 +178,7 @@ e2e_build_extension() {
   cp -fr "$SRC_EXT_DIR/images" "$BUILD_EXT_DIR"
   cp -fr "$SRC_EXT_DIR/_locales" "$BUILD_EXT_DIR"
   find "$SRC_EXT_DIR/ui" -regex .*.html -not -regex .*_test.html -exec cp -f "{}" "$BUILD_EXT_DIR" \;
-  cp -f "$SRC_EXT_DIR/helper/gmonkeystub.js" "$BUILD_EXT_DIR"
+  # cp -f "$SRC_EXT_DIR/helper/gmonkeystub.js" "$BUILD_EXT_DIR"
   cp -f "$SRC_EXT_DIR/manifest.json" "$BUILD_EXT_DIR"
   cp -f lib/protobufjs/protobuf-light.alldeps.js "$BUILD_EXT_DIR"
   cp -f lib/protobufjs/coname-client.proto.json "$BUILD_EXT_DIR"

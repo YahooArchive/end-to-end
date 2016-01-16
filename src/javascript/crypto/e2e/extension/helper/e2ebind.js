@@ -591,7 +591,7 @@ e2ebind.installReadGlass_ = function(elem, opt_text) {
       '-----BEGIN PGP ' + firstValidArmor.type + '-----')) {
 
     var glassWrapper = new ui.GlassWrapper(elem, originalContent);
-    window.helper.registerDisposable(glassWrapper);
+    window.helper && window.helper.registerDisposable(glassWrapper);
     glassWrapper.installGlass();
 
     var resizeHandler = function(incoming) {
@@ -622,7 +622,7 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
 
   var hash = e2ebind.messagingTable_.getRandomString();
   var glassWrapper = new ui.ComposeGlassWrapper(elem, draft, hash);
-  window.helper.registerDisposable(glassWrapper);
+  window.helper && window.helper.registerDisposable(glassWrapper);
   glassWrapper.installGlass();
   elem.hadAutoGlass = true;
 
