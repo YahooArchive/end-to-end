@@ -30,7 +30,7 @@ goog.require('e2e.ext.api.Api');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
-goog.require('e2e.openpgp.error.PassphraseError');
+goog.require('e2e.ext.utils.TabsHelperProxy'); //@yahoo
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -111,9 +111,7 @@ ext.Launcher.prototype.start_ = function(passphrase) {
         }
       }, function(e) {
         this.updatePassphraseWarning();
-        if (!(e instanceof e2e.openpgp.error.PassphraseError)) {
-          throw e;
-        }
+        throw e;
       }, this).addCallback(this.completeStart_, this);
 };
 
@@ -287,12 +285,13 @@ ext.AppLauncher.prototype.createWindow = function(url, isForeground, callback) {
  * @extends {ext.ExtensionLauncher}
  */
 ext.yExtensionLauncher = function(pgpContext, preferencesStorage) {
+
   /**
-   * The ID of the last used tab.
-   * @type {number}
+   * Helper proxy object.
+   * @type {!e2e.ext.utils.HelperProxy}
    * @private
    */
-  this.lastTabId_ = window.NaN;
+  this.helperProxy_ = new e2e.ext.utils.TabsHelperProxy(false);
 
   ext.yExtensionLauncher.base(this, 'constructor', pgpContext,
       preferencesStorage);
@@ -325,7 +324,7 @@ ext.yExtensionLauncher.prototype.stop = function() {
   // Unset the passphrase on the keyring
   // TODO: add unsetKeyringPassphrase() into Context
   this.getContext().keyring_ = null;
-  // Remoeve the API
+  // Remove the API
   this.ctxApi_.removeApi();
   this.updatePassphraseWarning();
   this.getActiveTab_(goog.bind(function(tabId) {
@@ -343,6 +342,14 @@ ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
   }
 };
 
+
+/**
+ * Returns the helper proxy object.
+ * @return  {!e2e.ext.utils.HelperProxy}
+ */
+ext.yExtensionLauncher.prototype.getHelperProxy = function() {
+  return this.helperProxy_;
+};
 
 /**
  * TODO: //@yahoo use WebsiteApi
