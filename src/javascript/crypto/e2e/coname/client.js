@@ -530,18 +530,20 @@ e2e.coname.Client.prototype.searchPublicKey = function(email) {
     // no key found for that email
     if (verified.key === null) {
       result.callback([]);
-      return;
-    }
+    } else {
 
-    // TODO: support multiple keys
-    var verifiedPubKey =
-        e2e.openpgp.block.factory.parseByteArrayTransferableKey(verified.key);
-    verifiedPubKey.processSignatures();
-    result.callback([verifiedPubKey]);
+      // TODO: support multiple keys
+      var verifiedPubKey = e2e.openpgp.block.factory.
+                            parseByteArrayTransferableKey(verified.key);
+      verifiedPubKey.processSignatures();
+      result.callback([verifiedPubKey]);
+    }
 
   }, function(e) {
     // TODO: let user override?
     // any errors will be considered as having no key
     result.callback([]);
   }, this);
+
+  return result;
 };

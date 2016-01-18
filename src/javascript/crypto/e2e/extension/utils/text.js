@@ -121,10 +121,9 @@ utils.extractValidYahooEmail = function(recipient) {
   var email = utils.extractValidEmail(recipient);
   var domain;
   if (email) {
-    domain = email.split('@')[1];
+    domain = email.split('@')[1].toLowerCase();
     // TODO: This needs other yahoo domains like yahoo.jp
-    if (goog.string.caseInsensitiveEquals(domain, 'yahoo-inc.com') ||
-        goog.string.caseInsensitiveEquals(domain, 'yahoo.com')) {
+    if (domain === 'yahoo-inc.com' || domain === 'yahoo.com') {
       return email;
     }
   }

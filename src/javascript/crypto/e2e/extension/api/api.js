@@ -136,7 +136,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     case constants.Actions.ENCRYPT_SIGN:
     case constants.Actions.DECRYPT_VERIFY:
     //@yahoo, the following 4 actions are now yahoo-specific
-    case constants.Actions.LIST_ALL_UIDS:
+    case constants.Actions.GET_ALL_KEYS_BY_EMAILS:
     case constants.Actions.LIST_KEYS:
     case constants.Actions.IMPORT_KEY:
     case constants.Actions.GET_KEYRING_UNLOCKED:

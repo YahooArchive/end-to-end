@@ -23,9 +23,12 @@
 
 goog.provide('e2e.openpgp.yKeyRing');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.coname.Client');
 goog.require('e2e.openpgp.KeyRing');
+goog.require('goog.array');
 goog.require('goog.functions');
+goog.require('goog.string');
 
 
 
@@ -55,6 +58,14 @@ e2e.openpgp.yKeyRing.keyClient_ = null;
 
 
 /**
+ * the coname client
+ * @type {e2e.coname.Client}
+ * @private
+ */
+e2e.openpgp.yKeyRing.conameClient_ = null;
+
+
+/**
  * Creates and initializes the CONAME client and KeyRing object with an
  *    unlocked storage.
  * @param {!e2e.openpgp.LockableStorage} lockableStorage persistent
@@ -79,8 +90,56 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
   var returnKeyRing = goog.functions.constant(keyRing);
   return /** @type {!goog.async.Deferred.<!e2e.openpgp.KeyRing>} */ (
       keyRing.initialize().addCallback(function() {
-        this.keyClient_ = new e2e.coname.Client();
-        return this.keyClient_.initialize();
-      }).addCallback(returnKeyRing));
+        /** @suppress {accessControls} */
+        this.conameClient_ = new e2e.coname.Client();
+        return this.conameClient_.initialize();
+      }, keyRing).addCallback(returnKeyRing));
 };
 
+
+/**
+ * Searches a public or private key for a User ID asynchronously. The search is
+ * first performed locally. If we're searching for public key, then searches
+ * and appends the public key from the http key server. Do not import the found
+ * key to the local keyring.
+ * @param {string} uid User ID to search for, or empty to search all.
+ * @param {e2e.openpgp.KeyRing.Type=} opt_type Key type to search for.
+ * @return {!e2e.async.Result.<!Array.<!e2e.openpgp.block.TransferableKey>>}
+ *    An array of keys for the given User ID or [] if not found.
+ * @override
+ * @suppress {checkTypes}
+ */
+e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote = function(uid,
+    opt_type) {
+  var resultKeys = new e2e.async.Result();
+
+  // use extractValidEmail instead in case server allows non-yahoo addresses
+  var email = e2e.ext.utils.text.extractValidEmail(uid);
+
+  var uidOrMatcher = uid === email && email !== null ? function (uid_) {
+    return goog.string.caseInsensitiveContains(uid_, email);
+  } : uid;
+  
+  var localKeys = this.searchKey(uidOrMatcher, opt_type);
+  
+  // append remote public keys, if any
+  /** @suppress {accessControls} */
+  if (opt_type != e2e.openpgp.KeyRing.Type.PUBLIC ||
+      this.conameClient_ == null ||
+      goog.string.isEmptySafe(email)) {
+    resultKeys.callback(localKeys);
+  } else {
+    this.conameClient_.searchPublicKey(email).addCallback(function(pubKeys) {
+      if (pubKeys.length > 0) {
+        var allKeys = localKeys.concat(pubKeys);
+        // deduplicate local and remote keys
+        goog.array.removeDuplicates(allKeys);
+        resultKeys.callback(allKeys);
+      } else {
+        resultKeys.callback(localKeys);
+      }
+    });
+  } 
+
+  return resultKeys;
+};

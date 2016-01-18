@@ -23,12 +23,7 @@
 
 goog.provide('e2e.ext.e2ebind');
 
-goog.require('e2e.ext.constants.Actions');
-goog.require('e2e.ext.constants.CssClass');
-goog.require('e2e.ext.constants.ElementId');
-goog.require('e2e.ext.constants.e2ebind.requestActions');
-goog.require('e2e.ext.constants.e2ebind.responseActions');
-goog.require('e2e.ext.keyserver.Client');
+goog.require('e2e.ext.constants');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
@@ -39,18 +34,16 @@ goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.style');
 
 
 goog.scope(function() {
 var e2ebind = e2e.ext.e2ebind;
-var ext = e2e.ext;
-var constants = ext.constants;
-var messages = ext.messages;
+var constants = e2e.ext.constants;
+var messages = e2e.ext.messages;
 var utils = e2e.ext.utils;
-var ui = ext.ui;
+var ui = e2e.ext.ui;
 
 
 /**
@@ -189,7 +182,7 @@ e2ebind.initComposeGlass_ = function(elt) {
 
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.GET_KEYRING_UNLOCKED
-  }), goog.bind(function(response) {
+  }), function(response) {
     if (response.error || !response.content) {
       // Can't install compose glass if the keyring is locked
       window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
@@ -205,9 +198,9 @@ e2ebind.initComposeGlass_ = function(elt) {
       draft.from = window.config.signer ? window.config.signer :
           '';
 
-      e2ebind.hasDraft(goog.bind(function(hasDraftResult) {
+      e2ebind.hasDraft(function(hasDraftResult) {
         if (hasDraftResult) {
-          e2ebind.getDraft(goog.bind(function(getDraftResult) {
+          e2ebind.getDraft(function(getDraftResult) {
             draft.body = e2e.openpgp.asciiArmor.
                 extractPgpBlock(getDraftResult.body);
             draft.to = getDraftResult.to;
@@ -215,9 +208,9 @@ e2ebind.initComposeGlass_ = function(elt) {
             draft.bcc = getDraftResult.bcc;
             draft.subject = getDraftResult.subject;
             e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-          }, this));
+          });
         } else {
-          e2ebind.getCurrentMessage(goog.bind(function(result) {
+          e2ebind.getCurrentMessage(function(result) {
             var DOMelem = document.querySelector(result.elem);
             if (result.text) {
               draft.body = result.text;
@@ -228,11 +221,11 @@ e2ebind.initComposeGlass_ = function(elt) {
                   DOMelem.innerText);
             }
             e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-          }, this));
+          });
         }
-      }, this));
+      });
     }
-  }, this));
+  });
 };
 
 
@@ -320,10 +313,6 @@ e2ebind.start = function() {
   // Initialize the message-passing hash table between e2e and the provider
   e2ebind.messagingTable_ = new e2ebind.MessagingTable_();
 
-  // Initialize the client for the keyserver
-  e2ebind.keyserverClient_ = new e2e.ext.keyserver.Client(
-      window.location.origin);
-
   // Register the click handler
   goog.events.listen(window, goog.events.EventType.CLICK,
                      e2ebind.clickHandler_, true);
@@ -334,7 +323,8 @@ e2ebind.start = function() {
 
 
   // Register the handler for messages from the provider
-  window.addEventListener('message', goog.bind(e2ebind.messageHandler_, this));
+  window.addEventListener('message', goog.bind(
+      e2ebind.messageHandler_, e2ebind));
 
   window.addEventListener('load', function() {
     goog.style.setElementShown(window.document.getElementById('theAd'), false);
@@ -342,10 +332,10 @@ e2ebind.start = function() {
                                false);
   });
 
-  // Refresh the keyring.
-  e2ebind.keyserverClient_.refreshKeyring(function(results) {
-    console.log('refreshed keys', results);
-  });
+  // Refresh the keyring. @adon disabled
+  // e2ebind.keyserverClient_.refreshKeyring(function(results) {
+  //   console.log('refreshed keys', results);
+  // });
 };
 
 
@@ -354,9 +344,8 @@ e2ebind.start = function() {
  */
 e2ebind.stop = function() {
   window.removeEventListener('message', goog.bind(e2ebind.messageHandler_,
-                                                  this));
+                                                  e2ebind));
   e2ebind.messagingTable_ = undefined;
-  e2ebind.keyserverClient_ = undefined;
   e2ebind.started_ = false;
   window.config = {};
   window.valid = undefined;
@@ -551,12 +540,7 @@ e2ebind.handleProviderRequest_ = function(request) {
             return;
           }
           e2ebind.validateRecipients_(args.recipients, function(response) {
-            // response is a map of email to validity
-            var results = [];
-            goog.object.forEach(response, function(valid, recipient) {
-              results.push({recipient: recipient, valid: valid});
-            });
-            e2ebind.sendResponse_({results: results}, request, true);
+            e2ebind.sendResponse_({results: response}, request, true);
           });
         } catch (ex) {
           e2ebind.sendResponse_(null, request, false);
@@ -729,14 +713,14 @@ e2ebind.setDraft = function(args) {
   // addresses.
   var selects = document.querySelectorAll('select#from-field');
   if (args.from && selects.length) {
-    goog.array.forEach(selects, goog.bind(function(item) {
+    goog.array.forEach(selects, function(item) {
       goog.array.forEach(item.options, function(option) {
         if (utils.text.extractValidEmail(option.value) ===
             utils.text.extractValidEmail(args.from)) {
           item.value = option.value;
         }
       });
-    }, this));
+    });
   }
 };
 
@@ -804,14 +788,12 @@ e2ebind.hideBlob_ = function(blob) {
 */
 e2ebind.validateSigner_ = function(signer, callback) {
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-    action: constants.Actions.LIST_ALL_UIDS,
+    action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
+    recipients: [signer],
     content: 'private'
   }), function(response) {
-    response.content = response.content || [];
-    var emails = utils.text.getValidEmailAddressesFromArray(response.content,
-                                                            true);
-    var valid = goog.array.contains(emails, signer);
-    callback(valid);
+    var privKeys = response.error ? [] : response.content[0];
+    callback(privKeys && privKeys.length > 0);
   });
 };
 
@@ -827,43 +809,19 @@ e2ebind.validateSigner_ = function(signer, callback) {
 e2ebind.validateRecipients_ = function(recipients, callback) {
   // Check if the recipient is already in the keyring
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-    action: constants.Actions.LIST_ALL_UIDS,
+    action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
+    recipients: recipients,
     content: 'public'
   }), function(response) {
-    response.content = response.content || [];
-    var invalidRecipients = /** @type {!Array.<string>} */ ([]);
-    var validity = /** @type {!Object.<string, boolean>} */ ({});
+    var pubKeys = response.error ? [] : response.content;
 
-    // Convert UIDs to emails since the keyserver and ymail use emails
-    var emails = utils.text.getValidEmailAddressesFromArray(response.content,
-                                                            true);
-    goog.array.forEach(recipients, function(recipient) {
-      var valid = goog.array.contains(emails, recipient);
-      if (!valid) {
-        invalidRecipients.push(recipient);
-      }
-      validity[recipient] = valid;
-    });
+    callback(goog.array.map(recipients, function(recipient, index) {
+      return {
+        recipient: recipient,
+        valid: pubKeys[index] && pubKeys[index].length > 0
+      };
+    }));
 
-    if (invalidRecipients.length === 0 || !e2ebind.keyserverClient_) {
-      // If all recipients are already in the keyring or the ks client is
-      // unavailable, do the callback
-      callback(validity);
-    } else {
-      // Otherwise try to fetch the missing recipients from the keyserver
-      e2ebind.keyserverClient_.fetchAndImportKeys(invalidRecipients,
-                                                  function(results) {
-            if (results) {
-              goog.object.forEach(results, function(valid, recipient) {
-                goog.object.set(validity, recipient, valid);
-              });
-            }
-            callback(validity);
-          }, function(status) {
-            callback(validity);
-            console.error('Error fetching keys in e2ebind', status);
-          });
-    }
   });
 };
 
