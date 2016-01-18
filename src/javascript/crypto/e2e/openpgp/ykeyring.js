@@ -60,12 +60,21 @@ e2e.openpgp.yKeyRing.keyClient_ = null;
  * @param {!e2e.openpgp.LockableStorage} lockableStorage persistent
  *    storage mechanism. Storage must already be unlocked, otherwise this method
  *    will return a {@link e2e.openpgp.error.MissingPassphraseError}.
- * @param {?string=} opt_keyServerUrl ignored, as we'll use coname
+ * @param {string=} opt_keyServerUrl The optional http key server url. If not
+ *    specified then only support key operation locally.
  * @return {!goog.async.Deferred.<!e2e.openpgp.KeyRing>} The initialized
  *    keyring.
  * @override
  */
 e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
+
+  // back to regular KeyRing when opt_keyServerUrl is specified or during tests
+  if (opt_keyServerUrl ||
+      !Boolean(chrome.runtime.getURL) ||
+      !Boolean(chrome.runtime.getURL(e2e.coname.Client.PROTO_FILE_PATH))) {
+    return e2e.openpgp.KeyRing.launch(lockableStorage, opt_keyServerUrl);
+  }
+
   var keyRing = new e2e.openpgp.yKeyRing(lockableStorage);
   var returnKeyRing = goog.functions.constant(keyRing);
   return /** @type {!goog.async.Deferred.<!e2e.openpgp.KeyRing>} */ (

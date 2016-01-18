@@ -21,23 +21,27 @@
 goog.provide('e2e.coname.Client');
 goog.provide('e2e.coname.QuorumRequirement');
 goog.provide('e2e.coname.RealmConfig');
+goog.provide('e2e.coname.Result');
 goog.provide('e2e.coname.VerificationPolicy');
-goog.provide('e2e.coname.getRealmByEmail');
 goog.provide('e2e.coname.getRealmByDomain');
+goog.provide('e2e.coname.getRealmByEmail');
+
 
 goog.require('e2e');
+goog.require('e2e.async.Result');
+goog.require('e2e.coname.ProtoBuf');
 goog.require('e2e.coname.sha3');
 goog.require('e2e.coname.verifyLookup');
 goog.require('e2e.ecc.Ed25519');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.config');
+goog.require('e2e.openpgp.block.factory');
 goog.require('e2e.random');
 goog.require('goog.array');
 goog.require('goog.crypt.base64');
-goog.require('goog.net.jsloader');
-goog.require('goog.net.XhrIo');
 goog.require('goog.net.ErrorCode');
+goog.require('goog.net.XhrIo');
 
 
 /**
@@ -85,6 +89,7 @@ e2e.coname.VerificationPolicy;
  * }}
  */
 e2e.coname.RealmConfig;
+
 
 /**
  * The structure of key lookup result
@@ -188,51 +193,16 @@ e2e.coname.getRealmByEmail = function(user) {
  * Constructor for the coname client.
  * @constructor
  */
-e2e.coname.ProtoBuf = function() {
-  /**
-   * @private {boolean}
-   */
-  this.initialized_ = false;
-};
-
-/**
- * Initializes the external protobuf dependency.
- * @return {!e2e.async.Result.<?Object<string,*>>} The deferred ProtoBuf object
- */
-e2e.coname.ProtoBuf.prototype.initialize = function() {
-  var d = window.dcodeIO;
-  if (d && d.ByteBuffer && d.Long && d.ProtoBuf) {
-    return e2e.async.Result.toResult(/** @type {?Object<string,*>} */ 
-      (d.ProtoBuf));
-  }
-
-  var result = new e2e.async.Result;
-  var pbURL = chrome.runtime.getURL('protobuf-light.alldeps.js');
-  // XXX: jsloader has spurious timeout errors, so set it to 0 for no timeout.
-  goog.net.jsloader.load(pbURL, {timeout: 0}).addCallbacks(function() {
-    var d = window.dcodeIO;
-    if (d && d.Long && d.ByteBuffer && d.ProtoBuf) {
-      this.initialized_ = true;
-      result.callback(d.ProtoBuf);
-    } else {
-      result.errback(new Error('Missing protobuf!'));
-    }
-  }, result.errback, this);
-
-  return result;
-};
-
-
-/**
- * Constructor for the coname client.
- * @constructor
- */
 e2e.coname.Client = function() {
   /**
    * @type {?Object<string,*>}
    */
   this.proto = null;
 };
+
+
+/** @const */
+e2e.coname.Client.PROTO_FILE_PATH = 'coname-client.proto.json';
 
 
 /**
@@ -243,22 +213,23 @@ e2e.coname.Client.prototype.initialize = function() {
 
   if (this.proto) {
     return e2e.async.Result.toResult(/** @type {?Object<string,*>} */
-      (this.proto));
+        (this.proto));
   }
 
   var result = new e2e.async.Result;
 
   new e2e.coname.ProtoBuf().initialize().addCallbacks(function(ProtoBuf) {
 
-    var clientProtoURL = chrome.runtime.getURL('coname-client.proto.json');
-    ProtoBuf.loadJsonFile(clientProtoURL, goog.bind(function(err, builder) {
-      if (err) {
-        result.errback(err);
-        return;
-      }
-      this.proto = builder.build('proto');
-      result.callback(this.proto);
-    }, this));
+    ProtoBuf.loadJsonFile(
+        chrome.runtime.getURL(e2e.coname.Client.PROTO_FILE_PATH),
+        goog.bind(function(err, builder) {
+          if (err) {
+            result.errback(err);
+            return;
+          }
+          this.proto = builder.build('proto');
+          result.callback(this.proto);
+        }, this));
   }, result.errback, this);
 
   return result;
@@ -406,7 +377,7 @@ e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
  */
 e2e.coname.getAJAX_ = function(method, url, timeout, data) {
   var result = new e2e.async.Result;
-  goog.net.XhrIo.send(url, function(e){
+  goog.net.XhrIo.send(url, function(e) {
     var xhr = e.target;
     if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
       try {
@@ -425,7 +396,7 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
 /**
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
- * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the 
+ * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the
  *  Result if there has a key associated with the email, and it is validated.
  *  Result is null for no realms. key is null if verified for having no key.
  */
@@ -446,30 +417,30 @@ e2e.coname.Client.prototype.lookup = function(email) {
     user_id: email,
     quorum_requirement: realm.verification_policy.quorum
   };
-  
+
   // TODO: make this possible for polling/retries
   e2e.coname.getAJAX_('POST', realm.addr + '/lookup', 5000, data).
-    addCallbacks(function(responseText) {
-      var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
-          profile = pf['profile'],
-          keyByteArray;
+      addCallbacks(function(responseText) {
+        var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
+            profile = pf['profile'],
+            keyByteArray;
 
-      try {
-        e2e.coname.verifyLookup(realm, email, pf);
-      } catch (e) {
-        result.errback(e);
-        return;
-      }
+        try {
+          e2e.coname.verifyLookup(realm, email, pf);
+        } catch (e) {
+          result.errback(e);
+          return;
+        }
 
-      keyByteArray = profile &&
+        keyByteArray = profile &&
             profile['keys'] &&
             profile['keys'].has('pgp') ? /** @type {e2e.ByteArray} */
-              (profile['keys'].get('pgp').toBuffer()) :
-              null;
+            (profile['keys'].get('pgp').toBuffer()) :
+            null;
 
-      result.callback({key: keyByteArray, proof:pf});
+        result.callback({key: keyByteArray, proof: pf});
 
-    }, result.errback, this);
+      }, result.errback, this);
 
   return result;
 };
@@ -479,7 +450,7 @@ e2e.coname.Client.prototype.lookup = function(email) {
  * Update or add public keys for an email address
  * @param {!string} email The email address
  * @param {!e2e.ByteArray} key The public key to upload for the email address
- * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the 
+ * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the
  *  Result if there has a key associated with the email, and it is validated.
  *  Result is null for no realms. key is null if verified for having no key.
  */
@@ -497,40 +468,40 @@ e2e.coname.Client.prototype.update = function(email, key) {
 
   // TODO: save persistently the key in case update fails in the mid way
   return this.lookup(email).
-    addCallback(function(oldResult) {
-      oldKey = oldResult.key;
+      addCallback(function(oldResult) {
+        oldKey = oldResult.key;
 
-      var data = e2e.coname.encodeUpdateRequest_(
-                  this.proto, email, oldResult.key, realm, oldResult.proof);
+        var data = e2e.coname.encodeUpdateRequest_(
+           this.proto, email, oldResult.key, realm, oldResult.proof);
 
-      newProfileBase64 = data.profile;
+        newProfileBase64 = data.profile;
 
-      // set 1m timeout
-      return e2e.coname.getAJAX_('POST', realm.addr + '/update', 60000, data);
+        // set 1m timeout
+        return e2e.coname.getAJAX_('POST', realm.addr + '/update', 60000, data);
 
-    }, this).
-    addCallback(function(responseText) {
-      var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
-          profile = pf.profile,
-          verifiedKey;
+      }, this).
+      addCallback(function(responseText) {
+        var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
+           profile = pf.profile,
+           verifiedKey;
 
-      if (newProfileBase64 !== profile.toBase64()) {
-        throw new Error('server rejected the new profile/key');
-      }
-      if (!e2e.coname.verifyLookup(realm, email, pf)) {
-        // TODO: poll the server until the update can be verified
-        throw new Error('profile/keys cannot be validated');
-      }
+        if (newProfileBase64 !== profile.toBase64()) {
+          throw new Error('server rejected the new profile/key');
+        }
+        if (!e2e.coname.verifyLookup(realm, email, pf)) {
+          // TODO: poll the server until the update can be verified
+          throw new Error('profile/keys cannot be validated');
+        }
 
-      verifiedKey = /** @type {e2e.ByteArray} */ (
-        profile['keys'].get('pgp').toBuffer());
+        verifiedKey = /** @type {e2e.ByteArray} */ (
+           profile['keys'].get('pgp').toBuffer());
 
-      return e2e.async.Result.toResult({
-        key: verifiedKey,
-        proof: pf
-      });
+        return e2e.async.Result.toResult({
+          key: verifiedKey,
+          proof: pf
+        });
 
-    }, this);
+      }, this);
 };
 
 
@@ -567,7 +538,7 @@ e2e.coname.Client.prototype.searchPublicKey = function(email) {
         e2e.openpgp.block.factory.parseByteArrayTransferableKey(verified.key);
     verifiedPubKey.processSignatures();
     result.callback([verifiedPubKey]);
-    
+
   }, function(e) {
     // TODO: let user override?
     // any errors will be considered as having no key
