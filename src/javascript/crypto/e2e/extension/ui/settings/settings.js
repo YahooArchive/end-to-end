@@ -174,11 +174,12 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
 
   this.renderPanels_();
 
-  this.getHandler().
-      listen(
-          this.getElement(),
+  //@yahoo put it in capture phrase, so it runs first to clear failure message
+  this.getHandler().listen(
+          elem,
           goog.events.EventType.CLICK,
-          this.clearFailure_);
+          this.clearFailure_,
+          true);
 
 };
 
