@@ -331,11 +331,6 @@ e2ebind.start = function() {
     goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
                                false);
   });
-
-  // Refresh the keyring. @adon disabled
-  // e2ebind.keyserverClient_.refreshKeyring(function(results) {
-  //   console.log('refreshed keys', results);
-  // });
 };
 
 

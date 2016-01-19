@@ -22,14 +22,8 @@ goog.provide('e2e.ext.ui.panels.GenerateKey');
 
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
-goog.require('e2e.ext.constants.Keyserver');
-//@yahoo added 2 requires
-goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
-//@yahoo added 3 requires
-goog.require('e2e.ext.utils');
-goog.require('e2e.ext.utils.action');
-goog.require('e2e.ext.utils.text');
+goog.require('e2e.ext.utils.action'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
@@ -68,15 +62,6 @@ panels.GenerateKey = function(callback, opt_hideTitle, opt_actionBtnTitle) {
    * @private
    */
   this.callback_ = callback;
-
-  /**
-   * //@yahoo
-   * The keyserver client component associated with this panel.
-   * @type {!e2e.ext.keyserver.Client}
-   * @private
-   */
-  this.keyserverClient_ = new e2e.ext.keyserver.Client(
-      e2e.ext.constants.Keyserver.DEFAULT_LOCATION);
 
   /**
    * The title for the generate key section. If empty, it will not be displayed.
@@ -155,8 +140,6 @@ panels.GenerateKey.prototype.enterDocument = function() {
  * @private
  */
 panels.GenerateKey.prototype.generate_ = function() {
-  //@yahoo
-  this.clearFailure_();
   var name = '';
   var email = this.getElementByClass(constants.CssClass.EMAIL).value;
   var comments = '';
@@ -176,45 +159,6 @@ panels.GenerateKey.prototype.reset = function() {
   goog.array.forEach(inputs, function(input) {
     input.value = '';
   });
-};
-
-
-/**
- * //@yahoo
- * Sends an OpenPGP public key(s) to the keyserver.
- * @param {!e2e.openpgp.Keys} keys
- * @param {function(string)} callback
- * @param {e2e.openpgp.ContextImpl} ctx
- */
-panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
-  goog.array.forEach(keys, goog.bind(function(key) {
-    if (!key.key.secret) {
-      var email = e2e.ext.utils.text.extractValidYahooEmail(key.uids[0]);
-      if (email) {
-        try {
-          this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
-              function(response) {
-                // Key was successfully registered, and response is valid
-                e2e.ext.utils.action.refreshYmail();
-                callback(response);
-                window.alert(chrome.i18n.getMessage('sendKeySuccess'));
-              }, this),
-              goog.bind(function(err) {
-                // The key wasn't sent to the server or the server signature
-                // was invalid, so delete it for now.
-                // TODO: Separate key generation and import to keyring.
-                if (ctx !== null) {
-                  ctx.deleteKey(key.uids[0]);
-                }
-                this.displayFailure_(err);
-              }, this));
-        } catch (e) {
-          console.error('got key send failure in generate key', email);
-          this.displayFailure_(e);
-        }
-      }
-    }
-  }, this));
 };
 
 
@@ -239,38 +183,5 @@ panels.GenerateKey.prototype.hideSignupForm_ = function() {
 
 };
 
-
-/**
- * //@yahoo
- * Displays error message.
- * @param {Error} error The error to display.
- * @private
- */
-panels.GenerateKey.prototype.displayFailure_ = function(error) {
-  var errorDiv = goog.dom.getElementByClass(constants.CssClass.ERROR);
-  if (error) {
-    var errorMsg = goog.isDef(error.messageId) ?
-        chrome.i18n.getMessage(error.messageId) : error.message;
-    e2e.ext.utils.errorHandler(error);
-    if (errorDiv) {
-      errorDiv.textContent = errorMsg;
-    } else {
-      // The errorDiv might be destroyed by the time displayFailure_ fires
-      window.alert('Error: ' + errorMsg);
-    }
-  } else if (errorDiv) {
-    errorDiv.textContent = '';
-  }
-};
-
-
-/**
- * //@yahoo
- * Clears error messages.
- * @private
- */
-panels.GenerateKey.prototype.clearFailure_ = function() {
-  this.displayFailure_(null);
-};
 
 });  // goog.scope

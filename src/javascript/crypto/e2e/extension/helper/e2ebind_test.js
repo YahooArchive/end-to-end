@@ -26,7 +26,6 @@ goog.require('e2e.ext.Helper');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.e2ebind');
-goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.testingstubs');
 goog.require('goog.array');
 goog.require('goog.asserts');
@@ -400,8 +399,6 @@ function testProviderRequestToValidateSigner() {
 
 function testProviderRequestToValidateRecipients() {
   e2ebind.started_ = true;
-  e2ebind.keyserverClient_ =
-      new e2e.ext.keyserver.Client('https://foo.mail.yahoo.com');
   window.valid = true;
 
   stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
