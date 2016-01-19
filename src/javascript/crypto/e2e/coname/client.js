@@ -201,8 +201,15 @@ e2e.coname.Client = function() {
 };
 
 
-/** @const */
+/** @const {string} */
 e2e.coname.Client.PROTO_FILE_PATH = 'coname-client.proto.json';
+
+
+/**
+ * The key name being referenced in the keys
+ * @const {string}
+ */
+e2e.coname.Client.KEY_NAME = '25519';
 
 
 /**
@@ -246,20 +253,18 @@ e2e.coname.Client.prototype.initialize = function() {
 e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
   var lookupProof = JSON.parse(jsonString);
   var b64decode = goog.crypt.base64.decodeStringToByteArray;
-  var profile, entry;
+  var profile, entry, tree = lookupProof.tree_proof;
 
   // a lot of convertions before they can be verified
   // TODO: except the use of encodeAB(), may be better to move them to server
   lookupProof.index = b64decode(lookupProof.index);
   lookupProof.index_proof = b64decode(lookupProof.index_proof);
 
-  lookupProof.tree_proof.neighbors = goog.array.map(
-      lookupProof.tree_proof.neighbors,
+  tree.neighbors = goog.array.map(
+      tree.neighbors,
       function(n) {return b64decode(n)});
-  lookupProof.tree_proof.existing_index = b64decode(
-      lookupProof.tree_proof.existing_index);
-  lookupProof.tree_proof.existing_entry_hash = b64decode(
-      lookupProof.tree_proof.existing_entry_hash);
+  tree.existing_index = b64decode(tree.existing_index || '');
+  tree.existing_entry_hash = b64decode(tree.existing_entry_hash || '');
 
   goog.array.forEach(lookupProof.ratifications, function(r) {
     var id, encoding = b64decode(r.head), rHH;
@@ -316,9 +321,12 @@ e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
     // clone the old key set
     keys = proto['Profile'].decode(oldProof.profile.encoding).keys;
     // update only the pgp key
-    keys.set('pgp', goog.crypt.base64.encodeByteArray(key));
+    keys.set(
+        e2e.coname.Client.KEY_NAME,
+        goog.crypt.base64.encodeByteArray(key));
   } else {
-    keys = {'pgp': new Uint8Array(key)};
+    keys = {};
+    keys[e2e.coname.Client.KEY_NAME] = new Uint8Array(key);
   }
 
   profile = proto['Profile'].encode({
@@ -397,8 +405,8 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
  * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the
- *  Result if there has a key associated with the email, and it is validated.
- *  Result is null for no realms. key is null if verified for having no key.
+ *    Result if there has a key associated with the email, and it is validated.
+ *    Result is null for no realms. key is null if verified for having no key.
  */
 e2e.coname.Client.prototype.lookup = function(email) {
   // normalize the email address
@@ -432,10 +440,10 @@ e2e.coname.Client.prototype.lookup = function(email) {
           return;
         }
 
-        keyByteArray = profile &&
-            profile['keys'] &&
-            profile['keys'].has('pgp') ? /** @type {e2e.ByteArray} */
-            (profile['keys'].get('pgp').toBuffer()) :
+        keyByteArray = profile && profile.keys &&
+            profile.keys.has(e2e.coname.Client.KEY_NAME) ?
+            /** @type {e2e.ByteArray} */ (
+            profile.keys.get(e2e.coname.Client.KEY_NAME).toBuffer()) :
             null;
 
         result.callback({key: keyByteArray, proof: pf});
@@ -494,7 +502,7 @@ e2e.coname.Client.prototype.update = function(email, key) {
         }
 
         verifiedKey = /** @type {e2e.ByteArray} */ (
-           profile['keys'].get('pgp').toBuffer());
+           profile.keys.get(e2e.coname.Client.KEY_NAME).toBuffer());
 
         return e2e.async.Result.toResult({
           key: verifiedKey,
@@ -534,7 +542,7 @@ e2e.coname.Client.prototype.searchPublicKey = function(email) {
 
       // TODO: support multiple keys
       var verifiedPubKey = e2e.openpgp.block.factory.
-                            parseByteArrayTransferableKey(verified.key);
+          parseByteArrayTransferableKey(verified.key);
       verifiedPubKey.processSignatures();
       result.callback([verifiedPubKey]);
     }

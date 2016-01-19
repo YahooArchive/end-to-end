@@ -152,7 +152,7 @@ e2e.coname.SignedEpochHead;
  *    ratifications: ?Array.<e2e.coname.SignedEpochHead>,
  *    tree_proof: !e2e.coname.TreeProof,
  *    entry: (undefined|ProtoBuf.Builder.Message),
- *    profile: (undefined|ProtoBuf.Builder.Message)
+ *    profile: (undefined|{keys: Object, nonce: Object, toBase64: function()})
  * }}
  */
 e2e.coname.ServerResponse;

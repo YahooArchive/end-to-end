@@ -123,10 +123,12 @@ e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote = function(uid,
   var localKeys = this.searchKey(uidOrMatcher, opt_type);
   
   // append remote public keys, if any
+  // TODO: relax key lookup for non-yahoo email address?
   /** @suppress {accessControls} */
   if (opt_type != e2e.openpgp.KeyRing.Type.PUBLIC ||
-      this.conameClient_ == null ||
-      goog.string.isEmptySafe(email)) {
+      this.conameClient_ === null ||
+      goog.string.isEmptySafe(email) ||
+      e2e.ext.utils.text.extractValidYahooEmail(email) === null) {
     resultKeys.callback(localKeys);
   } else {
     this.conameClient_.searchPublicKey(email).addCallback(function(pubKeys) {

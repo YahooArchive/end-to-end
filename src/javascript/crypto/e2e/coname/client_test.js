@@ -90,9 +90,7 @@ var lookupProofNoBodySample = {
     }
   }],
   "tree_proof": {
-    "neighbors": ["Aj2/iia09hdY9M15RG/mYwIJuuvo5uEzBGiu5WTsF1Q=", "uHZAo3zIZNmrlvCIVokRuMdBVHGqJ88qdDG4MnbJhpw="],
-    "existing_index": "ajBsOaETPLW/TTSRlTDjSelmOxb97pahF73tC+QBqXY=",
-    "existing_entry_hash": "pG6JwmHfw3XP70EXxrysBS2QcCVY29RDsvvYkyp91rU="
+    "neighbors": ["Aj2/iia09hdY9M15RG/mYwIJuuvo5uEzBGiu5WTsF1Q=", "uHZAo3zIZNmrlvCIVokRuMdBVHGqJ88qdDG4MnbJhpw="]
   }
 };
 
@@ -148,7 +146,7 @@ function testGetRealmByEmail() {
   assertEquals('object', typeof realm);
 
   // check that the realm is initialized
-  assertTrue(realm.verification_policy.quorum_list.length > 0);
+  assertTrue(realm.verification_policy.quorum_list instanceof Array);
   goog.array.forEach(realm.verification_policy.quorum_list, function(id) {
     assertTrue(realm.verification_policy.public_keys[id].ed25519Verifier !== undefined);
   });
@@ -179,8 +177,8 @@ function testDecodeLookupMessage() {
 
     assertTrue(lookupProof.tree_proof.neighbors[0].length > 0);
     assertTrue(lookupProof.tree_proof.neighbors[1].length > 0);
-    assertTrue(lookupProof.tree_proof.existing_index.length > 0);
-    assertTrue(lookupProof.tree_proof.existing_entry_hash.length > 0);
+    assertTrue(lookupProof.tree_proof.existing_index instanceof Array);
+    assertTrue(lookupProof.tree_proof.existing_entry_hash instanceof Array);
   }
 
   client.initialize().addCallback(function(proto) {
