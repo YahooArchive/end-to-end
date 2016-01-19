@@ -466,6 +466,9 @@
   "keyserverResponseError": {
     "message": "Invalid response from keyserver. Please try again later."
   },
+  "conameConnectionError": {
+    "message": "There is a connection error to the key server."
+  },
   "e2ebindShowEncrypted": {
     "message": "> Show encrypted message"
   },
@@ -546,7 +549,7 @@
   },
 
   "duplicateKeyWarning": {
-    "message": "There is already a key for this address in the keyring. Please remove it before generating a new one.",
+    "message": "There is already a key for this address in the keyring. Please BACKUP and remove it before using a new one.",
     "description": "Warning that a key already exists for the given email address"
   },
   "invalidEmailWarning": {

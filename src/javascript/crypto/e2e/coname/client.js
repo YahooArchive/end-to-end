@@ -36,9 +36,12 @@ goog.require('e2e.ecc.Ed25519');
 goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.error.InvalidArgumentsError');
 goog.require('e2e.ext.config');
+goog.require('e2e.ext.utils.Error');
+goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.block.factory');
 goog.require('e2e.random');
 goog.require('goog.array');
+goog.require('goog.async.DeferredList');
 goog.require('goog.crypt.base64');
 goog.require('goog.net.ErrorCode');
 goog.require('goog.net.XhrIo');
@@ -314,7 +317,7 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
  */
 e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
 
-  var keys, hProfile, profile, entry;
+  var keys = {}, hProfile, profile, entry;
 
   // if a current profile exists
   if (oldProof.profile) {
@@ -325,7 +328,6 @@ e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
         e2e.coname.Client.KEY_NAME,
         goog.crypt.base64.encodeByteArray(key));
   } else {
-    keys = {};
     keys[e2e.coname.Client.KEY_NAME] = new Uint8Array(key);
   }
 
@@ -335,7 +337,8 @@ e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
   });
 
   hProfile = new Uint8Array(
-      e2e.coname.sha3.shake256(64).update(profile.toBuffer()).digest());
+      e2e.coname.sha3.shake256(64).update(
+      new Uint8Array(profile.toBuffer())).digest());
 
   // if a current entry exists
   if (oldProof.entry) {
@@ -384,7 +387,15 @@ e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
  *                                          responds 200 OK
  */
 e2e.coname.getAJAX_ = function(method, url, timeout, data) {
-  var result = new e2e.async.Result;
+  var dataString = '';
+  try {
+    dataString = JSON.stringify(data);
+  } catch (e) {
+    return e2e.async.Result.toError(e);
+  }
+
+  var result = new e2e.async.Result,
+      utilsError = e2e.ext.utils.Error;
   goog.net.XhrIo.send(url, function(e) {
     var xhr = e.target;
     if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
@@ -394,9 +405,11 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
         result.errback(e);
       }
     } else {
-      result.errback(new Error('[CONAME] ' + xhr.getLastError()));
+      result.errback(new utilsError(
+          'CONAME Connection Error: ' + xhr.getLastError(),
+          'conameConnectionError'));
     }
-  }, method, JSON.stringify(data), {}, timeout);
+  }, method, dataString, {}, timeout);
   return result;
 };
 
@@ -404,11 +417,12 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
 /**
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
+ * @param {boolean=} opt_skipVerify whether skip the verify step
  * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the
  *    Result if there has a key associated with the email, and it is validated.
  *    Result is null for no realms. key is null if verified for having no key.
  */
-e2e.coname.Client.prototype.lookup = function(email) {
+e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
   // normalize the email address
   email = email.toLowerCase();
 
@@ -434,7 +448,7 @@ e2e.coname.Client.prototype.lookup = function(email) {
             keyByteArray;
 
         try {
-          e2e.coname.verifyLookup(realm, email, pf);
+          !opt_skipVerify && e2e.coname.verifyLookup(realm, email, pf);
         } catch (e) {
           result.errback(e);
           return;
@@ -443,7 +457,8 @@ e2e.coname.Client.prototype.lookup = function(email) {
         keyByteArray = profile && profile.keys &&
             profile.keys.has(e2e.coname.Client.KEY_NAME) ?
             /** @type {e2e.ByteArray} */ (
-            profile.keys.get(e2e.coname.Client.KEY_NAME).toBuffer()) :
+            Array.prototype.slice.call(new Uint8Array(profile.keys.get(
+            e2e.coname.Client.KEY_NAME).toBuffer()))) :
             null;
 
         result.callback({key: keyByteArray, proof: pf});
@@ -475,12 +490,12 @@ e2e.coname.Client.prototype.update = function(email, key) {
   realm = /** @type {e2e.coname.RealmConfig} */(realm_);
 
   // TODO: save persistently the key in case update fails in the mid way
-  return this.lookup(email).
+  return this.lookup(email, true).
       addCallback(function(oldResult) {
         oldKey = oldResult.key;
 
         var data = e2e.coname.encodeUpdateRequest_(
-           this.proto, email, oldResult.key, realm, oldResult.proof);
+           this.proto, email, key, realm, oldResult.proof);
 
         newProfileBase64 = data.profile;
 
@@ -501,8 +516,8 @@ e2e.coname.Client.prototype.update = function(email, key) {
           throw new Error('profile/keys cannot be validated');
         }
 
-        verifiedKey = /** @type {e2e.ByteArray} */ (
-           profile.keys.get(e2e.coname.Client.KEY_NAME).toBuffer());
+        verifiedKey = Array.prototype.slice.call(new Uint8Array(
+           profile.keys.get(e2e.coname.Client.KEY_NAME).toBuffer()));
 
         return e2e.async.Result.toResult({
           key: verifiedKey,
@@ -517,10 +532,30 @@ e2e.coname.Client.prototype.update = function(email, key) {
  * Imports a public key to the key server.
  * @param {!e2e.openpgp.block.TransferablePublicKey} key The ASCII
  *    armored or {e2e.openpgp.block.TransferablePublicKey} key to import.
- * @return {!e2e.async.Result.<boolean>} True if importing key is succeeded.
+ * @return {!goog.async.Deferred.<boolean>} True if importing key is succeeded.
  */
 e2e.coname.Client.prototype.importPublicKey = function(key) {
-  return e2e.async.Result.toResult(false);
+  var emails = e2e.ext.utils.text.getValidEmailAddressesFromArray(
+      key.getUserIds(), true);
+
+  // TODO: relax key lookup for non-yahoo email address?
+  var yahooEmails = goog.array.filter(emails, function(email) {
+    return e2e.ext.utils.text.extractValidYahooEmail(email) !== null;
+  });
+  if (yahooEmails.length === 0) {
+    return e2e.async.Result.toResult(true);
+  }
+
+  var serializedKey = key.serialize();
+
+  var importedKeysResults = goog.async.DeferredList.gatherResults(
+      goog.array.map(yahooEmails, function(email) {
+        return this.update(email, serializedKey);
+      }, this));
+  return importedKeysResults.addCallback(function(importedKeys) {
+    // Return true only if it was imported for all the emails
+    return (importedKeys.indexOf(null) === -1);
+  });
 };
 
 
@@ -532,6 +567,11 @@ e2e.coname.Client.prototype.importPublicKey = function(key) {
  *    The public keys correspond to the email or [] if not found.
  */
 e2e.coname.Client.prototype.searchPublicKey = function(email) {
+  // TODO: relax key lookup for non-yahoo email address?
+  if (e2e.ext.utils.text.extractValidYahooEmail(email) === null) {
+    return e2e.async.Result.toResult([]);
+  }
+
   var result = new e2e.async.Result;
   this.lookup(email).addCallbacks(function(verified) {
 
