@@ -41,7 +41,8 @@ var stubs = new goog.testing.PropertyReplacer();
 function setUp() {
   e2e.ext.testingstubs.initStubs(stubs);
 
-  chipHolder = new e2e.ext.ui.panels.ChipHolder(['1'], ['1', '2', '3']);
+  chipHolder = new e2e.ext.ui.panels.ChipHolder(['1'], ['1', '2', '3'],
+      goog.nullFunction);
   chipHolder.decorate(document.body);
 }
 
@@ -52,24 +53,19 @@ function tearDown() {
 }
 
 
-function testAddChip() {
-  var chip1 = chipHolder.addChip('2');
-  var chip2 = chipHolder.addChip('6', true);
-  var chip3 = chipHolder.addChip(new e2e.ext.ui.panels.Chip('5', true));
-  var badChip = constants.CssClass.BAD_CHIP;
-  assertEquals('1,2,6', chipHolder.getSelectedUids().join(','));
-  assertEquals('5', chipHolder.getProvidedPassphrases().join(','));
-  assertFalse(goog.dom.classlist.contains(chip1.getElement(), badChip));
-  assertTrue(goog.dom.classlist.contains(chip2.getElement(), badChip));
-  assertFalse(goog.dom.classlist.contains(chip3.getElement(), badChip));
+function testRender() {
+  assertContains('promptRecipientsPlaceholder1', document.body.textContent);
+  assertContains('promptEncryptionPassphraseLink', document.body.textContent);
 }
 
-function testRemoveUids() {
+
+function testAddChip() {
   chipHolder.addChip('2');
-  chipHolder.addChip('3');
-  chipHolder.removeUids(['1', '3']);
-  assertArrayEquals(['2'], chipHolder.getSelectedUids());
+  chipHolder.addChip(new e2e.ext.ui.panels.Chip('5', true));
+  assertEquals('1,2', chipHolder.getSelectedUids().join(','));
+  assertEquals('5', chipHolder.getProvidedPassphrases().join(','));
 }
+
 
 function testIncreaseInputArea() {
   var originalWidth = goog.style.getSize(chipHolder.shadowInputElem_).width;
@@ -212,19 +208,14 @@ function testLock() {
   chipHolder.lock();
   assertTrue(chipHolder.isLocked());
   assertTrue(chipHolder.getChildAt(0).isLocked());
+  assertTrue(goog.dom.classlist.contains
+      (chipHolder.getElementByClass(
+      constants.CssClass.PASSPHRASE_ENCRYPTION_LINK),
+      constants.CssClass.INVISIBLE));
   chipHolder.handleKeyEvent_({keyCode: goog.events.KeyCodes.BACKSPACE});
   assertEquals('1', chipHolder.getSelectedUids().join(','));
   chipHolder.addChip('2');
   assertEquals('1', chipHolder.getSelectedUids().join(','));
   chipHolder.getChildAt(0).remove();
   assertEquals('1', chipHolder.getSelectedUids().join(','));
-}
-
-function testMarkGoodChips() {
-  var chip1 = chipHolder.addChip('4', true);
-  var chip2 = chipHolder.addChip('5', true);
-  var badChip = constants.CssClass.BAD_CHIP;
-  chipHolder.markGoodChips(['6', '4']);
-  assertFalse(goog.dom.classlist.contains(chip1.getElement(), badChip));
-  assertTrue(goog.dom.classlist.contains(chip2.getElement(), badChip));
 }

@@ -50,10 +50,13 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  * @param {!Array.<string>} selectedUids The UIDs that have already been
  *     selected.
  * @param {!Array.<string>} allUids All UIDs that are available for selection.
+ * @param {Function} renderEncryptionPassphraseCallback Callback for rendering
+ *     an encryption passphrase dialog.
  * @constructor
  * @extends {goog.ui.Component}
  */
-panels.ChipHolder = function(selectedUids, allUids) {
+panels.ChipHolder = function(selectedUids, allUids,
+    renderEncryptionPassphraseCallback) {
   goog.base(this);
 
   /**
@@ -77,6 +80,13 @@ panels.ChipHolder = function(selectedUids, allUids) {
    */
   this.isLocked_ = false;
 
+  /**
+   * Callback for rendering an passphrase encryption dialog.
+   * @type {Function}
+   * @private
+   */
+  this.renderEncryptionPassphraseCallback_ =
+      renderEncryptionPassphraseCallback;
 };
 goog.inherits(panels.ChipHolder, goog.ui.Component);
 
@@ -156,9 +166,7 @@ panels.ChipHolder.prototype.handleNewChipValue_ = function(chipValue) {
 panels.ChipHolder.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  goog.array.forEach(this.selectedUids_, function(uid) {
-    this.addChip(uid, true);
-  }, this);
+  goog.array.forEach(this.selectedUids_, this.addChip, this);
 
   this.autoComplete_ = this.createAutoComplete_();
 
@@ -179,6 +187,10 @@ panels.ChipHolder.prototype.enterDocument = function() {
       this.keyHandler_,
       goog.events.KeyHandler.EventType.KEY,
       this.handleKeyEvent_);
+
+  this.getHandler().listen(
+      this.getElementByClass(constants.CssClass.PASSPHRASE_ENCRYPTION_LINK),
+      goog.events.EventType.CLICK, this.renderEncryptionPassphraseCallback_);
 };
 
 
@@ -186,29 +198,22 @@ panels.ChipHolder.prototype.enterDocument = function() {
  * Adds a new chip to the chip holder using the selection in the input field.
  * Aborts if ChipHolder is locked.
  * @param {panels.Chip|string=} opt_chip The chip or UID to render.
- * @param {boolean=} opt_mark Whether to mark the chip as good/bad. Default
- *   false.
- * @return {panels.Chip|undefined}
  */
-panels.ChipHolder.prototype.addChip = function(opt_chip, opt_mark) {
+panels.ChipHolder.prototype.addChip = function(opt_chip) {
   if (this.isLocked_) {
     return;
   }
 
   var chip = null;
-  var markChipBad = false;
   if (opt_chip && opt_chip instanceof panels.Chip) {
     chip = /** @type {panels.Chip} */ (opt_chip);
   } else {
     var uid = goog.string.trim(typeof opt_chip == 'string' ?
         opt_chip : this.shadowInputElem_.value);
-    if (opt_mark) {
-      markChipBad = !goog.array.contains(this.allUids_, uid);
-    }
     chip = new panels.Chip(uid.replace(/,\s*$/, ''));
   }
 
-  if (chip.getValue().length === 0) {
+  if (chip.getValue().length == 0) {
     return;
   }
 
@@ -217,32 +222,6 @@ panels.ChipHolder.prototype.addChip = function(opt_chip, opt_mark) {
   this.shadowInputElem_.value = '';
   this.shadowInputElem_.placeholder = '';
   goog.style.setWidth(this.shadowInputElem_, 10);
-
-  if (markChipBad) {
-    goog.dom.classlist.add(chip.getElement(), constants.CssClass.BAD_CHIP);
-  }
-  return chip;
-};
-
-
-/**
- * Removes chips by UID. Aborts if ChipHolder is locked.
- * @param {!Array.<string>} uids The UIDs to remove.
- */
-panels.ChipHolder.prototype.removeUids = function(uids) {
-  if (this.isLocked_) {
-    return;
-  }
-  var chipsLeft = this.getChildCount() - 1;
-  var chip;
-  // Removes chips from right to left so that the child index is invariant
-  while (chipsLeft > -1) {
-    chip = this.getChildAt(chipsLeft);
-    if (goog.array.contains(uids, chip.getValue())) {
-      this.removeChild(chip, true);
-    }
-    chipsLeft = chipsLeft - 1;
-  }
 };
 
 
@@ -317,25 +296,12 @@ panels.ChipHolder.prototype.handleKeyEvent_ = function(evt) {
  * @private
  */
 panels.ChipHolder.prototype.addAndMarkChip_ = function(markChipBad) {
-  var chip = this.addChip();
+  this.addChip();
 
-  if (chip && markChipBad) {
+  if (markChipBad) {
+    var chip = this.getChildAt(this.getChildCount() - 1);
     goog.dom.classlist.add(chip.getElement(), constants.CssClass.BAD_CHIP);
   }
-};
-
-
-/**
- * Marks bad chips as good.
- * @param {!Array.<string>} uids The uids of the chip to change.
- */
-panels.ChipHolder.prototype.markGoodChips = function(uids) {
-  this.forEachChild(function(chip) {
-    if (goog.array.contains(uids, chip.getValue())) {
-      goog.dom.classlist.remove(chip.getElement(), constants.CssClass.BAD_CHIP);
-    }
-  });
-  this.allUids_.concat(uids);
 };
 
 
@@ -391,6 +357,10 @@ panels.ChipHolder.prototype.lock = function() {
     chip.lock();
   });
   goog.dom.classlist.add(this.shadowInputElem_, constants.CssClass.INVISIBLE);
+  var passphraseEncryptionLink = this.getElementByClass(
+      constants.CssClass.PASSPHRASE_ENCRYPTION_LINK);
+  goog.dom.classlist.add(
+      passphraseEncryptionLink, constants.CssClass.INVISIBLE);
 };
 
 
