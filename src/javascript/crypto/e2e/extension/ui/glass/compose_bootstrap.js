@@ -31,7 +31,7 @@ var initComposeGlass = function(evt) {
   }
   var data = evt.data;
   data.draft = data.draft || null;
-  if (!data.draft || !data.mode || !data.hash) {
+  if (!data.draft || !data.hash) {
     return;
   }
   if (data.draft.subject === 'Encrypted Message') {
@@ -41,10 +41,8 @@ var initComposeGlass = function(evt) {
   }
   /** @type {!e2e.ext.ui.ComposeGlass} */
   window.composeGlass = new e2e.ext.ui.ComposeGlass(data.draft,
-                                                    data.mode,
                                                     evt.origin,
-                                                    data.hash,
-                                                    data.height);
+                                                    data.hash);
   window.composeGlass.decorate(document.documentElement);
 };
 window.addEventListener('message', initComposeGlass);

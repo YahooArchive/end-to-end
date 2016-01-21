@@ -166,7 +166,6 @@ ui.ComposeGlassWrapper = function(targetElem, draft, hash) {
   this.targetElem_ = targetElem;
   this.draft = draft;
   this.targetElem_.setAttribute('original_content', this.draft.body);
-  this.mode = 'scroll';
   this.hash = hash;
 };
 goog.inherits(ui.ComposeGlassWrapper, goog.Disposable);
@@ -208,7 +207,6 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   glassFrame.addEventListener('load', goog.bind(function() {
     glassFrame.contentWindow.postMessage({
       draft: this.draft,
-      mode: this.mode,
       hash: this.hash,
       height: targetSize.height
     }, chrome.runtime.getURL(''));

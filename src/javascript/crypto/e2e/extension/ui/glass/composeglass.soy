@@ -42,37 +42,36 @@
 /**
  * Renders the required UI elements for PGP encryption.
  * @param fromLabel The label to describe the "From:" select box.
- * @param noPrivateKeysFound The label to inform the user that he needs a private key to use
- *      signing functionality
- * @param availableSigningKeys The keys that can be used to sign a message.
- * @param backButtonTitle The title for the back button.
- * @param actionButtonTitle The title of the prompt button.
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field
+ * @param signerCheckboxTitle The label for the checkbox to sign messages.
+ * @param actionButtonTitle The title of the prompt button.
+ * @param backButtonTitle The title for the back button.
  */
 {template .renderEncrypt}
   <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}">
     <div>{$fromLabel}</div>
-    <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"
-      {if length($availableSigningKeys) == 0}disabled{/if}
-    >
-      {foreach $key in $availableSigningKeys}
-        <option>{$key}</option>
-      {/foreach}
-    </select>
-    {if length($availableSigningKeys) == 0}{$noPrivateKeysFound}{/if}
+    <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"></select>
   </div>
   <div id="{e2e.ext.constants.ElementId.CHIP_HOLDER}"></div>
-  <div id="subjectHolder">
-    <input type="text" placeholder="{$subjectLabel}" value="{$subject}" />
+  {if isNonnull($subject)}
+  <div id="{e2e.ext.constants.ElementId.SUBJECT_HOLDER}">
+    <input id="{e2e.ext.constants.ElementId.SUBJECT}" value="{$subject}" placeholder="{$subjectLabel}" />
   </div>
-  <div>
-    <textarea autofocus></textarea>
-  </div>
-  <div>
-  <button class="{e2e.ext.constants.CssClass.INSERT}">{$actionButtonTitle}</button>
-  <button class="{e2e.ext.constants.CssClass.BACK}">
-    <img src="images/back.png" title="{$backButtonTitle}"/>
-  </button>
+  {/if}
+  <textarea></textarea>
+  <div class="{e2e.ext.constants.CssClass.PROMPT_ACTIONS}">
+    <div style="display:none"><!-- @yahoo hide the option whether to sign the message -->
+      <input type="checkbox" id="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
+      <label for="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
+        {$signerCheckboxTitle}
+      </label>
+    </div>
+
+    <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
+    <button class="{e2e.ext.constants.CssClass.BACK}">
+      <img src="images/back.png" title="{$backButtonTitle}"/>
+    </button>
+
   </div>
 {/template}
