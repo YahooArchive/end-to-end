@@ -52,11 +52,14 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  * @param {!Array.<string>} allUids All UIDs that are available for selection.
  * @param {Function} renderEncryptionPassphraseCallback Callback for rendering
  *     an encryption passphrase dialog.
+ * @param {function(string):e2e.async.Result.<boolean>=} opt_badChipCallback
+ *     Callback for checking if a chipValue has to be marked as bad. If
+ *     unspecified, mark those not included in allUids as bad.
  * @constructor
  * @extends {goog.ui.Component}
  */
 panels.ChipHolder = function(selectedUids, allUids,
-    renderEncryptionPassphraseCallback) {
+    renderEncryptionPassphraseCallback, opt_badChipCallback) {
   goog.base(this);
 
   /**
@@ -87,6 +90,17 @@ panels.ChipHolder = function(selectedUids, allUids,
    */
   this.renderEncryptionPassphraseCallback_ =
       renderEncryptionPassphraseCallback;
+
+  /**
+   * Callback for checking if a chipValue has to be marked as bad.
+   * @type {Function}
+   * @private
+   */
+  this.badChipCallback_ = opt_badChipCallback || goog.bind(
+    function (chipValue) {
+      return e2e.async.Result.toResult(
+          !goog.array.contains(this.allUids_, chipValue));
+    }, this);
 };
 goog.inherits(panels.ChipHolder, goog.ui.Component);
 
@@ -157,8 +171,24 @@ panels.ChipHolder.prototype.createAutoComplete_ = function() {
  * @private
  */
 panels.ChipHolder.prototype.handleNewChipValue_ = function(chipValue) {
-  var markChipBad = !goog.array.contains(this.allUids_, chipValue);
-  this.addAndMarkChip_(markChipBad);
+  // add the chip first, determine validity later
+  this.addChip();
+
+  // badChipCallback_ works asynchronusly, mark chipValue as bad
+  this.badChipCallback_(chipValue).addCallback(function(markChipBad) {
+    if (markChipBad) {
+      // from right to left as more likely it's checking the last one
+      var chipsLeft = this.getChildCount();
+      while (--chipsLeft > -1) {
+        var chip = this.getChildAt(chipsLeft);
+        if (chipValue == chip.getValue()) {
+          goog.dom.classlist.add(
+              chip.getElement(), constants.CssClass.BAD_CHIP);
+          // TODO(adon): can multiple chip carry the same chipValue? return?
+        }
+      }
+    }
+  }, this);
 };
 
 
