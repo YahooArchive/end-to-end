@@ -42,13 +42,31 @@ actions.GetAllKeysByEmails = function() {};
 actions.GetAllKeysByEmails.prototype.execute =
     function(ctx, request, requestor, callback, errorCallback) {
 
-  var searchKey_ = goog.bind(request.content == 'private' ?
+  if (request.recipients.length === 0) {
+  	callback([]);
+  	return;
+  }
+
+  var content_ = request.content;
+  var callback_ = callback;
+
+  var checkExistsOnly = goog.string.endsWith(content_, '_exist');
+  if (checkExistsOnly) {
+    content_ = goog.string.removeAt(content_, content_.length - 6, 6);
+    callback_ = function(keysPerRecipient) {
+      callback(goog.array.map(keysPerRecipient, function(keys){
+      	return keys.length > 0;
+      }));
+    }
+  }
+
+  var searchKey_ = goog.bind(content_ == 'private' ?
       ctx.searchPrivateKey :
       ctx.searchPublicKey, ctx);
 
   goog.async.DeferredList.gatherResults(
-      goog.array.map(request.recipients || [], searchKey_)).
-          addCallbacks(callback, errorCallback);
+      goog.array.map(request.recipients, searchKey_)).
+          addCallbacks(callback_, errorCallback);
 };
 
 });  // goog.scope

@@ -806,17 +806,17 @@ e2ebind.validateRecipients_ = function(recipients, callback) {
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
     recipients: recipients,
-    content: 'public'
+    content: 'public_exist'
   }), function(response) {
-    var pubKeys = response.error ? [] : response.content;
+    var hasKeysPerRecipient = response.content;
 
-    callback(goog.array.map(recipients, function(recipient, index) {
-      return {
-        recipient: recipient,
-        valid: pubKeys[index] && pubKeys[index].length > 0
-      };
+    callback(goog.array.map(recipients, function(recipient, i) {
+      return {recipient: recipient, valid: hasKeysPerRecipient[i]};
     }));
 
+  }, function() {
+    // ignored error
+    callback([]);
   });
 };
 

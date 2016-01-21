@@ -156,7 +156,8 @@ messages.e2ebindRequest;
  *   success: boolean,
  *   action: string,
  *   hash: string,
- *   result: Object
+ *   result: Object,
+ *   error: ?Object
  * }}
  */
 messages.e2ebindResponse;
