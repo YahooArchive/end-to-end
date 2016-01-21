@@ -343,11 +343,6 @@ e2e.ext.constants.e2ebind.requestActions = {
  * @const
  */
 e2e.ext.constants.Keyserver = {
-  //TODO(dlg): separate Kauth key from Keyserver response key
-  KAUTH_PUB: e2e.ext.config.KAUTH_PUB,
-  TESTSERVER_ORIGIN: e2e.ext.config.TESTSERVER_ORIGIN,
-  API_V1: 'v1/k',
   DEFAULT_LOCATION: e2e.ext.config.AUTH_DEFAULT_ORIGIN,
   AUTH_COOKIE: e2e.ext.config.AUTH_COOKIE,
-  AUTH_ENABLED: e2e.ext.config.AUTH_ENABLED
 };
