@@ -99,7 +99,53 @@ e2e_assert_jsdeps() {
   fi
 }
 
-e2e_build_library() {
+e2e_build_closure_lib_() {
+  # $1 - Closure entry point
+  # $2 - Filename
+  # $3 - Additional source dir
+  # $4 - [debug|optimized]
+  ENTRY_POINT=$1
+  FNAME=$2
+  SRC_DIRS=( \
+    src \
+    lib/closure-library/closure/goog \
+    lib/closure-library/third_party/closure/goog \
+    lib/closure-templates-compiler lib/zlib.js/src \
+    lib/typedarray )
+  if [ -d "$3" ]; then
+    SRC_DIRS+=("$3")
+  fi
+  jscompile_e2e="$JSCOMPILE_CMD"
+  for var in "${SRC_DIRS[@]}"
+  do
+    jscompile_e2e+=" --js='$var/**.js' --js='!$var/**_test.js' --js='!$var/**_perf.js'"
+  done
+  jscompile_e2e+=" --js='!lib/closure-library/closure/goog/demos/**.js'"
+  if [ "$4" == "debug" ]; then
+     jscompile_e2e+=" --debug --formatting=PRETTY_PRINT -O WHITESPACE_ONLY"
+  elif [ "$4" == "optimized" ]; then
+     jscompile_e2e+=" -O ADVANCED"
+  fi
+  echo -n "."
+  $jscompile_e2e --closure_entry_point "$ENTRY_POINT" --js_output_file "$FNAME"
+}
+
+e2e_build_jsmodule() {
+  echo "Building JS module $1 into $BUILD_DIR/$1.js..."
+  e2e_assert_dependencies
+  set -e
+  e2e_assert_jsdeps
+  mkdir -p "$BUILD_DIR"
+  if [ "$2" == "debug" ]; then
+    echo "Debug mode enabled"
+  fi
+  e2e_build_closure_lib_ $1 "$BUILD_DIR/$1.js" "" $2;
+  echo ""
+  echo "Done."
+}
+
+e2e_build_library_prepare() {
+  echo "Building End-To-End library into $BUILD_DIR/library..."
   e2e_assert_dependencies
   set -e
   e2e_assert_jsdeps
@@ -108,19 +154,47 @@ e2e_build_library() {
   echo "Building End-To-End library into $BUILD_EXT_DIR ..."
   rm -rf "$BUILD_EXT_DIR"
   mkdir -p "$BUILD_EXT_DIR"
-  SRC_DIRS=( src lib/closure-library lib/zlib.js/src lib/typedarray )
-  jscompile_e2e="$JSCOMPILE_CMD"
-  for var in "${SRC_DIRS[@]}"
-  do
-    jscompile_e2e+=" --js='$var/**.js' --js='!$var/**_test.js'"
-  done
-  jscompile_e2e+=" --js='!src/javascript/crypto/e2e/extension/*.js'"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.openpgp.ContextImpl" --js_output_file "$BUILD_EXT_DIR/end-to-end.compiled.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.openpgp.ContextImpl" --debug --formatting=PRETTY_PRINT --js_output_file "$BUILD_EXT_DIR/end-to-end.debug.js"
-  echo ""
-  echo "Done."
 }
 
+e2e_build_library() {
+  e2e_build_library_prepare
+  e2e_build_closure_lib_ "e2e.openpgp.Context2Impl" "$BUILD_EXT_DIR/end-to-end.compiled.js"
+  e2e_build_closure_lib_ "e2e.openpgp.Context2Impl" "$BUILD_EXT_DIR/end-to-end.debug.js" "" "debug"
+  echo -e "\nDone."
+}
+
+e2e_build_library_ctx1() {
+  e2e_build_library_prepare
+  e2e_build_closure_lib_ "e2e.openpgp.ContextImpl" "$BUILD_EXT_DIR/end-to-end-ctx1.compiled.js"
+  e2e_build_closure_lib_ "e2e.openpgp.ContextImpl" "$BUILD_EXT_DIR/end-to-end-ctx1.debug.js" "" "debug"
+  echo -e "\nDone."
+}
+
+e2e_build_library_all() {
+  e2e_build_library_prepare
+  e2e_build_closure_lib_ "e2e.openpgp.ContextImpl" "$BUILD_EXT_DIR/end-to-end-ctx1.compiled.js"
+  e2e_build_closure_lib_ "e2e.openpgp.ContextImpl" "$BUILD_EXT_DIR/end-to-end-ctx1.debug.js" "" "debug"
+  e2e_build_closure_lib_ "e2e.openpgp.Context2Impl" "$BUILD_EXT_DIR/end-to-end.compiled.js"
+  e2e_build_closure_lib_ "e2e.openpgp.Context2Impl" "$BUILD_EXT_DIR/end-to-end.debug.js" "" "debug"
+  echo -e "\nDone."
+}
+
+e2e_test_compat_e2e() {
+  e2e_assert_nodejs
+  e2e_assert_dependencies
+  set -e
+  e2e_assert_jsdeps
+  BUILD_EXT_DIR="$BUILD_DIR/library"
+  rm -rf "$BUILD_EXT_DIR"
+  mkdir -p "$BUILD_EXT_DIR"
+  echo -n "Building End-To-End debug library into $BUILD_DIR/library..."
+  e2e_build_closure_lib_ "e2e.openpgp.ContextImpl" "$BUILD_EXT_DIR/end-to-end.debug.js" "" "debug"
+  echo
+  echo "Running compatibility tests..."
+  TEST_ROOT="src/javascript/crypto/e2e/compatibility_tests"
+  $NODEJS_CMD "$TEST_ROOT/drivers/e2e/run.js" "$BUILD_EXT_DIR/end-to-end.debug.js" "$TEST_ROOT/openpgp-interop/testcases"
+  echo "Done."
+}
 
 e2e_build_css() {
   BUILD_EXT_DIR="$BUILD_DIR/extension"
@@ -189,6 +263,12 @@ e2e_build_extension() {
 e2e_build_clean() {
   echo "Cleaning all builds..."
   rm -rfv "$BUILD_DIR"
+  echo "Done."
+}
+
+e2e_clean_deps() {
+  echo "Removing all build dependencies. Install them with ./do.sh install_deps."
+  rm -rfv lib
   echo "Done."
 }
 
@@ -279,8 +359,23 @@ case "$CMD" in
   build_extension)
     e2e_build_extension $1;
     ;;
+  # build_app)
+  #   e2e_build_app $1;
+  #   ;;
   build_library)
     e2e_build_library;
+    ;;
+  build_library_ctx1)
+    e2e_build_library_ctx1;
+    ;;
+  build_library_all)
+    e2e_build_library_all;
+    ;;
+  test_compat_e2e)
+    e2e_test_compat_e2e;
+    ;;
+  test_compat_bc)
+    e2e_test_compat_bc;
     ;;
   build_templates)
     e2e_build_templates;
@@ -288,8 +383,14 @@ case "$CMD" in
   build_css)
     e2e_build_css;
     ;;
+  build_jsmodule)
+    e2e_build_jsmodule $*;
+    ;;
   clean)
     e2e_build_clean;
+    ;;
+  clean_deps)
+    e2e_clean_deps;
     ;;
   testserver)
     e2e_testserver $*;
@@ -300,11 +401,8 @@ case "$CMD" in
   deps)
     e2e_generate_deps;
     ;;
-  zip)
-    e2e_zip;
-    ;;
   *)
-    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip} [debug]"
+    echo "Usage: $0 {build_extension|build_library|build_library_ctx1|build_library_all|build_templates|clean|check_deps|clean_deps|install_deps|testserver|test_compat_e2e|test_compat_bc|lint} [debug]"
     RETVAL=1
 esac
 
