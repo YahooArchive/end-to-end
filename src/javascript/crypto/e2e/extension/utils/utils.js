@@ -159,7 +159,7 @@ utils.sendExtensionRequest = function(args, opt_callback, opt_errorCallback) {
   var respHandler = typeof opt_errorCallback === 'function' ? 
     function(response) {
       response.error ?
-        opt_errorCallback(response.error) :
+        opt_errorCallback(new Error(response.error)) :
         opt_callback(response);
       port.disconnect();
     } :
