@@ -182,6 +182,7 @@ e2e_build_extension() {
   cp -f "$SRC_EXT_DIR/manifest.json" "$BUILD_EXT_DIR"
   cp -f lib/protobufjs/protobuf-light.alldeps.js "$BUILD_EXT_DIR"
   cp -f lib/protobufjs/coname-client.proto.json "$BUILD_EXT_DIR"
+  cp -fr lib/yAuth "$BUILD_EXT_DIR"
   echo "Done."
 }
 
@@ -263,24 +264,6 @@ e2e_zip() {
   cd ..
 }
 
-e2e_config() {
-  KAUTH_PUB="$GOPATH/src/github.com/yahoo/keyshop/data/kauth/kauth.pub.js"
-  CONFIG_FILE="src/javascript/crypto/e2e/extension/config.js"
-  MANIFEST_FILE="src/javascript/crypto/e2e/extension/manifest.json"
-  if [[ -f $KAUTH_PUB ]]
-  then 
-    echo "Using keyserver public key from $KAUTH_PUB"
-    # Hack to make sed -i work consistently on GNU/Linux and OSX
-    sed -i.bak "s/\[.*\]/$(cat $KAUTH_PUB)/" "$CONFIG_FILE"
-    rm "$CONFIG_FILE.bak"
-  fi
-  if [ -n "$1" ]; then
-    echo "Changing hosts to $1"
-    sed -i.bak "s/localhost:25519/$1/" "$CONFIG_FILE" "$MANIFEST_FILE"
-    rm "$CONFIG_FILE.bak" "$MANIFEST_FILE.bak"
-  fi
-}
-
 RETVAL=0
 
 CMD=$1
@@ -320,11 +303,8 @@ case "$CMD" in
   zip)
     e2e_zip;
     ;;
-  config)
-    e2e_config $*;
-    ;;
   *)
-    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip|config} [debug]"
+    echo "Usage: $0 {build_extension|build_library|build_css|build_templates|clean|check_deps|install_deps|testserver|lint|zip} [debug]"
     RETVAL=1
 esac
 

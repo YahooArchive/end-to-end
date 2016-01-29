@@ -19,182 +19,25 @@
  */
 
 goog.provide('e2e.coname.Client');
-goog.provide('e2e.coname.QuorumRequirement');
-goog.provide('e2e.coname.RealmConfig');
-goog.provide('e2e.coname.KeyData');
-goog.provide('e2e.coname.VerificationPolicy');
-goog.provide('e2e.coname.getRealmByDomain');
-goog.provide('e2e.coname.getRealmByEmail');
-
 
 goog.require('e2e');
 goog.require('e2e.async.Result');
+goog.require('e2e.coname');
 goog.require('e2e.coname.ProtoBuf');
 goog.require('e2e.coname.sha3');
 goog.require('e2e.coname.verifyLookup');
-goog.require('e2e.ecc.Ed25519');
-goog.require('e2e.ecc.PrimeCurve');
-goog.require('e2e.error.InvalidArgumentsError');
-goog.require('e2e.ext.config');
 goog.require('e2e.ext.utils.Error');
-goog.require('e2e.ext.utils.text');
-goog.require('e2e.openpgp.block.factory');
 goog.require('e2e.random');
 goog.require('goog.array');
-goog.require('goog.async.DeferredList');
 goog.require('goog.crypt.base64');
 goog.require('goog.net.ErrorCode');
 goog.require('goog.net.XhrIo');
 
 
-/**
- * @private
- * @type {Object<string, e2e.coname.RealmConfig>}
- * This cache serves as a map of domain to realm config
- */
-e2e.coname.realmConfig_ = {};
-
-
-/**
- * The structure of Quorum Requirement
- * @typedef {{
- *    threshold: !Number,
- *    candidates: ?Array.<string>,
- *    subexpressions: ?e2e.coname.QuorumRequirement
- * }}
- */
-e2e.coname.QuorumRequirement;
-
-
-/**
- * The structure of Verification Policy
- * @typedef {{
- *    public_keys: Object<string, Object<string, e2e.ByteArray>>,
- *    quorum: e2e.coname.QuorumRequirement
- * }}
- */
-e2e.coname.VerificationPolicy;
-
-
-/**
- * The structure of Realm Config
- * @typedef {{
- *    realm_name: !string,
- *    domains: !Array.<string>,
- *    addr: !string,
- *    URL: !string,
- *    VRFPublic: !e2e.ByteArray,
- *    verification_policy: e2e.coname.VerificationPolicy,
- *    epoch_time_to_live: number,
- *    tree_nonce: (undefined|e2e.ByteArray),
- *    passphrase: ?string,
- *    newPassphrase: ?string
- * }}
- */
-e2e.coname.RealmConfig;
-
-
-/**
- * The structure of key lookup result
- * @typedef {{
- *    keyData: ?e2e.ByteArray,
- *    proof: Object
- * }}
- */
-e2e.coname.KeyData;
-
-
-/**
- * flattenRealmQuorums_ puts all (nested) quorums into a flattened array
- * @private
- * @param {e2e.coname.QuorumRequirement} quorums The quorum requirement
- *        extracted from realm config
- * @return {Array.<string>} an array of all quorum IDs
- */
-e2e.coname.flattenRealmQuorums_ = function(quorums) {
-  var out = [];
-
-  if (quorums) {
-    if (quorums.candidates) {
-      out = out.concat(quorums.candidates);
-    }
-
-    if (quorums.subexpressions) {
-      goog.array.forEach(quorums.subexpressions, function(e) {
-        out = out.concat(e2e.coname.flattenRealmQuorums_(e));
-      });
-    }
-  }
-
-  return out;
-};
-
-
-/**
- * Initialize and return the realm constants for the provided domain
- * @param {string} domain The domain name
- * @return {?e2e.coname.RealmConfig} ret The corresponding RealmConfig
- */
-e2e.coname.getRealmByDomain = function(domain) {
-  var ret = e2e.coname.realmConfig_[domain] || null;
-
-  // if the realm is found in cache, immediately return it
-  if (ret) {
-    return ret;
-  }
-
-  // TODO: duplicate realm for a domain should be checked during config import
-  goog.array.some(e2e.ext.config.CONAME.realms, function(realm) {
-    var id, keys;
-    if (goog.array.indexOf(realm.domains, domain) !== -1) {
-
-      // initialize the realm config for performance
-
-      // prepare the Ed25519 instance - facilitate ed25519 signature check
-      keys = realm.verification_policy.public_keys;
-      for (id in keys) {
-        if (keys[id].ed25519) {
-          keys[id].ed25519Verifier = new e2e.ecc.Ed25519(
-              e2e.ecc.PrimeCurve.ED_25519, {
-                pubKey: keys[id].ed25519,
-                privKey: []
-              });
-        }
-      }
-
-      // aggregate (nested) quorums and flatten them in an array
-      realm.verification_policy.quorum_list = e2e.coname.flattenRealmQuorums_(
-          realm.verification_policy.quorum);
-
-      e2e.coname.realmConfig_[domain] = ret = realm;
-
-      return true;
-    }
-  });
-
-  return ret;
-};
-
-
-/**
- * Get the realm constants based on the domain of email address
- * @param {string} user The username
- * @return {?e2e.coname.RealmConfig} The RealmConfig
- */
-e2e.coname.getRealmByEmail = function(user) {
-  var i = user.indexOf('@');
-  if (i === -1) {
-    throw new e2e.error.InvalidArgumentsError(
-        'GetRealm: user must be of the form .*@.* (got ' + user + ')');
-  }
-  return e2e.coname.getRealmByDomain(user.slice(i + 1));
-};
-
-
 
 /**
  * Constructor for the coname client.
- * @param {string=} opt_keyName The key name being referenced in the key data blob
+ * @param {string=} opt_keyName The key name of the keyData Map
  * @constructor
  */
 e2e.coname.Client = function(opt_keyName) {
@@ -206,6 +49,7 @@ e2e.coname.Client = function(opt_keyName) {
   /**
    * The key name being referenced in the key data blob
    * @type {string}
+   * @private
    */
   this.keyName_ = opt_keyName || '25519';
 };
@@ -213,9 +57,6 @@ e2e.coname.Client = function(opt_keyName) {
 
 /** @const {string} */
 e2e.coname.Client.PROTO_FILE_PATH = 'coname-client.proto.json';
-
-
-
 
 
 /**
@@ -243,7 +84,7 @@ e2e.coname.Client.prototype.initialize = function() {
           this.proto = builder.build('proto');
           result.callback(this.proto);
         }, this));
-  }, result.errback, this);
+  }, goog.bind(result.errback, result), this);
 
   return result;
 };
@@ -319,7 +160,8 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
  * @param {string} keyName The key name being referenced in the key data blob
  * @return {Object<string,*>} The update message
  */
-e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof, keyName) {
+e2e.coname.encodeUpdateRequest_ = function(
+    proto, email, key, realm, oldProof, keyName) {
 
   var keys = {}, hProfile, profile, entry;
 
@@ -401,16 +243,18 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
   var result = new e2e.async.Result;
   goog.net.XhrIo.send(url, function(e) {
     var xhr = e.target;
-    if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
-      try {
-        result.callback(xhr.getResponseText());
-      } catch (e) {
-        result.errback(e);
+    try {
+      if (xhr.getLastErrorCode() !== goog.net.ErrorCode.NO_ERROR) {
+        throw new e2e.ext.utils.Error(
+            'CONAME Connection Error: ' + xhr.getLastError(),
+            xhr.getStatus() === 401 ||
+            xhr.getLastErrorCode() === goog.net.ErrorCode.HTTP_ERROR ?
+              'conameAuthError' :
+              'conameConnError');
       }
-    } else {
-      result.errback(new e2e.ext.utils.Error(
-          'CONAME Connection Error: ' + xhr.getLastError(),
-          'conameConnectionError'));
+      result.callback(xhr.getResponseText());
+    } catch (e) {
+      result.errback(e);
     }
   }, method, dataString, {}, timeout);
   return result;
@@ -466,7 +310,7 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
 
         result.callback({keyData: keyByteArray, proof: pf});
 
-      }, result.errback, this);
+      }, goog.bind(result.errback, result), this);
 
   return result;
 };

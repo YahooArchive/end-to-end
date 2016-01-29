@@ -212,6 +212,10 @@ e2e.ext.constants.CssClass = {
   /* TODO(rcc): Remove when we can use keyserver for lookups. */
   KEYRING_RESTORE_EMAIL: 'keyring-restore-email',
   KEYRING_PASSPHRASE_CHANGE: 'keyring-passphrase-change',
+  /** Used in the sync resolution */
+  KEY_INFO: 'key-info',
+  KEY_INFO_PLUS: 'key-info-plus',
+  KEY_INFO_MINUS: 'key-info-minus',
 
   /** Used in the welcome page */
   WELCOME_MENU_ICON: 'welcome-menu-icon',

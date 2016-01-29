@@ -45,15 +45,6 @@ var ConameKeyProvider = e2e.coname.KeyProvider;
 
 
 /**
- * Initializes the external protobuf dependency.
- * @return {!e2e.async.Result.<?Object<string,*>>} The deferred Coname protocol
- */
-ConameKeyProvider.prototype.initialize = function() {
-  return this.client_.initialize();
-};
-
-
-/**
  * Imports public key to the key server.
  * @param {!Array.<e2e.openpgp.block.TransferablePublicKey>} keys The keys to
  *     import.
@@ -61,6 +52,7 @@ ConameKeyProvider.prototype.initialize = function() {
  *     are successfully uploaded according to the specified uids.
  */
 ConameKeyProvider.prototype.importKeys = function(keys) {
+
   var emailKeyMap = {};
 
   goog.array.forEach(keys, function(key) {
@@ -70,18 +62,19 @@ ConameKeyProvider.prototype.importKeys = function(keys) {
 
       // validate a proper email is present in the uids
       goog.array.forEach(key.getUserIds(), function(uid) {
-        // TODO: use extractValidEmail() instead for non-yahoo email address?
-        var yEmail = e2e.ext.utils.text.extractValidYahooEmail(uid);
-        if (yEmail !== null) {
-          if (!emailKeyMap[yEmail]) {
-            emailKeyMap[yEmail] = new goog.structs.Map();
+
+        var email = e2e.coname.getSupportedEmailByUid(uid);
+        if (email !== null) {
+          if (!emailKeyMap[email]) {
+            emailKeyMap[email] = new goog.structs.Map();
           }
           // De-duplicate keys
-          emailKeyMap[yEmail].set(key.keyPacket.fingerprint, key.serialize());
+          emailKeyMap[email].set(
+            key.keyPacket.fingerprint, key.serialize());
         }
       });
     } catch (any) {
-      // Discard invalid keys, and those not having a uid with yahoo address
+      // Discard invalid keys, and those lacking a uid with yahoo address
     }
   });
 
@@ -90,70 +83,67 @@ ConameKeyProvider.prototype.importKeys = function(keys) {
     return e2e.async.Result.toResult(true);
   }
 
-  var importedKeysResults = goog.async.DeferredList.gatherResults(
-      goog.array.map(goog.object.getKeys(emailKeyMap), function(email) {
-        var keyData = goog.array.flatten(emailKeyMap[email].getValues());
-        return this.client_.update(email, keyData);
-      }, this));
-
-  return importedKeysResults.addCallback(function(importedKeys) {
-    // Return true if it was imported for some emails.
-    // Not necessarily all as user may not have authenticated with all emails
-    return goog.array.some(importedKeys, function(keys) {
-      return keys !== null;
-    });
-  });
+  return this.client_.initialize().
+    addCallback(function() {
+      return goog.async.DeferredList.gatherResults(
+          goog.array.map(goog.object.getKeys(emailKeyMap), function(email) {
+            var keyData = goog.array.flatten(emailKeyMap[email].getValues());
+            return this.client_.update(email, keyData);
+          }, this));
+    }, this).
+    addCallback(function(importedKeys) {
+      // Return true if it was imported for some emails.
+      // Not necessarily all as user may not have authenticated all accts
+      return goog.array.some(importedKeys, function(keys) {
+        return keys !== null;
+      });
+    }, this);
 };
 
 
 /**
  * Searches public keys based on an email.
- * @param {string} email The email which is used to search for the
- *    corresponding public keys.
- * @return {!e2e.async.Result.<!Array.<!e2e.openpgp.block.TransferableKey>>}
+ * @param {string} email The email which is used to search for the remote
+ *    public keys.
+ * @return {!goog.async.Deferred.<!Array.<!e2e.openpgp.block.TransferableKey>>}
  *    The public keys correspond to the email or [] if not found.
  */
 ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
-  // TODO: relax key lookup for non-yahoo email address?
-  if (e2e.ext.utils.text.extractValidYahooEmail(email) === null) {
+  if (e2e.coname.getSupportedEmailByUid(email) === null) {
     return e2e.async.Result.toResult([]);
   }
 
-  var result = new e2e.async.Result;
-  this.client_.lookup(email).addCallbacks(function(lookupResult) {
+  return this.client_.initialize().
+    addCallback(function() {
+      return this.client_.lookup(email);
+    }, this).
+    addCallback(function(lookupResult) {
+      // no key found for that email
+      if (lookupResult === null || lookupResult.keyData === null) {
+        return [];
+      }
 
-    // no key found for that email
-    if (lookupResult === null || lookupResult.keyData === null) {
-      result.callback([]);
-      return;
-    }
+      var parsedKeys = e2e.openpgp.block.factory.
+          parseByteArrayAllTransferableKeys(lookupResult.keyData);
 
-    var parsedKeys = e2e.openpgp.block.factory.
-        parseByteArrayAllTransferableKeys(lookupResult.keyData);
-    result.callback(goog.array.filter(parsedKeys, function(key) {
-      try {
-        // validate the keys
-        key.processSignatures();
+      return goog.array.filter(parsedKeys, function(key) {
+        try {
+          // validate the keys
+          key.processSignatures();
 
-        // maintain a history mapping of keyId to email
-        this.keyIdEmailMap_.set(key.keyPacket.keyId, email);
-        key.subKeys && goog.array.forEach(key.subKeys, function(subKey) {
-          this.keyIdEmailMap_.set(subKey.keyId, email);
-        }, this);
+          // maintain a history mapping of keyId to email
+          this.keyIdEmailMap_.set(key.keyPacket.keyId, email);
+          key.subKeys && goog.array.forEach(key.subKeys, function(subKey) {
+            this.keyIdEmailMap_.set(subKey.keyId, email);
+          }, this);
 
-        return true;
-      } catch (any) {}
-      // Discard those keys without proper signatures
-      return false;
-    }));
-
-  }, function(e) {
-    // TODO: let user override?
-    // any errors will be considered as having no key
-    result.callback([]);
-  }, this);
-
-  return result;
+          return true;
+        } catch (any) {
+          // Discard those keys without proper signatures
+          return false;
+        }
+      }, this);
+    }, this);
 };
 
 
@@ -164,7 +154,7 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
  *
  * @see https://tools.ietf.org/html/rfc4880#section-5.1
  * @param {!e2e.openpgp.KeyId} id The key ID.
- * @return {!e2e.async.Result.<!Array.<!e2e.openpgp.block.TransferableKey>>}
+ * @return {!goog.async.Deferred.<!Array.<!e2e.openpgp.block.TransferableKey>>}
  *     The resulting trusted keys that are once looked up using
  *     {#getTrustedPublicKeysByEmail}.
  */

@@ -23,17 +23,18 @@
 
 goog.provide('e2e.openpgp.yKeyRing');
 
+goog.require('e2e');
 goog.require('e2e.async.Result');
+goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.coname.KeyProvider');
-goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.KeyRing');
-goog.require('e2e.openpgp.block.TransferablePublicKey');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.array');
+goog.require('goog.async.DeferredList');
 goog.require('goog.functions');
 goog.require('goog.string');
-goog.require('goog.structs.Map');
+goog.require('goog.structs');
 
 
 
@@ -85,51 +86,76 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
   var returnKeyRing = goog.functions.constant(keyRing);
   return /** @type {!goog.async.Deferred.<!e2e.openpgp.KeyRing>} */ (
       keyRing.initialize().addCallback(function() {
-        /** @suppress {accessControls} */
         this.conameKeyProvider_ = new e2e.coname.KeyProvider();
-        return this.conameKeyProvider_.initialize();
       }, keyRing).addCallback(returnKeyRing));
 };
 
-
-/** @override */
-e2e.openpgp.yKeyRing.prototype.generateKey = function(uid,
-                                                     keyAlgo,
-                                                     keyLength,
-                                                     subkeyAlgo,
-                                                     subkeyLength,
-                                                     opt_keyLocation) {
-
-  // TODO: key management on updates (conameKeyProvider may fail)
-  if (this.searchKey(uid, e2e.openpgp.KeyRing.Type.PRIVATE)) {
-    return e2e.async.Result.toError(new e2e.ext.utils.Error(
-        'There is already a key for this address in the keyring. ' +
-        'Please BACKUP and remove it before using a new one.',
-        'duplicateKeyWarning'));
-  }
-
-  var generateKey_ = goog.base(this, 'generateKey', uid, keyAlgo, keyLength,
-      subkeyAlgo, subkeyLength, opt_keyLocation);
-
-  // use the original generateKey if no conameKeyProvider_ exists
-  if (this.conameKeyProvider_ === null) {
-    return generateKey_;
-  }
-
-  return generateKey_.addCallback(function(keys) {
-
-    // only one public key will be seen, upload it. delete the key when error
-    for (var i = 0, n = keys.length; i < n; i++) {
-      if (keys[i] instanceof e2e.openpgp.block.TransferablePublicKey) {
-        return this.conameKeyProvider_.importKeys([keys[i]]).addCallbacks(
-            goog.functions.constant(keys),
-            function() { this.deleteKey(uid); },
-            this);
-      }
-    }
-
-  }, this);
+/**
+ * Upload the public keys for the user id
+ * @param {string} uid The uid
+ * @return {!goog.async.Deferred.<boolean>} True if at least one of the keys
+ *     are successfully uploaded according to the specified uids.
+ */
+e2e.openpgp.yKeyRing.prototype.uploadKeys = function(uid) {
+  return this.conameKeyProvider_.importKeys(this.searchKey(uid) || []);
 };
+
+
+
+    // confirmFeedback.addCallback(function(preferReplace) {
+    //   if (preferReplace === null) { // cancelled
+    //     result.callback([]);
+    //     return;
+    //   }
+    //   if (preferReplace) {
+    //     this.deleteKey(uid);
+    //   }
+
+    //   // generate a new one and upload
+    //   this.generateKey(uid, keyAlgo, keyLength,
+    //       subkeyAlgo, subkeyLength, opt_keyLocation).
+    //     addCallbacks(function(generatedKeys) {
+
+    //       // whether to replace or add the new key
+    //       this.uploadKeys_(preferReplace ?
+    //         generatedKeys :
+    //         generatedKeys.concat(existingKeys)).
+    //       addCallbacks(function() {
+    //         result.callback(generatedKeys);
+    //       }, result.errback);
+
+    //     }, goog.bind(result.errback, result), this);
+    // }, this);
+
+
+
+
+
+
+    // confirmFeedback.addCallback(function(preferReplace) {
+    //   if (preferReplace === null) { // cancelled
+    //     result.callback([]);
+    //     return;
+    //   }
+    //   if (preferReplace) {
+    //     this.deleteKey(uid);
+    //   }
+
+    //   // generate a new one and upload
+    //   this.generateKey(uid, keyAlgo, keyLength,
+    //       subkeyAlgo, subkeyLength, opt_keyLocation).
+    //     addCallbacks(function(generatedKeys) {
+
+    //       // whether to replace or add the new key
+    //       this.uploadKeys_(preferReplace ?
+    //         generatedKeys :
+    //         generatedKeys.concat(existingKeys)).
+    //       addCallbacks(function() {
+    //         result.callback(generatedKeys);
+    //       }, result.errback);
+
+    //     }, goog.bind(result.errback, result), this);
+    // }, this);
 
 
 // /** @override */
@@ -188,20 +214,33 @@ e2e.openpgp.yKeyRing.prototype.generateKey = function(uid,
  */
 e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote = function(uid,
     opt_type) {
-  var resultKeys = new e2e.async.Result();
+  return this.searchKeyLocalAndRemote_(uid, opt_type);
+};
+
+
+/**
+ * Searches a public or private key for a User ID asynchronously. The search is
+ * first performed locally. If we're searching for public key, then searches
+ * and appends the public key from the http key server. Do not import the found
+ * key to the local keyring.
+ * @param {string} uid User ID to search for, or empty to search all.
+ * @param {e2e.openpgp.KeyRing.Type=} opt_type Key type to search for.
+ * @param {boolean=} opt_requireRemoteResponse Whether to throw errors if the
+ *      server fails.
+ * @return {!e2e.async.Result.<!Array.<!e2e.openpgp.block.TransferableKey>>}
+ *    An array of keys for the given User ID or [] if not found.
+ * @private
+ */
+e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote_ = function(uid,
+    opt_type, opt_requireRemoteResponse) {
 
   var email = e2e.ext.utils.text.extractValidEmail(uid);
-  var localKeys;
-
-  if (uid === email && email !== null) {
-    localKeys = this.searchKeysByUidMatcher(function(uid_) {
-      return goog.string.caseInsensitiveContains(
-          uid_,
-          /** @type {string} */ (email));
-    }, opt_type);
-  } else {
-    localKeys = this.searchKey(uid, opt_type);
-  }
+  var localKeys = (email === null) ?
+      this.searchKey(uid, opt_type) :
+      this.searchKeysByUidMatcher(function(uid_) {
+        return goog.string.caseInsensitiveContains(
+            uid_, /** @type {string} */ (email));
+      }, opt_type);
 
   // localKeys could be null if none is found
   if (localKeys === null) {
@@ -209,28 +248,38 @@ e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote = function(uid,
   }
 
   // append remote public keys, if any
-  /** @suppress {accessControls} */
-  if (opt_type != e2e.openpgp.KeyRing.Type.PUBLIC ||
+  if ((opt_type && opt_type !== e2e.openpgp.KeyRing.Type.PUBLIC) ||
       this.conameKeyProvider_ === null ||
       goog.string.isEmptySafe(email)) {
-    resultKeys.callback(localKeys);
-  } else {
-    this.conameKeyProvider_.getTrustedPublicKeysByEmail(email).
-        addCallback(function(pubKeys) {
-          if (pubKeys.length === 0) {
-            resultKeys.callback(localKeys);
-          } else {
-            // De-duplicate keys
-            var keyMap = new goog.structs.Map();
-            goog.array.forEach(localKeys.concat(pubKeys), function(key) {
-              keyMap.set(key.keyPacket.fingerprint, key);
-            });
-            resultKeys.callback(keyMap.getValues());
-          }
-        }, this);
+    return e2e.async.Result.toResult(localKeys);
   }
 
-  return resultKeys;
+  var result = new e2e.async.Result;
+
+  this.conameKeyProvider_.getTrustedPublicKeysByEmail(email).
+      addCallbacks(function(pubKeys) {
+        if (pubKeys.length === 0) {
+          result.callback(localKeys);
+          return;
+        }
+
+        // De-duplicate keys
+        var allKeys = localKeys.concat(pubKeys);
+        goog.array.removeDuplicates(allKeys, null, function(key) {
+          return key.keyPacket.fingerprint.join(',');
+        });
+        result.callback(allKeys);
+
+      }, function(err) {
+        // in case of any error
+        opt_requireRemoteResponse ?
+            // let error propagates and fail
+            result.errback(err) :
+            // STILL proceed with local keys 
+            result.callback(localKeys);
+      });
+
+  return result;
 };
 
 
@@ -283,3 +332,68 @@ e2e.openpgp.yKeyRing.prototype.getKeyBlockByIdLocalAndRemote = function(keyId,
       });
 };
 
+
+/**
+ * Compare local keys with the remote key provider
+ * @param {string} uid The uid for remote sync check
+ * @return {!goog.async.Deferred}
+ */
+e2e.openpgp.yKeyRing.prototype.compareWithRemote = function(uid) {
+
+  // search for the local public keys
+  var localKeys = this.searchKey(uid, e2e.openpgp.KeyRing.Type.PUBLIC) || [];
+
+  var email = e2e.ext.utils.text.extractValidEmail(uid);
+  if (email === null || e2e.coname.getRealmByEmail(email) === null) {
+    return e2e.async.Result.toResult({
+      syncManaged: false,
+      common: localKeys.map(function(k) {return k.toKeyObject();})
+    });
+  }
+
+  return this.conameKeyProvider_.getTrustedPublicKeysByEmail(email).
+      addCallback(function(remoteKeys) {
+
+        var localOnly = goog.array.filter(localKeys, function(l) {
+          var lFingerprint = l.keyPacket.fingerprint;
+          return goog.array.every(remoteKeys, function(r) {
+            return !e2e.compareByteArray(
+                lFingerprint, r.keyPacket.fingerprint);
+          });
+        });
+
+        var common = goog.array.filter(localKeys, function(l) {
+          var lFingerprint = l.keyPacket.fingerprint;
+          return goog.array.every(localOnly, function(r) {
+            return !e2e.compareByteArray(
+                lFingerprint, r.keyPacket.fingerprint);
+          });
+        });
+
+        var remoteOnly = goog.array.filter(remoteKeys, function(l) {
+          var lFingerprint = l.keyPacket.fingerprint;
+          return goog.array.every(localKeys, function(r) {
+            return !e2e.compareByteArray(
+                lFingerprint, r.keyPacket.fingerprint);
+          });
+        });
+
+        return {
+          syncManaged: true,
+          localOnly: localOnly.map(function(k) {return k.toKeyObject();}),
+          common: common.map(function(k) {return k.toKeyObject();}),
+          remoteOnly: remoteOnly.map(function(k) {return k.toKeyObject();})
+        };
+
+      }, this);
+};
+
+
+
+
+// e2e.openpgp.yKeyRing.prototype.syncAllWithRemote = function() {
+//   // get all uids that have private keys, and that uid has an email
+//   var availableSigningUids = goog.structs.getKeys(this.getAllKeys(true));
+//   return goog.async.DeferredList.gatherResults(
+//       goog.array.map(availableSigningUids, this.syncWithRemote, this));
+// };

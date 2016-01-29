@@ -547,15 +547,6 @@
     "message": "Key fingerprint",
     "description": "The OpenPGP key fingerprint"
   },
-
-  "duplicateKeyWarning": {
-    "message": "There is already a key for this address in the keyring. Please BACKUP and remove it before using a new one.",
-    "description": "Warning that a key already exists for the given email address"
-  },
-  "invalidEmailWarning": {
-    "message": "Please enter a valid Yahoo email address.",
-    "description": "Warning that an email is not valid."
-  },
   "passphraseIncorrectWarning": {
     "message": "Passphrase is incorrect.",
     "description": "A message informing the user that passphrase validation failed."
@@ -563,5 +554,41 @@
   "lookingGlassTitle": {
     "message": "Secure message",
     "description": "Text that appears at the top of a looking glass."
+  },
+  "promptOverrideRemoteKeysConfirmMessage": {
+    "message": "Override the conflicts?\n\nThe local keyring is found out of sync with the remote keyserver. This could occur if an update is just made (within 5 minutes), please kindly wait for the notifications when the update is complete.\n\nIn case you want to override the conflicts using your local keyring, click Override to update the remote keyserver.",
+    "description": "A sentence asking the user to confirm overriding the conflicts with local keyring."
+  },
+  "promptIgnoreMissingPrivateKeysConfirmMessage": {
+    "message": "Really need a new key?\n\nYou have a prior registration with the email address. To read emails encrypted to the registered key(s), please transfer the private key(s) to this device (Click Cancel and then Import or Restore).\n\nClick Add a New Key in case you have lost them, or just want a new one for this device.",
+    "description": "A sentence recommending the user to use new keys instead of importing private keys of those publicized ones."
+  },
+  "promptAddReplaceKeysConfirmMessage": {
+    "message": "Keep existing keys amid adding a new one?\n\n",
+    "description": "A sentence asking the user whether to keep existing keys while adding a new one."
+  },
+  "localOnlyKeysLabel": {
+    "message": "This key is found only from the local keyring.",
+    "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only locally."
+  },
+  "commonKeysLabel": {
+    "message": "This key is found both locally and remotely.",
+    "description": "A sentence informing the user the key synchronization conflicts, particularly those keys that exists both locally and remotely."
+  },
+  "remoteOnlyKeysLabel": {
+    "message": "This key is found only from the remote keyserver.",
+    "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
+  },
+  "replaceKeyCheckboxLabel": {
+    "message": " Remove them and replace with a new one.",
+    "description": "A sentence informing the user that existing keys will be deleted before getting a new one."
+  },
+  "actionOverrideRemoteKeys": {
+    "message": "Override",
+    "description": "A verb prompting the user to update keyserver with local keyrings."
+  },
+  "actionIgnoreMissingPrivateKeys": {
+    "message": "Add a New Key",
+    "description": "A verb prompting the user to add a new key."
   }
 }

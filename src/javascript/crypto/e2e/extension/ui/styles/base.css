@@ -60,6 +60,7 @@ button.options,
 button.save {
   box-shadow: 0 2px #ABAEB7;
   background-color: BTN_CANCEL;
+  color: BTN_CANCEL_TEXT;
 }
 
 button.back:hover,
@@ -144,6 +145,8 @@ input {
   border: 1px solid YCOLOR_GREY_6;
   margin: 0;
   padding: 3px;
+  line-height: 25px;
+  font-size: 100%;
 }
 
 input:hover,
@@ -270,6 +273,7 @@ input:focus {
   position: fixed;
   top: 0;
   left: 0;
+  background: #ccc;
 }
 
 .pgpHead {
@@ -289,4 +293,28 @@ input:focus {
 .overlayDialog textarea {
   width: 98%;
   height: 80px;
+}
+
+.key-info {
+  padding-left: 15px;
+}
+
+.key-info-plus {
+  background: #eaffea;
+}
+
+.key-info-minus {
+  background: #ffecec;
+}
+
+.key-info-plus span:before, .key-info-minus span:before {
+  content: '+';
+  position: absolute;
+  margin-left: -10px;
+  font-weight: bolder;
+  font-size: 90%;
+}
+
+.key-info-minus span:before {
+  content: '-';
 }

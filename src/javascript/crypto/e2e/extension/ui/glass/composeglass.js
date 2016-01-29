@@ -611,7 +611,7 @@ ui.ComposeGlass.prototype.lackPublicKeys_ = function(recipients) {
     result.callback(goog.array.filter(recipients, function(recipient, i) {
       return !hasKeysPerRecipient[i];
     }));
-  }, result.errback);
+  }, goog.bind(result.errback, result));
 
   return result;
 };

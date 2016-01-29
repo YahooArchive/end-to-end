@@ -60,7 +60,7 @@ e2e.coname.ProtoBuf.prototype.initialize = function() {
     } else {
       result.errback(new Error('Missing protobuf!'));
     }
-  }, result.errback, this);
+  }, goog.bind(result.errback, result), this);
 
   return result;
 };
