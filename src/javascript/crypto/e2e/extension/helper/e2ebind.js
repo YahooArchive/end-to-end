@@ -183,7 +183,7 @@ e2ebind.initComposeGlass_ = function(elt) {
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.GET_KEYRING_UNLOCKED
   }), function(response) {
-    if (response.error || !response.content) {
+    if (!response.content) {
       // Can't install compose glass if the keyring is locked
       window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
     } else {
@@ -225,6 +225,9 @@ e2ebind.initComposeGlass_ = function(elt) {
         }
       });
     }
+  }, function (error) {
+    // Can't install compose glass if the keyring is locked
+    window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
   });
 };
 
@@ -785,10 +788,11 @@ e2ebind.validateSigner_ = function(signer, callback) {
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
     recipients: [signer],
-    content: 'private'
+    content: 'private_exist'
   }), function(response) {
-    var privKeys = response.error ? [] : response.content[0];
-    callback(privKeys && privKeys.length > 0);
+    callback(response.content);
+  }, function(err) {
+    callback(false);
   });
 };
 

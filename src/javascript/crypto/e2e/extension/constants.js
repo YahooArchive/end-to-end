@@ -54,7 +54,6 @@ e2e.ext.constants.Actions = {
 
   //@yahoo
   GET_ALL_KEYS_BY_EMAILS: 'get_all_keys_by_emails',
-  LIST_ALL_UIDS: 'list_all_uids',
   GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',
   LOCK_KEYRING: 'lock_keyring',
 

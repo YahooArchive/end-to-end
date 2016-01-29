@@ -26,7 +26,6 @@ goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.actions.GetKeyringBackupData');
 goog.require('e2e.ext.actions.GetAllKeysByEmails'); // @yahoo
 goog.require('e2e.ext.actions.ImportKey');
-goog.require('e2e.ext.actions.ListAllUids'); // @yahoo
 goog.require('e2e.ext.actions.ListKeys');
 goog.require('e2e.ext.actions.RestoreKeyringData');
 goog.require('e2e.ext.constants.Actions');

@@ -21,7 +21,6 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.e2ebindTest');
 
-goog.require('e2e.ext');
 goog.require('e2e.ext.Helper');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
@@ -56,15 +55,6 @@ function setUp() {
   window.config = {};
   mockControl = new goog.testing.MockControl();
   e2e.ext.testingstubs.initStubs(stubs);
-
-  stubs.replace(e2e.ext.keyserver.Client.prototype, 'fetchAndImportKeys',
-                function(emails, cb) {
-                  var result = {};
-                  goog.array.forEach(emails, function(email) {
-                    result[email] = (email === 'yan@yahoo.com');
-                  });
-                  cb(result);
-                });
 
   stubs.setPath('chrome.runtime.getURL', function(filename) {
     return './' + filename;
@@ -120,7 +110,7 @@ function tearDown() {
 function testStart() {
   assertEquals(undefined, e2ebind.messagingTable);
   e2ebind.start();
-  goog.asserts.assertInstanceof(e2ebind.messagingTable,
+  goog.asserts.assertInstanceof(e2ebind.messagingTable_,
                                 e2ebind.MessagingTable_);
 }
 
@@ -295,8 +285,18 @@ function testProviderRequestToInstallReadGlass() {
   var div2 = document.createElement('div');
   div1.id = 's1';
   div2.id = 's2';
-  var text1 = '-----BEGIN PGP MESSAGE-----';
-  var text2 = 'foo';
+  var text1 =
+    '-----BEGIN PGP MESSAGE-----\n' +
+    'Version: GnuPG v1.4.11 (GNU/Linux)\n' +
+    '\n' +
+    'hIwDXrdcIWJXR5IBA/92aAG/zps/vIGXdw5TEEpjjJsTzzb9q+YPtmrWMBn/dvf2\n' +
+    't3RzxFigHvOTZxQthlGYr5Ft8zxmG4l7T6QO+sYp+sQuHjiex1w6A6fuNVx8ieXD\n' +
+    'G/MGU16PhBa6wLe0OOEE5nmEKYo1A8imHUyvFF8VXpDeMgACHYBFKvA/4bIbANJQ\n' +
+    'ARBHsOBARkRDW7TibAaXijDaFBKGCylxi8dxQVCDkDJpzLDcs1JsiE6v4eKVztb8\n' +
+    'msKSPseUtmsJdu9oQyZdFU4igAWSRKvXQOXAbjBdgmw=\n' +
+    '=HSJn\n' +
+    '-----END PGP MESSAGE-----';
+  var text2 = '-----BEGIN PGP MESSAGE-----';
   document.body.appendChild(div1);
   document.body.appendChild(div2);
 
@@ -368,9 +368,9 @@ function testProviderRequestToValidateSigner() {
   stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
     var response = {};
     response.completedAction = request.action;
-    if (request.action === constants.Actions.LIST_ALL_UIDS &&
-        request.content === 'private') {
-      response.content = ['yzhu@yahoo-inc.com', 'yan@example.com'];
+    if (request.action === constants.Actions.GET_ALL_KEYS_BY_EMAILS &&
+        request.content === 'private_exist') {
+      response.content = true;
     }
     cb(response);
   });
@@ -404,10 +404,9 @@ function testProviderRequestToValidateRecipients() {
   stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
     var response = {};
     response.completedAction = request.action;
-    if (request.action === constants.Actions.LIST_ALL_UIDS &&
-        request.content === 'public') {
-      response.content = ['yzhu@yahoo-inc.com', 'yan@example.com',
-        'cc@example.com'];
+    if (request.action === constants.Actions.GET_ALL_KEYS_BY_EMAILS &&
+        request.content === 'public_exist') {
+      response.content = [false, false, true, true];
     }
     cb(response);
   });
