@@ -408,60 +408,81 @@ e2e.openpgp.ContextImpl.prototype.verifyDecryptInternal = function(
 
 
 /**
- * Processes a literal message and returns the result of verification.
+ * Processes a literal message and returns the result of verification. //@yahoo
  * @param {e2e.openpgp.block.Message} block
  * @return {!e2e.openpgp.VerifyDecryptResult}
  * @private
  */
 e2e.openpgp.ContextImpl.prototype.processLiteralMessage_ = function(block) {
   var literalBlock = block.getLiteralMessage();
-  var verifyResult = null;
+
   if (literalBlock.signatures) {
-    verifyResult = this.verifyMessage_(literalBlock);
+    var asyncResult = new e2e.async.Result;
+    this.verifyMessage_(literalBlock).addCallback(function(verifyResult){
+      asyncResult.callback(/** @type {!e2e.openpgp.VerifiedDecrypt} */ ({
+        'decrypt': {
+          'data': literalBlock.getData(),
+          'options': {
+            'charset': literalBlock.getCharset(),
+            'creationTime': literalBlock.getTimestamp(),
+            'filename': literalBlock.getFilename()
+          },
+          'wasEncrypted': false
+        },
+        'verify': verifyResult
+      }));
+    });
+    return asyncResult;
   }
-  /** @type {!e2e.openpgp.VerifiedDecrypt} */
-  var result = {
-    'decrypt': {
-      'data': literalBlock.getData(),
-      'options': {
-        'charset': literalBlock.getCharset(),
-        'creationTime': literalBlock.getTimestamp(),
-        'filename': literalBlock.getFilename()
+
+  return e2e.async.Result.toResult(
+    /** @type {!e2e.openpgp.VerifiedDecrypt} */ ({
+      'decrypt': {
+        'data': literalBlock.getData(),
+        'options': {
+          'charset': literalBlock.getCharset(),
+          'creationTime': literalBlock.getTimestamp(),
+          'filename': literalBlock.getFilename()
+        },
+        'wasEncrypted': false
       },
-      'wasEncrypted': false
-    },
-    'verify': verifyResult
-  };
-  return e2e.async.Result.toResult(result);
+      'verify': null
+    }));
 };
 
 
 /**
  * Verifies signatures places on a LiteralMessage
  * @param  {!e2e.openpgp.block.LiteralMessage} message Block to verify
- * @return {!e2e.openpgp.VerifyResult} Verification result.
+ * @return {e2e.async.Result.<!e2e.openpgp.VerifyResult>} Verification result.
  * @private
  */
 e2e.openpgp.ContextImpl.prototype.verifyMessage_ = function(
     message) {
   // Get keys matching key IDs declared in signatures.
-  var keyBlocks = goog.array.map(message.getSignatureKeyIds(), goog.bind(
+  var keyBlocksResults = goog.array.map(message.getSignatureKeyIds(), goog.bind(
       function(keyId) {
-        return this.keyRing_.getKeyBlockById(keyId);
+        return this.keyRing_.getKeyBlockByIdLocalAndRemote(keyId);
       }, this));
-  // Verify not empty key blocks only
-  var verifyResult = message.verify(goog.array.filter(keyBlocks,
-      function(block) {
-        return !goog.isNull(block);
-      }));
-  return {
-    success: goog.array.map(verifyResult.success, function(key) {
-      return key.toKeyObject();
-    }),
-    failure: goog.array.map(verifyResult.failure, function(key) {
-      return key.toKeyObject();
-    })
-  };
+
+  var result = new e2e.async.Result;
+  goog.async.DeferredList.gatherResults(keyBlocksResults).
+    addCallback(function(keyBlocks) {
+      // Verify not empty key blocks only
+      var verifyResult = message.verify(goog.array.filter(keyBlocks,
+          function(block) {
+            return !goog.isNull(block);
+          }));
+      result.callback({
+        success: goog.array.map(verifyResult.success, function(key) {
+          return key.toKeyObject();
+        }),
+        failure: goog.array.map(verifyResult.failure, function(key) {
+          return key.toKeyObject();
+        })
+      });
+    });
+  return result;
 };
 
 

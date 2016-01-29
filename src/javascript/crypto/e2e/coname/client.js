@@ -21,7 +21,7 @@
 goog.provide('e2e.coname.Client');
 goog.provide('e2e.coname.QuorumRequirement');
 goog.provide('e2e.coname.RealmConfig');
-goog.provide('e2e.coname.Result');
+goog.provide('e2e.coname.KeyData');
 goog.provide('e2e.coname.VerificationPolicy');
 goog.provide('e2e.coname.getRealmByDomain');
 goog.provide('e2e.coname.getRealmByEmail');
@@ -97,11 +97,11 @@ e2e.coname.RealmConfig;
 /**
  * The structure of key lookup result
  * @typedef {{
- *    key: ?e2e.ByteArray,
+ *    keyData: ?e2e.ByteArray,
  *    proof: Object
  * }}
  */
-e2e.coname.Result;
+e2e.coname.KeyData;
 
 
 /**
@@ -194,13 +194,20 @@ e2e.coname.getRealmByEmail = function(user) {
 
 /**
  * Constructor for the coname client.
+ * @param {string=} opt_keyName The key name being referenced in the key data blob
  * @constructor
  */
-e2e.coname.Client = function() {
+e2e.coname.Client = function(opt_keyName) {
   /**
    * @type {?Object<string,*>}
    */
   this.proto = null;
+
+  /**
+   * The key name being referenced in the key data blob
+   * @type {string}
+   */
+  this.keyName_ = opt_keyName || '25519';
 };
 
 
@@ -208,11 +215,7 @@ e2e.coname.Client = function() {
 e2e.coname.Client.PROTO_FILE_PATH = 'coname-client.proto.json';
 
 
-/**
- * The key name being referenced in the keys
- * @const {string}
- */
-e2e.coname.Client.KEY_NAME = '25519';
+
 
 
 /**
@@ -313,9 +316,10 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
  * @param {!e2e.ByteArray} key OpenPGP key to send
  * @param {e2e.coname.RealmConfig} realm The RealmConfig
  * @param {e2e.coname.ServerResponse} oldProof The lookup proof just obtained
+ * @param {string} keyName The key name being referenced in the key data blob
  * @return {Object<string,*>} The update message
  */
-e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
+e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof, keyName) {
 
   var keys = {}, hProfile, profile, entry;
 
@@ -325,10 +329,10 @@ e2e.coname.encodeUpdateRequest_ = function(proto, email, key, realm, oldProof) {
     keys = proto['Profile'].decode(oldProof.profile.encoding).keys;
     // update only the pgp key
     keys.set(
-        e2e.coname.Client.KEY_NAME,
+        keyName,
         goog.crypt.base64.encodeByteArray(key));
   } else {
-    keys[e2e.coname.Client.KEY_NAME] = new Uint8Array(key);
+    keys[keyName] = new Uint8Array(key);
   }
 
   profile = proto['Profile'].encode({
@@ -394,8 +398,7 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
     return e2e.async.Result.toError(e);
   }
 
-  var result = new e2e.async.Result,
-      utilsError = e2e.ext.utils.Error;
+  var result = new e2e.async.Result;
   goog.net.XhrIo.send(url, function(e) {
     var xhr = e.target;
     if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
@@ -405,7 +408,7 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
         result.errback(e);
       }
     } else {
-      result.errback(new utilsError(
+      result.errback(new e2e.ext.utils.Error(
           'CONAME Connection Error: ' + xhr.getLastError(),
           'conameConnectionError'));
     }
@@ -418,7 +421,7 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
  * @param {boolean=} opt_skipVerify whether skip the verify step
- * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the
+ * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.KeyData>} the
  *    Result if there has a key associated with the email, and it is validated.
  *    Result is null for no realms. key is null if verified for having no key.
  */
@@ -455,13 +458,13 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
         }
 
         keyByteArray = profile && profile.keys &&
-            profile.keys.has(e2e.coname.Client.KEY_NAME) ?
+            profile.keys.has(this.keyName_) ?
             /** @type {e2e.ByteArray} */ (
             Array.prototype.slice.call(new Uint8Array(profile.keys.get(
-            e2e.coname.Client.KEY_NAME).toBuffer()))) :
+            this.keyName_).toBuffer()))) :
             null;
 
-        result.callback({key: keyByteArray, proof: pf});
+        result.callback({keyData: keyByteArray, proof: pf});
 
       }, result.errback, this);
 
@@ -472,12 +475,12 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
 /**
  * Update or add public keys for an email address
  * @param {!string} email The email address
- * @param {!e2e.ByteArray} key The public key to upload for the email address
- * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.Result>} the
+ * @param {!e2e.ByteArray} keyData The key blob to upload for the email address
+ * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.KeyData>} the
  *  Result if there has a key associated with the email, and it is validated.
  *  Result is null for no realms. key is null if verified for having no key.
  */
-e2e.coname.Client.prototype.update = function(email, key) {
+e2e.coname.Client.prototype.update = function(email, keyData) {
   // normalize the email address
   email = email.toLowerCase();
   var realm, realm_ = e2e.coname.getRealmByEmail(email);
@@ -495,7 +498,7 @@ e2e.coname.Client.prototype.update = function(email, key) {
         oldKey = oldResult.key;
 
         var data = e2e.coname.encodeUpdateRequest_(
-           this.proto, email, key, realm, oldResult.proof);
+           this.proto, email, keyData, realm, oldResult.proof, this.keyName_);
 
         newProfileBase64 = data.profile;
 
@@ -517,81 +520,12 @@ e2e.coname.Client.prototype.update = function(email, key) {
         }
 
         verifiedKey = Array.prototype.slice.call(new Uint8Array(
-           profile.keys.get(e2e.coname.Client.KEY_NAME).toBuffer()));
+           profile.keys.get(this.keyName_).toBuffer()));
 
         return e2e.async.Result.toResult({
-          key: verifiedKey,
+          keyData: verifiedKey,
           proof: pf
         });
 
       }, this);
-};
-
-
-/**
- * Imports a public key to the key server.
- * @param {!e2e.openpgp.block.TransferablePublicKey} key The ASCII
- *    armored or {e2e.openpgp.block.TransferablePublicKey} key to import.
- * @return {!goog.async.Deferred.<boolean>} True if importing key is succeeded.
- */
-e2e.coname.Client.prototype.importPublicKey = function(key) {
-  var emails = e2e.ext.utils.text.getValidEmailAddressesFromArray(
-      key.getUserIds(), true);
-
-  // TODO: relax key lookup for non-yahoo email address?
-  var yahooEmails = goog.array.filter(emails, function(email) {
-    return e2e.ext.utils.text.extractValidYahooEmail(email) !== null;
-  });
-  if (yahooEmails.length === 0) {
-    return e2e.async.Result.toResult(true);
-  }
-
-  var serializedKey = key.serialize();
-
-  var importedKeysResults = goog.async.DeferredList.gatherResults(
-      goog.array.map(yahooEmails, function(email) {
-        return this.update(email, serializedKey);
-      }, this));
-  return importedKeysResults.addCallback(function(importedKeys) {
-    // Return true only if it was imported for all the emails
-    return (importedKeys.indexOf(null) === -1);
-  });
-};
-
-
-/**
- * Searches a public key based on an email.
- * @param {string} email The email which is used to search for the
- *    corresponding public keys.
- * @return {!e2e.async.Result.<!Array.<!e2e.openpgp.block.TransferableKey>>}
- *    The public keys correspond to the email or [] if not found.
- */
-e2e.coname.Client.prototype.searchPublicKey = function(email) {
-  // TODO: relax key lookup for non-yahoo email address?
-  if (e2e.ext.utils.text.extractValidYahooEmail(email) === null) {
-    return e2e.async.Result.toResult([]);
-  }
-
-  var result = new e2e.async.Result;
-  this.lookup(email).addCallbacks(function(verified) {
-
-    // no key found for that email
-    if (verified.key === null) {
-      result.callback([]);
-    } else {
-
-      // TODO: support multiple keys
-      var verifiedPubKey = e2e.openpgp.block.factory.
-          parseByteArrayTransferableKey(verified.key);
-      verifiedPubKey.processSignatures();
-      result.callback([verifiedPubKey]);
-    }
-
-  }, function(e) {
-    // TODO: let user override?
-    // any errors will be considered as having no key
-    result.callback([]);
-  }, this);
-
-  return result;
 };

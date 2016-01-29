@@ -211,7 +211,7 @@ function testEncodeUpdateRequest() {
     var realm = e2e.coname.getRealmByEmail(email);
     var key = [1,2,3];
 
-    var message = e2e.coname.encodeUpdateRequest_(proto, email, key, realm, lookupProof);
+    var message = e2e.coname.encodeUpdateRequest_(proto, email, key, realm, lookupProof, '25519');
 
     assertEquals('string', typeof message.profile);
     assertEquals('string', typeof message.update.new_entry);
