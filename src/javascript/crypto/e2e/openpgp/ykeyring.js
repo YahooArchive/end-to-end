@@ -91,7 +91,7 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
 };
 
 /**
- * Upload the public keys for the user id
+ * Upload the local public keys for the user id
  * @param {string} uid The uid
  * @return {!goog.async.Deferred.<boolean>} True if at least one of the keys
  *     are successfully uploaded according to the specified uids.
@@ -248,7 +248,7 @@ e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote_ = function(uid,
   }
 
   // append remote public keys, if any
-  if ((opt_type && opt_type !== e2e.openpgp.KeyRing.Type.PUBLIC) ||
+  if ((opt_type && opt_type === e2e.openpgp.KeyRing.Type.PRIVATE) ||
       this.conameKeyProvider_ === null ||
       goog.string.isEmptySafe(email)) {
     return e2e.async.Result.toResult(localKeys);
@@ -388,12 +388,3 @@ e2e.openpgp.yKeyRing.prototype.compareWithRemote = function(uid) {
       }, this);
 };
 
-
-
-
-// e2e.openpgp.yKeyRing.prototype.syncAllWithRemote = function() {
-//   // get all uids that have private keys, and that uid has an email
-//   var availableSigningUids = goog.structs.getKeys(this.getAllKeys(true));
-//   return goog.async.DeferredList.gatherResults(
-//       goog.array.map(availableSigningUids, this.syncWithRemote, this));
-// };

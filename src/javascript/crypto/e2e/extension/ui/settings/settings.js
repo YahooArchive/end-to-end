@@ -320,6 +320,7 @@ ui.Settings.prototype.importKeyring_ = function(file) {
       content: contents,
       passphraseCallback: goog.bind(this.renderPassphraseCallback_, this)
     }), this, goog.bind(function(res) {
+      goog.array.removeDuplicates(res); //@yahoo
       if (res.length > 0) {
         utils.showNotification(
             chrome.i18n.getMessage(

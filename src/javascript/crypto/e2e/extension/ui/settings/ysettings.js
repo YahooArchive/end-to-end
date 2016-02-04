@@ -20,15 +20,20 @@
 goog.provide('e2e.ext.ui.ySettings');
 
 goog.require('e2e.async.Result');
+goog.require('e2e.cipher.Algorithm');
+goog.require('e2e.coname.getRealmByEmail');
+goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.Settings');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.templates.dialogs.importconfirmation');
 goog.require('e2e.ext.ui.templates.dialogs.syncconfirmation');
-goog.require('goog.array');
-goog.require('goog.async.DeferredList');
+goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.text');
+goog.require('e2e.signer.Algorithm');
 goog.require('goog.dom');
+goog.require('goog.string');
 
 
 goog.scope(function() {
@@ -56,44 +61,123 @@ goog.inherits(ui.ySettings, ui.Settings);
 
 
 /**
- * Prompt a login window 
- * @param {string} email The email address used for coname query
- * @return {!e2e.async.Result} A promise
+ * Sync Keys
+ * @param {string} keyUid The key UID to sync
+ * @param {string} action The action, keygen or import
+ * @param {boolean=} opt_overrideRemote Whether the user has acknowledged to
+ *     override remote keys with local keyring.
+ * @return {!e2e.async.Result.<{needsKeyGen: boolean, keysToKeep:
+ *     ?e2e.openpgp.Keys, keysToImport: ?e2e.openpgp.Keys}>} The sync results
  * @private
+ * @suppress {accessControls}
  */
-ui.ySettings.prototype.renderAuthCallback_ = function(email) {
-  var result = new e2e.async.Result;
-
-    // TODO: url now hardcoded
-    var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
-                encodeURIComponent(
-                  'https://alpha.coname.corp.yahoo.com:25519/auth/cookies');
-
-    chrome.windows.create({
-      url: authUrl,
-      // url: e2e.coname.getRealmByEmail(email).addr +
-      //         '/auth?email=' + encodeURIComponent(email),
-      width: 640,
-      height: 640,
-      type: 'popup'
-    }, goog.bind(function(win) {
-
-      var onClose_ = goog.bind(function(closedWinId) {
-        if (win.id === closedWinId) {
-          chrome.windows.onRemoved.removeListener(onClose_);
-          result.callback();
-        }
-      }, this);
-      chrome.windows.onRemoved.addListener(onClose_);
-
-    }, this));
-
-  return result;
+ui.ySettings.prototype.syncKeys_ = function(
+    keyUid, action, opt_overrideRemote) {
+  return this.pgpContext_.syncKeys(keyUid, action,
+      goog.bind(this.renderAuthCallback_, this),
+      goog.bind(this.renderKeepExistingKeysCallback_, this),
+      goog.bind(this.renderIgnoreMissingPrivateKeysCallback_, this),
+      opt_overrideRemote === true ?
+      undefined :
+      goog.bind(this.renderOverrideRemoteKeysCallback_, this)).
+    addErrback(this.displayFailure_, this);
 };
 
 
 /**
- * Override to add email validity and priv key duplicate check
+ * Renders a new PGP key into the settings page.
+ * @param {string} keyUid The key UID to render.
+ * @param {boolean=} opt_isKeyGen Whether the user has acknowledged to
+ *     override remote keys with local keyring.
+ * @suppress {accessControls}
+ * @override
+ */
+ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isKeyGen) {
+  var ctx = this.pgpContext_;
+  ctx.searchLocalKey(keyUid) // expected to return only local keys
+      .addCallback(function(pgpKeys) {
+        this.keyringMgmtPanel_.addNewKey(keyUid, pgpKeys);
+        this.renderPanels_();
+
+
+        // sync with remote only if such a keyUid has a private key
+        var email = e2e.ext.utils.text.extractValidEmail(keyUid);
+        if (email === null ||
+            e2e.coname.getRealmByEmail(email) === null ||
+            ctx.searchPrivateKey(keyUid).length === 0) {
+          return;
+        }
+
+        this.syncKeys_(keyUid,
+            opt_isKeyGen ? 'keygen' : 'import',
+            opt_isKeyGen).
+        addCallbacks(function(isInSync) {
+          isInSync && utils.showNotification(
+              chrome.i18n.getMessage('keyUpdateSuccessMsg'),
+              goog.nullFunction);
+        }, this.displayFailure_, this);
+
+      }, this)
+      .addErrback(this.displayFailure_, this);
+};
+
+
+// TODO: support updating empty key to keyserver
+// /**
+//  * Removes a PGP key.
+//  * @param {string} keyUid The ID of the key to remove.
+//  * @suppress {accessControls}
+//  * @override
+//  */
+// ui.ySettings.prototype.removeKey_ = function(keyUid) {
+//   this.pgpContext_
+//       .searchPrivateKey(keyUid)
+//       .addCallback(/** @this {ui.Settings} */ (function(privateKeys) {
+//         // TODO(evn): This message should be localized.
+//         var prompt = 'Deleting all keys for ' + keyUid;
+//         if (privateKeys && privateKeys.length > 0) {
+//           prompt += '\n\nWARNING: This will delete some private keys!';
+//         }
+//         if (window.confirm(prompt)) {
+//           this.pgpContext_.deleteKey(keyUid).addCallback(function() {
+//             this.keyringMgmtPanel_.removeKey(keyUid);
+//             this.renderPanels_();
+//           }, this);
+//         }
+//       }), this)
+//       .addErrback(this.displayFailure_, this);
+// };
+
+
+/**
+ * Generates a new PGP key using the information that is provided by the user.
+ * Same as Settings.prototype.generateKey_ except added overrideRemote
+ * @param {panels.GenerateKey} panel The panel where the user has provided the
+ *     information for the new key.
+ * @param {string} name The name to use.
+ * @param {string} email The email to use.
+ * @param {string} comments The comments to use.
+ * @param {number} expDate The expiration date to use.
+ * @private
+ * @return {goog.async.Deferred}
+ * @suppress {accessControls}
+ */
+ui.ySettings.prototype.generateKeyAndOverrideRemote_ = function(
+    panel, name, email, comments, expDate) {
+  var defaults = constants.KEY_DEFAULTS;
+  return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
+      defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
+      defaults.subkeyLength, name, comments, email, expDate)
+      .addCallback(goog.bind(function(key) {
+        this.renderNewKey_(key[0].uids[0], true); //@yahoo overrideRemote
+        panel.reset();
+      }, this)).addErrback(this.displayFailure_, this);
+};
+
+
+/**
+ * Generate keys only after user acknowledges to add or override any existing
+ * keys uploaded to the keyserver.
  * @suppress {accessControls}
  * @override
  * @private
@@ -101,50 +185,59 @@ ui.ySettings.prototype.renderAuthCallback_ = function(email) {
 ui.ySettings.prototype.generateKey_ = function(
     panel, name, email, comments, expDate) {
 
+  email = goog.string.trim(email);
+  if (email === '') {
+    return e2e.async.Result.toResult(undefined);
+  }
+
   var uid = '<' + email + '>';
   var ctx = this.pgpContext_;
 
-  return ctx.syncKeys(uid,
-      goog.bind(this.renderAuthCallback_, this),
-      goog.bind(this.renderIgnoreMissingPrivateKeysCallback_, this),
-      goog.bind(this.renderOverrideRemoteKeysCallback_, this)).
-      addCallbacks(function(syncResults) {
-        syncResults = /** @type {{shouldAddKey: boolean, keysToKeep:
-          ?e2e.openpgp.Keys, keysToImport: ?e2e.openpgp.Keys}} */(syncResults);
-        if (!syncResults.shouldAddKey) {
-          return;
-        }
+  return this.syncKeys_(uid, 'keygen').addCallbacks(function(needsNewKey) {
+    if (needsNewKey) {
+      // generate a new key and update the panel
+      return this.generateKeyAndOverrideRemote_(
+          panel, name, email, comments, expDate);
+    }
+    return [];
+  }, this.displayFailure_, this);
+};
 
-        return this.renderKeepExistingKeysCallback_(
-            uid, syncResults.keysToKeep || []).
-        addCallback(function(preferKeep) {
-          var defer;
-          switch (preferKeep) {
-            case '': return;
-            case 'false':
-              defer = ctx.deleteKey(uid);
-              break;
-            case 'true':
-              defer = goog.async.DeferredList.gatherResults(goog.array.map(
-                  syncResults.keysToImport || [], function(keyObject) {
-                    return ctx.importKey(
-                                goog.nullFunction, keyObject.serialized);
-                  }));
-              break;
-          }
-          return defer.
-              addCallback(function() {
-                return ui.Settings.prototype.generateKey_.call(this,
-                    panel, name, email, comments, expDate);
-              }, this).
-              addCallback(function(newKeys) {
-                // to trigger uploading the local key ring
-                return ctx.syncKeys(uid, 
-                  goog.bind(this.renderAuthCallback_, this));
-              }, this);
-        }, this);
 
-      }, this.displayFailure_, this);
+/**
+ * Prompt a login window
+ * @param {string} email The email address used for coname query
+ * @return {!e2e.async.Result} A promise
+ * @private
+ */
+ui.ySettings.prototype.renderAuthCallback_ = function(email) {
+  var result = new e2e.async.Result;
+
+  // TODO: url now hardcoded
+  var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
+                encodeURIComponent(
+                  'https://alpha.coname.corp.yahoo.com:25519/auth/cookies');
+
+  chrome.windows.create({
+    url: authUrl,
+    // url: e2e.coname.getRealmByEmail(email).addr +
+    //         '/auth?email=' + encodeURIComponent(email),
+    width: 500,
+    height: 640,
+    type: 'popup'
+  }, goog.bind(function(win) {
+
+    var onClose_ = goog.bind(function(closedWinId) {
+      if (win.id === closedWinId) {
+        chrome.windows.onRemoved.removeListener(onClose_);
+        result.callback();
+      }
+    }, this);
+    chrome.windows.onRemoved.addListener(onClose_);
+
+  }, this));
+
+  return result;
 };
 
 

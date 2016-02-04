@@ -734,7 +734,29 @@ e2e.openpgp.ContextImpl.prototype.restoreKeyring = function(data, email) {
 };
 
 
+
+
 /**
+ * //@yahoo
+ * Searches a key (either public, private, or both) in the local keyring.
+ * @param {string} uid The user id.
+ * @private
+ * @return {!e2e.openpgp.KeyResult} The result of the search.
+ */
+e2e.openpgp.ContextImpl.prototype.searchLocalKey = function(uid) {
+  return e2e.async.Result.toResult(
+        this.keyRing_.searchKey(uid, e2e.openpgp.KeyRing.Type.ALL) || []).
+      addCallback(function(keyBlocks) {
+        return /** @type {!e2e.openpgp.Keys} */ (goog.array.map(keyBlocks,
+            function(keyBlock) {
+              return keyBlock.toKeyObject();
+            }));
+      });
+};
+
+
+/**
+ * //@yahoo
  * A stub to bypass user actions and return true
  * @param {string} uid The user id
  * @param {...!e2e.openpgp.Keys} var_args
@@ -752,33 +774,38 @@ e2e.openpgp.ContextImpl.prototype.alwaysTrueCallbackStub_ = function(
  * Obtains conflict resolution decisions from the user when local keyring is
  * found out of sync with the remote keyserver.
  * @param {string} uid The user id.
- * @param {function(): !e2e.async.Result} renderAuthCallback The Callback to 
+ * @param {function(): !e2e.async.Result} authCallback The Callback to 
  *     authenticate the user
+ * @param {function(string, !e2e.openpgp.Keys): !e2e.async.Result<string>}
+ *     keepExistingKeysCallback The Callback to confirm whether the  
+ *     user want to keep any existing keys, be it remote or local
  * @param {function(string, !e2e.openpgp.Keys, !e2e.openpgp.Keys, 
- *     !e2e.openpgp.Keys): !e2e.async.Result<boolean>=} 
- *     opt_renderIgnoreMissingPrivateKeysCallback The Callback to recommend 
+ *     !e2e.openpgp.Keys): !e2e.async.Result<boolean>} 
+ *     ignoreMissingPrivateKeysCallback The Callback to recommend 
  *     users to add a new key in case secret companions of existing public keys
  *     are missing
  * @param {function(string, !e2e.openpgp.Keys, !e2e.openpgp.Keys, 
  *     !e2e.openpgp.Keys): !e2e.async.Result<boolean>=}
  *     opt_overrideRemoteKeysCallback The Callback to capture user consent
  *     whether to override the remote with the local copy.
- * @return {!e2e.async.Result.<{shouldAddKey: boolean, keysToKeep:
- *     ?e2e.openpgp.Keys, keysToImport: ?e2e.openpgp.Keys}>} The action based
- *     on the sync results
+ * @return {!e2e.async.Result.<{needsKeyGen: boolean, keysToKeep:
+ *     ?e2e.openpgp.Keys, keysToImport: ?e2e.openpgp.Keys}>} The sync results
  */
-e2e.openpgp.ContextImpl.prototype.syncKeys = function(uid, renderAuthCallback, 
-  opt_renderIgnoreMissingPrivateKeysCallback, opt_overrideRemoteKeysCallback) {
+e2e.openpgp.ContextImpl.prototype.syncKeys = function(uid, action,
+  authCallback, 
+  keepExistingKeysCallback,
+  ignoreMissingPrivateKeysCallback,
+  opt_overrideRemoteKeysCallback) {
+
 
   // go ahead to upload. bypass if opt_overrideRemoteKeysCallback missing
   if (!opt_overrideRemoteKeysCallback) {
     opt_overrideRemoteKeysCallback = this.alwaysTrueCallbackStub_;
   }
-  if (!opt_renderIgnoreMissingPrivateKeysCallback) {
-    opt_renderIgnoreMissingPrivateKeysCallback = this.alwaysTrueCallbackStub_;
-  }
 
-  var result = new e2e.async.Result;
+  var result = new e2e.async.Result, 
+    positiveCallback = function() { result.callback(true); },
+    negativeCallback = function() { result.callback(false); };
 
   // TODO: now keyserver being online is a must for yahoo users
   this.keyRing_.compareWithRemote(uid).
@@ -789,56 +816,100 @@ e2e.openpgp.ContextImpl.prototype.syncKeys = function(uid, renderAuthCallback,
           remoteOnly = diff.remoteOnly;
 
       if (!diff.syncManaged) {
-        result.callback({shouldAddKey: true, keysToKeep: common});
-        return;
+        return positiveCallback();
       }
 
       if (localOnly.length !== 0) {
         // some keys found unique to local, can possibly happen after a local
         // key import, last key generation, or server being out sync
+
+        if (remoteOnly.length === 0 && action === 'import') {
+          this.keyRing_.uploadKeys(uid).addCallbacks(
+              positiveCallback, result.errback, result);
+          return;
+        }
+
         opt_overrideRemoteKeysCallback(uid, localOnly, common, remoteOnly).
           addCallback(function(preferOverride) {
             if (preferOverride) {
               // prefer use existing local keys, (re)attempt to upload them
               this.keyRing_.uploadKeys(uid).
-                addCallbacks(function() {
-                  result.callback({shouldAddKey: false});
-                }, result.errback, result);
+                  addCallbacks(positiveCallback, result.errback, result);
             } else {
-              result.callback({shouldAddKey: false});
+              negativeCallback();
             }
           }, this);
 
       } else {
         if (remoteOnly.length === 0) {
-          // in sync, proceed
-          result.callback({shouldAddKey: true, keysToKeep: common});
-          // confirmFeedback = localKeys.length === 0 ?
-          //     e2e.async.Result.toResult(true) :
-          //     promptCallbacks.canReplaceOrAdd(existingKeys = localKeys);
+          // in sync
+          if (action === 'keygen') {
+            keepExistingKeysCallback(uid, common).
+              addCallback(function(preferReplace) {
+                switch(preferReplace) {
+                  case '': negativeCallback(); break;
+                  case 'true':
+                    this.deleteKey(uid).addCallback(positiveCallback);
+                    break;
+                  case 'false': positiveCallback(); break;
+                }
+              }, this);
+          } else if (action === 'import') {
+            positiveCallback();
+          }
         } else {
-          // some keys found unique to remote, recommend user to add/replace
-          opt_renderIgnoreMissingPrivateKeysCallback(
-              uid, localOnly, common, remoteOnly).
-            addCallback(function(preferNewKeys) {
-              result.callback({
-                shouldAddKey: preferNewKeys,
-                keysToKeep: common.concat(remoteOnly),
-                keysToImport: remoteOnly
-              });
+          // some keys found unique to remote, and localOnly = 0
+          if (action === 'keygen') {
+            // ask if user still want a key, or restore his private keys
+            ignoreMissingPrivateKeysCallback(
+                uid, localOnly, common, remoteOnly).
+              addCallback(function(preferNewKey) {
+                if (!preferNewKey) {  // canceled
+                  return negativeCallback();
+                }
 
-              // // user gives up importing keys, but prefer replace/add
-              // return localKeys.length === 0 ?
-              //   e2e.async.Result.toResult(true) :
-              //   promptCallbacks.canReplaceOrAdd(existingKeys = remoteKeys);
-            });
+                // recommend user to add/replace in addition to remote+common
+                keepExistingKeysCallback(uid, common.concat(remoteOnly)).
+                  addCallback(function(preferReplace) {
+                    var defer;
+                    switch (preferReplace) {
+                      case '': negativeCallback(); return;
+                      case 'true':
+                        defer = this.deleteKey(uid);
+                        break;
+                      case 'false':
+                        defer = goog.async.DeferredList.gatherResults(
+                            goog.array.map(remoteOnly, function(keyObject) {
+                              return this.importKey(goog.nullFunction,
+                                                      keyObject.serialized);
+                            }, this));
+                        break;
+                    }
+                    defer.addCallback(positiveCallback);
+                  }, this);
+              }, this);
+          } else if (action === 'import') {
+            // just imported a key, but still some keys are unique to remote
+            opt_overrideRemoteKeysCallback(uid, localOnly, common, remoteOnly).
+              addCallback(function(preferOverride) {
+                if (preferOverride) {
+                  // prefer use existing local keys, (re)attempt to upload them
+                  this.keyRing_.uploadKeys(uid).
+                    addCallbacks(positiveCallback, result.errback, result);
+                } else {
+                  negativeCallback();
+                }
+              }, this);
+          }
+
         }
       }
     }, function(error) {
       if (error.messageId === 'conameAuthError') {
-        renderAuthCallback().addCallback(function(){
-          this.syncKeys(uid, renderAuthCallback, 
-              opt_renderIgnoreMissingPrivateKeysCallback, 
+        authCallback().addCallback(function(){
+          this.syncKeys(uid, action, authCallback, 
+              keepExistingKeysCallback,
+              ignoreMissingPrivateKeysCallback,
               opt_overrideRemoteKeysCallback).
             addCallbacks(result.callback, result.errback, result);
         }, this);

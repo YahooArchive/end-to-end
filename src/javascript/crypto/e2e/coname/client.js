@@ -243,18 +243,12 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
   var result = new e2e.async.Result;
   goog.net.XhrIo.send(url, function(e) {
     var xhr = e.target;
-    try {
-      if (xhr.getLastErrorCode() !== goog.net.ErrorCode.NO_ERROR) {
-        throw new e2e.ext.utils.Error(
-            'CONAME Connection Error: ' + xhr.getLastError(),
-            xhr.getStatus() === 401 ||
-            xhr.getLastErrorCode() === goog.net.ErrorCode.HTTP_ERROR ?
-              'conameAuthError' :
-              'conameConnError');
-      }
+    if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
       result.callback(xhr.getResponseText());
-    } catch (e) {
-      result.errback(e);
+    } else {
+      result.errback(xhr.getStatus() === 401 ?
+          {messageId: 'conameAuthError'} :
+          new Error('Error connecting to keyserver: ' + xhr.getLastError()));
     }
   }, method, dataString, {}, timeout);
   return result;
@@ -288,7 +282,7 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
   };
 
   // TODO: make this possible for polling/retries
-  e2e.coname.getAJAX_('POST', realm.addr + '/lookup', 5000, data).
+  e2e.coname.getAJAX_('POST', realm.addr + '/lookup', 10000, data).
       addCallbacks(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
             profile = pf['profile'],

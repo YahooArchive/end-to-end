@@ -267,14 +267,7 @@ input:focus {
   color: #0c0c0c;
 }
 
-
-
-.modal-dialog-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  background: #ccc;
-}
+/* below are yahoo-specific */
 
 .pgpHead {
   /* fujigradient from Yahoo Messenger */
@@ -290,9 +283,35 @@ input:focus {
   color: YCOLOR_WHITE;
 }
 
+.modal-dialog-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #ccc;
+}
+
 .overlayDialog textarea {
   width: 98%;
   height: 80px;
+}
+
+#callbackDialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(50, 50, 50, 0.2);
+}
+
+#callbackDialog > div {
+  position: static;
+  margin: 8% auto 100%;
+}
+
+
+
+.keyring-signup {
+  cursor: pointer;
 }
 
 .key-info {

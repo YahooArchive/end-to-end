@@ -103,11 +103,12 @@
  */
 {template .manageKeyring}
   <!-- @yahoo--><div>{$content}</div>
-  <div id="{e2e.ext.constants.ElementId.KEYRING_IMPORT_DIV}"
+  <!-- @yahoo trigger file upload directly -->
+  <!--div id="{e2e.ext.constants.ElementId.KEYRING_IMPORT_DIV}"
        class="{e2e.ext.constants.CssClass.HIDDEN}">
     <input type="file" class="{e2e.ext.constants.CssClass.ACTION}"/>
     <button class="{e2e.ext.constants.CssClass.CANCEL}">{$importCancelButtonTitle}</button>
-  </div>
+  </div-->
   <!-- @yahoo fb import avail only in yahoo build -->
   <div id="{e2e.ext.constants.ElementId.FB_IMPORT_DIV}"
        class="{e2e.ext.constants.CssClass.HIDDEN}">
@@ -145,7 +146,8 @@
        class="{e2e.ext.constants.CssClass.SIGNUP_PROMPT}
               {sp}{e2e.ext.constants.CssClass.HIDDEN}">{$signupPromptLabel}</p>
     <button class="{e2e.ext.constants.CssClass.KEYRING_IMPORT}
-                   {sp}{e2e.ext.constants.CssClass.CANCEL}">{$importKeyringLabel}</button>
+                   {sp}{e2e.ext.constants.CssClass.CANCEL}">
+                   <input id="{e2e.ext.constants.ElementId.KEYRING_IMPORT}" type="file">{$importKeyringLabel}</button>
     <!-- @yahoo fb import avail only in yahoo build -->
     <button class="{e2e.ext.constants.CssClass.FB_IMPORT}
                    {sp}{e2e.ext.constants.CssClass.CANCEL}">{$fbImportLabel}</button>

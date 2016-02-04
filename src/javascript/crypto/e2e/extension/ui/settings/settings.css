@@ -91,3 +91,17 @@
 .passphrase {
   width: 300px;
 }
+
+#pgpBody button.keyring-import input[type="file"] {
+  float: left;
+  width: 400px;
+  height: 200%;
+  margin: 0 -400px 0 -230px;
+  cursor: pointer;
+  opacity: 0;
+  border: 0;
+}
+
+button.keyring-import {
+  overflow: hidden
+}

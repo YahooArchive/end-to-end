@@ -200,7 +200,11 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
 
   var signupPrompt = goog.dom.getElement(
       constants.ElementId.SIGNUP_PROMPT);
-  var importDiv = goog.dom.getElement(constants.ElementId.KEYRING_IMPORT_DIV);
+  // @yahoo shows file selector directly
+  // var importDiv = goog.dom.getElement(
+  //   constants.ElementId.KEYRING_IMPORT_DIV);
+  var importDiv = goog.dom.getElementByClass(
+                                        constants.CssClass.KEYRING_IMPORT);
   var fbImportDiv = goog.dom.getElement(constants.ElementId.FB_IMPORT_DIV);
   var passphraseChangeDiv = goog.dom.getElement(
       constants.ElementId.KEYRING_PASSPHRASE_CHANGE_DIV);
@@ -220,9 +224,11 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
       listen(
           this.getElementByClass(constants.CssClass.KEYRING_IMPORT),
           goog.events.EventType.CLICK,
-          goog.partial(
-              this.showKeyringMgmtForm_,
-              constants.ElementId.KEYRING_IMPORT_DIV)).
+          // @yahoo shows file selector directly
+          // goog.partial(
+          //     this.showKeyringMgmtForm_,
+          //     constants.ElementId.KEYRING_IMPORT_DIV)).
+          this.importKeyring_).
       listen(
           this.getElementByClass(constants.CssClass.FB_IMPORT),
           goog.events.EventType.CLICK,
@@ -252,12 +258,13 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           this.getElementByClass(constants.CssClass.KEYRING_CANCEL),
           goog.events.EventType.CLICK,
           this.cancelCallback_).
-      listen(
-          goog.dom.getElementByClass(constants.CssClass.CANCEL, importDiv),
-          goog.events.EventType.CLICK,
-          goog.partial(
-              this.showKeyringMgmtForm_,
-              constants.ElementId.KEYRING_OPTIONS_DIV)).
+      // @yahoo shows file selector directly
+      // listen(
+      //     goog.dom.getElementByClass(constants.CssClass.CANCEL, importDiv),
+      //     goog.events.EventType.CLICK,
+      //     goog.partial(
+      //         this.showKeyringMgmtForm_,
+      //         constants.ElementId.KEYRING_OPTIONS_DIV)).
       listen(
           goog.dom.getElementByClass(constants.CssClass.CANCEL, fbImportDiv),
           goog.events.EventType.CLICK,
@@ -265,7 +272,9 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
               this.showKeyringMgmtForm_,
               constants.ElementId.KEYRING_OPTIONS_DIV)).
       listen(
-          goog.dom.getElementByClass(constants.CssClass.ACTION, importDiv),
+          // @yahoo shows file selector directly. listen to <input type=file>
+          // goog.dom.getElementByClass(constants.CssClass.ACTION, importDiv),
+          goog.dom.getFirstElementChild(importDiv),
           goog.events.EventType.CHANGE,
           this.importKeyring_).
       listen(
@@ -355,7 +364,11 @@ panels.KeyringMgmtMini.prototype.showKeyringMgmtForm_ = function(formId) {
  * @private
  */
 panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
-  var importDiv = goog.dom.getElement(constants.ElementId.KEYRING_IMPORT_DIV);
+  // @yahoo shows file selector directly
+  // var importDiv = goog.dom.getElement(
+  //     constants.ElementId.KEYRING_IMPORT_DIV);
+  var importDiv = this.getElementByClass(
+    constants.CssClass.KEYRING_IMPORT);
   var fileInput = importDiv.querySelector('input');
 
   if (fileInput.files.length > 0) {
@@ -507,7 +520,9 @@ panels.KeyringMgmtMini.prototype.setKeyringEncrypted = function(encrypted) {
  * Resets the appearance of the panel.
  */
 panels.KeyringMgmtMini.prototype.reset = function() {
-  goog.dom.getElement(constants.ElementId.KEYRING_IMPORT_DIV)
+  // @yahoo shows file selector directly
+  // goog.dom.getElement(constants.ElementId.KEYRING_IMPORT_DIV)
+  this.getElementByClass(constants.CssClass.KEYRING_IMPORT)
       .querySelector('input').value = '';
   this.showKeyringMgmtForm_(constants.ElementId.KEYRING_OPTIONS_DIV);
 };

@@ -110,6 +110,9 @@ e2e.ext.constants.ElementId = {
   SUBJECT_HOLDER: 'subjectHolder',
   SUBJECT: 'subject',
 
+  /* Used in settings page //@yahoo */
+  KEYRING_IMPORT: 'keyring-import',
+
   /* Used to display menus in the UI. */
   MENU_CONTAINER: 'menu-container',
 
