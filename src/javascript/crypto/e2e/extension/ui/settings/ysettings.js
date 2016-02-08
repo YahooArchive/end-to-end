@@ -32,7 +32,10 @@ goog.require('e2e.ext.ui.templates.dialogs.syncconfirmation');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.signer.Algorithm');
+goog.require('goog.array');
+goog.require('goog.async.DeferredList');
 goog.require('goog.dom');
+goog.require('goog.functions');
 goog.require('goog.string');
 
 
@@ -61,97 +64,119 @@ goog.inherits(ui.ySettings, ui.Settings);
 
 
 /**
- * Sync Keys
- * @param {string} keyUid The key UID to sync
- * @param {string} action The action, keygen or import
- * @param {boolean=} opt_overrideRemote Whether the user has acknowledged to
- *     override remote keys with local keyring.
- * @return {!e2e.async.Result.<{needsKeyGen: boolean, keysToKeep:
- *     ?e2e.openpgp.Keys, keysToImport: ?e2e.openpgp.Keys}>} The sync results
+ * Renders the settings page.
+ * //@yahoo added key conflict resolution dialogs for email that comes thru
+ * location.hash
+ * @param {!Object} pgpKeys The existing PGP keys in the keyring.
  * @private
  * @suppress {accessControls}
  */
-ui.ySettings.prototype.syncKeys_ = function(
-    keyUid, action, opt_overrideRemote) {
-  return this.pgpContext_.syncKeys(keyUid, action,
-      goog.bind(this.renderAuthCallback_, this),
-      goog.bind(this.renderKeepExistingKeysCallback_, this),
-      goog.bind(this.renderIgnoreMissingPrivateKeysCallback_, this),
-      opt_overrideRemote === true ?
-      undefined :
-      goog.bind(this.renderOverrideRemoteKeysCallback_, this)).
-    addErrback(this.displayFailure_, this);
+ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
+  goog.base(this, 'renderTemplate_', pgpKeys);
+
+  //@yahoo when a email is supplied thru location.hash
+  // trigger the key resolution dialogs
+  if (location.hash) {
+    var emailField, email = e2e.ext.utils.text.extractValidEmail(
+        decodeURIComponent(location.hash.substring(1)));
+    if (email !== null) {
+      this.syncWithRemote('<' + email + '>', 'load');
+    }
+  }
 };
 
 
 /**
  * Renders a new PGP key into the settings page.
+ * //@yahoo used searchLocalKey() instead of searchKey()
  * @param {string} keyUid The key UID to render.
- * @param {boolean=} opt_isKeyGen Whether the user has acknowledged to
+ * @param {boolean=} opt_isOverride Whether the user has acknowledged to
  *     override remote keys with local keyring.
  * @suppress {accessControls}
  * @override
  */
-ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isKeyGen) {
-  var ctx = this.pgpContext_;
-  ctx.searchLocalKey(keyUid) // expected to return only local keys
+ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isOverride) {
+  this.pgpContext_
+      // @yahoo expected to render only local keys
+      // .searchKey(keyUid)
+      .searchLocalKey(keyUid)
       .addCallback(function(pgpKeys) {
         this.keyringMgmtPanel_.addNewKey(keyUid, pgpKeys);
         this.renderPanels_();
-
-
-        // sync with remote only if such a keyUid has a private key
-        var email = e2e.ext.utils.text.extractValidEmail(keyUid);
-        if (email === null ||
-            e2e.coname.getRealmByEmail(email) === null ||
-            ctx.searchPrivateKey(keyUid).length === 0) {
-          return;
-        }
-
-        this.syncKeys_(keyUid,
-            opt_isKeyGen ? 'keygen' : 'import',
-            opt_isKeyGen).
-        addCallbacks(function(isInSync) {
-          isInSync && utils.showNotification(
-              chrome.i18n.getMessage('keyUpdateSuccessMsg'),
-              goog.nullFunction);
-        }, this.displayFailure_, this);
-
+        // @yahoo added sync with remote
+        this.syncWithRemote(keyUid, opt_isOverride ? 'keygen' : 'import');
       }, this)
       .addErrback(this.displayFailure_, this);
 };
 
 
-// TODO: support updating empty key to keyserver
-// /**
-//  * Removes a PGP key.
-//  * @param {string} keyUid The ID of the key to remove.
-//  * @suppress {accessControls}
-//  * @override
-//  */
-// ui.ySettings.prototype.removeKey_ = function(keyUid) {
-//   this.pgpContext_
-//       .searchPrivateKey(keyUid)
-//       .addCallback(/** @this {ui.Settings} */ (function(privateKeys) {
-//         // TODO(evn): This message should be localized.
-//         var prompt = 'Deleting all keys for ' + keyUid;
-//         if (privateKeys && privateKeys.length > 0) {
-//           prompt += '\n\nWARNING: This will delete some private keys!';
-//         }
-//         if (window.confirm(prompt)) {
-//           this.pgpContext_.deleteKey(keyUid).addCallback(function() {
-//             this.keyringMgmtPanel_.removeKey(keyUid);
-//             this.renderPanels_();
-//           }, this);
-//         }
-//       }), this)
-//       .addErrback(this.displayFailure_, this);
-// };
+/**
+ * Removes a PGP key.
+ * @param {string} keyUid The ID of the key to remove.
+ * @suppress {accessControls}
+ * @override
+ */
+ui.ySettings.prototype.removeKey_ = function(keyUid) {
+  this.pgpContext_
+      .searchPrivateKey(keyUid)
+      .addCallback(/** @this {ui.Settings} */ (function(privateKeys) {
+        // TODO(evn): This message should be localized.
+        var prompt = 'Deleting all keys for ' + keyUid;
+        if (privateKeys && privateKeys.length > 0) {
+          prompt += '\n\nWARNING: This will delete some private keys!';
+          //@yahoo let user knows no one can send you encrypted email
+          prompt += '\nYour friends can no longer send you encrypted emails.';
+        }
+        if (window.confirm(prompt)) {
+          this.pgpContext_.deleteKey(keyUid).addCallback(function() {
+            this.keyringMgmtPanel_.removeKey(keyUid);
+            this.renderPanels_();
+
+            // @yahoo added sync with remote
+            this.syncWithRemote(keyUid, 'remove');
+          }, this);
+        }
+      }), this)
+      .addErrback(this.displayFailure_, this);
+};
+
+
+/**
+ * Updates the keyserver as needed after key generation and import
+ * @param {string} keyUid The key UID to render.
+ * @param {string=} opt_intention The intention to trigger syncWithRemote
+ * @suppress {accessControls}
+ */
+ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
+  // sync with remote only if such a keyUid has a private key
+  var email = e2e.ext.utils.text.extractValidEmail(keyUid);
+  var constFunction = goog.functions.constant;
+  if (email !== null && e2e.coname.getRealmByEmail(email) !== null) {
+    this.pgpContext_.searchPrivateKey(keyUid).addCallbacks(function(privKeys) {
+
+      if (opt_intention === 'load' || opt_intention === 'remove' ||
+          privKeys.length !== 0) {
+        this.pgpContext_.syncWithRemote(keyUid, e2e.ext.utils.openAuthWindow,
+            // do nothing when it's in-sync
+            constFunction(e2e.async.Result.toResult(null)),
+            // make an update if the inconsistency is acknowledged
+            opt_intention === 'keygen' || opt_intention === 'remove' ?
+            constFunction(e2e.async.Result.toResult('overwriteRemote')) :
+            goog.bind(this.renderConfirmSyncKeysCallback_, this)).
+            addCallback(function(reqActionResult) {
+              reqActionResult !== null && utils.showNotification(
+              chrome.i18n.getMessage('keyUpdateSuccessMsg'),
+              goog.nullFunction);
+            }, this);
+      }
+    }, this.displayFailure_, this);
+  }
+};
 
 
 /**
  * Generates a new PGP key using the information that is provided by the user.
- * Same as Settings.prototype.generateKey_ except added overrideRemote
+ * Same as Settings.prototype.generateKey_ except added overwriteRemote
  * @param {panels.GenerateKey} panel The panel where the user has provided the
  *     information for the new key.
  * @param {string} name The name to use.
@@ -162,22 +187,21 @@ ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isKeyGen) {
  * @return {goog.async.Deferred}
  * @suppress {accessControls}
  */
-ui.ySettings.prototype.generateKeyAndOverrideRemote_ = function(
+ui.ySettings.prototype.generateKeyAndOverwriteRemote_ = function(
     panel, name, email, comments, expDate) {
   var defaults = constants.KEY_DEFAULTS;
   return this.pgpContext_.generateKey(e2e.signer.Algorithm[defaults.keyAlgo],
       defaults.keyLength, e2e.cipher.Algorithm[defaults.subkeyAlgo],
       defaults.subkeyLength, name, comments, email, expDate)
       .addCallback(goog.bind(function(key) {
-        this.renderNewKey_(key[0].uids[0], true); //@yahoo overrideRemote
+        this.renderNewKey_(key[0].uids[0], true); //@yahoo overwriteRemote
         panel.reset();
       }, this)).addErrback(this.displayFailure_, this);
 };
 
 
 /**
- * Generate keys only after user acknowledges to add or override any existing
- * keys uploaded to the keyserver.
+ * This has become the entry point to manage keys
  * @suppress {accessControls}
  * @override
  * @private
@@ -190,62 +214,121 @@ ui.ySettings.prototype.generateKey_ = function(
     return e2e.async.Result.toResult(undefined);
   }
 
+  // TODO: enhance this email to uid mapping
   var uid = '<' + email + '>';
-  var ctx = this.pgpContext_;
 
-  return this.syncKeys_(uid, 'keygen').addCallbacks(function(needsNewKey) {
-    if (needsNewKey) {
-      // generate a new key and update the panel
-      return this.generateKeyAndOverrideRemote_(
-          panel, name, email, comments, expDate);
-    }
-    return [];
-  }, this.displayFailure_, this);
+  return this.pgpContext_.syncWithRemote(uid, e2e.ext.utils.openAuthWindow,
+      goog.bind(this.renderKeepExistingKeysCallback_, this),
+      goog.bind(function(uid, local, common, remote) {
+        var keys = local.concat(common);
+
+        // inconsistency due to presence of remote only keys
+        if (remote.length !== 0) {
+          // ask if user can restore his private keys, or just want a new one
+          return this.renderMatchRemoteKeysCallback_(
+              uid, local, common, remote).addCallback(function(resolution) {
+
+            return resolution === null ? resolution : // cancelled
+            this.renderKeepExistingKeysCallback_(uid,
+                resolution === 'importedRemote' ? keys.concat(remote) : keys);
+
+          }, this);
+        }
+
+        // inconsistency solely due to presence of local only keys
+        return this.renderKeepExistingKeysCallback_(uid, keys);
+
+      }, this)).
+      addCallbacks(function(reqActionResult) {
+        // generate a new key and update the panel
+        return reqActionResult !== null && this.generateKeyAndOverwriteRemote_(
+            panel, name, email, comments, expDate);
+      }, this.displayFailure_, this);
 };
 
 
 /**
- * Prompt a login window
- * @param {string} email The email address used for coname query
- * @return {!e2e.async.Result} A promise
+ * Renders the UI elements needed for confirming if the user can import keys
+ * to match with those published on keyserver.
+ * @param {string} uid The user id being handled
+ * @param {!Array.<!e2e.openpgp.block.TransferableKey>} localOnlyKeys
+ * @param {!Array.<!e2e.openpgp.block.TransferableKey>} commonKeys
+ * @param {!Array.<!e2e.openpgp.block.TransferableKey>} remoteOnlyKeys
+ * @param {boolean=} isOverride Whether to show Override instead of Add Key.
+ * @return {!e2e.async.Result<?string>} A promise
+ * @suppress {accessControls}
  * @private
  */
-ui.ySettings.prototype.renderAuthCallback_ = function(email) {
-  var result = new e2e.async.Result;
+ui.ySettings.prototype.renderMatchRemoteKeysCallback_ = function(
+    uid, localOnlyKeys, commonKeys, remoteOnlyKeys, isOverride) {
+  var result = new e2e.async.Result();
+  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
+  var dialog = new dialogs.Generic(
+      syncTemplates.syncKeysConfirm({
+        promptSyncKeyLabel: chrome.i18n.getMessage(
+            'promptMatchRemoteKeysMessage'),
+        uid: uid,
+        localOnlyKeys: localOnlyKeys,
+        commonKeys: commonKeys,
+        remoteOnlyKeys: remoteOnlyKeys,
+        localOnlyKeysLabel: chrome.i18n.getMessage('localOnlyKeysLabel'),
+        commonKeysLabel: chrome.i18n.getMessage('commonKeysLabel'),
+        remoteOnlyKeysLabel: chrome.i18n.getMessage('remoteOnlyKeysLabel'),
+        secretKeyDescription: chrome.i18n.getMessage('secretKeyDescription'),
+        publicKeyDescription: chrome.i18n.getMessage('publicKeyDescription'),
+        keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel')
+      }),
+      goog.bind(function(decision) {
+        goog.dispose(dialog);
+        // user chose whether to delete or keep remote keys
+        switch (decision) {
+          case '': decision = null; break;
+          case 'true':
+            decision = 'overwriteRemote';
+            break;
+          case 'false': // import remote keys
+            decision = goog.async.DeferredList.gatherResults(
+            goog.array.map(remoteOnlyKeys, function(k) {
+              return this.importKey(goog.nullFunction, k['serialized']);
+            }, this.pgpContext_)).
+            addCallback(function() {
+              // update the panels
+              this.keyringMgmtPanel_.addNewKey(uid, remoteOnlyKeys);
+              this.renderPanels_();
+              return 'importedRemote';
+            }, this);
+            break;
+        }
+        result.callback(decision);
+      }, this),
+      dialogs.InputType.CHECKBOX,
+      chrome.i18n.getMessage('giveUpRemoteKeyCheckboxLabel'),
+      chrome.i18n.getMessage(isOverride === true ?
+          'actionOverwriteRemoteKeys' : 'actionAddNewKey'),
+      chrome.i18n.getMessage('actionCancelPgpAction'));
 
-  // TODO: url now hardcoded
-  var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
-                encodeURIComponent(
-                  'https://alpha.coname.corp.yahoo.com:25519/auth/cookies');
+  this.addChild(dialog, false);
+  dialog.render(popupElem);
 
-  chrome.windows.create({
-    url: authUrl,
-    // url: e2e.coname.getRealmByEmail(email).addr +
-    //         '/auth?email=' + encodeURIComponent(email),
-    width: 500,
-    height: 640,
-    type: 'popup'
-  }, goog.bind(function(win) {
-
-    var onClose_ = goog.bind(function(closedWinId) {
-      if (win.id === closedWinId) {
-        chrome.windows.onRemoved.removeListener(onClose_);
-        result.callback();
-      }
-    }, this);
-    chrome.windows.onRemoved.addListener(onClose_);
-
-  }, this));
+  // dialog.getHandler().listen(
+  //     dialog.getElement(),
+  //     goog.events.EventType.CLICK,
+  //     function(e) {
+  //       if (e instanceof HTMLAnchorElement) {
+  //         goog.dispose(dialog);
+  //         result.callback(e.target.id);
+  //       }
+  //     });
 
   return result;
 };
 
 
 /**
- * Renders the UI elements needed for adding or replacing new keys
+ * Renders the UI elements needed for confirming whether to keep existing keys.
  * @param {string} uid The user id being handled
  * @param {!Array.<!e2e.openpgp.block.TransferableKey>} keysToKeep
- * @return {!e2e.async.Result<string>} A promise
+ * @return {!e2e.async.Result<?string>} A promise
  * @private
  */
 ui.ySettings.prototype.renderKeepExistingKeysCallback_ = function(
@@ -253,7 +336,7 @@ ui.ySettings.prototype.renderKeepExistingKeysCallback_ = function(
 
   // skip the dialog if we have nothing to keep, for a new registration
   if (keysToKeep.length === 0) {
-    return e2e.async.Result.toResult('true');
+    return e2e.async.Result.toResult(/** @type {?string} */ ('noop'));
   }
 
   var result = new e2e.async.Result();
@@ -269,6 +352,13 @@ ui.ySettings.prototype.renderKeepExistingKeysCallback_ = function(
       }),
       function(decision) {
         goog.dispose(dialog);
+
+        // user choses whether to give up those keysToKeep
+        switch (decision) {
+          case '': decision = null; break;
+          case 'true': decision = 'delete'; break;
+          case 'false': decision = 'noop'; break;
+        }
         result.callback(decision);
       },
       dialogs.InputType.CHECKBOX,
@@ -283,85 +373,42 @@ ui.ySettings.prototype.renderKeepExistingKeysCallback_ = function(
 
 
 /**
- * Renders the UI elements needed for recommending users to make new keys in
- * case the private keys are not imported to match the existing ones.
+ * Renders the UI elements needed for keeping key consistency locally and
+ * remotely.
  * @param {string} uid The user id being handled
  * @param {!Array.<!e2e.openpgp.block.TransferableKey>} localOnlyKeys
  * @param {!Array.<!e2e.openpgp.block.TransferableKey>} commonKeys
  * @param {!Array.<!e2e.openpgp.block.TransferableKey>} remoteOnlyKeys
- * @return {!e2e.async.Result<boolean>} A promise
+ * @return {!e2e.async.Result<?string>} A promise
  * @private
  */
-ui.ySettings.prototype.renderIgnoreMissingPrivateKeysCallback_ = function(
+ui.ySettings.prototype.renderConfirmSyncKeysCallback_ = function(
     uid, localOnlyKeys, commonKeys, remoteOnlyKeys) {
+
+  if (remoteOnlyKeys.length !== 0) {
+    return this.renderMatchRemoteKeysCallback_(
+        uid, localOnlyKeys, commonKeys, remoteOnlyKeys, true);
+  }
+
   var result = new e2e.async.Result();
   var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
   var dialog = new dialogs.Generic(
-      syncTemplates.syncKeysConfirm({
-        promptSyncKeyConfirmLabel: chrome.i18n.getMessage(
-            'promptIgnoreMissingPrivateKeysConfirmMessage'),
-        uid: uid,
-        localOnlyKeys: localOnlyKeys,
-        commonKeys: commonKeys,
-        remoteOnlyKeys: remoteOnlyKeys,
-        localOnlyKeysLabel: chrome.i18n.getMessage('localOnlyKeysLabel'),
-        commonKeysLabel: chrome.i18n.getMessage('commonKeysLabel'),
-        remoteOnlyKeysLabel: chrome.i18n.getMessage('remoteOnlyKeysLabel'),
+      importTemplates.importKeyConfirm({
+        promptImportKeyConfirmLabel: chrome.i18n.getMessage(
+            'promptKeepSyncKeysMessage'),
+        keys: localOnlyKeys,
         secretKeyDescription: chrome.i18n.getMessage('secretKeyDescription'),
         publicKeyDescription: chrome.i18n.getMessage('publicKeyDescription'),
         keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel')
       }),
       function(decision) {
         goog.dispose(dialog);
-        result.callback(goog.isDef(decision));
+        // user choses whether to update the keyserver
+        result.callback(goog.isDef(decision) ? 'overwriteRemote' : null);
       },
       dialogs.InputType.NONE,
       '',
-      chrome.i18n.getMessage('actionIgnoreMissingPrivateKeys'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
-
-  this.addChild(dialog, false);
-  dialog.render(popupElem);
-  return result;
-};
-
-
-/**
- * Renders the UI elements needed for requesting the user consent to override
- * remote keys with local copy.
- * @param {string} uid The user id being handled
- * @param {!Array.<!e2e.openpgp.block.TransferableKey>} localOnlyKeys
- * @param {!Array.<!e2e.openpgp.block.TransferableKey>} commonKeys
- * @param {!Array.<!e2e.openpgp.block.TransferableKey>} remoteOnlyKeys
- * @return {!e2e.async.Result<boolean>} A promise
- * @private
- */
-ui.ySettings.prototype.renderOverrideRemoteKeysCallback_ = function(
-    uid, localOnlyKeys, commonKeys, remoteOnlyKeys) {
-  var result = new e2e.async.Result();
-  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
-  var dialog = new dialogs.Generic(
-      syncTemplates.syncKeysConfirm({
-        promptSyncKeyConfirmLabel: chrome.i18n.getMessage(
-            'promptOverrideRemoteKeysConfirmMessage'),
-        uid: uid,
-        localOnlyKeys: localOnlyKeys,
-        commonKeys: commonKeys,
-        remoteOnlyKeys: remoteOnlyKeys,
-        localOnlyKeysLabel: chrome.i18n.getMessage('localOnlyKeysLabel'),
-        commonKeysLabel: chrome.i18n.getMessage('commonKeysLabel'),
-        remoteOnlyKeysLabel: chrome.i18n.getMessage('remoteOnlyKeysLabel'),
-        secretKeyDescription: chrome.i18n.getMessage('secretKeyDescription'),
-        publicKeyDescription: chrome.i18n.getMessage('publicKeyDescription'),
-        keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel')
-      }),
-      function(decision) {
-        goog.dispose(dialog);
-        result.callback(goog.isDef(decision));
-      },
-      dialogs.InputType.NONE,
-      '',
-      chrome.i18n.getMessage('actionOverrideRemoteKeys'),
+      chrome.i18n.getMessage('actionOverwriteRemoteKeys'),
       chrome.i18n.getMessage('actionCancelPgpAction'));
 
   this.addChild(dialog, false);

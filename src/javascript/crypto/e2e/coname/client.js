@@ -26,7 +26,6 @@ goog.require('e2e.coname');
 goog.require('e2e.coname.ProtoBuf');
 goog.require('e2e.coname.sha3');
 goog.require('e2e.coname.verifyLookup');
-goog.require('e2e.ext.utils.Error');
 goog.require('e2e.random');
 goog.require('goog.array');
 goog.require('goog.crypt.base64');
@@ -154,7 +153,7 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
  * Encode the update request message
  * @param {Object<string,*>} proto The initialized protobuf object
  * @param {string} email The email address
- * @param {!e2e.ByteArray} key OpenPGP key to send
+ * @param {?e2e.ByteArray} key OpenPGP key to send
  * @param {e2e.coname.RealmConfig} realm The RealmConfig
  * @param {e2e.coname.ServerResponse} oldProof The lookup proof just obtained
  * @param {string} keyName The key name being referenced in the key data blob
@@ -170,10 +169,10 @@ e2e.coname.encodeUpdateRequest_ = function(
     // clone the old key set
     keys = proto['Profile'].decode(oldProof.profile.encoding).keys;
     // update only the pgp key
-    keys.set(
-        keyName,
-        goog.crypt.base64.encodeByteArray(key));
-  } else {
+    key === null ?
+        keys.delete(keyName) :
+        keys.set(keyName, goog.crypt.base64.encodeByteArray(key));
+  } else if (key !== null) {
     keys[keyName] = new Uint8Array(key);
   }
 
@@ -313,7 +312,8 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
 /**
  * Update or add public keys for an email address
  * @param {!string} email The email address
- * @param {!e2e.ByteArray} keyData The key blob to upload for the email address
+ * @param {?e2e.ByteArray} keyData The key blob to upload. Use null to remove
+ *     the specific key field.
  * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.KeyData>} the
  *  Result if there has a key associated with the email, and it is validated.
  *  Result is null for no realms. key is null if verified for having no key.

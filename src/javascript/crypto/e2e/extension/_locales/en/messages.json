@@ -266,7 +266,7 @@
     "description": "A noun indicating where the user needs to specify a passphrase for her new PGP key."
   },
   "genKeyGenerateButtonLabel": {
-    "message": "Sign Up",
+    "message": "Register Key(s)",
     "description": "A verb prompting the user to register to receive secret messages."
   },
   "settingsTitle": {
@@ -555,40 +555,48 @@
     "message": "The keys are now in sync with the server.",
     "description": "A sentence informing the user that the local keys are in-sync with server."
   },
-  "promptOverrideRemoteKeysConfirmMessage": {
-    "message": "Override with local keyring?\n\nThe local keyring is found inconsistent with the remote keyserver. This might occur if a key is imported that mismatches the remote one. In case an update is just made (within 5 minutes), please click Cancel and wait patiently for the completion notifications. Click Override to update the keyserver with your local keyring (i.e., keys registered only remotely will be discarded).",
+  "promptKeepSyncKeysMessage": {
+    "message": "The local keyring is found inconsistent with the remote keyserver.\n\nYou might have imported a key that is unknown to the keyserver. We apologize for the inconvenience if this is unexpected, which could due to a reset to the keyserver during the alpha stage, or a recent change (within 5-min) to key registration is still being processed.",
     "description": "A sentence asking the user to confirm overriding the conflicts with local keyring."
   },
-  "promptIgnoreMissingPrivateKeysConfirmMessage": {
-    "message": "Private Key(s) Missing...\n\nYou have a prior registration with the email address. To read emails encrypted to the registered key(s), please transfer the corresponding private key(s) to this device (Click Cancel and then Import or Restore).\n\nClick Add a New Key in case you have lost them, or just want a new one for this device.",
-    "description": "A sentence recommending the user to use new keys instead of importing private keys of those publicized ones."
+  "promptMatchRemoteKeysMessage": {
+    "message": "Some key(s) registered with the following email address is missing.",
+    "description": "A sentence recommending the user to import private keys of those publicized ones."
   },
   "promptAddReplaceKeysConfirmMessage": {
     "message": "Add a new key in addition to the existing one(s) below?",
     "description": "A sentence asking the user whether to keep existing keys while adding a new one."
   },
   "localOnlyKeysLabel": {
-    "message": "This key is found only from the local keyring.",
+    "message": "The following keys are present only locally.",
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only locally."
   },
   "commonKeysLabel": {
-    "message": "This key is found both locally and remotely.",
+    "message": "The following keys are common to both local keyring and remote keyserver.",
     "description": "A sentence informing the user the key synchronization conflicts, particularly those keys that exists both locally and remotely."
   },
   "remoteOnlyKeysLabel": {
-    "message": "This key is found only from the remote keyserver.",
+    "message": "To read emails encrypted to the following registered key(s), please Import or Restore the corresponding private key(s).",
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
+  },
+  "giveUpRemoteKeyCheckboxLabel": {
+    "message": " Take them down from the public listing (e.g., key lost). Update with this unchecked to suppress warnings.",
+    "description": "A sentence informing the user that remote keys will be deleted before proceeding."
   },
   "replaceKeyCheckboxLabel": {
     "message": " Replace the existing ones with a new one.",
     "description": "A sentence informing the user that existing keys will be deleted before getting a new one."
   },
-  "actionOverrideRemoteKeys": {
-    "message": "Override",
+  "actionOverwriteRemoteKeys": {
+    "message": "Update",
     "description": "A verb prompting the user to update keyserver with local keyrings."
   },
-  "actionIgnoreMissingPrivateKeys": {
+  "actionAddNewKey": {
     "message": "Add a New Key",
     "description": "A verb prompting the user to add a new key."
+  },
+  "confirmUserSyncKeys": {
+    "message": "Setup keys to let friends send you encrypted emails?",
+    "description": "A sentence prompting the user to synchronize local keyring with remote keyserver."
   }
 }

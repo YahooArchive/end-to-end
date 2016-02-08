@@ -779,7 +779,8 @@ e2ebind.hideBlob_ = function(blob) {
 
 
 /**
-* Validates whather or not we have a private key for this signer.
+* Validates whether or not a private key exist for the signer, and that the
+* server has a consistent keyring with the local.
 * @param {string} signer The signer ("name@domain.com") we wish to validate
 * @param {!function(boolean)} callback Callback to call with the result.
 * @private
@@ -789,8 +790,31 @@ e2ebind.validateSigner_ = function(signer, callback) {
     action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
     recipients: [signer],
     content: 'private_exist'
-  }), function(response) {
-    callback(response.content);
+  }), function(privKeyResponse) {
+    if (privKeyResponse.content === false) {
+      callback(false);
+      return;
+    }
+
+    utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+      action: constants.Actions.SYNC_KEYS,
+      content: signer
+    }), function(response) {
+      if (response.content === false) {
+        if (window.confirm(chrome.i18n.getMessage('confirmUserSyncKeys'))) {
+          utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+            action: constants.Actions.CONFIGURE_EXTENSION,
+            content: signer
+          }));
+        }
+      }
+      callback(response.content);
+
+    }, function(err) {
+      callback(false);
+    });
+
+
   }, function(err) {
     callback(false);
   });

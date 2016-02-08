@@ -245,18 +245,9 @@ function testSendRequest() {
 
 function testProviderRequestToStart() {
   var signer = 'irrelevant';
-  stubs.replace(e2ebind, 'validateSigner_', mockControl.createFunctionMock());
-
-  var validateSignerArg = new goog.testing.mockmatchers.ArgumentMatcher(
-      function(arg) {
-        assertEquals(signer, arg);
-        return true;
-      });
-  var callbackArg = new goog.testing.mockmatchers.SaveArgument(goog.isFunction);
-
-  e2ebind.validateSigner_(validateSignerArg, callbackArg);
-
-  mockControl.$replayAll();
+  stubs.replace(e2ebind, 'validateSigner_', function(arg) {
+    assertEquals(signer, arg);
+  });
 
   e2ebind.handleProviderRequest_({
     action: actions.START,
@@ -275,7 +266,6 @@ function testProviderRequestToStart() {
 
 function testProviderRequestToInstallReadGlass() {
   window.config.read_glass_enabled = true;
-  window.valid = true;
   e2ebind.started_ = true;
   window.helper = new e2e.ext.Helper();
 
@@ -356,7 +346,6 @@ function testProviderRequestToSetSigner() {
   });
 
   assertEquals(signer, window.config.signer);
-  assertTrue(window.valid);
   mockControl.$verifyAll();
 }
 
@@ -370,6 +359,9 @@ function testProviderRequestToValidateSigner() {
     response.completedAction = request.action;
     if (request.action === constants.Actions.GET_ALL_KEYS_BY_EMAILS &&
         request.content === 'private_exist') {
+      response.content = true;
+    } else if (request.action === constants.Actions.SYNC_KEYS &&
+        request.content === signer) {
       response.content = true;
     }
     cb(response);
@@ -399,7 +391,6 @@ function testProviderRequestToValidateSigner() {
 
 function testProviderRequestToValidateRecipients() {
   e2ebind.started_ = true;
-  window.valid = true;
 
   stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
     var response = {};

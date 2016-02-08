@@ -25,16 +25,14 @@ goog.provide('e2e.openpgp.yKeyRing');
 
 goog.require('e2e');
 goog.require('e2e.async.Result');
-goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.coname.KeyProvider');
+goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.KeyRing');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.array');
-goog.require('goog.async.DeferredList');
 goog.require('goog.functions');
 goog.require('goog.string');
-goog.require('goog.structs');
 
 
 
@@ -90,6 +88,53 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
       }, keyRing).addCallback(returnKeyRing));
 };
 
+
+/**
+ * Restores serialized data from ECC key backup
+ * //@yahoo aligns the uid to email mapping similar to key generation
+ * @param {e2e.openpgp.KeyringBackupInfo} data
+ *     serialized data to restore
+ * @param {string} uid User ID to associate with restored keys.
+ * @override
+ */
+e2e.openpgp.yKeyRing.prototype.restoreKeyring = function(data, uid) {
+  // @yahoo aligns the uid to email mapping similar to key generation
+  var email = e2e.ext.utils.text.extractValidEmail(uid);
+  uid = email === uid ? '<' + email + '>' : uid;
+  return goog.base(this, 'restoreKeyring', data, uid);
+};
+
+
+/**
+ * Imports a key block to the key ring.
+ * //@yahoo aligns the uid to email mapping similar to key generation
+ * @param {!e2e.openpgp.block.TransferableKey} keyBlock The key block to
+ *     import.
+ * @param {!e2e.ByteArray=} opt_passphrase The passphrase to use to
+ *     import the key.
+ * @return {!goog.async.Deferred<?e2e.openpgp.block.TransferableKey>}
+ *     The imported key iff it was imported for all User ID packets,
+ *     or null if the key was not imported (e.g. a duplicate key). Invalid keys
+ *     will call an errback instead.
+ * @override
+ */
+e2e.openpgp.yKeyRing.prototype.importKey = function(
+    keyBlock, opt_passphrase) {
+
+  // @yahoo aligns the uid to email mapping similar to key generation
+  keyBlock.processSignatures(); // to populate uids
+  var uids = keyBlock.getUserIds();
+  keyBlock.getUserIds = function() {
+    return goog.array.map(uids, function(uid) {
+      var email = e2e.ext.utils.text.extractValidEmail(uid);
+      return email === null ? uid : '<' + email + '>';
+    });
+  };
+
+  return goog.base(this, 'importKey', keyBlock, opt_passphrase);
+};
+
+
 /**
  * Upload the local public keys for the user id
  * @param {string} uid The uid
@@ -97,108 +142,8 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
  *     are successfully uploaded according to the specified uids.
  */
 e2e.openpgp.yKeyRing.prototype.uploadKeys = function(uid) {
-  return this.conameKeyProvider_.importKeys(this.searchKey(uid) || []);
+  return this.conameKeyProvider_.importKeys(this.searchKey(uid) || [], uid);
 };
-
-
-
-    // confirmFeedback.addCallback(function(preferReplace) {
-    //   if (preferReplace === null) { // cancelled
-    //     result.callback([]);
-    //     return;
-    //   }
-    //   if (preferReplace) {
-    //     this.deleteKey(uid);
-    //   }
-
-    //   // generate a new one and upload
-    //   this.generateKey(uid, keyAlgo, keyLength,
-    //       subkeyAlgo, subkeyLength, opt_keyLocation).
-    //     addCallbacks(function(generatedKeys) {
-
-    //       // whether to replace or add the new key
-    //       this.uploadKeys_(preferReplace ?
-    //         generatedKeys :
-    //         generatedKeys.concat(existingKeys)).
-    //       addCallbacks(function() {
-    //         result.callback(generatedKeys);
-    //       }, result.errback);
-
-    //     }, goog.bind(result.errback, result), this);
-    // }, this);
-
-
-
-
-
-
-    // confirmFeedback.addCallback(function(preferReplace) {
-    //   if (preferReplace === null) { // cancelled
-    //     result.callback([]);
-    //     return;
-    //   }
-    //   if (preferReplace) {
-    //     this.deleteKey(uid);
-    //   }
-
-    //   // generate a new one and upload
-    //   this.generateKey(uid, keyAlgo, keyLength,
-    //       subkeyAlgo, subkeyLength, opt_keyLocation).
-    //     addCallbacks(function(generatedKeys) {
-
-    //       // whether to replace or add the new key
-    //       this.uploadKeys_(preferReplace ?
-    //         generatedKeys :
-    //         generatedKeys.concat(existingKeys)).
-    //       addCallbacks(function() {
-    //         result.callback(generatedKeys);
-    //       }, result.errback);
-
-    //     }, goog.bind(result.errback, result), this);
-    // }, this);
-
-
-// /** @override */
-// e2e.openpgp.yKeyRing.prototype.importKey = function(
-//     keyBlock, opt_passphrase) {
-
-//   return goog.base(this, 'importKey', keyBlock, opt_passphrase).
-//     addCallback(function (returnedKeyBlock) {
-//       var uids = returnedKeyBlock.getUserIds();
-//       goog.array.removeDuplicates(uids);
-
-
-//       if (keyBlock instanceof e2e.openpgp.block.TransferablePublicKey) {
-
-
-//       return e2e.async.Result.toResult(returnedKeyBlock);
-//     });
-
-//   var result = e2e.async.Result.toResult(undefined);
-//   return result.addCallback(function() {
-//     var keys = [keyBlock.keyPacket].concat(keyBlock.subKeys);
-//     var keyRing;
-//     if (keyBlock instanceof e2e.openpgp.block.TransferablePublicKey) {
-//       keyRing = this.pubKeyRing_;
-//     } else if (keyBlock instanceof e2e.openpgp.block.TransferableSecretKey) {
-//       keyRing = this.privKeyRing_;
-//     } else {
-//       return false;
-//     }
-//     // This will throw on signature verification failures.
-//     keyBlock.processSignatures();
-//     var uids = keyBlock.getUserIds();
-//     goog.array.removeDuplicates(uids);
-//     var importedKeysResults = goog.async.DeferredList.gatherResults(
-//         goog.array.map(uids, function(uid) {
-//           return this.importKey_(uid, keyBlock, keyRing, opt_passphrase);
-//         }, this));
-//     return importedKeysResults.addCallback(function(importedKeys) {
-//       // Return the key only if it was imported for all the uids.
-//       return (importedKeys.indexOf(false) == -1) ? keyBlock : null;
-//     });
-//   }, this);
-// };
 
 
 /**
@@ -275,7 +220,7 @@ e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote_ = function(uid,
         opt_requireRemoteResponse ?
             // let error propagates and fail
             result.errback(err) :
-            // STILL proceed with local keys 
+            // STILL proceed with local keys
             result.callback(localKeys);
       });
 
@@ -347,7 +292,9 @@ e2e.openpgp.yKeyRing.prototype.compareWithRemote = function(uid) {
   if (email === null || e2e.coname.getRealmByEmail(email) === null) {
     return e2e.async.Result.toResult({
       syncManaged: false,
-      common: localKeys.map(function(k) {return k.toKeyObject();})
+      localOnly: [],
+      common: localKeys.map(function(k) {return k.toKeyObject();}),
+      remoteOnly: []
     });
   }
 
@@ -387,4 +334,3 @@ e2e.openpgp.yKeyRing.prototype.compareWithRemote = function(uid) {
 
       }, this);
 };
-

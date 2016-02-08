@@ -180,7 +180,6 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
           goog.events.EventType.CLICK,
           this.clearFailure_,
           true);
-
 };
 
 

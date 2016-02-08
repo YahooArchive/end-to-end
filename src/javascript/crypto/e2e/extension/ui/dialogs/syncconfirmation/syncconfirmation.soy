@@ -16,64 +16,77 @@
 
 /**
  * Renders the text for key sync confirmation dialog.
- * @param promptSyncKeyConfirmLabel A sentence asking the user to confirm
- *     the key sync.
+ * @param promptSyncKeyLabel A sentence briefing the user that an inconsistency
+ * is found between local keyring and keyserver
+ * @param localOnlyKeysLabel A sentence suggesting how to resolve the
+ * inconsistency due to local only keys
+ * @param remoteOnlyKeysLabel A sentence suggesting how to resolve the
+ * inconsistency due to remote only keys
  * @param uid The user id.
  * @param localOnlyKeys Array of keys exist only locally (e2e.openpgp.Keys).
  * @param commonKeys Array of keys exist only locally (e2e.openpgp.Keys).
  * @param remoteOnlyKeys Array of keys exist only locally (e2e.openpgp.Keys).
- * @param localOnlyKeysLabel Text to display as a local keys only label.
  * @param commonKeysLabel Text to display as a common keys label.
- * @param remoteOnlyKeysLabel Text to display as a remote keys only label.
  * @param secretKeyDescription Text describing a secret key.
  * @param publicKeyDescription Text describing a public key.
  * @param keyFingerprintLabel Text to display as a fingerprint label.
  */
 {template .syncKeysConfirm}
-  <p>{$promptSyncKeyConfirmLabel}
-  </p>
+  <p>{$promptSyncKeyLabel}</p>
   <div class="{e2e.ext.constants.CssClass.KEY_UID}">
     {$uid}
   </div>
-  {foreach $key in $localOnlyKeys}
-    <div class="{e2e.ext.constants.CssClass.KEY_INFO}{sp}
-        {e2e.ext.constants.CssClass.KEY_INFO_PLUS}"
-        title="{$localOnlyKeysLabel}">
-      <div>
-        {call e2e.ext.ui.templates.dialogs.importconfirmation.keyPacketInfo}
-          {param keyPacketInfo: $key.key /}
-          {param secretKeyDescription: $secretKeyDescription /}
-          {param publicKeyDescription: $publicKeyDescription /}
-          {param keyFingerprintLabel: $keyFingerprintLabel /}
-        {/call}
-      </div>
-    </div>
-  {/foreach}
-  {foreach $key in $commonKeys}
-    <div class="{e2e.ext.constants.CssClass.KEY_INFO}"
-        title="{$commonKeysLabel}">
-      <div>
-        {call e2e.ext.ui.templates.dialogs.importconfirmation.keyPacketInfo}
-          {param keyPacketInfo: $key.key /}
-          {param secretKeyDescription: $secretKeyDescription /}
-          {param publicKeyDescription: $publicKeyDescription /}
-          {param keyFingerprintLabel: $keyFingerprintLabel /}
-        {/call}
-      </div>
-    </div>
-  {/foreach}
-  {foreach $key in $remoteOnlyKeys}
-    <div class="{e2e.ext.constants.CssClass.KEY_INFO}{sp}
-        {e2e.ext.constants.CssClass.KEY_INFO_MINUS}"
-        title="{$remoteOnlyKeysLabel}">
-      <div>
-        {call e2e.ext.ui.templates.dialogs.importconfirmation.keyPacketInfo}
-          {param keyPacketInfo: $key.key /}
-          {param secretKeyDescription: $secretKeyDescription /}
-          {param publicKeyDescription: $publicKeyDescription /}
-          {param keyFingerprintLabel: $keyFingerprintLabel /}
-        {/call}
-      </div>
-    </div>
-  {/foreach}
+  {if length($localOnlyKeys)}
+    <p>
+      <div><a id="resolveLocal">{$localOnlyKeysLabel}</a></div>
+      {foreach $key in $localOnlyKeys}
+        <div class="{e2e.ext.constants.CssClass.KEY_INFO}{sp}
+            {e2e.ext.constants.CssClass.KEY_INFO_PLUS}">
+          <div>
+            {call e2e.ext.ui.templates.dialogs.importconfirmation.keyPacketInfo}
+              {param keyPacketInfo: $key.key /}
+              {param secretKeyDescription: $secretKeyDescription /}
+              {param publicKeyDescription: $publicKeyDescription /}
+              {param keyFingerprintLabel: $keyFingerprintLabel /}
+            {/call}
+          </div>
+        </div>
+      {/foreach}
+    </p>
+  {/if}
+  {if length($commonKeys)}
+    <p>
+      <div>{$commonKeysLabel}</div>
+      {foreach $key in $commonKeys}
+        <div class="{e2e.ext.constants.CssClass.KEY_INFO}">
+          <div>
+            {call e2e.ext.ui.templates.dialogs.importconfirmation.keyPacketInfo}
+              {param keyPacketInfo: $key.key /}
+              {param secretKeyDescription: $secretKeyDescription /}
+              {param publicKeyDescription: $publicKeyDescription /}
+              {param keyFingerprintLabel: $keyFingerprintLabel /}
+            {/call}
+          </div>
+        </div>
+      {/foreach}
+    </p>
+  {/if}
+  {if length($remoteOnlyKeys)}
+    <p>
+      <div><a id="resolveRemote">{$remoteOnlyKeysLabel}</a></div>
+      {foreach $key in $remoteOnlyKeys}
+        <div class="{e2e.ext.constants.CssClass.KEY_INFO}{sp}
+            {e2e.ext.constants.CssClass.KEY_INFO_MINUS}">
+          <div>
+            {call e2e.ext.ui.templates.dialogs.importconfirmation.keyPacketInfo}
+              {param keyPacketInfo: $key.key /}
+              {param secretKeyDescription: $secretKeyDescription /}
+              {param publicKeyDescription: $publicKeyDescription /}
+              {param keyFingerprintLabel: $keyFingerprintLabel /}
+            {/call}
+          </div>
+        </div>
+      {/foreach}
+    </p>
+  {/if}
 {/template}

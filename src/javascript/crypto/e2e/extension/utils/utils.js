@@ -21,6 +21,7 @@
 goog.provide('e2e.ext.utils');
 goog.provide('e2e.ext.utils.Error');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('goog.object');
@@ -156,17 +157,17 @@ utils.sendExtensionRequest = function(args, opt_callback, opt_errorCallback) {
 
   opt_callback = opt_callback || goog.nullFunction;
 
-  var respHandler = typeof opt_errorCallback === 'function' ? 
-    function(response) {
-      response.error ?
+  var respHandler = typeof opt_errorCallback === 'function' ?
+      function(response) {
+        response.error ?
         opt_errorCallback(new Error(response.error)) :
         opt_callback(response);
-      port.disconnect();
-    } :
-    function(response) {
-      opt_callback(response);
-      port.disconnect();
-    };
+        port.disconnect();
+      } :
+      function(response) {
+        opt_callback(response);
+        port.disconnect();
+      };
   port.onMessage.addListener(respHandler);
   port.onDisconnect.addListener(function() {
     port = null;
@@ -246,6 +247,42 @@ utils.isContentScript = function() {
   return Boolean(chrome.runtime) &&
       Boolean(chrome.runtime.getURL) && // Running as Chrome extension/app
       !Boolean(chrome.runtime.getBackgroundPage); // Running in a content script
+};
+
+
+/**
+ * Opens a window to requests for authentication, callback when the user has
+ * successfully authenticated.
+ * @param {string} email The email address that requires authentication
+ * @return {!e2e.async.Result<boolean>} The authentication result
+ */
+utils.openAuthWindow = function(email) {
+  var result = new e2e.async.Result;
+
+  // TODO: url now hardcoded. support openid type
+  var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
+                encodeURIComponent(
+                  'https://alpha.coname.corp.yahoo.com:25519/auth/cookies');
+
+  chrome.windows.create({
+    url: authUrl,
+    // url: e2e.coname.getRealmByEmail(email).addr +
+    //         '/auth?email=' + encodeURIComponent(email),
+    width: 500,
+    height: 640,
+    type: 'popup'
+  }, function(win) {
+
+    var onClose_ = function(closedWinId) {
+      if (win.id === closedWinId) {
+        chrome.windows.onRemoved.removeListener(onClose_);
+        result.callback(true);
+      }
+    };
+    chrome.windows.onRemoved.addListener(onClose_);
+
+  });
+  return result;
 };
 
 });  // goog.scope

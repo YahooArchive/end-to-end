@@ -16,8 +16,8 @@
 goog.provide('e2e.coname.KeyProvider');
 
 goog.require('e2e.async.Result');
+goog.require('e2e.coname');
 goog.require('e2e.coname.Client');
-goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.array');
 goog.require('goog.async.DeferredList');
@@ -48,12 +48,13 @@ var ConameKeyProvider = e2e.coname.KeyProvider;
  * Imports public key to the key server.
  * @param {!Array.<e2e.openpgp.block.TransferablePublicKey>} keys The keys to
  *     import.
+ * @param {string=} opt_uid The default user id
  * @return {!goog.async.Deferred.<boolean>} True if at least one of the keys
  *     are successfully uploaded according to the specified uids.
  */
-ConameKeyProvider.prototype.importKeys = function(keys) {
+ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
 
-  var emailKeyMap = {};
+  var email, emailKeyMap = {};
 
   goog.array.forEach(keys, function(key) {
     try {
@@ -63,14 +64,14 @@ ConameKeyProvider.prototype.importKeys = function(keys) {
       // validate a proper email is present in the uids
       goog.array.forEach(key.getUserIds(), function(uid) {
 
-        var email = e2e.coname.getSupportedEmailByUid(uid);
+        email = e2e.coname.getSupportedEmailByUid(uid);
         if (email !== null) {
           if (!emailKeyMap[email]) {
             emailKeyMap[email] = new goog.structs.Map();
           }
           // De-duplicate keys
           emailKeyMap[email].set(
-            key.keyPacket.fingerprint, key.serialize());
+              key.keyPacket.fingerprint, key.serialize());
         }
       });
     } catch (any) {
@@ -78,26 +79,30 @@ ConameKeyProvider.prototype.importKeys = function(keys) {
     }
   });
 
-  // it's considered success if nothing needs to be uploaded
-  if (goog.object.isEmpty(emailKeyMap)) {
-    return e2e.async.Result.toResult(true);
-  }
-
   return this.client_.initialize().
-    addCallback(function() {
-      return goog.async.DeferredList.gatherResults(
+      addCallback(function() {
+
+        if (goog.object.isEmpty(emailKeyMap)) {
+          if (opt_uid && (email = e2e.coname.getSupportedEmailByUid(opt_uid))) {
+            // update to set empty keys for the opt_uid user
+            return this.client_.update(email, null);
+          }
+          return e2e.async.Result.toResult(true);
+        }
+
+        return goog.async.DeferredList.gatherResults(
           goog.array.map(goog.object.getKeys(emailKeyMap), function(email) {
             var keyData = goog.array.flatten(emailKeyMap[email].getValues());
             return this.client_.update(email, keyData);
           }, this));
-    }, this).
-    addCallback(function(importedKeys) {
-      // Return true if it was imported for some emails.
-      // Not necessarily all as user may not have authenticated all accts
-      return goog.array.some(importedKeys, function(keys) {
-        return keys !== null;
-      });
-    }, this);
+      }, this).
+      addCallback(function(importedKeys) {
+        // Return true if it was imported for some emails.
+        // Not necessarily all as user may not have authenticated all accts
+        return goog.array.some(importedKeys, function(keys) {
+          return keys !== null;
+        });
+      }, this);
 };
 
 
@@ -114,36 +119,36 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
   }
 
   return this.client_.initialize().
-    addCallback(function() {
-      return this.client_.lookup(email);
-    }, this).
-    addCallback(function(lookupResult) {
-      // no key found for that email
-      if (lookupResult === null || lookupResult.keyData === null) {
-        return [];
-      }
+      addCallback(function() {
+        return this.client_.lookup(email);
+      }, this).
+      addCallback(function(lookupResult) {
+        // no key found for that email
+        if (lookupResult === null || lookupResult.keyData === null) {
+          return [];
+        }
 
-      var parsedKeys = e2e.openpgp.block.factory.
+        var parsedKeys = e2e.openpgp.block.factory.
           parseByteArrayAllTransferableKeys(lookupResult.keyData);
 
-      return goog.array.filter(parsedKeys, function(key) {
-        try {
-          // validate the keys
-          key.processSignatures();
+        return goog.array.filter(parsedKeys, function(key) {
+          try {
+            // validate the keys
+            key.processSignatures();
 
-          // maintain a history mapping of keyId to email
-          this.keyIdEmailMap_.set(key.keyPacket.keyId, email);
-          key.subKeys && goog.array.forEach(key.subKeys, function(subKey) {
-            this.keyIdEmailMap_.set(subKey.keyId, email);
-          }, this);
+            // maintain a history mapping of keyId to email
+            this.keyIdEmailMap_.set(key.keyPacket.keyId, email);
+            key.subKeys && goog.array.forEach(key.subKeys, function(subKey) {
+              this.keyIdEmailMap_.set(subKey.keyId, email);
+            }, this);
 
-          return true;
-        } catch (any) {
-          // Discard those keys without proper signatures
-          return false;
-        }
+            return true;
+          } catch (any) {
+            // Discard those keys without proper signatures
+            return false;
+          }
+        }, this);
       }, this);
-    }, this);
 };
 
 
