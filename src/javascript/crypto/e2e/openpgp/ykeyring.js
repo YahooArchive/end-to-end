@@ -273,7 +273,7 @@ e2e.openpgp.yKeyRing.prototype.getKeyBlockByIdLocalAndRemote = function(keyId,
 
   return this.conameKeyProvider_.getVerificationKeysByKeyId(keyId).
       addCallback(function(keys) {
-        return keys.length === 0 ? null : keys[1];
+        return keys[0] || null;
       });
 };
 

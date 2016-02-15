@@ -460,21 +460,21 @@ e2e.openpgp.ContextImpl.prototype.processLiteralMessage_ = function(block) {
 e2e.openpgp.ContextImpl.prototype.verifyMessage_ = function(
     message) {
   // Get keys matching key IDs declared in signatures.
-  var keyBlocksResults = goog.array.map(message.getSignatureKeyIds(), goog.bind(
-      function(keyId) {
+  var results = goog.array.map(message.getSignatureKeyIds(),
+      goog.bind(function(keyId) {
         return this.keyRing_.getKeyBlockByIdLocalAndRemote ?
             this.keyRing_.getKeyBlockByIdLocalAndRemote(keyId) :
             e2e.async.Result.toResult(this.keyRing_.getKeyBlockById(keyId));
       }, this));
 
   var result = new e2e.async.Result;
-  goog.async.DeferredList.gatherResults(keyBlocksResults).
+  goog.async.DeferredList.gatherResults(results).
       addCallback(function(keyBlocks) {
         // Verify not empty key blocks only
-        var verifyResult = message.verify(goog.array.filter(keyBlocks,
-          function(block) {
-            return !goog.isNull(block);
-          }));
+        var verifyResult = message.verify(goog.array.filter(
+            goog.array.flatten(keyBlocks), function(block) {
+              return !goog.isNull(block);
+            }));
         result.callback({
           success: goog.array.map(verifyResult.success, function(key) {
             return key.toKeyObject();
@@ -485,6 +485,25 @@ e2e.openpgp.ContextImpl.prototype.verifyMessage_ = function(
         });
       });
   return result;
+
+
+  // var keyBlocks = goog.array.map(message.getSignatureKeyIds(), goog.bind(
+  //     function(keyId) {
+  //       return this.keyRing_.getKeyBlockById(keyId);
+  //     }, this));
+  // // Verify not empty key blocks only
+  // var verifyResult = message.verify(goog.array.filter(keyBlocks,
+  //     function(block) {
+  //       return !goog.isNull(block);
+  //     }));
+  // return {
+  //   success: goog.array.map(verifyResult.success, function(key) {
+  //     return key.toKeyObject();
+  //   }),
+  //   failure: goog.array.map(verifyResult.failure, function(key) {
+  //     return key.toKeyObject();
+  //   })
+  // };
 };
 
 
@@ -738,7 +757,6 @@ e2e.openpgp.ContextImpl.prototype.restoreKeyring = function(data, email) {
  * //@yahoo
  * Searches a key (either public, private, or both) in the local keyring.
  * @param {string} uid The user id.
- * @private
  * @return {!e2e.openpgp.KeyResult} The result of the search.
  */
 e2e.openpgp.ContextImpl.prototype.searchLocalKey = function(uid) {
