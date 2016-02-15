@@ -46,8 +46,8 @@ actions.SyncKeys.prototype.execute =
   var uid = '<' + email + '>';
 
   ctx.syncWithRemote(uid, e2e.ext.utils.openAuthWindow,
-      function(uid, commonKeys) {
-        callback(commonKeys.length !== 0);
+      function(uid, commonKeys, keyserverManaged) {
+        callback(!keyserverManaged || commonKeys.length !== 0);
         return e2e.async.Result.toResult('');
       },
       function() { callback(false); return e2e.async.Result.toResult(''); }).

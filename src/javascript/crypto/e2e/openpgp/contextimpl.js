@@ -778,9 +778,9 @@ e2e.openpgp.ContextImpl.prototype.searchLocalKey = function(uid) {
  * @param {string} uid The user id.
  * @param {function(string): !e2e.async.Result} authCallback The Callback to
  *     authenticate the given user
- * @param {function(string, !e2e.openpgp.Keys): !e2e.async.Result<string>}
- *     consistentCallback The Callback to call when it is in sync with the
- *     remote keyserver.
+ * @param {function(string, !e2e.openpgp.Keys, boolean): 
+ *     !e2e.async.Result<string>} consistentCallback The Callback to call when
+ *     keys are in sync with the remote, or that uid is non-keyserver-managed.
  * @param {function(string, !e2e.openpgp.Keys, !e2e.openpgp.Keys,
  *     !e2e.openpgp.Keys): !e2e.async.Result<string>} inconsistentCallback
  *     The Callback to call when there is an inconsistency found.
@@ -796,7 +796,7 @@ e2e.openpgp.ContextImpl.prototype.syncWithRemote = function(uid,
     var local = diff.localOnly, common = diff.common, remote = diff.remoteOnly;
     var callback = (!diff.syncManaged ||
         local.length === 0 && remote.length === 0) ?
-        consistentCallback(uid, common) :
+        consistentCallback(uid, common, diff.syncManaged) :
         inconsistentCallback(uid, local, common, remote);
 
     callback.addCallbacks(function(action) {
