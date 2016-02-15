@@ -228,10 +228,19 @@ ui.ySettings.prototype.generateKey_ = function(
           return this.renderMatchRemoteKeysCallback_(
               uid, local, common, remote).addCallback(function(resolution) {
 
-            return resolution === null ? resolution : // cancelled
-            this.renderKeepExistingKeysCallback_(uid,
-                resolution === 'importedRemote' ? keys.concat(remote) : keys);
-
+            switch (resolution) {
+              // cancelled
+              case null: return resolution;
+              // user preferred to keep remote keys
+              case 'importedRemote':
+                // no need to ask again if only remote keys are what to keep 
+                if (keys.length === 0) {
+                  return 'noop';
+                }
+                keys = keys.concat(remote);
+                break;
+            }
+            return this.renderKeepExistingKeysCallback_(uid, keys);
           }, this);
         }
 
@@ -282,9 +291,9 @@ ui.ySettings.prototype.renderMatchRemoteKeysCallback_ = function(
         goog.dispose(dialog);
         // user chose whether to delete or keep remote keys
         switch (decision) {
-          case '': decision = null; break;
+          case '': result.callback(null); break;
           case 'true':
-            decision = 'overwriteRemote';
+            result.callback('overwriteRemote');
             break;
           case 'false': // import remote keys
             decision = goog.async.DeferredList.gatherResults(
@@ -295,11 +304,10 @@ ui.ySettings.prototype.renderMatchRemoteKeysCallback_ = function(
               // update the panels
               this.keyringMgmtPanel_.addNewKey(uid, remoteOnlyKeys);
               this.renderPanels_();
-              return 'importedRemote';
+              result.callback('importedRemote');
             }, this);
             break;
         }
-        result.callback(decision);
       }, this),
       dialogs.InputType.CHECKBOX,
       chrome.i18n.getMessage('giveUpRemoteKeyCheckboxLabel'),
