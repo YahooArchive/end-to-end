@@ -38,7 +38,7 @@
   </div>
   {if length($localOnlyKeys)}
     <p>
-      <div><a id="resolveLocal">{$localOnlyKeysLabel}</a></div>
+      <div>{$localOnlyKeysLabel}</div>
       {foreach $key in $localOnlyKeys}
         <div class="{e2e.ext.constants.CssClass.KEY_INFO}{sp}
             {e2e.ext.constants.CssClass.KEY_INFO_PLUS}">
@@ -73,7 +73,7 @@
   {/if}
   {if length($remoteOnlyKeys)}
     <p>
-      <div><a id="resolveRemote">{$remoteOnlyKeysLabel}</a></div>
+      <div>{$remoteOnlyKeysLabel}</div>
       {foreach $key in $remoteOnlyKeys}
         <div class="{e2e.ext.constants.CssClass.KEY_INFO}{sp}
             {e2e.ext.constants.CssClass.KEY_INFO_MINUS}">

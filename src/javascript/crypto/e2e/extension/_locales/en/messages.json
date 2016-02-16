@@ -576,7 +576,7 @@
     "description": "A sentence informing the user the key synchronization conflicts, particularly those keys that exists both locally and remotely."
   },
   "remoteOnlyKeysLabel": {
-    "message": "To read emails encrypted to the following registered key(s), please Import or Restore the corresponding private key(s).",
+    "message": "To read emails encrypted to the following registered key(s), please #import#Import# or Restore the corresponding private key(s).",
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
   },
   "giveUpRemoteKeyCheckboxLabel": {
