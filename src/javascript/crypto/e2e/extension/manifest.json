@@ -24,6 +24,10 @@
     {
       "matches": ["https://*.mail.yahoo.com/*"],
       "js": ["helper_binary.js"]
+    },
+    {
+      "matches": ["https://localhost:25519/auth/cookies"],
+      "js": ["yAuth/cookies.js"]
     }
   ],
   "icons": {
