@@ -556,7 +556,7 @@
     "description": "A sentence informing the user that the local keys are in-sync with server."
   },
   "promptKeepSyncKeysMessage": {
-    "message": "The local keyring is found inconsistent with the remote keyserver.\n\nYou might have imported a key that is unknown to the keyserver. We apologize for the inconvenience if this is unexpected, which could due to a reset to the keyserver during the alpha stage, or a recent change (within 5-min) to key registration is still being processed.",
+    "message": "The local keyring is found inconsistent with the remote keyserver.\n\nYou might have just imported a key that is unknown to the keyserver. If this is unexpected, we apologize for the inconvenience as we might have reset the keyserver during the alpha stage, or a recent change (within 5-min) to key registration is still being processed.",
     "description": "A sentence asking the user to confirm overriding the conflicts with local keyring."
   },
   "promptMatchRemoteKeysMessage": {

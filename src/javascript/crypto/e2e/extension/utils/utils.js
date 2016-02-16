@@ -147,21 +147,27 @@ utils.showNotification = function(msg, callback) {
  * @param {messages.ApiRequest} args The message to send to the launcher
  * @param {function(messages.e2ebindResponse)=} opt_callback optional callback
  *   to call with the result.
- * @param {function(Error)=} opt_errorCallback The callback to invoke if an
+ * @param {function(Error)=} opt_errback The callback to invoke if an
  *     error is encountered. If omitted, the default error callback will be
  *     invoked.
  */
-utils.sendExtensionRequest = function(args, opt_callback, opt_errorCallback) {
+utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
   var port = chrome.runtime.connect();
   port.postMessage(args);
 
   opt_callback = opt_callback || goog.nullFunction;
 
-  var respHandler = typeof opt_errorCallback === 'function' ?
+  var respHandler = typeof opt_errback === 'function' ?
       function(response) {
-        response.error ?
-        opt_errorCallback(new Error(response.error)) :
-        opt_callback(response);
+        if (response.error) {
+          opt_errback(new Error(response.error));
+        } else {
+          try {
+            opt_callback(response);
+          } catch(ex) {
+            opt_errback(ex);
+          }
+        }
         port.disconnect();
       } :
       function(response) {

@@ -137,12 +137,12 @@ e2ebind.messageHandler_ = function(response) {
       return;
     }
 
-    console.log('got e2ebind msg from provider:', data);
-    if (data.action.toUpperCase() in constants.e2ebind.requestActions) {
+    // console.log('got e2ebind msg from provider:', data);
+    var action = data.action.toUpperCase();
+    if (action in constants.e2ebind.requestActions) {
       e2ebind.handleProviderRequest_(/** @type {messages.e2ebindRequest} */
                                      (data));
-    } else if (
-        data.action.toUpperCase() in constants.e2ebind.responseActions) {
+    } else if (action in constants.e2ebind.responseActions) {
       e2ebind.handleProviderResponse_(/** @type {messages.e2ebindResponse} */
                                       (data));
     }
@@ -346,7 +346,6 @@ e2ebind.stop = function() {
   e2ebind.messagingTable_ = undefined;
   e2ebind.started_ = false;
   window.config = {};
-  window.valid = undefined;
   goog.events.unlisten(window, goog.events.EventType.CLICK,
                        e2ebind.clickHandler_);
   goog.events.unlisten(window, goog.events.EventType.FOCUS,
@@ -447,46 +446,41 @@ e2ebind.handleProviderRequest_ = function(request) {
 
   switch (request.action) {
     case actions.START:
-      (function() {
-        if (!e2ebind.started_) {
-          // Note that we've attempted to start, and set the config
-          e2ebind.started_ = true;
-          window.config = {
-            signer: String(args.signer),
-            version: String(args.version),
-            read_glass_enabled: Boolean(args.read_glass_enabled),
-            compose_glass_enabled: Boolean(args.compose_glass_enabled)
-          };
+      if (e2ebind.started_) {
+        // We've already started.
+        e2ebind.sendResponse_(null, request, false);
+        break;
+      }
 
-          // Verify the signer
-          e2ebind.validateSigner_(String(args.signer), function(valid) {
-            window.valid = valid;
-            e2ebind.sendResponse_({valid: valid}, request, true);
-          });
-        } else {
-          // We've already started.
-          e2ebind.sendResponse_(null, request, false);
-        }
-      })();
+      // Note that we've attempted to start, and set the config
+      e2ebind.started_ = true;
+      window.config = {
+        signer: String(args.signer),
+        version: String(args.version),
+        read_glass_enabled: Boolean(args.read_glass_enabled),
+        compose_glass_enabled: Boolean(args.compose_glass_enabled)
+      };
 
+      // Verify the signer
+      e2ebind.validateSigner_(args.signer);
+      // Always return true to add encryptr button
+      e2ebind.sendResponse_({valid: true}, request, true); 
       break;
 
     case actions.INSTALL_READ_GLASS:
-      (function() {
-        if (window.config.read_glass_enabled && args.messages && window.valid) {
-          try {
-            goog.array.forEach(args.messages, function(message) {
-              // XXX: message.elem is a selector string, not a DOM element
-              var DOMelem = document.querySelector(message.elem);
-              e2ebind.installReadGlass_(DOMelem, message.text);
-            });
-            e2ebind.sendResponse_(null, request, true);
-          } catch (ex) {
-            e2ebind.sendResponse_(null, request, false);
-          }
+      if (window.config.read_glass_enabled && args.messages) {
+        try {
+          goog.array.forEach(args.messages, function(message) {
+            // XXX: message.elem is a selector string, not a DOM element
+            e2ebind.installReadGlass_(
+                document.querySelector(message.elem),
+                message.text);
+          });
+          e2ebind.sendResponse_(null, request, true);
+        } catch (ex) {
+          e2ebind.sendResponse_(null, request, false);
         }
-      })();
-
+      }
       break;
 
     case actions.INSTALL_COMPOSE_GLASS:
@@ -496,55 +490,30 @@ e2ebind.handleProviderRequest_ = function(request) {
 
     case actions.SET_SIGNER:
       // TODO: Page doesn't send message when selected signer changes.
-      (function() {
-        // validates and updates the signer/validity in E2E
-        if (!args.signer) {
-          return;
-        }
-        window.config.signer = String(args.signer);
-        try {
-          e2ebind.validateSigner_(String(args.signer), function(valid) {
-            window.valid = valid;
-            e2ebind.sendResponse_({valid: valid}, request, true);
-          });
-        } catch (ex) {
-          e2ebind.sendResponse_(null, request, false);
-        }
-      })();
-
-      break;
+      // validates and updates the signer/validity in E2E
+      if (!args.signer) {
+        break;
+      }
+      window.config.signer = String(args.signer);
 
     case actions.VALIDATE_SIGNER:
-      (function() {
-        try {
-          if (!args.signer) {
-            return;
-          }
-          e2ebind.validateSigner_(String(args.signer), function(valid) {
-            e2ebind.sendResponse_({valid: valid}, request, true);
-          });
-        } catch (ex) {
-          e2ebind.sendResponse_(null, request, false);
-        }
-      })();
-
+      try {
+        e2ebind.validateSigner_(args.signer, function(valid) {
+          e2ebind.sendResponse_({valid: valid}, request, true);
+        });
+      } catch (ex) {
+        e2ebind.sendResponse_(null, request, false);
+      }
       break;
 
     case actions.VALIDATE_RECIPIENTS:
-      (function() {
-        try {
-          if (!args.recipients || !(args.recipients instanceof Array) ||
-              !window.valid) {
-            return;
-          }
-          e2ebind.validateRecipients_(args.recipients, function(response) {
-            e2ebind.sendResponse_({results: response}, request, true);
-          });
-        } catch (ex) {
-          e2ebind.sendResponse_(null, request, false);
-        }
-      })();
-
+      try {
+        e2ebind.validateRecipients_(args.recipients, function(response) {
+          e2ebind.sendResponse_({results: response}, request, true);
+        });
+      } catch (ex) {
+        e2ebind.sendResponse_(null, request, false);
+      }
       break;
   }
 };
@@ -782,17 +751,22 @@ e2ebind.hideBlob_ = function(blob) {
 * Validates whether or not a private key exist for the signer, and that the
 * server has a consistent keyring with the local.
 * @param {string} signer The signer ("name@domain.com") we wish to validate
-* @param {!function(boolean)} callback Callback to call with the result.
+* @param {!function(boolean)=} opt_callback Callback to call with the result.
 * @private
 */
-e2ebind.validateSigner_ = function(signer, callback) {
+e2ebind.validateSigner_ = function(signer, opt_callback) {
+  if (!signer) {
+    return;
+  }
+  signer = String(signer);
+
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
     recipients: [signer],
     content: 'private_exist'
   }), function(privKeyResponse) {
     if (privKeyResponse.content === false) {
-      callback(false);
+      opt_callback && opt_callback(false);
       return;
     }
 
@@ -808,15 +782,15 @@ e2ebind.validateSigner_ = function(signer, callback) {
           }));
         }
       }
-      callback(response.content);
+      opt_callback && opt_callback(response.content);
 
     }, function(err) {
-      callback(false);
+      opt_callback && opt_callback(false);
     });
 
 
   }, function(err) {
-    callback(false);
+    opt_callback && opt_callback(false);
   });
 };
 
@@ -830,6 +804,9 @@ e2ebind.validateSigner_ = function(signer, callback) {
 * @private
 */
 e2ebind.validateRecipients_ = function(recipients, callback) {
+  if (!recipients || !goog.isArray(recipients)) {
+    return;
+  }
   // Check if the recipient is already in the keyring
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
     action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,

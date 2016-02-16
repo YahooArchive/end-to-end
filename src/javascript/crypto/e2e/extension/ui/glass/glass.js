@@ -62,13 +62,6 @@ ui.Glass = function(pgpMessage) {
   this.pgpMessage_ = pgpMessage;
 
   /**
-   * The communication channel with the extension.
-   * @type {Port}
-   * @private
-   */
-  this.port_ = null;
-
-  /**
    * Whether the glass contents have been rendered.
    * @type {boolean}
    * @private
@@ -78,57 +71,17 @@ ui.Glass = function(pgpMessage) {
 goog.inherits(ui.Glass, goog.ui.Component);
 
 
-/**
- * The offset to use when scrolling up/down.
- * @type {number}
- * @private
- * @const
- */
-ui.Glass.prototype.SCROLL_OFFSET_ = 10;
-
-
-/** @override */
-ui.Glass.prototype.disposeInternal = function() {
-  if (this.port_) {
-    this.port_.disconnect();
-    this.port_ = null;
-  }
-
-  goog.base(this, 'disposeInternal');
-};
-
-
 /** @override */
 ui.Glass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
-  if (!this.port_) {
-    this.port_ = chrome.runtime.connect();
-  }
-
-  window.setTimeout(goog.bind(/** @this ui.Glass */ function() {
-    if (this.port_) {
-      this.port_.postMessage({
-        content: this.pgpMessage_,
-        action: constants.Actions.DECRYPT_VERIFY
-      });
-    } else {
-      this.renderContents_({
-        completedAction: constants.Actions.DECRYPT_VERIFY,
-        error: chrome.i18n.getMessage('glassCannotDecrypt')
-      });
-    }
-  }, this), e2e.random.getRandomBytes(1, [0])[0]);
-
-  this.port_.onDisconnect.addListener(goog.bind(function() {
-    this.port_ = null;
-  }, this));
-
-  this.port_.onMessage.addListener(goog.bind(function(response) {
-    window.setTimeout(
-        goog.bind(this.renderContents_, this, response),
-        e2e.random.getRandomBytes(1, [0])[0]);
-  }, this));
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+      content: this.pgpMessage_,
+      action: constants.Actions.DECRYPT_VERIFY
+    }),
+    goog.bind(function(response) {
+      this.renderContents_(response);
+    }, this));
 };
 
 
