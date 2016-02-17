@@ -29,8 +29,9 @@ goog.require('e2e.ext.api.RequestThrottle');
 goog.require('e2e.ext.constants.Actions');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
-// @yahoo
-goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils'); // @yahoo
+goog.require('e2e.openpgp.error.MissingPassphraseError'); // @yahoo
+goog.require('e2e.openpgp.error.WrongPassphraseError'); // @yahoo
 goog.require('goog.ui.Component');
 
 goog.scope(function() {
@@ -135,18 +136,29 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   switch (incoming.action) {
     case constants.Actions.ENCRYPT_SIGN:
     case constants.Actions.DECRYPT_VERIFY:
-    //@yahoo, the following 6 actions are now yahoo-specific
-    case constants.Actions.SYNC_KEYS:
-    case constants.Actions.CONFIGURE_EXTENSION:
-    case constants.Actions.GET_ALL_KEYS_BY_EMAILS:
-    case constants.Actions.LIST_KEYS:
-    case constants.Actions.IMPORT_KEY:
-    case constants.Actions.GET_KEYRING_UNLOCKED:
+    case constants.Actions.DECRYPT_VERIFY_RICH_INFO: //@yahoo
       // Propagate the decryptPassphrase if needed.
       incoming.passphraseCallback = function(uid) {
         // Note: The passphrase needs to be known when calling executeAction_.
-        return e2e.async.Result.toResult(incoming.decryptPassphrase || '');
+
+        // @yahoo feedback the need of decrypt passphrase
+        // return e2e.async.Result.toResult(incoming.decryptPassphrase || '');
+        if (incoming.decryptPassphrase && !incoming.passphraseAttempted) {
+          incoming.passphraseAttempted = true;
+          return e2e.async.Result.toResult(incoming.decryptPassphrase);
+        }
+
+        outgoing.error = chrome.i18n.getMessage('actionEnterPassphrase');
+        callback(outgoing);
+        throw incoming.passphraseAttempted ?
+            new e2e.openpgp.error.WrongPassphraseError() :
+            new e2e.openpgp.error.MissingPassphraseError();
       };
+      break;
+    //@yahoo, the following 3 actions are now yahoo-specific
+    case constants.Actions.CONFIGURE_EXTENSION:
+    case constants.Actions.SYNC_KEYS:
+    case constants.Actions.GET_ALL_KEYS_BY_EMAILS:
       break;
     //@yahoo
     case constants.Actions.SHOW_NOTIFICATION:
@@ -166,12 +178,6 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     callback({
       error: chrome.i18n.getMessage('glassKeyringLockedError')
     });
-    return;
-  }
-  //@yahoo
-  else if (incoming.action === constants.Actions.GET_KEYRING_UNLOCKED) {
-    outgoing.content = true;
-    callback(outgoing);
     return;
   }
 

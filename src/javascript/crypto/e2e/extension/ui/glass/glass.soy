@@ -23,7 +23,7 @@
 {template .contentFrame}
 <html>
   <head>
-    <link rel="stylesheet"/>
+    <link rel="stylesheet" href="glass_styles.css" />
   </head>
   <body>
     <fieldset>
@@ -33,9 +33,11 @@
         </span>
         <span>
         <img id="{e2e.ext.constants.ElementId.LOCK_ICON}"
-             src="images/yahoo/lock-circle.png" />
+            class="{e2e.ext.constants.CssClass.HIDDEN}"
+            src="images/yahoo/lock-circle.png" />
         <img id="{e2e.ext.constants.ElementId.CHECK_ICON}"
-             src="images/yahoo/check-circle.png" />
+            class="{e2e.ext.constants.CssClass.HIDDEN}"
+            src="images/yahoo/check-circle.png" />
         <span>
       </legend>
       {if $error}

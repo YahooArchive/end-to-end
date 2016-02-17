@@ -43,6 +43,7 @@ e2e.ext.constants.Actions = {
 
   // Decryption/verification related actions.
   DECRYPT_VERIFY: 'decrypt_verify',
+  DECRYPT_VERIFY_RICH_INFO: 'decrypt_verify_rich_info', //@yahoo
 
   // Keyring management related actions.
   GET_KEY_DESCRIPTION: 'get_key_description',

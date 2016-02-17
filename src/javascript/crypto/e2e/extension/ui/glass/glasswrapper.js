@@ -93,16 +93,20 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   var surroundings = originalContent.split(pgpMessage);
 
   this.targetElem_.textContent = '';
-  var before = surroundings[0] || '';
-  var after = surroundings[1] || '';
+  var before = surroundings[0];
+  var after = surroundings[1];
 
-  var p1 = this.targetElem_.appendChild(document.createElement('pre'));
-  p1.style.fontFamily = 'inherit';
-  p1.appendChild(document.createTextNode(before));
+  if (before) {
+    var p1 = this.targetElem_.appendChild(document.createElement('pre'));
+    p1.style.fontFamily = 'inherit';
+    p1.appendChild(document.createTextNode(before));
+  }
   this.targetElem_.appendChild(glassFrame);
-  var p2 = this.targetElem_.appendChild(document.createElement('pre'));
-  p2.style.fontFamily = 'inherit';
-  p2.appendChild(document.createTextNode(after));
+  if (after) {
+    var p2 = this.targetElem_.appendChild(document.createElement('pre'));
+    p2.style.fontFamily = 'inherit';
+    p2.appendChild(document.createTextNode(after));
+  }
 
   glassFrame.addEventListener('load', goog.bind(function() {
     glassFrame.contentWindow.postMessage(

@@ -21,6 +21,7 @@
 goog.provide('e2e.ext.actions.Executor');
 
 goog.require('e2e.ext.actions.DecryptVerify');
+goog.require('e2e.ext.actions.DecryptVerifyRichInfo'); // @yahoo
 goog.require('e2e.ext.actions.EncryptSign');
 goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.actions.GetKeyringBackupData');
@@ -101,6 +102,9 @@ actions.Executor.prototype.getAction_ = function(actionType) {
   switch (actionType) {
     case constants.Actions.DECRYPT_VERIFY:
       return new actions.DecryptVerify();
+    // @yahoo
+    case constants.Actions.DECRYPT_VERIFY_RICH_INFO:
+      return new actions.DecryptVerifyRichInfo();
     case constants.Actions.ENCRYPT_SIGN:
       return new actions.EncryptSign();
     case constants.Actions.GET_KEY_DESCRIPTION:

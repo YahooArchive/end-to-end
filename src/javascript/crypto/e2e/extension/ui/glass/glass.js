@@ -21,18 +21,22 @@
 
 goog.provide('e2e.ext.ui.Glass');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.ui.templates.glass');
 goog.require('e2e.ext.utils');
 goog.require('e2e.openpgp.asciiArmor');
-goog.require('e2e.random');
 goog.require('goog.dom');
+goog.require('goog.dom.classlist');
+goog.require('goog.string');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('soy');
+
 
 goog.scope(function() {
 var constants = e2e.ext.constants;
@@ -61,12 +65,13 @@ ui.Glass = function(pgpMessage) {
    */
   this.pgpMessage_ = pgpMessage;
 
+
   /**
-   * Whether the glass contents have been rendered.
-   * @type {boolean}
+   * The passphrase required for per message passphrase decryption.
+   * @type {string|undefined}
    * @private
    */
-  this.rendered_ = false;
+  this.decryptPassphrase_ = undefined;
 };
 goog.inherits(ui.Glass, goog.ui.Component);
 
@@ -76,12 +81,61 @@ ui.Glass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
   utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-      content: this.pgpMessage_,
-      action: constants.Actions.DECRYPT_VERIFY
-    }),
-    goog.bind(function(response) {
-      this.renderContents_(response);
-    }, this));
+    content: this.pgpMessage_,
+    action: constants.Actions.DECRYPT_VERIFY_RICH_INFO,
+    decryptPassphrase: this.decryptPassphrase_
+  }),
+  goog.bind(function(response) {
+    // renderPassphraseCallback if decryptPassphrase is needed
+    if (response.error === chrome.i18n.getMessage('actionEnterPassphrase')) {
+      this.renderPassphraseCallback().addCallback(function(passphrase) {
+        if (passphrase) {
+          this.decryptPassphrase_ = passphrase;
+          this.decorateInternal(elem);
+        } else {
+          response.error = chrome.i18n.getMessage(
+              'passphraseIncorrectWarning');
+
+          this.renderContents_(response);
+        }
+      }, this);
+      return;
+    }
+
+    // If the response has no content, show an undecryptable error if
+    // the error message is missing for some reason.
+    if (!response.error) {
+      if (response.content) {
+        // decode rich info from Actions.DECRYPT_VERIFY_RICH_INFO
+        try {
+          var json = JSON.parse(response.content);
+          response.content = json[0];
+          response.wasEncrypted = json[1];
+          response.isVerified = json[2];
+        } catch(ex) {}
+      } else {
+        response.error = chrome.i18n.getMessage('glassCannotDecrypt');
+      }
+    }
+
+    this.renderContents_(response);
+    this.renderIcons_(response);
+  }, this));
+};
+
+
+/**
+ * Renders the contents of the looking glass.
+ * @return {e2e.async.Result.<string>}
+ */
+ui.Glass.prototype.renderPassphraseCallback = function() {
+  var result = new e2e.async.Result;
+  // TODO: make this look good
+  window.setTimeout(goog.bind(function() {
+    this.callback(window.prompt(
+        chrome.i18n.getMessage('actionEnterPassphrase')));
+  }, result), 1);
+  return result;
 };
 
 
@@ -93,87 +147,15 @@ ui.Glass.prototype.decorateInternal = function(elem) {
  */
 ui.Glass.prototype.renderContents_ = function(response) {
   var elem = this.getElement();
-  var decrypted = true; // was the message encrypted and then decrypted?
-  var verified = true; // was the message signed and then verified?
 
-  if (!response.content && !response.error) {
-    // If the response has no content, show an undecryptable error if
-    // the error message is missing for some reason.
-    response.error = chrome.i18n.getMessage('glassCannotDecrypt');
-  }
+  soy.renderElement(elem, templates.contentFrame, {
+    label: chrome.i18n.getMessage('extName'),
+    content: response.content || this.pgpMessage_,
+    error: response.error
+  });
 
-  if (response.error && response.error.indexOf(
-      chrome.i18n.getMessage('promptVerificationFailureMsg')) === 0) {
-    // Message must have been decrypted but it wasn't verified
-    verified = false;
-  } else if (response.error) {
-    // Otherwise probably we neither decrypted nor verified
-    decrypted = false;
-    verified = false;
-  }
-
-  // If the pgp message wasn't encrypted in the first place, it wasn't decrypted
-  // if (!e2e.openpgp.asciiArmor.isEncrypted(this.pgpMessage_)) {
-  if (this.pgpMessage_.indexOf('-----BEGIN PGP MESSAGE-----') === -1) {
-    decrypted = false;
-    // If it wasn't encrypted or clear signed, it can't have been verified
-    if (!e2e.openpgp.asciiArmor.isClearSign(this.pgpMessage_)) {
-      verified = false;
-    }
-  }
-  var styles;
-
-  if (!this.rendered_) {
-    soy.renderElement(elem, templates.contentFrame, {
-      label: chrome.i18n.getMessage('extName'),
-      content: response.content || this.pgpMessage_,
-      error: response.error
-    });
-    styles = elem.querySelector('link');
-    styles.href = chrome.runtime.getURL('glass_styles.css');
-
-    this.resizeGlass_();
-    this.rendered_ = true;
-  } else if (response.content) {
-    var previousError = goog.dom.getElement(
-        constants.ElementId.ERROR_DIV).textContent || undefined;
-    if (previousError === chrome.i18n.getMessage('glassCannotDecrypt')) {
-      // Since the response content is now the decrypted message, we can
-      // get rid of the undecryptable error message. This happens because
-      // the decryptVerify API *might* send two messages if a verification
-      // error is encountered (one with the error, and one with the decrypted
-      // content).
-      previousError = undefined;
-    }
-    soy.renderElement(elem, templates.contentFrame, {
-      label: chrome.i18n.getMessage('extName'),
-      content: response.content,
-      error: previousError
-    });
-    styles = elem.querySelector('link');
-    styles.href = chrome.runtime.getURL('glass_styles.css');
-
-    this.resizeGlass_();
-  } else if (response.error) {
-    goog.dom.getElement(constants.ElementId.ERROR_DIV).textContent =
-        response.error;
-  }
-
-  if (!decrypted) {
-    goog.dom.getElement(constants.ElementId.LOCK_ICON).style.display = 'none';
-  }
-  if (!verified) {
-    goog.dom.getElement(constants.ElementId.CHECK_ICON).style.display = 'none';
-  }
-};
-
-
-/**
- * Waits for stylesheet to be applied, then resizes the glass.
- * @private
- */
-ui.Glass.prototype.resizeGlass_ = function() {
-  window.setTimeout(goog.bind(function() {
+  // waits for style and height to settle, then resize the iframe.
+  window.setTimeout(function() {
     utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
       action: constants.Actions.SET_GLASS_SIZE,
       content: {
@@ -181,44 +163,67 @@ ui.Glass.prototype.resizeGlass_ = function() {
             Math.floor(Math.random() * 18)
       }
     }));
-  }, this), 50);
-};
-
-
-/** @override */
-ui.Glass.prototype.enterDocument = function() {
-  goog.base(this, 'enterDocument');
-
-  /*
-  var mouseWheelHandler = new goog.events.MouseWheelHandler(
-      this.getElement(), true);
-  this.registerDisposable(mouseWheelHandler);
-
-  this.getHandler().listen(
-      mouseWheelHandler,
-      goog.events.MouseWheelHandler.EventType.MOUSEWHEEL,
-      this.scroll_);
-  */
+  }, 100);
 };
 
 
 /**
- * Scrolls the looking glass up/down.
- * @param {goog.events.MouseWheelEvent} evt The mouse wheel event to
- *     scroll up/down.
+ * Renders the icons of the looking glass.
+ * @param {messages.ApiResponse} response The response from the extension to
+ *     render.
  * @private
  */
-ui.Glass.prototype.scroll_ = function(evt) {
-  var fieldset = this.getElement().querySelector('fieldset');
-  var position = goog.style.getPosition(fieldset);
+ui.Glass.prototype.renderIcons_ = function(response) {
+  if (response.error) {
+    return;
+  }
 
-  var newY = position.y - evt.deltaY * 5;
-  // Set upper boundary.
-  newY = Math.min(0, newY);
-  // Set lower boundary.
-  newY = Math.max(window.innerHeight * -1, newY);
+  if (response.wasEncrypted) {
+    goog.dom.classlist.remove(
+        goog.dom.getElement(constants.ElementId.LOCK_ICON),
+        constants.CssClass.HIDDEN);
+  }
 
-  goog.style.setPosition(fieldset, 0, newY);
+  if (response.isVerified) {
+    goog.dom.classlist.remove(
+        goog.dom.getElement(constants.ElementId.CHECK_ICON),
+        constants.CssClass.HIDDEN);
+  }
 };
+
+
+// /** @override */
+// ui.Glass.prototype.enterDocument = function() {
+//   goog.base(this, 'enterDocument');
+
+//   var mouseWheelHandler = new goog.events.MouseWheelHandler(
+//       this.getElement(), true);
+//   this.registerDisposable(mouseWheelHandler);
+
+//   this.getHandler().listen(
+//       mouseWheelHandler,
+//       goog.events.MouseWheelHandler.EventType.MOUSEWHEEL,
+//       this.scroll_);
+// };
+
+
+// /**
+//  * Scrolls the looking glass up/down.
+//  * @param {goog.events.MouseWheelEvent} evt The mouse wheel event to
+//  *     scroll up/down.
+//  * @private
+//  */
+// ui.Glass.prototype.scroll_ = function(evt) {
+//   var fieldset = this.getElement().querySelector('fieldset');
+//   var position = goog.style.getPosition(fieldset);
+
+//   var newY = position.y - evt.deltaY * 5;
+//   // Set upper boundary.
+//   newY = Math.min(0, newY);
+//   // Set lower boundary.
+//   newY = Math.max(window.innerHeight * -1, newY);
+
+//   goog.style.setPosition(fieldset, 0, newY);
+// };
 
 });  // goog.scope
