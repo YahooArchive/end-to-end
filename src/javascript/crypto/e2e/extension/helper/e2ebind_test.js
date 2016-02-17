@@ -138,11 +138,6 @@ function testE2ebindIconClick() {
   stubs.replace(goog.dom, 'getAncestorByTagNameAndClass', function() {
     return document.createElement('div');
   });
-  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(request, cb) {
-    if (request.action === constants.Actions.GET_KEYRING_UNLOCKED) {
-      cb({content: true, completedAction: request.action});
-    }
-  });
   stubs.replace(e2ebind, 'hasDraft', function() {
     clickHandled = true;
   });

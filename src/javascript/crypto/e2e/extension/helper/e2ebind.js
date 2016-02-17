@@ -180,54 +180,41 @@ e2ebind.initComposeGlass_ = function(elt) {
     return;
   }
 
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-    action: constants.Actions.GET_KEYRING_UNLOCKED
-  }), function(response) {
-    if (!response.content) {
-      // Can't install compose glass if the keyring is locked
-      window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
+  // We have to unhide the PGP blob so that text shows up in compose glass
+  var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
+  if (textElem) {
+    goog.style.setElementShown(textElem, true);
+  }
+
+  // Get the compose window associated with the clicked icon
+  var draft = /** @type {messages.e2ebindDraft} */ ({});
+  draft.from = window.config.signer ? window.config.signer : '';
+
+  e2ebind.hasDraft(function(hasDraftResult) {
+    if (hasDraftResult) {
+      e2ebind.getDraft(function(getDraftResult) {
+        draft.body = e2e.openpgp.asciiArmor.
+            extractPgpBlock(getDraftResult.body);
+        draft.to = getDraftResult.to;
+        draft.cc = getDraftResult.cc;
+        draft.bcc = getDraftResult.bcc;
+        draft.subject = getDraftResult.subject;
+        e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
+      });
     } else {
-      // We have to unhide the PGP blob so that text shows up in compose glass
-      var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
-      if (textElem) {
-        goog.style.setElementShown(textElem, true);
-      }
-
-      // Get the compose window associated with the clicked icon
-      var draft = /** @type {messages.e2ebindDraft} */ ({});
-      draft.from = window.config.signer ? window.config.signer :
-          '';
-
-      e2ebind.hasDraft(function(hasDraftResult) {
-        if (hasDraftResult) {
-          e2ebind.getDraft(function(getDraftResult) {
-            draft.body = e2e.openpgp.asciiArmor.
-                extractPgpBlock(getDraftResult.body);
-            draft.to = getDraftResult.to;
-            draft.cc = getDraftResult.cc;
-            draft.bcc = getDraftResult.bcc;
-            draft.subject = getDraftResult.subject;
-            e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-          });
-        } else {
-          e2ebind.getCurrentMessage(function(result) {
-            var DOMelem = document.querySelector(result.elem);
-            if (result.text) {
-              draft.body = result.text;
-            } else if (DOMelem) {
-              draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
-                  goog.isDef(DOMelem.lookingGlass) ?
-                  DOMelem.lookingGlass.getOriginalContent() :
-                  DOMelem.innerText);
-            }
-            e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-          });
+      e2ebind.getCurrentMessage(function(result) {
+        var DOMelem = document.querySelector(result.elem);
+        if (result.text) {
+          draft.body = result.text;
+        } else if (DOMelem) {
+          draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
+              goog.isDef(DOMelem.lookingGlass) ?
+              DOMelem.lookingGlass.getOriginalContent() :
+              DOMelem.innerText);
         }
+        e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
       });
     }
-  }, function (error) {
-    // Can't install compose glass if the keyring is locked
-    window.alert(chrome.i18n.getMessage('glassKeyringLockedError'));
   });
 };
 
