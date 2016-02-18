@@ -158,7 +158,9 @@ ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
           privKeys.length !== 0) {
         this.pgpContext_.syncWithRemote(keyUid, e2e.ext.utils.openAuthWindow,
             // no reqAction when it's in-sync
-            constFunction(e2e.async.Result.toResult('noop')),
+            opt_intention === 'load' ?
+              goog.bind(this.renderWelcomeScreen_, this) :
+              constFunction(e2e.async.Result.toResult('noop')),
             // make an update if the inconsistency is acknowledged
             opt_intention === 'keygen' || opt_intention === 'remove' ?
                 constFunction(e2e.async.Result.toResult('overwriteRemote')) :
@@ -253,6 +255,35 @@ ui.ySettings.prototype.generateKey_ = function(
         return reqActionResult !== null && this.generateKeyAndOverwriteRemote_(
             panel, name, email, comments, expDate);
       }, this.displayFailure_, this);
+};
+
+
+
+/**
+ * TODO: this is temporary
+ * Renders the UI elements needed for welcoming the user.
+ * @return {!e2e.async.Result<string>} A promise that returns noop
+ * @private
+ */
+ui.ySettings.prototype.renderWelcomeScreen_ = function() {
+
+  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
+  var dialog = new dialogs.Generic(
+      chrome.i18n.getMessage('welcomeHeader') + '\n\n' +
+      chrome.i18n.getMessage('welcomeBasicsLine1') + '\n\n' +
+      'Please proceed by clicking "Add a New Key" to let friends send you encrypted emails.\n' +
+      'For advanced users, you may like to "Import" your existing OpenPGP key pair.',
+      function() {
+        goog.dispose(dialog);
+      },
+      dialogs.InputType.NONE,
+      '',
+      chrome.i18n.getMessage('promptOkActionLabel'));
+
+  this.addChild(dialog, false);
+  dialog.render(popupElem);
+
+  return e2e.async.Result.toResult('noop');
 };
 
 

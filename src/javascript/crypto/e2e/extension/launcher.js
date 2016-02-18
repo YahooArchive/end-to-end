@@ -27,6 +27,7 @@ goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
 goog.require('e2e.ext.Preferences');
 goog.require('e2e.ext.api.Api');
+goog.require('e2e.ext.config'); //@yahoo
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
@@ -304,8 +305,22 @@ ext.yExtensionLauncher.prototype.start = function(opt_passphrase) {
 
   return goog.base(this, 'start', opt_passphrase).addCallback(function() {
 
-    // All ymail tabs need to be reloaded for the e2ebind API to work
-    e2e.ext.utils.action.refreshYmail();
+    // @yahoo focus or go to ymail instead
+    chrome.tabs.query({
+      // this must match the one declared in manifest
+      url: 'https://*.mail.yahoo.com/*'
+    }, goog.bind(function(tabs) {
+      // All ymail tabs need to be reloaded for the e2ebind API to work
+      goog.array.forEach(tabs, function(tab) {
+        chrome.tabs.reload(tab.id);
+      });
+
+      // focus if present, otherwise open a new one
+      tabs.length ?
+        chrome.tabs.update(tabs[0].id, {highlighted: true, active: true}) :
+        this.createWindow(
+            e2e.ext.config.CONAME.realms[0].URL, true, goog.nullFunction);
+    }, this));
 
     // add message listener
     chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
@@ -337,7 +352,8 @@ ext.yExtensionLauncher.prototype.stop = function() {
 ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
   var preferences = this.getPreferences();
   if (preferences.isWelcomePageEnabled()) {
-    this.createWindow('setup.html', true, goog.nullFunction);
+    // @yahoo disabled welcome screen for now
+    // this.createWindow('setup.html', true, goog.nullFunction);
     preferences.setWelcomePageEnabled(false);
   }
 };

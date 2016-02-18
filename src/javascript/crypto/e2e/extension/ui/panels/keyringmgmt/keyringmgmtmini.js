@@ -593,7 +593,8 @@ panels.KeyringMgmtMini.prototype.refreshOptions = function() {
             // private keys
             showElementOnlyIf(
                 constants.CssClass.KEYRING_PASSPHRASE_CHANGE,
-                (this.updatePassphraseCallback_ !== goog.nullFunction)
+                (hasPrivateKeys &&
+                    this.updatePassphraseCallback_ !== goog.nullFunction)
             );
             // Show Cancel/SkipPassphrase button only if we can do so
             showElementOnlyIf(

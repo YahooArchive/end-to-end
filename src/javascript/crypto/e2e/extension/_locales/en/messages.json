@@ -266,11 +266,11 @@
     "description": "A noun indicating where the user needs to specify a passphrase for her new PGP key."
   },
   "genKeyGenerateButtonLabel": {
-    "message": "Register Key(s)",
+    "message": "Add a New Key",
     "description": "A verb prompting the user to register to receive secret messages."
   },
   "settingsTitle": {
-    "message": "End-To-End Keys and Settings",
+    "message": "Yahoo Mail End-To-End",
     "description": "A page title indicating to the user that the current page will allow her to modify the extension's settings."
   },
   "settingsKeyringLockedError": {
