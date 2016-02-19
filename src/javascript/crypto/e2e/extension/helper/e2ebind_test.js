@@ -252,8 +252,6 @@ function testProviderRequestToStart() {
   assertTrue(e2ebind.started_);
   assertEquals(window.config.signer, signer);
   assertEquals(window.config.version, '0');
-  assertTrue(window.config.read_glass_enabled);
-  assertFalse(window.config.compose_glass_enabled);
 
   mockControl.$verifyAll();
 }

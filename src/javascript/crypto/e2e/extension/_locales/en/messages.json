@@ -278,7 +278,7 @@
     "description": "An error message indicating that the user must unlock their KeyRing and/or choose an initial passphrase for the KeyRing before using the Options page."
   },
   "promptRecipientsPlaceholder": {
-    "message": "To:",
+    "message": "To",
     "description": "A phrase to prompt the user to enter the intended recipients of the message."
   },
   "promptPassphraseEncrypt": {
@@ -306,11 +306,11 @@
     "description": "A sentence prompting the user to specify their PGP key to sign and encrypt."
   },
   "promptFromLabel": {
-    "message": "From:",
+    "message": "From",
     "description": "The label to describe who is the author of the message."
   },
   "promptSubjectLabel": {
-    "message": "Subject: (Warning: Subject is NOT protected)",
+    "message": "Subject (Warning: Subject is NOT protected)",
     "description": "The label to describe the subject of the message."
   },
   "promptNoPrivateKeysFound": {
@@ -602,5 +602,9 @@
   "confirmUserSyncKeys": {
     "message": "Setup keys to let friends send you encrypted emails?",
     "description": "A sentence prompting the user to synchronize local keyring with remote keyserver."
+  },
+  "promptRestoreToNormalComposeLabel": {
+    "message": "#restore#Restore# to the regular compose for formatting and attachments.\nRecipients will need #extensionLink#Yahoo Mail Encryption Plugin# to read.",
+    "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
   }
 }

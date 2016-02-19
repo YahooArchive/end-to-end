@@ -169,6 +169,14 @@ api.Api.prototype.executeAction_ = function(callback, req) {
         });
       }
       return;
+    //@yahoo
+    case constants.Actions.GET_PREFERENCE:
+      if (window.launcher) {
+        outgoing.content = window.launcher.
+                              getPreferences().getItem(incoming.content);
+        callback(outgoing);
+        return;
+      }
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
       callback(outgoing);

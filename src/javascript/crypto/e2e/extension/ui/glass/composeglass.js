@@ -119,14 +119,24 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   // @yahoo renders the body
   elem = goog.dom.getElement(constants.ElementId.BODY);
   // @yahoo
+  var restoreLabel = goog.string.htmlEscape(
+    chrome.i18n.getMessage('promptRestoreToNormalComposeLabel')).
+      replace('\n', '<br>').
+      replace(/#restore#([^#]*)#/, 
+        '<label for="' + constants.ElementId.BACK_BUTTON + '">$1</label>').
+      replace(/#extensionLink#([^#]*)#/, 
+        '<label for="' + constants.ElementId.PROMOTE_BUTTON + '">$1</label>');
+
+  // @yahoo
   soy.renderElement(elem, templates.renderEncrypt, {
     signerCheckboxTitle: chrome.i18n.getMessage('promptSignMessageAs'),
     fromLabel: chrome.i18n.getMessage('promptFromLabel'),
     actionButtonTitle: chrome.i18n.getMessage(
         'promptEncryptSignActionLabel'),
-    backButtonTitle: chrome.i18n.getMessage('actionBackToMenu'),
     subject: content.subject,
-    subjectLabel: chrome.i18n.getMessage('promptSubjectLabel')
+    subjectLabel: chrome.i18n.getMessage('promptSubjectLabel'),
+    restoreToNormalComposeLabel: soydata.VERY_UNSAFE.ordainSanitizedHtml(
+                                    restoreLabel)
   });
 
 
@@ -197,16 +207,11 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   //       goog.partial(this.insertMessageIntoPage_, origin));
   // }
 
-  //@yahoo used a back button
+  //@yahoo has a back button
   this.getHandler().listen(
-      this.getElementByClass(constants.CssClass.BACK),
+      goog.dom.getElement(constants.ElementId.BACK_BUTTON),
       goog.events.EventType.CLICK,
-      goog.bind(function() {
-        if (window.confirm(
-            chrome.i18n.getMessage('composeGlassConfirmBack'))) {
-          this.close();
-        }
-      }, this));
+      goog.bind(this.close, this));
 };
 
 

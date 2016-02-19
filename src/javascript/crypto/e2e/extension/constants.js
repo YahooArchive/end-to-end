@@ -54,6 +54,7 @@ e2e.ext.constants.Actions = {
   LIST_KEYS: 'list_keys',
 
   //@yahoo
+  GET_PREFERENCE: 'get_preference',
   SYNC_KEYS: 'sync_keys',
   GET_ALL_KEYS_BY_EMAILS: 'get_all_keys_by_emails',
   LOCK_KEYRING: 'lock_keyring',
@@ -158,6 +159,8 @@ e2e.ext.constants.ElementId = {
   // glass
   LOCK_ICON: 'lock-icon',
   CHECK_ICON: 'check-icon',
+  BACK_BUTTON: 'back-button',
+  PROMOTE_BUTTON: 'promote-button',
 
   // Website container
   WEBVIEW: 'webview',

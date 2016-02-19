@@ -146,9 +146,7 @@ e2ebind.messageHandler_ = function(response) {
       e2ebind.handleProviderResponse_(/** @type {messages.e2ebindResponse} */
                                       (data));
     }
-  } catch (e) {
-    return;
-  }
+  } catch (e) {}
 };
 
 
@@ -164,31 +162,28 @@ e2ebind.activeComposeElem_ = null;
  * Starts initializing the compose glass if either the lock icon was clicked
  * or if at least one recipient has a PGP key or the message is a PGP message.
  * @param {Element} elt Element for the lock icon or null if one was not clicked
+ * @param {boolean=} opt_isExplicit Whether it is explicitly triggered by user.
  * @private
  */
-e2ebind.initComposeGlass_ = function(elt) {
-  // If the element is null, then the icon wasn't clicked
-  var iconClicked = (elt !== null);
-  elt = elt || document.activeElement;
+e2ebind.initComposeGlass_ = function(elt, opt_isExplicit) {
+  elt = elt || e2ebind.activeComposeElem_;
 
-  e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(elt, 'div',
-      constants.CssClass.COMPOSE_CONTAINER);
-  if (!e2ebind.activeComposeElem_ ||
-      (!iconClicked && e2ebind.activeComposeElem_.hadAutoGlass)) {
+  if (!elt || !opt_isExplicit && elt.hadAutoGlass) {
     // Either there is no valid compose element to install the glass in,
     // or we already tried to auto-install the glass.
     return;
   }
 
-  // We have to unhide the PGP blob so that text shows up in compose glass
-  var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
-  if (textElem) {
-    goog.style.setElementShown(textElem, true);
-  }
+  // // We have to unhide the PGP blob so that text shows up in compose glass
+  // var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
+  // if (textElem) {
+  //   goog.style.setElementShown(textElem, true);
+  // }
 
   // Get the compose window associated with the clicked icon
-  var draft = /** @type {messages.e2ebindDraft} */ ({});
-  draft.from = window.config.signer ? window.config.signer : '';
+  var draft = /** @type {messages.e2ebindDraft} */ ({
+    from: window.config.signer || ''
+  });
 
   e2ebind.hasDraft(function(hasDraftResult) {
     if (hasDraftResult) {
@@ -221,19 +216,29 @@ e2ebind.initComposeGlass_ = function(elt) {
 
 /**
  * Custom click event handler for e2ebind page elements.
- * @param {Element} e The element that was clicked.
+ * @param {Event} e The click event object.
  * @private
  */
 e2ebind.clickHandler_ = function(e) {
-  var elt = e.target;
-  if (elt.id === constants.ElementId.E2EBIND_ICON) {
-    // The encryptr icon was clicked; initiate the compose glass
-    e2ebind.initComposeGlass_(elt);
+  var elt = e.target || document.activeElement;
+  // The encryptr icon was clicked; initiate the compose glass
+  if (elt.id === constants.ElementId.E2EBIND_ICON && e.type === 'click') {
+    e2ebind.initComposeGlass_(elt, true);
+    return;
   }
-  else {
-    // Sometimes the focus event gets overriden by yahoo mail, so call it here
-    e2ebind.focusHandler_(e);
-  }
+
+  // get parent element whose class is 'compose'
+  elt = e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
+    elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
+
+  // opens the compose glass if so configured
+  elt && utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.GET_PREFERENCE,
+    content: constants.StorageKey.ENABLE_COMPOSE_GLASS
+  }), function(response) {
+    response.content == 'true' && e2ebind.initComposeGlass_(elt);
+  });
+
 };
 
 
@@ -304,23 +309,16 @@ e2ebind.start = function() {
   e2ebind.messagingTable_ = new e2ebind.MessagingTable_();
 
   // Register the click handler
-  goog.events.listen(window, goog.events.EventType.CLICK,
-                     e2ebind.clickHandler_, true);
+  goog.events.listen(document.body, goog.events.EventType.CLICK,
+                       e2ebind.clickHandler_, true);
 
   // Register handler for when the compose area is focused
-  goog.events.listen(window, goog.events.EventType.FOCUS,
-                     e2ebind.focusHandler_, true);
+  goog.events.listen(document.body, goog.events.EventType.FOCUS,
+                     e2ebind.clickHandler_, true);
 
 
   // Register the handler for messages from the provider
-  window.addEventListener('message', goog.bind(
-      e2ebind.messageHandler_, e2ebind));
-
-  window.addEventListener('load', function() {
-    goog.style.setElementShown(window.document.getElementById('theAd'), false);
-    goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
-                               false);
-  });
+  window.addEventListener('message', e2ebind.messageHandler_);
 };
 
 
@@ -328,22 +326,14 @@ e2ebind.start = function() {
  * Stops the e2ebind API
  */
 e2ebind.stop = function() {
-  window.removeEventListener('message', goog.bind(e2ebind.messageHandler_,
-                                                  e2ebind));
+  window.removeEventListener('message', e2ebind.messageHandler_);
   e2ebind.messagingTable_ = undefined;
   e2ebind.started_ = false;
   window.config = {};
-  goog.events.unlisten(window, goog.events.EventType.CLICK,
+  goog.events.unlisten(document.body, goog.events.EventType.CLICK,
                        e2ebind.clickHandler_);
-  goog.events.unlisten(window, goog.events.EventType.FOCUS,
-                       e2ebind.focusHandler_);
-
-  try {
-    goog.style.setElementShown(window.document.getElementById('theAd'), true);
-    goog.style.setElementShown(window.document.getElementById('slot_mbrec'),
-                               true);
-  } catch (ex) {
-  }
+  goog.events.unlisten(document.body, goog.events.EventType.FOCUS,
+                       e2ebind.clickHandler_);
 };
 
 
@@ -443,9 +433,7 @@ e2ebind.handleProviderRequest_ = function(request) {
       e2ebind.started_ = true;
       window.config = {
         signer: String(args.signer),
-        version: String(args.version),
-        read_glass_enabled: Boolean(args.read_glass_enabled),
-        compose_glass_enabled: Boolean(args.compose_glass_enabled)
+        version: String(args.version)
       };
 
       // Verify the signer
@@ -455,7 +443,7 @@ e2ebind.handleProviderRequest_ = function(request) {
       break;
 
     case actions.INSTALL_READ_GLASS:
-      if (window.config.read_glass_enabled && args.messages) {
+      if (args.messages) {
         try {
           goog.array.forEach(args.messages, function(message) {
             // XXX: message.elem is a selector string, not a DOM element

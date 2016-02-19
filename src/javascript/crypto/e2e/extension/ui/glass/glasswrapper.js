@@ -191,9 +191,9 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   var glassFrame = goog.dom.createElement(goog.dom.TagName.IFRAME);
   glassFrame.src = chrome.runtime.getURL('composeglass.html');
   var targetSize = goog.style.getSize(this.targetElem_);
-  goog.style.setWidth(glassFrame, targetSize.width);
-  // Make the frame fit a bit better?
-  goog.style.setHeight(glassFrame, targetSize.height);
+  goog.style.setSize(glassFrame,
+      targetSize.width,
+      Math.max(targetSize.height, 400));
   glassFrame.style.border = 0;
   glassFrame.classList.add('e2eComposeGlass');
 

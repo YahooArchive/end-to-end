@@ -45,8 +45,9 @@
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field
  * @param signerCheckboxTitle The label for the checkbox to sign messages.
- * @param actionButtonTitle The title of the prompt button.
- * @param backButtonTitle The title for the back button.
+ * @param actionButtonTitle The title of the prompt button. 
+ * @param restoreToNormalComposeLabel The label for restoring to regular
+ *     compose.
  */
 {template .renderEncrypt}
   <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}">
@@ -66,12 +67,11 @@
       <label for="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
         {$signerCheckboxTitle}
       </label>
+      <button id="{e2e.ext.constants.ElementId.BACK_BUTTON}">Back</button>
+      <button id="{e2e.ext.constants.ElementId.PROMOTE_BUTTON}">Promote</button>
     </div>
 
     <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
-    <button class="{e2e.ext.constants.CssClass.BACK}">
-      <img src="images/back.png" title="{$backButtonTitle}"/>
-    </button>
-
+    <div>{$restoreToNormalComposeLabel}</div>
   </div>
 {/template}

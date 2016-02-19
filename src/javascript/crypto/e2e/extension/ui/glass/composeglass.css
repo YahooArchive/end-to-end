@@ -37,6 +37,10 @@ button {
   line-height: 16px;
 }
 
+#pgpKeySelect {
+  cursor: text;
+}
+
 #pgpSignerSelect, #pgpKeySelect input, #subjectHolder input, textarea {
   font-size: .85rem;
 }
@@ -57,7 +61,13 @@ button {
 }
 
 #pgpKeySelect > .uid-chips > div {
-  margin: 2px 4px;
+  border: 0;
+  background: inherit;
+  padding: 2px 4px;
+}
+#pgpKeySelect>.uid-chips>.uid-bad-chip {
+  background: inherit;
+  color: #f44444;
 }
 #pgpKeySelect>.uid-chips>input {
   margin: 6px;
@@ -97,10 +107,31 @@ textarea {
 }
 
 .passphraseEncryptionLink {
-  font-size: .82rem;
+  font-size: .75rem;
+  margin-top: 13px;
 }
 
 .passphraseEncryptionLink:hover {
   text-decoration: underline;
 }
 
+.uid-chip>div {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pgpActions>div {
+  display: inline;
+  position: absolute;
+  font-size: .9em;
+  margin-top: 18px;
+  opacity: .7
+}
+
+.pgpActions label[for] {
+  cursor: pointer;
+  color: -webkit-link;
+  text-decoration: underline;
+}
