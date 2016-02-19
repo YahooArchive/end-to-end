@@ -84,12 +84,21 @@ panels.PreferencesPanel.prototype.decorateInternal = function(elem) {
       isSet: preferences.isLookingGlassEnabled()
     },
     */
+    // @yahoo disable welcome screen option for now
+    // {
+    //   name: constants.StorageKey.ENABLE_WELCOME_SCREEN,
+    //   description: chrome.i18n.getMessage('preferenceWelcomeScreen'),
+    //   setterCallback: goog.bind(this.preferences_.setWelcomePageEnabled,
+    //       this.preferences_),
+    //   isSet: this.preferences_.isWelcomePageEnabled()
+    // }
+    // @yahoo added the option to default whether to open secure compose
     {
-      name: constants.StorageKey.ENABLE_WELCOME_SCREEN,
-      description: chrome.i18n.getMessage('preferenceWelcomeScreen'),
-      setterCallback: goog.bind(this.preferences_.setWelcomePageEnabled,
+      name: constants.StorageKey.ENABLE_COMPOSE_GLASS,
+      description: chrome.i18n.getMessage('preferenceComposeGlass'),
+      setterCallback: goog.bind(this.preferences_.setComposeGlassEnabled,
           this.preferences_),
-      isSet: this.preferences_.isWelcomePageEnabled()
+      isSet: this.preferences_.isComposeGlassEnabled()
     }
   ];
   goog.array.forEach(prefs, function(pref) {

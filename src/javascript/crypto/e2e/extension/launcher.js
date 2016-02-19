@@ -25,7 +25,7 @@ goog.provide('e2e.ext.ExtensionLauncher');
 goog.provide('e2e.ext.Launcher');
 goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
-goog.require('e2e.ext.Preferences');
+goog.require('e2e.ext.yPreferences');  //@yahoo
 goog.require('e2e.ext.api.Api');
 goog.require('e2e.ext.config'); //@yahoo
 goog.require('e2e.ext.constants.Actions');
@@ -64,11 +64,12 @@ ext.Launcher = function(pgpContext, preferencesStorage) {
   this.pgpContext_ = pgpContext;
 
   /**
+   * //@yahoo used yPreferences
    * Object for accessing user preferences.
-   * @type {!e2e.ext.Preferences}
+   * @type {!e2e.ext.yPreferences}
    * @private
    */
-  this.preferences_ = new e2e.ext.Preferences(preferencesStorage);
+  this.preferences_ = new e2e.ext.yPreferences(preferencesStorage);
 
 
   /**
@@ -139,8 +140,9 @@ ext.Launcher.prototype.getContext = function() {
 
 
 /**
+ * //@yahoo returns yPreferences
  * Returns the Preferences object used within the extension.
- * @return {e2e.ext.Preferences} The Preferences object.
+ * @return {e2e.ext.yPreferences} The Preferences object.
  * @export
  */
 ext.Launcher.prototype.getPreferences = function() {

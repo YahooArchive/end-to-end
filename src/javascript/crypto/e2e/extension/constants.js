@@ -253,6 +253,7 @@ e2e.ext.constants.CssClass = {
  * @enum {string}
  */
 e2e.ext.constants.StorageKey = {
+  ENABLE_COMPOSE_GLASS: 'enable-compose-glass', //@yahoo
   ENABLE_WELCOME_SCREEN: 'enable-welcome',
   ENABLE_ACTION_SNIFFING: 'enable-action-sniff',
   ENABLE_AUTO_SAVE: 'enable-auto-save',

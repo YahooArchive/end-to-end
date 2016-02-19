@@ -417,6 +417,10 @@
     "message": "Show the decrypted text inside supported email providers when possible.",
     "description": "A sentence prompting the user to enable the looking glass in supported providers."
   },
+  "preferenceComposeGlass": {
+    "message": "Default to show the secure compose for mail encryption.",
+    "description": "A sentence prompting the user to enable the compose glass."
+  },
   "throttleErrorMsg": {
     "message": "The requested operation cannot be performed at this time. Please try again in 1 minute.",
     "description": "A sentence to display when the requested operation cannot be executed due to throttling."
