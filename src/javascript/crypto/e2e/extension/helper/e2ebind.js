@@ -29,7 +29,6 @@ goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
-goog.require('goog.Uri');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events');
@@ -296,15 +295,6 @@ e2ebind.focusHandler_ = function(e) {
 * Start listening for responses and requests to/from the provider.
 */
 e2ebind.start = function() {
-  var uri = new goog.Uri(window.location.href);
-  // Use the version of YMail that has the endtoend module included.
-  if (utils.text.isYmailOrigin(window.location.href) &&
-      !uri.getParameterValue('encryptr')) {
-    uri.setParameterValue('encryptr', 1);
-    window.location.href = uri.toString();
-    return;
-  }
-
   // Initialize the message-passing hash table between e2e and the provider
   e2ebind.messagingTable_ = new e2ebind.MessagingTable_();
 
@@ -391,18 +381,11 @@ e2ebind.sendResponse_ = function(result, request, success) {
 * @private
 */
 e2ebind.handleProviderResponse_ = function(response) {
-  if (!e2ebind.messagingTable_) {
-    return;
-  }
-
-  var request = e2ebind.messagingTable_.get(response.hash, response.action);
-
-  if (!request) {
-    return;
-  }
-
-  if (request.callback) {
-    request.callback(response);
+  if (e2ebind.messagingTable_) {
+    var request = e2ebind.messagingTable_.get(response.hash, response.action);
+    if (request && request.callback) {
+      request.callback(response);
+    }
   }
 };
 

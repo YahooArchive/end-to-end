@@ -25,13 +25,14 @@ goog.provide('e2e.ext.ExtensionLauncher');
 goog.provide('e2e.ext.Launcher');
 goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
-goog.require('e2e.ext.yPreferences');  //@yahoo
 goog.require('e2e.ext.api.Api');
 goog.require('e2e.ext.config'); //@yahoo
 goog.require('e2e.ext.constants.Actions');
-goog.require('e2e.ext.utils.action');
-goog.require('e2e.ext.utils.text');
 goog.require('e2e.ext.utils.TabsHelperProxy'); //@yahoo
+goog.require('e2e.ext.utils.text'); //@yahoo
+goog.require('e2e.ext.yPreferences'); //@yahoo
+goog.require('goog.Uri'); //@yahoo
+goog.require('goog.array'); //@yahoo
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -304,32 +305,56 @@ goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 
 /** @override */
 ext.yExtensionLauncher.prototype.start = function(opt_passphrase) {
+  this.configureWebRequests();
 
   return goog.base(this, 'start', opt_passphrase).addCallback(function() {
-
-    // @yahoo focus or go to ymail instead
-    chrome.tabs.query({
-      // this must match the one declared in manifest
-      url: 'https://*.mail.yahoo.com/*'
-    }, goog.bind(function(tabs) {
-      // All ymail tabs need to be reloaded for the e2ebind API to work
-      goog.array.forEach(tabs, function(tab) {
-        chrome.tabs.reload(tab.id);
-      });
-
-      // focus if present, otherwise open a new one
-      tabs.length ?
-        chrome.tabs.update(tabs[0].id, {highlighted: true, active: true}) :
-        this.createWindow(
-            e2e.ext.config.CONAME.realms[0].URL, true, goog.nullFunction);
-    }, this));
-
     // add message listener
     chrome.runtime.onMessage.addListener(goog.bind(function(message, sender) {
       this.proxyMessage(message, sender);
     }, this));
 
   }, this);
+};
+
+
+/**
+ * Configure web requests to boost up redirection speeds
+ */
+ext.yExtensionLauncher.prototype.configureWebRequests = function() {
+  // mainframe access only
+  // TODO: redirect non-e2e.mail.yahoo.com to e2e.mail.yahoo.com
+  chrome.webRequest.onBeforeRequest.addListener(function(details) {
+    var url = new goog.Uri(details.url);
+    if (!goog.isDef(url.getParameterValue('encryptr'))) {
+      return /** @type {!BlockingResponse} */ ({
+        redirectUrl: url.setParameterValue('encryptr', 1).toString()
+      });
+    }
+  },
+  /** @type {!RequestFilter} */ ({
+    urls: ['https://*.mail.yahoo.com/*'],
+    types: ['main_frame']
+  }),
+  ['blocking']);
+
+
+
+  // @yahoo focus or go to ymail instead
+  chrome.tabs.query({
+    // this must match the one declared in manifest
+    url: 'https://*.mail.yahoo.com/*'
+  }, goog.bind(function(tabs) {
+    // All ymail tabs need to be reloaded for the e2ebind API to work
+    goog.array.forEach(tabs, function(tab) {
+      chrome.tabs.reload(tab.id);
+    });
+
+    // focus if present, otherwise open a new one
+    tabs.length ?
+        chrome.tabs.update(tabs[0].id, {highlighted: true, active: true}) :
+        this.createWindow(
+          e2e.ext.config.CONAME.realms[0].URL, true, goog.nullFunction);
+  }, this));
 };
 
 
@@ -368,6 +393,7 @@ ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
 ext.yExtensionLauncher.prototype.getHelperProxy = function() {
   return this.helperProxy_;
 };
+
 
 /**
  * TODO: //@yahoo use WebsiteApi

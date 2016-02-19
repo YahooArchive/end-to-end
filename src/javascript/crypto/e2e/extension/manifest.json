@@ -8,6 +8,8 @@
     "cookies",
     "notifications",
     "tabs",
+    "webRequest",
+    "webRequestBlocking",
     "https://localhost:25519/*",
     "https://*.mail.yahoo.com/*",
     "https://www.facebook.com/*/publickey/download?_rdr=p"
@@ -23,7 +25,8 @@
   "content_scripts": [
     {
       "matches": ["https://*.mail.yahoo.com/*"],
-      "js": ["helper_binary.js"]
+      "js": ["helper_binary.js"],
+      "run_at": "document_end"
     },
     {
       "matches": ["https://localhost:25519/auth/cookies"],
