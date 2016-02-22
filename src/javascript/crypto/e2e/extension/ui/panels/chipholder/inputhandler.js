@@ -51,6 +51,8 @@ goog.inherits(panels.ChipHolderInputHandler, goog.ui.ac.InputHandler);
 /** @override */
 panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
   switch (evt.keyCode) {
+    case goog.events.KeyCodes.COMMA: //@yahoo
+    case goog.events.KeyCodes.SEMICOLON: //@yahoo
     case goog.events.KeyCodes.TAB:
     case goog.events.KeyCodes.ENTER:
       // Cover only the case when autocomplete suggestions are not open,
@@ -66,6 +68,18 @@ panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
       }
   }
   return goog.base(this, 'handleKeyEvent', evt);
+};
+
+// @yahoo trigger onSelectCallback_ when on blur
+/** @override */
+panels.ChipHolderInputHandler.prototype.handleBlur = function(opt_e) {
+  goog.base(this, 'handleBlur', opt_e);
+
+  if (opt_e && !this.getAutoComplete().isOpen() &&
+      opt_e.target && opt_e.target.value && opt_e.target.value.length > 0) {
+    // Call the callback - this will trigger a bad chip.
+    this.onSelectCallback_(opt_e.target.value);
+  }
 };
 
 

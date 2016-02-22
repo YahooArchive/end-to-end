@@ -342,7 +342,8 @@ panels.ChipHolder.prototype.addAndMarkChip_ = function(markChipBad) {
 panels.ChipHolder.prototype.increaseInputArea_ = function() {
   goog.style.setWidth(
       this.shadowInputElem_,
-      goog.style.getSize(this.shadowInputElem_).width + 10);
+      // goog.style.getSize(this.shadowInputElem_).width + 10);
+      (this.shadowInputElem_.value.length + 1) * 10); // @yahoo
 };
 
 
