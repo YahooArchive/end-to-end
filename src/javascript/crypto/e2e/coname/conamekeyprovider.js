@@ -85,9 +85,10 @@ ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
         if (goog.object.isEmpty(emailKeyMap)) {
           if (opt_uid && (email = e2e.coname.getSupportedEmailByUid(opt_uid))) {
             // update to set empty keys for the opt_uid user
-            return this.client_.update(email, null);
+            return this.client_.update(email, null).
+                    addCallback(function(result) { return [result]; });
           }
-          return e2e.async.Result.toResult(true);
+          return e2e.async.Result.toResult([true]);
         }
 
         return goog.async.DeferredList.gatherResults(
@@ -96,12 +97,15 @@ ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
             return this.client_.update(email, keyData);
           }, this));
       }, this).
-      addCallback(function(importedKeys) {
+      addCallbacks(function(importedKeys) {
         // Return true if it was imported for some emails.
         // Not necessarily all as user may not have authenticated all accts
         return goog.array.some(importedKeys, function(keys) {
           return keys !== null;
         });
+      }, function(error) {
+        // TODO: prompt a relevant error if no rights to update
+        return false;
       }, this);
 };
 

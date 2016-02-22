@@ -457,7 +457,8 @@ e2e.coname.verifyLookup = function(realm, user, pf) {
   }
 
   // compare the entire index stored in the leaf node
-  if (!e2e.compareByteArray(pf.index, pf.tree_proof.existing_index)) {
+  if (!pf.tree_proof.existing_index ||
+      !e2e.compareByteArray(pf.index, pf.tree_proof.existing_index)) {
     // getting into this branch means no leaf with the requested index
     if (pf.entry) {
       throw new e2e.error.InvalidArgumentsError(
@@ -474,7 +475,8 @@ e2e.coname.verifyLookup = function(realm, user, pf) {
 
   entryHash = SHA3Shake256(32).update(pf.entry.encoding).digest();
 
-  if (!e2e.compareByteArray(entryHash, pf.tree_proof.existing_entry_hash)) {
+  if (!pf.tree_proof.existing_entry_hash ||
+      !e2e.compareByteArray(entryHash, pf.tree_proof.existing_entry_hash)) {
     throw new e2e.error.InvalidArgumentsError(
         'VerifyLookup: entry hash ' + entryHash +
         ' did not match verified lookup result ' +

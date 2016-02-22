@@ -109,8 +109,12 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
   tree.neighbors = goog.array.map(
       tree.neighbors,
       function(n) {return b64decode(n)});
-  tree.existing_index = b64decode(tree.existing_index || '');
-  tree.existing_entry_hash = b64decode(tree.existing_entry_hash || '');
+  if (tree.existing_index) {
+    tree.existing_index = b64decode(tree.existing_index);
+  }
+  if (tree.existing_entry_hash) {
+    tree.existing_entry_hash = b64decode(tree.existing_entry_hash);
+  }
 
   goog.array.forEach(lookupProof.ratifications, function(r) {
     var id, encoding = b64decode(r.head), rHH;
@@ -258,7 +262,7 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
  * @param {boolean=} opt_skipVerify whether skip the verify step
- * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.KeyData>} the
+ * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>} the
  *    Result if there has a key associated with the email, and it is validated.
  *    Result is null for no realms. key is null if verified for having no key.
  */
@@ -314,7 +318,7 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
  * @param {!string} email The email address
  * @param {?e2e.ByteArray} keyData The key blob to upload. Use null to remove
  *     the specific key field.
- * @return {e2e.async.Result.<null>|e2e.async.Result.<!e2e.coname.KeyData>} the
+ * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>} the
  *  Result if there has a key associated with the email, and it is validated.
  *  Result is null for no realms. key is null if verified for having no key.
  */
@@ -352,7 +356,8 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
         if (newProfileBase64 !== profile.toBase64()) {
           throw new Error('server rejected the new profile/key');
         }
-        if (!e2e.coname.verifyLookup(realm, email, pf)) {
+        if (!e2e.coname.verifyLookup(realm, email, pf) ||
+              !profile.keys.has(this.keyName_)) {
           // TODO: poll the server until the update can be verified
           throw new Error('profile/keys cannot be validated');
         }
@@ -360,10 +365,10 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
         verifiedKey = Array.prototype.slice.call(new Uint8Array(
            profile.keys.get(this.keyName_).toBuffer()));
 
-        return e2e.async.Result.toResult({
+        return {
           keyData: verifiedKey,
           proof: pf
-        });
+        };
 
       }, this);
 };
