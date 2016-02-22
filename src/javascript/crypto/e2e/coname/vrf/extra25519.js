@@ -113,7 +113,7 @@ e2e.coname.vrf.extra25519.representativeToMontgomeryX = function(r) {
   // e is either 1 or -1
   // x = ev - (1-e)A/2
   // This is not constant time and thus must not be used with secret inputs.
-  var x = e.isEqual(ed25519Curve.ONE) ? v : A.subtract(v);
+  var x = e.isEqual(ed25519Curve.ONE) ? v : A.negate().subtract(v);
 
   // assertEquals('d4ad43e1aaf9b0ce31093a2cbe62af7e53bcb072c804e23b0d395147be6eed44',
   //  goog.crypt.byteArrayToHex(x.x.toByteArray().reverse()));
