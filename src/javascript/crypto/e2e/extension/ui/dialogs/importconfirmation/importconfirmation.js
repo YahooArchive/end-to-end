@@ -41,10 +41,16 @@ var templates = e2e.ext.ui.templates.dialogs.importconfirmation;
  * @extends {dialogs.Generic}
  */
 dialogs.ImportConfirmation = function(keys, callback) {
+  // @yahoo shows a different message when private key exists
+  var hasPrivateKey = goog.array.some(keys, function(key) {
+    return key.key.secret;
+  });
   goog.base(
       this,
       templates.importKeyConfirm({
         promptImportKeyConfirmLabel: chrome.i18n.getMessage(
+            // @yahoo shows a different message when private key exists
+            hasPrivateKey ? 'promptImportPrivateKeyConfirmLabel' :
             'promptImportKeyConfirmLabel'),
         keys: keys,
         secretKeyDescription: chrome.i18n.getMessage('secretKeyDescription'),

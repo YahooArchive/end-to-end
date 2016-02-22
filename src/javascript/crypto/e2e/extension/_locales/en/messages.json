@@ -83,6 +83,10 @@
     "message": "Do you want to import the following keys?\n\nYou should verify (e.g. with a phone call) that the key owners displayed below use the same key fingerprints.",
     "description": "A sentence asking the user to confirm the key import."
   },
+  "promptImportPrivateKeyConfirmLabel": {
+    "message": "Do you want to import the following keys?\n\nThe public keys here can be uploaded to the remote keyserver.",
+    "description": "A sentence asking the user to confirm the key import."
+  },
   "promptImportKeyVerifyLabel": {
     "message": "Please verify all keys!",
     "description": "A sentence asking the user to verify all keys to import."
