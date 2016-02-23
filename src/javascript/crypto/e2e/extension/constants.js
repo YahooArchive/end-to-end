@@ -160,7 +160,6 @@ e2e.ext.constants.ElementId = {
   LOCK_ICON: 'lock-icon',
   CHECK_ICON: 'check-icon',
   BACK_BUTTON: 'back-button',
-  PROMOTE_BUTTON: 'promote-button',
 
   // Website container
   WEBVIEW: 'webview',

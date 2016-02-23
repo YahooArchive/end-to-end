@@ -123,9 +123,7 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
     chrome.i18n.getMessage('promptRestoreToNormalComposeLabel')).
       replace('\n', '<br>').
       replace(/#restore#([^#]*)#/, 
-        '<label for="' + constants.ElementId.BACK_BUTTON + '">$1</label>').
-      replace(/#extensionLink#([^#]*)#/, 
-        '<label for="' + constants.ElementId.PROMOTE_BUTTON + '">$1</label>');
+        '<label for="' + constants.ElementId.BACK_BUTTON + '">$1</label>');
 
   // @yahoo
   soy.renderElement(elem, templates.renderEncrypt, {
