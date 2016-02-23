@@ -28,9 +28,9 @@ goog.provide('e2e.ext.config');
  */
 e2e.ext.config = {
   /* The name of the cookie used to authenticate users to the keyserver. */
-  AUTH_COOKIE: 'YOUR_COOKIE_HERE',
+  AUTH_COOKIE: 'YBY',
   /* Some location that has access to the auth cookie. */
-  AUTH_DEFAULT_ORIGIN: 'https://us-mg5.mail.yahoo.com',
+  AUTH_DEFAULT_ORIGIN: 'https://mail.yahoo.com',
 
   /* The CONAME CONFIG */
   CONAME: {

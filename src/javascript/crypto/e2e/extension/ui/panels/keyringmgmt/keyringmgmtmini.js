@@ -280,7 +280,7 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
       listen(
           goog.dom.getElementByClass(constants.CssClass.ACTION, fbImportDiv),
           goog.events.EventType.CLICK,
-          this.fbImportKey_).
+          this.fbImportGetPermission_).
       listen(
           goog.dom.getElementByClass(
               constants.CssClass.CANCEL, passphraseChangeDiv),
@@ -308,7 +308,7 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
       listen(
           keyboardHandler,
           goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
-          this.fbImportKey_);
+          this.fbImportGetPermission_);
 };
 
 
@@ -378,6 +378,24 @@ panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
 
 
 /**
+ * Request for permission to access Facebook PGP key address
+ * @param {Event} event
+ * @private
+ */
+panels.KeyringMgmtMini.prototype.fbImportGetPermission_ = function(event) {
+  // Permissions must be requested from inside a user gesture, like a button's
+  // click handler.
+  chrome.permissions.request({
+    origins: ['https://www.facebook.com/']
+  }, goog.bind(function(granted) {
+    if (granted) {
+      this.fbImportKey_(event);
+    }
+  }, this));
+};
+
+
+/**
  * Handles requests from the user to import a key from Facebook.
  * @param {Event} event
  * @private
@@ -413,7 +431,7 @@ panels.KeyringMgmtMini.prototype.fbImportKey_ = function(event) {
 panels.KeyringMgmtMini.prototype.sendFbRequest_ = function(username, cb,
                                                            errback) {
   var url = ['https://www.facebook.com', username, 'publickey',
-    'download?_rdr=p'].join('/');
+    'download'].join('/');
   var xhr = new XMLHttpRequest();
   xhr.timeout = 2000;
   xhr.open('GET', url, true);

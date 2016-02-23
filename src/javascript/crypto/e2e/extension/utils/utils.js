@@ -267,8 +267,7 @@ utils.openAuthWindow = function(email) {
 
   // TODO: url now hardcoded. support openid type
   var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
-                encodeURIComponent(
-                  'https://alpha.coname.corp.yahoo.com:25519/auth/cookies');
+    encodeURIComponent(e2e.ext.config.CONAME.realms[0].addr + '/auth/cookies');
 
   chrome.windows.create({
     url: authUrl,

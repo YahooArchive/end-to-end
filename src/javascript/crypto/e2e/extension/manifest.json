@@ -11,10 +11,11 @@
     "webRequest",
     "webRequestBlocking",
     "https://localhost:25519/*",
-    "https://*.mail.yahoo.com/*",
-    "https://www.facebook.com/*/publickey/download?_rdr=p"
+    "https://*.mail.yahoo.com/*"
   ],
-  "optional_permissions": [],
+  "optional_permissions": [
+    "https://www.facebook.com/*/publickey/download"
+  ],
   "background": {"scripts": ["launcher_binary.js"]},
   "options_page": "settings.html",
   "browser_action": {
