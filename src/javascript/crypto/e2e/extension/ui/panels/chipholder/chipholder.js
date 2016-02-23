@@ -166,13 +166,13 @@ panels.ChipHolder.prototype.createAutoComplete_ = function() {
 
 /**
  * Handles the new chip value entered by the user, detecting whether the chip
- * is valid or not.
+ * is valid or not. //@yahoo
  * @param  {string} chipValue The value of the chip.
  * @private
  */
 panels.ChipHolder.prototype.handleNewChipValue_ = function(chipValue) {
   // add the chip first, determine validity later
-  this.addChip();
+  this.addChip(chipValue);
 
   // badChipCallback_ works asynchronusly, mark chipValue as bad
   this.badChipCallback_(chipValue).addCallback(function(markChipBad) {
@@ -196,7 +196,7 @@ panels.ChipHolder.prototype.handleNewChipValue_ = function(chipValue) {
 panels.ChipHolder.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  goog.array.forEach(this.selectedUids_, this.addChip, this);
+  goog.array.forEach(this.selectedUids_, this.handleNewChipValue_, this);
 
   this.autoComplete_ = this.createAutoComplete_();
 
