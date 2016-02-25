@@ -221,34 +221,25 @@ e2e_build_extension() {
   rm -rf "$BUILD_EXT_DIR"
   mkdir -p "$BUILD_EXT_DIR"
   SRC_EXT_DIR="src/javascript/crypto/e2e/extension"
-  SRC_DIRS=( src lib/closure-library lib/closure-templates-compiler $BUILD_TPL_DIR \
-    lib/zlib.js/src lib/typedarray )
-
-  # compile javascript files
-  jscompile_e2e="$JSCOMPILE_CMD"
-  for var in "${SRC_DIRS[@]}"
-  do
-    jscompile_e2e+=" --js='$var/**.js' --js='!$var/**_test.js'"
-  done
-  # compile javascript files
   if [ "$1" == "debug" ]; then
     echo "Debug mode enabled"
-    jscompile_e2e+=" --debug --formatting=PRETTY_PRINT"
   fi
+  # compile javascript files
   echo "Compiling JS files..."
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.bootstrap" --js_output_file "$BUILD_EXT_DIR/launcher_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.helper.bootstrap" --js_output_file "$BUILD_EXT_DIR/helper_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.bootstrap" --js_output_file "$BUILD_EXT_DIR/glass_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.compose.bootstrap" --js_output_file "$BUILD_EXT_DIR/composeglass_binary.js"
-  # echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.webview.bootstrap" --js_output_file "$BUILD_EXT_DIR/webview_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.prompt.bootstrap" --js_output_file "$BUILD_EXT_DIR/prompt_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.settings.bootstrap" --js_output_file "$BUILD_EXT_DIR/settings_binary.js"
-  # echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.Setup" --js_output_file "$BUILD_EXT_DIR/setup_binary.js"
+  e2e_build_closure_lib_ "e2e.ext.bootstrap" "$BUILD_EXT_DIR/launcher_binary.js" "$BUILD_TPL_DIR" "$1"
+  e2e_build_closure_lib_ "e2e.ext.helper.bootstrap" "$BUILD_EXT_DIR/helper_binary.js" "$BUILD_TPL_DIR" "$1"
+  e2e_build_closure_lib_ "e2e.ext.ui.prompt.bootstrap" "$BUILD_EXT_DIR/prompt_binary.js" "$BUILD_TPL_DIR" "$1"
+  e2e_build_closure_lib_ "e2e.ext.ui.glass.bootstrap" "$BUILD_EXT_DIR/glass_binary.js" "$BUILD_TPL_DIR" "$1"
+  e2e_build_closure_lib_ "e2e.ext.ui.glass.compose.bootstrap" "$BUILD_EXT_DIR/composeglass_binary.js" "$BUILD_TPL_DIR" "$1"
+  e2e_build_closure_lib_ "e2e.ext.ui.settings.bootstrap" "$BUILD_EXT_DIR/settings_binary.js" "$BUILD_TPL_DIR" "$1"
+  # e2e_build_closure_lib_ "e2e.ext.ui.welcome.bootstrap" "$BUILD_EXT_DIR/welcome_binary.js" "$BUILD_TPL_DIR" "$1"
   echo ""
+  
   # compile css files
   e2e_build_css
-  echo "Copying extension files..."
+
   # copy extension files
+  echo "Copying extension files..."
   cp -fr "$SRC_EXT_DIR/images" "$BUILD_EXT_DIR"
   cp -fr "$SRC_EXT_DIR/_locales" "$BUILD_EXT_DIR"
   find "$SRC_EXT_DIR/ui" -regex .*.html -not -regex .*_test.html -exec cp -f "{}" "$BUILD_EXT_DIR" \;
