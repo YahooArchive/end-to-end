@@ -84,7 +84,7 @@
     "description": "A sentence asking the user to confirm the key import."
   },
   "promptImportPrivateKeyConfirmLabel": {
-    "message": "Do you want to import the following keys?\n\nThe public keys here can be uploaded to the remote keyserver.",
+    "message": "Do you want to import the following keys?",
     "description": "A sentence asking the user to confirm the key import."
   },
   "promptImportKeyVerifyLabel": {
@@ -608,7 +608,7 @@
     "description": "A sentence prompting the user to synchronize local keyring with remote keyserver."
   },
   "promptRestoreToNormalComposeLabel": {
-    "message": "#restore#Restore# to the regular compose for formatting and attachments.\nRecipients will need Yahoo Mail Encryption Plugin to read encrypted messages.",
+    "message": "Encrypted formatting and attachments not yet supported.\n#restore#Switch# to non encrypted compose.",
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
   }
 }
