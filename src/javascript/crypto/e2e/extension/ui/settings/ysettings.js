@@ -165,11 +165,11 @@ ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
             opt_intention === 'keygen' || opt_intention === 'remove' ?
                 constFunction(e2e.async.Result.toResult('overwriteRemote')) :
                 goog.bind(this.renderConfirmSyncKeysCallback_, this)).
-            addCallback(function(reqActionResult) {
+            addCallbacks(function(reqActionResult) {
               reqActionResult !== null && utils.showNotification(
               chrome.i18n.getMessage('keyUpdateSuccessMsg'),
               goog.nullFunction);
-            }, this);
+            }, this.displayFailure_, this);
       }
     }, this.displayFailure_, this);
   }

@@ -792,31 +792,27 @@ e2e.openpgp.ContextImpl.prototype.syncWithRemote = function(uid,
   var result = new e2e.async.Result;
 
   // TODO: now keyserver being online is a must for yahoo users
-  this.keyRing_.compareWithRemote(uid).addCallbacks(function(diff) {
+  this.keyRing_.compareWithRemote(uid).addCallback(function(diff) {
     var local = diff.localOnly, common = diff.common, remote = diff.remoteOnly;
     var callback = (!diff.syncManaged ||
         local.length === 0 && remote.length === 0) ?
-        consistentCallback(uid, common, diff.syncManaged) :
-        inconsistentCallback(uid, local, common, remote);
+            consistentCallback(uid, common, diff.syncManaged) :
+            inconsistentCallback(uid, local, common, remote);
 
-    callback.addCallbacks(function(action) {
-      var actionCallback;
+    return callback.addCallback(function(action) {
       switch (action) {
         case 'delete':
-          actionCallback = this.deleteKey(uid);
-          break;
+          return this.deleteKey(uid);
         case 'overwriteRemote':
-          actionCallback = this.keyRing_.uploadKeys(uid);
-          break;
+          return this.keyRing_.uploadKeys(uid);
         case 'noop':
-          return result.callback(true);
-        default:
-          return result.callback(null);
+          return true;
       }
-      return actionCallback.addCallback(result.callback, result);
-    }, goog.bind(result.errback, result), this);
+      return null;
+    }, this);
 
-  }, function(error) {
+  }, this).
+  addCallbacks(goog.bind(result.callback, result), function(error) {
     // prompt user for authentication
     if (error.messageId === 'conameAuthError') {
       authCallback(uid).addCallback(function() {
@@ -826,9 +822,9 @@ e2e.openpgp.ContextImpl.prototype.syncWithRemote = function(uid,
             addCallbacks(result.callback, result.errback, result);
 
       }, this);
-      return;
+    } else {
+      result.errback(error);
     }
-    result.errback(error);
   }, this);
 
   return result;

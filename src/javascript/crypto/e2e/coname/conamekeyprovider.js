@@ -97,15 +97,12 @@ ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
             return this.client_.update(email, keyData);
           }, this));
       }, this).
-      addCallbacks(function(importedKeys) {
+      addCallback(function(importedKeys) {
         // Return true if it was imported for some emails.
         // Not necessarily all as user may not have authenticated all accts
         return goog.array.some(importedKeys, function(keys) {
           return keys !== null;
         });
-      }, function(error) {
-        // TODO: prompt a relevant error if no rights to update
-        return false;
       }, this);
 };
 
