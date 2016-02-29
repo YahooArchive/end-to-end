@@ -262,7 +262,8 @@ ui.ySettings.prototype.generateKey_ = function(
 /**
  * TODO: this is temporary
  * Renders the UI elements needed for welcoming the user.
- * @return {!e2e.async.Result<string>} A promise that returns noop
+ * @return {!e2e.async.Result<null>} A promise that returns null to disable in
+ *     sync notification
  * @private
  */
 ui.ySettings.prototype.renderWelcomeScreen_ = function() {
@@ -283,7 +284,7 @@ ui.ySettings.prototype.renderWelcomeScreen_ = function() {
   this.addChild(dialog, false);
   dialog.render(popupElem);
 
-  return e2e.async.Result.toResult('noop');
+  return e2e.async.Result.toResult(null);
 };
 
 
