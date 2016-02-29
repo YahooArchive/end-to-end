@@ -177,8 +177,10 @@ function testDecodeLookupMessage() {
 
     assertTrue(lookupProof.tree_proof.neighbors[0].length > 0);
     assertTrue(lookupProof.tree_proof.neighbors[1].length > 0);
-    assertTrue(lookupProof.tree_proof.existing_index instanceof Array);
-    assertTrue(lookupProof.tree_proof.existing_entry_hash instanceof Array);
+    assertTrue(lookupProof.tree_proof.existing_index instanceof Array ||
+      typeof lookupProof.tree_proof.existing_index === 'undefined');
+    assertTrue(lookupProof.tree_proof.existing_entry_hash instanceof Array ||
+      typeof lookupProof.tree_proof.existing_entry_hash === 'undefined');
   }
 
   client.initialize().addCallback(function(proto) {
@@ -220,7 +222,7 @@ function testEncodeUpdateRequest() {
     var newProfile = proto.Profile.decode64(message.profile);
     // at least 16 bytes (each 2 hex digits represent 1 byte)
     assertTrue(newProfile.nonce.toHex().length >= 32); 
-    assertTrue(newProfile.keys.has('pgp'));
+    assertTrue(newProfile.keys.has('25519'));
 
     return message;
   }
