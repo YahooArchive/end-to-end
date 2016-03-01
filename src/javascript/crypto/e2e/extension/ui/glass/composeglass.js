@@ -102,7 +102,7 @@ ui.ComposeGlass = function(draft, origin, hash) {
    * @type {string}
    * @private
    */
-  this.from_ = draft.from ? draft.from.toLowerCase() : '';
+  this.defaultSender_ = draft.from ? draft.from.toLowerCase() : '';
 };
 goog.inherits(ui.ComposeGlass, e2e.ext.ui.panels.prompt.PanelBase);
 
@@ -338,12 +338,12 @@ ui.ComposeGlass.prototype.renderSigningKeys_ = function() {
         signerSelect.appendChild(keyElem);
 
         // @yahoo choose the first UID associated with the 'from' address
-        if (this.from_ && selectedIndex == 0 &&
-            goog.string.contains(key.toLowerCase(), this.from)) {
+        if (this.defaultSender_ && selectedIndex == 0 &&
+            goog.string.contains(key.toLowerCase(), this.defaultSender_)) {
           selectedIndex = i;
           keyElem.selected = 'selected';
         }
-      });
+      }, this);
       resolve();
     }, this), goog.bind(function(error) {
       this.errorCallback_(error);
