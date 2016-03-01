@@ -38,9 +38,12 @@ goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
+goog.require('goog.events.KeyCodes');  //@yahoo
+goog.require('goog.events.KeyHandler');  //@yahoo
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
+goog.require('goog.userAgent'); //@yahoo
 goog.require('soy');
 
 goog.scope(function() {
@@ -104,9 +107,21 @@ ui.ComposeGlass = function(draft, origin, hash) {
 goog.inherits(ui.ComposeGlass, e2e.ext.ui.panels.prompt.PanelBase);
 
 
+/**
+ * A keyboard shortcut handler.
+ * @type {goog.events.KeyHandler}
+ * @private
+ */
+ui.ComposeGlass.prototype.keyHandler_ = null;
+
+
 /** @override */
 ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
+
+  //@yahoo added shortcut keys
+  this.keyHandler_ = new goog.events.KeyHandler(elem, true);
+
   var content = this.getContent();
 
   // @yahoo renders the HTML
@@ -120,10 +135,10 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   elem = goog.dom.getElement(constants.ElementId.BODY);
   // @yahoo
   var restoreLabel = goog.string.htmlEscape(
-    chrome.i18n.getMessage('promptRestoreToNormalComposeLabel')).
+      chrome.i18n.getMessage('promptRestoreToNormalComposeLabel')).
       replace('\n', '<br>').
-      replace(/#restore#([^#]*)#/, 
-        '<label for="' + constants.ElementId.BACK_BUTTON + '">$1</label>');
+      replace(/#restore#([^#]*)#/,
+          '<label for="' + constants.ElementId.BACK_BUTTON + '">$1</label>');
 
   // @yahoo
   soy.renderElement(elem, templates.renderEncrypt, {
@@ -134,7 +149,7 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
     subject: content.subject,
     subjectLabel: chrome.i18n.getMessage('promptSubjectLabel'),
     restoreToNormalComposeLabel: soydata.VERY_UNSAFE.ordainSanitizedHtml(
-                                    restoreLabel)
+        restoreLabel)
   });
 
 
@@ -190,6 +205,12 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       goog.events.EventType.CLICK,
       goog.bind(this.keyMissingWarningThenEncryptSign_, this));
 
+  //@yahoo added shortcut keys
+  this.getHandler().listen(
+      this.keyHandler_,
+      goog.events.KeyHandler.EventType.KEY,
+      goog.bind(this.handleKeyEvent_, this));
+
   //@yahoo canSaveDraft is false, as we lack the button
   // if (this.getContent().canSaveDraft) {
   //   this.getHandler().listen(
@@ -210,6 +231,20 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       goog.dom.getElement(constants.ElementId.BACK_BUTTON),
       goog.events.EventType.CLICK,
       goog.bind(this.close, this));
+};
+
+
+/**
+ * Handles keyboard events for shortcut keys //@yahoo
+ * @param {goog.events.KeyEvent} evt The keyboard event to handle.
+ * @private
+ */
+ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
+  // pressed Cmd + Enter in Mac or Ctrl + Enter otherwise
+  if ((goog.userAgent.MAC ? evt.metaKey : evt.ctrlKey) &&
+      evt.keyCode === goog.events.KeyCodes.ENTER) {
+    this.keyMissingWarningThenEncryptSign_();
+  }
 };
 
 
