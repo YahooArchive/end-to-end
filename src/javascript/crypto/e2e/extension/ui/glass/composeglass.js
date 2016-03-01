@@ -384,8 +384,8 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
   // @yahoo sets textarea height
   if (window) {
     var reposition = function() {
-      var height = window.innerHeight - 140;
-      textArea.style.height = height > 50 ? height + 'px' : '50px';
+      textArea.style.height = (window.innerHeight -
+          goog.style.getPosition(textArea).y - 66) + 'px';
     };
     goog.events.listen(window, goog.events.EventType.RESIZE, reposition);
     reposition();

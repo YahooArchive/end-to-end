@@ -186,33 +186,34 @@ ui.ComposeGlassWrapper.prototype.disposeInternal = function() {
  * Installs compose glass
  */
 ui.ComposeGlassWrapper.prototype.installGlass = function() {
-  this.targetElem_.composeGlass = this;
+  var elem = this.targetElem_;
+  elem.composeGlass = this;
 
   var glassFrame = goog.dom.createElement(goog.dom.TagName.IFRAME);
   glassFrame.src = chrome.runtime.getURL('composeglass.html');
-  var targetSize = goog.style.getSize(this.targetElem_);
-  goog.style.setSize(glassFrame,
-      targetSize.width,
-      Math.max(targetSize.height, 400));
+  var targetSize = goog.style.getSize(elem);
+  goog.style.setSize(glassFrame, targetSize.width, targetSize.height);
+  var elemY = goog.style.getClientPosition(elem).y;
+  glassFrame.style.minHeight = elemY < 150 ? '880px' : '400px';
+  glassFrame.style.maxHeight = window.innerHeight - elemY + 'px';
   glassFrame.style.border = 0;
   glassFrame.classList.add('e2eComposeGlass');
 
   // Hide the original compose window
-  goog.array.forEach(this.targetElem_.children, function(elem) {
+  goog.array.forEach(elem.children, function(elem) {
     if (elem.style.display !== 'none') {
       elem.setAttribute('hidden_by_compose_glass', true);
       goog.style.setElementShown(elem, false);
     }
   });
 
-  this.targetElem_.appendChild(glassFrame);
+  elem.appendChild(glassFrame);
   this.glassFrame = glassFrame;
 
   glassFrame.addEventListener('load', goog.bind(function() {
     glassFrame.contentWindow.postMessage({
       draft: this.draft,
-      hash: this.hash,
-      height: targetSize.height
+      hash: this.hash
     }, chrome.runtime.getURL(''));
   }, this), false);
 };

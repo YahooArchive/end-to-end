@@ -96,6 +96,7 @@ textarea {
   padding: 10px 28px;
   font-family: lucida console, sans-serif;
   border: 0;
+  resize: none;
 }
 
 #pgpBody .pgpActions {
