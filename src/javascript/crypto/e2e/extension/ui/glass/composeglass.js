@@ -724,7 +724,8 @@ ui.ComposeGlass.prototype.close = function() {
 
 /**
  * Pops a warning if there does not have a session passphrase, or if any of the
- * recipients does not have a public key. If no problem, call encryptSign_
+ * recipients does not have a public key. If no problem, call encryptSign_()
+ * //@yahoo
  * @private
  */
 ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
@@ -735,8 +736,15 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
     return;
   }
 
+  var selectedUids = this.chipHolder_.getSelectedUids();
+
+  // do nothing when there're no recipients
+  if (selectedUids.length === 0) {
+    return;
+  }
+
   // @yahoo ask to remove invalid recipients or send unencrypted msg
-  this.lackPublicKeys_(this.chipHolder_.getSelectedUids()).
+  this.lackPublicKeys_(selectedUids).
       addCallbacks(function(invalidRecipients) {
         if (invalidRecipients.length === 0) {
           this.encryptSign_();
