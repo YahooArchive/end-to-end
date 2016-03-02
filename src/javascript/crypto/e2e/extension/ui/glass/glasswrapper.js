@@ -193,9 +193,16 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   glassFrame.src = chrome.runtime.getURL('composeglass.html');
   var targetSize = goog.style.getSize(elem);
   goog.style.setSize(glassFrame, targetSize.width, targetSize.height);
-  var elemY = goog.style.getClientPosition(elem).y;
-  glassFrame.style.minHeight = elemY < 150 ? '880px' : '400px';
-  glassFrame.style.maxHeight = window.innerHeight - elemY + 'px';
+  var elemY = goog.style.getClientPosition(elem).y,
+      maxHeight = window.innerHeight - elemY;
+  if (targetSize.height < 240 || maxHeight < 240) {
+    glassFrame.style.minHeight = '240px';
+  } else {
+    glassFrame.style.maxHeight = maxHeight + 'px';
+    if (elemY < 150) {
+      glassFrame.style.height = maxHeight + 'px';
+    }
+  }
   glassFrame.style.border = 0;
   glassFrame.classList.add('e2eComposeGlass');
 
@@ -233,5 +240,6 @@ ui.ComposeGlassWrapper.prototype.removeGlass = function() {
       elem.removeAttribute('hidden_by_compose_glass');
     }
   });
+  // TODO: trigger resize event for targetElem_
 };
 });  // goog.scope
