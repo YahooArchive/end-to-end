@@ -29,11 +29,8 @@ goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.messages.ApiRequest');
 goog.require('e2e.ext.ui.templates.glass');
 goog.require('e2e.ext.utils');
-goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
-goog.require('goog.string');
-goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -112,7 +109,7 @@ ui.Glass.prototype.decorateInternal = function(elem) {
           response.content = json[0];
           response.wasEncrypted = json[1];
           response.isVerified = json[2];
-        } catch(ex) {}
+        } catch (ex) {}
       } else {
         response.error = chrome.i18n.getMessage('glassCannotDecrypt');
       }

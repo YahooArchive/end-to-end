@@ -21,12 +21,12 @@
 /** @suppress {extraProvide} */
 goog.provide('e2e.ext.e2ebindTest');
 
+goog.require('e2e.ext');
 goog.require('e2e.ext.Helper');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.e2ebind');
 goog.require('e2e.ext.testingstubs');
-goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.MockControl');
@@ -35,7 +35,6 @@ goog.require('goog.testing.asserts');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.mockmatchers');
 goog.require('goog.testing.mockmatchers.ArgumentMatcher');
-goog.require('goog.testing.mockmatchers.SaveArgument');
 
 goog.setTestOnly();
 
@@ -269,16 +268,16 @@ function testProviderRequestToInstallReadGlass() {
   div1.id = 's1';
   div2.id = 's2';
   var text1 =
-    '-----BEGIN PGP MESSAGE-----\n' +
-    'Version: GnuPG v1.4.11 (GNU/Linux)\n' +
-    '\n' +
-    'hIwDXrdcIWJXR5IBA/92aAG/zps/vIGXdw5TEEpjjJsTzzb9q+YPtmrWMBn/dvf2\n' +
-    't3RzxFigHvOTZxQthlGYr5Ft8zxmG4l7T6QO+sYp+sQuHjiex1w6A6fuNVx8ieXD\n' +
-    'G/MGU16PhBa6wLe0OOEE5nmEKYo1A8imHUyvFF8VXpDeMgACHYBFKvA/4bIbANJQ\n' +
-    'ARBHsOBARkRDW7TibAaXijDaFBKGCylxi8dxQVCDkDJpzLDcs1JsiE6v4eKVztb8\n' +
-    'msKSPseUtmsJdu9oQyZdFU4igAWSRKvXQOXAbjBdgmw=\n' +
-    '=HSJn\n' +
-    '-----END PGP MESSAGE-----';
+      '-----BEGIN PGP MESSAGE-----\n' +
+      'Version: GnuPG v1.4.11 (GNU/Linux)\n' +
+      '\n' +
+      'hIwDXrdcIWJXR5IBA/92aAG/zps/vIGXdw5TEEpjjJsTzzb9q+YPtmrWMBn/dvf2\n' +
+      't3RzxFigHvOTZxQthlGYr5Ft8zxmG4l7T6QO+sYp+sQuHjiex1w6A6fuNVx8ieXD\n' +
+      'G/MGU16PhBa6wLe0OOEE5nmEKYo1A8imHUyvFF8VXpDeMgACHYBFKvA/4bIbANJQ\n' +
+      'ARBHsOBARkRDW7TibAaXijDaFBKGCylxi8dxQVCDkDJpzLDcs1JsiE6v4eKVztb8\n' +
+      'msKSPseUtmsJdu9oQyZdFU4igAWSRKvXQOXAbjBdgmw=\n' +
+      '=HSJn\n' +
+      '-----END PGP MESSAGE-----';
   var text2 = '-----BEGIN PGP MESSAGE-----';
   document.body.appendChild(div1);
   document.body.appendChild(div2);

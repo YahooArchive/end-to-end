@@ -173,7 +173,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     case constants.Actions.GET_PREFERENCE:
       if (window.launcher) {
         outgoing.content = window.launcher.
-                              getPreferences().getItem(incoming.content);
+                               getPreferences().getItem(incoming.content);
         callback(outgoing);
         return;
       }

@@ -92,10 +92,10 @@ ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
         }
 
         return goog.async.DeferredList.gatherResults(
-          goog.array.map(goog.object.getKeys(emailKeyMap), function(email) {
-            var keyData = goog.array.flatten(emailKeyMap[email].getValues());
-            return this.client_.update(email, keyData);
-          }, this));
+            goog.array.map(goog.object.getKeys(emailKeyMap), function(email) {
+              var keyData = goog.array.flatten(emailKeyMap[email].getValues());
+              return this.client_.update(email, keyData);
+            }, this));
       }, this).
       addCallback(function(importedKeys) {
         // Return true if it was imported for some emails.
@@ -130,7 +130,7 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
         }
 
         var parsedKeys = e2e.openpgp.block.factory.
-          parseByteArrayAllTransferableKeys(lookupResult.keyData);
+            parseByteArrayAllTransferableKeys(lookupResult.keyData);
 
         return goog.array.filter(parsedKeys, function(key) {
           try {

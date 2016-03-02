@@ -262,9 +262,10 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
  * @param {boolean=} opt_skipVerify whether skip the verify step
- * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>} the
- *    Result if there has a key associated with the email, and it is validated.
- *    Result is null for no realms. key is null if verified for having no key.
+ * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>}
+ *    The result if there has a key associated with the email, and it is
+ *    validated. The result is null when no realms. The key in KeyData is null
+ *    if verified for having no key.
  */
 e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
   // normalize the email address
@@ -318,9 +319,10 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
  * @param {!string} email The email address
  * @param {?e2e.ByteArray} keyData The key blob to upload. Use null to remove
  *     the specific key field.
- * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>} the
- *  Result if there has a key associated with the email, and it is validated.
- *  Result is null for no realms. key is null if verified for having no key.
+ * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>}
+ *    The result if there has a key associated with the email, and it is
+ *    validated. The result is null when no realms. The key in KeyData is null
+ *    if verified for having no key.
  */
 e2e.coname.Client.prototype.update = function(email, keyData) {
   // normalize the email address
@@ -357,7 +359,7 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
           throw new Error('server rejected the new profile/key');
         }
         if (!e2e.coname.verifyLookup(realm, email, pf) ||
-              !profile.keys.has(this.keyName_)) {
+            !profile.keys.has(this.keyName_)) {
           // TODO: poll the server until the update can be verified
           throw new Error('profile/keys cannot be validated');
         }

@@ -22,7 +22,6 @@ goog.provide('e2e.coname.KeyData');
 goog.provide('e2e.coname.QuorumRequirement');
 goog.provide('e2e.coname.RealmConfig');
 goog.provide('e2e.coname.VerificationPolicy');
-goog.provide('e2e.coname.getAuthURLByEmail');
 goog.provide('e2e.coname.getRealmByDomain');
 goog.provide('e2e.coname.getRealmByEmail');
 goog.provide('e2e.coname.getSupportedEmailByUid');
@@ -33,7 +32,6 @@ goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.ext.config');
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
-goog.require('goog.string');
 
 
 /**

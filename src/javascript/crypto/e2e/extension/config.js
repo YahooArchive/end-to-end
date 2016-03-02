@@ -37,7 +37,7 @@ e2e.ext.config = {
     'realms': [{
       'realm_name': 'yahoo',
       'domains': ['yahoo-inc.com'],
-      'addr': 'https://localhost:25519',
+      'addr': 'https://localhost:4443',
       'URL': 'https://mail.yahoo.com',
       'VRFPublic': [
         173, 87, 173, 65, 228, 26, 136, 105, 43, 83, 77, 76, 161, 218, 39, 33,

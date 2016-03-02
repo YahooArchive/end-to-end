@@ -21,9 +21,6 @@
 goog.provide('e2e.ext.actions.ConfigureExtension');
 
 goog.require('e2e.ext.actions.Action');
-goog.require('goog.array');
-goog.require('goog.async.DeferredList');
-goog.require('goog.string');
 
 goog.scope(function() {
 var actions = e2e.ext.actions;

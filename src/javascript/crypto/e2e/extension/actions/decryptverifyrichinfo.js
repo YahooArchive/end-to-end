@@ -83,8 +83,8 @@ actions.DecryptVerifyRichInfo.prototype.execute =
                 decrypted,
                 result.decrypt.wasEncrypted,
                 goog.isDef(result.verify) &&
-                  result.verify.failure.length === 0 &&
-                  result.verify.success.length > 0
+                    result.verify.failure.length === 0 &&
+                    result.verify.success.length > 0
               ]));
             });
       }).

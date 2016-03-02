@@ -204,7 +204,7 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
   // var importDiv = goog.dom.getElement(
   //   constants.ElementId.KEYRING_IMPORT_DIV);
   var importDiv = goog.dom.getElementByClass(
-                                        constants.CssClass.KEYRING_IMPORT);
+      constants.CssClass.KEYRING_IMPORT);
   var fbImportDiv = goog.dom.getElement(constants.ElementId.FB_IMPORT_DIV);
   var passphraseChangeDiv = goog.dom.getElement(
       constants.ElementId.KEYRING_PASSPHRASE_CHANGE_DIV);
@@ -367,8 +367,7 @@ panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
   // @yahoo shows file selector directly
   // var importDiv = goog.dom.getElement(
   //     constants.ElementId.KEYRING_IMPORT_DIV);
-  var importDiv = this.getElementByClass(
-    constants.CssClass.KEYRING_IMPORT);
+  var importDiv = this.getElementByClass(constants.CssClass.KEYRING_IMPORT);
   var fileInput = importDiv.querySelector('input');
 
   if (fileInput.files.length > 0) {

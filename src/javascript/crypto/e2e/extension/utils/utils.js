@@ -22,6 +22,7 @@ goog.provide('e2e.ext.utils');
 goog.provide('e2e.ext.utils.Error');
 
 goog.require('e2e.async.Result');
+goog.require('e2e.ext.config');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('goog.object');
@@ -164,7 +165,7 @@ utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
         } else {
           try {
             opt_callback(response);
-          } catch(ex) {
+          } catch (ex) {
             opt_errback(ex);
           }
         }
@@ -267,7 +268,8 @@ utils.openAuthWindow = function(email) {
 
   // TODO: url now hardcoded. support openid type
   var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
-    encodeURIComponent(e2e.ext.config.CONAME.realms[0].addr + '/auth/cookies');
+      encodeURIComponent(
+          e2e.ext.config.CONAME.realms[0].addr + '/auth/cookies');
 
   chrome.windows.create({
     url: authUrl,

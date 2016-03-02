@@ -43,6 +43,7 @@ goog.require('goog.events.KeyHandler');  //@yahoo
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
+goog.require('goog.style');
 goog.require('goog.userAgent'); //@yahoo
 goog.require('soy');
 

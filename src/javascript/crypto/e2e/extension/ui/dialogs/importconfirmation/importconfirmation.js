@@ -23,6 +23,7 @@ goog.provide('e2e.ext.ui.dialogs.ImportConfirmation');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.templates.dialogs.importconfirmation');
+goog.require('goog.array');
 
 goog.scope(function() {
 var ui = e2e.ext.ui;

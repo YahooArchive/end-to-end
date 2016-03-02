@@ -250,7 +250,7 @@ ext.Helper.prototype.getE2ebindSelectedContent_ = function(req, sendResponse) {
       // We have a draft, get_draft from it
       e2ebind.getDraft(goog.bind(function(get_draft_result) {
         var selectionBody = e2e.openpgp.asciiArmor.
-                              extractPgpBlock(get_draft_result.body);
+                                extractPgpBlock(get_draft_result.body);
 
         sendResponse({
           action: constants.Actions.ENCRYPT_SIGN,

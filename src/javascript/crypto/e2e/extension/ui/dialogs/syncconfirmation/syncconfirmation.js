@@ -20,6 +20,7 @@
 
 goog.provide('e2e.ext.ui.dialogs.SyncConfirmation');
 
+goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.templates.dialogs.syncconfirmation');

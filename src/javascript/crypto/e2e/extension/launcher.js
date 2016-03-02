@@ -353,7 +353,7 @@ ext.yExtensionLauncher.prototype.configureWebRequests = function() {
     tabs.length ?
         chrome.tabs.update(tabs[0].id, {highlighted: true, active: true}) :
         this.createWindow(
-          e2e.ext.config.CONAME.realms[0].URL, true, goog.nullFunction);
+            e2e.ext.config.CONAME.realms[0].URL, true, goog.nullFunction);
   }, this));
 };
 

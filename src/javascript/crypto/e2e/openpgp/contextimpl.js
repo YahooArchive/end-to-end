@@ -778,7 +778,7 @@ e2e.openpgp.ContextImpl.prototype.searchLocalKey = function(uid) {
  * @param {string} uid The user id.
  * @param {function(string): !e2e.async.Result} authCallback The Callback to
  *     authenticate the given user
- * @param {function(string, !e2e.openpgp.Keys, boolean): 
+ * @param {function(string, !e2e.openpgp.Keys, boolean):
  *     !e2e.async.Result<string>} consistentCallback The Callback to call when
  *     keys are in sync with the remote, or that uid is non-keyserver-managed.
  * @param {function(string, !e2e.openpgp.Keys, !e2e.openpgp.Keys,
@@ -792,40 +792,43 @@ e2e.openpgp.ContextImpl.prototype.syncWithRemote = function(uid,
   var result = new e2e.async.Result;
 
   // TODO: now keyserver being online is a must for yahoo users
-  this.keyRing_.compareWithRemote(uid).addCallback(function(diff) {
-    var local = diff.localOnly, common = diff.common, remote = diff.remoteOnly;
-    var callback = (!diff.syncManaged ||
-        local.length === 0 && remote.length === 0) ?
-            consistentCallback(uid, common, diff.syncManaged) :
-            inconsistentCallback(uid, local, common, remote);
+  this.keyRing_.compareWithRemote(uid).
+      addCallback(function(diff) {
+        var local = diff.localOnly,
+            common = diff.common,
+            remote = diff.remoteOnly;
+        var callback = (!diff.syncManaged ||
+            local.length === 0 && remote.length === 0) ?
+                consistentCallback(uid, common, diff.syncManaged) :
+                inconsistentCallback(uid, local, common, remote);
 
-    return callback.addCallback(function(action) {
-      switch (action) {
-        case 'delete':
-          return this.deleteKey(uid);
-        case 'overwriteRemote':
-          return this.keyRing_.uploadKeys(uid);
-        case 'noop':
-          return true;
-      }
-      return null;
-    }, this);
+        return callback.addCallback(function(action) {
+          switch (action) {
+            case 'delete':
+              return this.deleteKey(uid);
+            case 'overwriteRemote':
+              return this.keyRing_.uploadKeys(uid);
+            case 'noop':
+              return true;
+          }
+          return null;
+        }, this);
 
-  }, this).
-  addCallbacks(goog.bind(result.callback, result), function(error) {
-    // prompt user for authentication
-    if (error.messageId === 'conameAuthError') {
-      authCallback(uid).addCallback(function() {
-        // now authenticated, do it once again
-        this.syncWithRemote(
-            uid, authCallback, consistentCallback, inconsistentCallback).
-            addCallbacks(result.callback, result.errback, result);
+      }, this).
+      addCallbacks(goog.bind(result.callback, result), function(error) {
+        // prompt user for authentication
+        if (error.messageId === 'conameAuthError') {
+          authCallback(uid).addCallback(function() {
+            // now authenticated, do it once again
+            this.syncWithRemote(
+                uid, authCallback, consistentCallback, inconsistentCallback).
+                addCallbacks(result.callback, result.errback, result);
 
+          }, this);
+        } else {
+          result.errback(error);
+        }
       }, this);
-    } else {
-      result.errback(error);
-    }
-  }, this);
 
   return result;
 };

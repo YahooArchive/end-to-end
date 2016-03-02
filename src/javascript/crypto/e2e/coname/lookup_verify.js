@@ -20,9 +20,9 @@
  */
 goog.provide('e2e.coname');
 goog.provide('e2e.coname.EpochHead');
-goog.provide('e2e.coname.ServerResponse');
 goog.provide('e2e.coname.MerkleLeaf');
 goog.provide('e2e.coname.MerkleNode');
+goog.provide('e2e.coname.ServerResponse');
 goog.provide('e2e.coname.SignedEpochHead');
 goog.provide('e2e.coname.Timestamp');
 goog.provide('e2e.coname.TreeProof');

@@ -20,17 +20,17 @@
 
 goog.provide('e2e.ext.actions.Executor');
 
+goog.require('e2e.ext.actions.ConfigureExtension'); // @yahoo
 goog.require('e2e.ext.actions.DecryptVerify');
 goog.require('e2e.ext.actions.DecryptVerifyRichInfo'); // @yahoo
 goog.require('e2e.ext.actions.EncryptSign');
+goog.require('e2e.ext.actions.GetAllKeysByEmails'); // @yahoo
 goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.actions.GetKeyringBackupData');
-goog.require('e2e.ext.actions.GetAllKeysByEmails'); // @yahoo
-goog.require('e2e.ext.actions.SyncKeys'); // @yahoo
-goog.require('e2e.ext.actions.ConfigureExtension'); // @yahoo
 goog.require('e2e.ext.actions.ImportKey');
 goog.require('e2e.ext.actions.ListKeys');
 goog.require('e2e.ext.actions.RestoreKeyringData');
+goog.require('e2e.ext.actions.SyncKeys'); // @yahoo
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.action');

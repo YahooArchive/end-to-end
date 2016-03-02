@@ -1,15 +1,15 @@
 {
   "manifest_version": 2,
-  "name": "__MSG_extName__",
+  "name": "Yahoo Mail End-To-End (alpha)",
   "description": "__MSG_extDescription__",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "permissions": [
     "activeTab",
     "cookies",
     "notifications",
     "webRequest",
     "webRequestBlocking",
-    "https://localhost:25519/*",
+    "https://localhost:4443/*",
     "https://*.mail.yahoo.com/*"
   ],
   "optional_permissions": [
@@ -29,7 +29,7 @@
       "run_at": "document_end"
     },
     {
-      "matches": ["https://localhost:25519/auth/cookies"],
+      "matches": ["https://localhost:4443/auth/cookies"],
       "js": ["yAuth/cookies.js"]
     }
   ],

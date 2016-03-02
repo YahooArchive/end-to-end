@@ -70,6 +70,7 @@ panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
   return goog.base(this, 'handleKeyEvent', evt);
 };
 
+
 // @yahoo trigger onSelectCallback_ when on blur
 /** @override */
 panels.ChipHolderInputHandler.prototype.handleBlur = function(opt_e) {

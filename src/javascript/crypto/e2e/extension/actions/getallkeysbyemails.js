@@ -43,8 +43,8 @@ actions.GetAllKeysByEmails.prototype.execute =
     function(ctx, request, requestor, callback, errorCallback) {
 
   if (request.recipients.length === 0) {
-  	callback([]);
-  	return;
+    callback([]);
+    return;
   }
 
   var content_ = request.content;
@@ -54,10 +54,10 @@ actions.GetAllKeysByEmails.prototype.execute =
   if (checkExistsOnly) {
     content_ = goog.string.removeAt(content_, content_.length - 6, 6);
     callback_ = function(keysPerRecipient) {
-      callback(goog.array.map(keysPerRecipient, function(keys){
-      	return keys.length > 0;
+      callback(goog.array.map(keysPerRecipient, function(keys) {
+        return keys.length > 0;
       }));
-    }
+    };
   }
 
   var searchKey_ = goog.bind(content_ == 'private' ?

@@ -23,7 +23,12 @@
 
 goog.provide('e2e.ext.e2ebind');
 
-goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.CssClass');
+goog.require('e2e.ext.constants.ElementId');
+goog.require('e2e.ext.constants.StorageKey');
+goog.require('e2e.ext.constants.e2ebind.requestActions');
+goog.require('e2e.ext.constants.e2ebind.responseActions');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
@@ -228,7 +233,7 @@ e2ebind.clickHandler_ = function(e) {
 
   // get parent element whose class is 'compose'
   elt = e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
-    elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
+      elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
 
   // opens the compose glass if so configured
   elt && utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
@@ -300,7 +305,7 @@ e2ebind.start = function() {
 
   // Register the click handler
   goog.events.listen(document.body, goog.events.EventType.CLICK,
-                       e2ebind.clickHandler_, true);
+                     e2ebind.clickHandler_, true);
 
   // Register handler for when the compose area is focused
   goog.events.listen(document.body, goog.events.EventType.FOCUS,
@@ -422,7 +427,7 @@ e2ebind.handleProviderRequest_ = function(request) {
       // Verify the signer
       e2ebind.validateSigner_(args.signer);
       // Always return true to add encryptr button
-      e2ebind.sendResponse_({valid: true}, request, true); 
+      e2ebind.sendResponse_({valid: true}, request, true);
       break;
 
     case actions.INSTALL_READ_GLASS:

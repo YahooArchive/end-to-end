@@ -280,7 +280,7 @@ function testE2ebindGetDraft() {
   window.config = {signer: 'yan@example.com'};
 
   stubs.set(e2ebind, 'hasDraft', mockControl.createFunctionMock());
-  var hasDraftArg = 
+  var hasDraftArg =
       new goog.testing.mockmatchers.SaveArgument(goog.isFunction);
   e2ebind.hasDraft(hasDraftArg);
 
@@ -336,7 +336,7 @@ function testE2ebindDisplay() {
   window.config = {signer: 'yan@example.com'};
 
   stubs.set(e2ebind, 'hasDraft', mockControl.createFunctionMock());
-  var hasDraftArg = 
+  var hasDraftArg =
       new goog.testing.mockmatchers.SaveArgument(goog.isFunction);
   e2ebind.hasDraft(hasDraftArg);
 

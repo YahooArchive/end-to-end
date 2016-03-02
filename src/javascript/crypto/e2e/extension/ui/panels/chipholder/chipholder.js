@@ -20,6 +20,7 @@
 
 goog.provide('e2e.ext.ui.panels.ChipHolder');
 
+goog.require('e2e.async.Result');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolderInputHandler');
@@ -97,10 +98,10 @@ panels.ChipHolder = function(selectedUids, allUids,
    * @private
    */
   this.badChipCallback_ = opt_badChipCallback || goog.bind(
-    function (chipValue) {
-      return e2e.async.Result.toResult(
-          !goog.array.contains(this.allUids_, chipValue));
-    }, this);
+      function(chipValue) {
+        return e2e.async.Result.toResult(
+        !goog.array.contains(this.allUids_, chipValue));
+      }, this);
 };
 goog.inherits(panels.ChipHolder, goog.ui.Component);
 

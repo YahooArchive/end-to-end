@@ -234,9 +234,9 @@ dialogs.Generic.prototype.exitDocument = function() {
 dialogs.Generic.prototype.invokeCallback = function(sendBlank) {
   if (this.inputElem_) {
     var returnValue = sendBlank ? '' :
-      this.inputElem_.type.toLowerCase() === 'checkbox' ?
-        this.inputElem_.checked.toString() :
-        this.inputElem_.value;
+        this.inputElem_.type.toLowerCase() === 'checkbox' ?
+            this.inputElem_.checked.toString() :
+            this.inputElem_.value;
     this.inputElem_.value = '';
     this.dialogCallback_(returnValue);
   } else {
