@@ -235,13 +235,19 @@ e2ebind.clickHandler_ = function(e) {
   elt = e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
       elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
 
-  // opens the compose glass if so configured
-  elt && utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-    action: constants.Actions.GET_PREFERENCE,
-    content: constants.StorageKey.ENABLE_COMPOSE_GLASS
-  }), function(response) {
-    response.content == 'true' && e2ebind.initComposeGlass_(elt);
-  });
+  // if such elt element exists, and not nested in COMPOSE_CONTAINER_EXCEPTION
+  if (elt && null === goog.dom.getAncestorByTagNameAndClass(
+      elt, 'div', constants.CssClass.COMPOSE_CONTAINER_EXCEPTION)) {
+
+    // default to open the compose glass if so configured
+    utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+      action: constants.Actions.GET_PREFERENCE,
+      content: constants.StorageKey.ENABLE_COMPOSE_GLASS
+    }), function(response) {
+      response.content == 'true' && e2ebind.initComposeGlass_(elt);
+    });
+
+  }
 
 };
 
