@@ -53,8 +53,13 @@ ui.GlassWrapper = function(targetElem, opt_text) {
    * @private
    */
   this.targetElem_ = targetElem;
-  this.targetElem_.setAttribute('original_content', opt_text ? opt_text :
-                                this.targetElem_.innerText);
+
+  /**
+   * The original content
+   * @type {string}
+   * @private
+   */
+  this.originalContent_ = opt_text ? opt_text : targetElem.innerText;
 
   /**
    * The original children of the target element.
@@ -148,7 +153,7 @@ ui.GlassWrapper.prototype.removeGlass = function() {
  * @return {string} The original content.
  */
 ui.GlassWrapper.prototype.getOriginalContent = function() {
-  return this.targetElem_.getAttribute('original_content');
+  return this.originalContent_;
 };
 
 
@@ -169,7 +174,7 @@ ui.ComposeGlassWrapper = function(targetElem, draft, hash) {
 
   this.targetElem_ = targetElem;
   this.draft = draft;
-  this.targetElem_.setAttribute('original_content', this.draft.body);
+  this.originalContent_ = this.draft.body;
   this.hash = hash;
 };
 goog.inherits(ui.ComposeGlassWrapper, goog.Disposable);
