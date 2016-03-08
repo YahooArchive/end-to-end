@@ -626,24 +626,24 @@ e2ebind.hasDraft = function(callback) {
 e2ebind.setDraft = function(args) {
   // TODO(yan): Doesn't work when multiple provider compose windows are open
   // on the same page
-  // TODO(yan): handle SET_AND_SEND_DRAFT as an e2ebind responseAction
-  e2ebind.sendRequest(constants.e2ebind.responseActions.SET_DRAFT,
-                      /** @type {messages.e2ebindDraft} */ ({
+  e2ebind.sendRequest(
+      constants.Actions.SET_DRAFT,
+      /** @type {messages.e2ebindDraft} */ ({
         to: args.to || [],
         cc: args.cc || [],
         bcc: args.bcc || [],
         subject: args.subject || '',
         body: args.body || ''
-      }), function(response) {
+      }),
+      function(response) {
         if (e2ebind.activeComposeElem_ === null) {
           console.warn('No active compose element for e2ebind');
-        } else {
+        } else if (args.send) {
           // Send the message by clicking the "send" button in ymail
           e2ebind.activeComposeElem_.querySelector(
               '[data-action=send]').click();
         }
-      }
-  );
+      });
 
   // XXX: ymail doesn't handle setting the 'from' field when user has multiple
   // addresses.

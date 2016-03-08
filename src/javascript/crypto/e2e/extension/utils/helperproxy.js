@@ -73,7 +73,7 @@ e2e.ext.utils.HelperProxy.prototype.isLookingGlassEnabled = function() {
  */
 e2e.ext.utils.HelperProxy.prototype.getSelectedContent = function(callback,
     errorCallback) {
-  this.sendMessage_({
+  this.sendMessage({ // @yahoo use sendMessage() instead of sendMessage_()
     enableLookingGlass: this.isLookingGlassEnabled()
   }, callback, errorCallback);
 };
@@ -93,18 +93,20 @@ e2e.ext.utils.HelperProxy.prototype.getSelectedContent = function(callback,
  * @param {!function(Error)} errorCallback The callback to invoke if an error is
  *     encountered.
  * @param {string=} opt_subject The subject of the message if applicable.
+ * @param {string=} opt_from The sender of the message if applicable. //@yahoo
  * @export
  */
 e2e.ext.utils.HelperProxy.prototype.updateSelectedContent =
     function(content, recipients, origin, shouldSend, callback,
-    errorCallback, opt_subject) {
-  this.sendMessage_({
+    errorCallback, opt_subject, opt_from) {
+  this.sendMessage({ // @yahoo use sendMessage() instead of sendMessage_()
     value: content,
     response: true,
     send: shouldSend,
     origin: origin,
     recipients: recipients,
-    subject: opt_subject
+    subject: opt_subject,
+    from: opt_from
   }, callback, errorCallback);
 };
 
@@ -115,9 +117,9 @@ e2e.ext.utils.HelperProxy.prototype.updateSelectedContent =
  * @param {!function(...)} callback The function to invoke with the response.
  * @param {!function(Error)} errorCallback Function to invoke on error
  *     conditions.
- * @private
+ * //yahoo made public
  */
-e2e.ext.utils.HelperProxy.prototype.sendMessage_ = function(payload, callback,
+e2e.ext.utils.HelperProxy.prototype.sendMessage = function(payload, callback,
     errorCallback)  {
   this.setupConnection(goog.bind(function() {
     this.sendMessageImpl(payload, goog.bind(function(response) {
