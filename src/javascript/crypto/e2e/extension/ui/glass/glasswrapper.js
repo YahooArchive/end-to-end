@@ -195,8 +195,8 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   goog.style.setSize(glassFrame, targetSize.width, targetSize.height);
   var elemY = goog.style.getClientPosition(elem).y,
       maxHeight = window.innerHeight - elemY;
-  if (targetSize.height < 240 || maxHeight < 240) {
-    glassFrame.style.minHeight = '240px';
+  if (targetSize.height < 390 || maxHeight < 390) {
+    glassFrame.style.minHeight = '390px';
   } else {
     glassFrame.style.maxHeight = maxHeight + 'px';
     if (elemY < 150) {
