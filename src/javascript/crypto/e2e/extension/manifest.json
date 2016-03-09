@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Yahoo Mail End-To-End (alpha)",
   "description": "__MSG_extDescription__",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "permissions": [
     "activeTab",
     "cookies",
