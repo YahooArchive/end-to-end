@@ -343,6 +343,13 @@ ui.ComposeGlass.prototype.renderSigningKeys_ = function() {
             goog.string.contains(key.toLowerCase(), this.defaultSender_)) {
           selectedIndex = i;
           keyElem.selected = 'selected';
+
+          // only one sender is present and is selected, then hide sender UI
+          if (availableSigningKeys.length === 1) {
+            goog.style.setElementShown(
+                goog.dom.getElement(constants.ElementId.FROM_HOLDER),
+                false);
+          }
         }
       }, this);
       resolve();
