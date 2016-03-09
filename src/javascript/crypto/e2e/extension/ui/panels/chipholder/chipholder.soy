@@ -38,10 +38,15 @@
 /**
  * Renders a chip that represents a PGP UID or passphrase.
  * @param value The UID or passphrase to render.
+ * @param opt_name The optional name to render.//@yahoo
  */
 {template .renderChip}
   <div class="{e2e.ext.constants.CssClass.CHIP}">
-    <div>{$value}</div>
+  {if $opt_name}
+    <div title="{$value}">{$opt_name}</div>
+  {else}
+    <div title="{$value}">{$value}</div>
+  {/if}
     <img src="images/close.png">
   </div>
 {/template}
