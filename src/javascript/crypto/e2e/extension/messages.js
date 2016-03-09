@@ -171,7 +171,8 @@ messages.e2ebindResponse;
  *   cc: Array.<string>,
  *   bcc: Array.<string>,
  *   subject: (string|undefined),
- *   from: (string|undefined)
+ *   from: (string|undefined),
+ *   contacts: Array.<{email:string,firstname:string}>
  * }}
  */
 messages.e2ebindDraft;

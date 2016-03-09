@@ -198,11 +198,13 @@ e2ebind.initComposeGlass_ = function(elt, opt_isExplicit) {
         draft.cc = getDraftResult.cc;
         draft.bcc = getDraftResult.bcc;
         draft.subject = getDraftResult.subject;
+        draft.contacts = getDraftResult.contacts;
         e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
       });
     } else {
       e2ebind.getCurrentMessage(function(result) {
         var DOMelem = document.querySelector(result.elem);
+        draft.contacts = result.contacts || [];
         if (result.text) {
           draft.body = result.text;
         } else if (DOMelem) {
@@ -567,23 +569,24 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
 e2ebind.getCurrentMessage = function(callback) {
   e2ebind.sendRequest(constants.e2ebind.responseActions.GET_CURRENT_MESSAGE,
                       null, function(data) {
-        var elem;
-        var text;
+        var result = data.result;
 
-        if (data.result && data.success) {
-          var result = data.result;
-          elem = result.elem;
-          text = result.text;
+        if (result && data.success) {
+          callback({
+            elem: result.elem,
+            text: result.text,
+            contacts: result.contacts || []
+          });
+        } else {
+          callback({});
         }
-
-        callback({elem: elem, text: text});
       });
 };
 
 
 /**
 * Gets the current draft/compose from the provider.
-* @param {!function(Object)} callback - The callback to call with the result
+* @param {!function(messages.e2ebindDraft)} callback The handler for draft
 */
 e2ebind.getDraft = function(callback) {
   e2ebind.sendRequest(constants.e2ebind.responseActions.GET_DRAFT, null,
@@ -650,11 +653,13 @@ e2ebind.setDraft = function(args) {
   var selects = document.querySelectorAll('select#from-field');
   if (args.from && selects.length) {
     goog.array.forEach(selects, function(item) {
-      goog.array.forEach(item.options, function(option) {
+      goog.array.some(item.options, function(option) {
         if (utils.text.extractValidEmail(option.value) ===
             utils.text.extractValidEmail(args.from)) {
           item.value = option.value;
+          return true;
         }
+        return false;
       });
     });
   }

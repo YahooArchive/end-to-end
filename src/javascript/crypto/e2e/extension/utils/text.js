@@ -132,6 +132,22 @@ utils.extractValidYahooEmail = function(recipient) {
 
 
 /**
+ * Map an array of emails in string to array of objects, of which each has a
+ * name and email address.
+ * @param {Array.<string>} uids array of "username &lt;email&gt;" string.
+ * @return {Array.<{name:string, email:string}>}
+ */
+utils.uidsToObjects = function(uids) {
+  return goog.array.map(uids, function(uid) {
+    var email = utils.extractValidEmail(goog.string.collapseWhitespace(uid));
+    return email && email !== uid ?
+        {name: uid.replace(email, '').replace(' <>', ''), email: email} :
+        {name: uid, email: uid};
+  });
+};
+
+
+/**
  * Extracts valid email addresses out of a string with comma-separated full
  *  email labels (e.g. "John Smith" <john@example.com>, Second
  *  <second@example.org>).

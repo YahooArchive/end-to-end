@@ -85,6 +85,13 @@ ui.ComposeGlass = function(draft, origin, hash) {
       content, this.errorCallback_);
 
   /**
+   * The contacts data for autocompletion
+   * @type {Array.<{email:string, firstname:string}>}
+   * @private
+   */
+  this.contacts_ = draft.contacts || [];
+
+  /**
    * A holder for the intended recipients of a PGP message.
    * @type {panels.ChipHolder}
    * @private
@@ -250,53 +257,56 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
 
 
 /**
- * Renders the available encryption keys in the UI.
+ * Renders the available encryption keys in the UI. //@yahoo
  * @return {!goog.Promise} Promise resolved when the encryption keys have
  *     been successfully rendered. It's never rejected.
  * @private
  */
 ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
   return new goog.Promise(function(resolve, reject) {
-    // @yahoo sendExtensionRequest is used instead of actionExecutor
-    utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-      action: constants.Actions.LIST_KEYS,
-      content: 'public'
-    }), goog.bind(function(response) {
-      var searchResult = response.content;
 
-      var providedRecipients = this.getContent().recipients || [];
-      var intendedRecipients = [];
-      var allAvailableRecipients = goog.object.getKeys(searchResult);
-      var recipientsEmailMap =
-          this.getRecipientsEmailMap_(allAvailableRecipients);
-      // @yahoo sends everyone to chipHolder, even though they may lack keys
-      intendedRecipients = providedRecipients;
-      // goog.array.forEach(providedRecipients, function(recipient) {
-      //   if (recipientsEmailMap.hasOwnProperty(recipient)) {
-      //     goog.array.extend(intendedRecipients,
-      //       recipientsEmailMap[recipient]);
-      //   }
-      // });
-      this.chipHolder_ = new panels.ChipHolder(
-          intendedRecipients, allAvailableRecipients,
-          goog.bind(this.renderEncryptionPassphraseDialog_, this),
-          // @yahoo enhanced ChipHolder with dynamic validation
-          goog.bind(this.hasUnsupportedRecipients_, this));
-      this.addChild(this.chipHolder_, false);
-      this.chipHolder_.decorate(
-          goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
-      resolve();
-    }, this), goog.bind(function(error) {
-      this.chipHolder_ = new panels.ChipHolder([], [],
-          goog.bind(this.renderEncryptionPassphraseDialog_, this),
-          // @yahoo enhanced ChipHolder with dynamic validation
-          goog.bind(this.hasUnsupportedRecipients_, this));
-      this.addChild(this.chipHolder_, false);
-      this.chipHolder_.decorate(
-          goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
-      this.errorCallback_(error);
-      resolve();
-    }, this));
+    var intendedRecipients = this.getContent().recipients || [];
+
+    // @yahoo collect all available recipients from contact list instead
+    // var allAvailableRecipients = goog.object.getKeys(searchResult);
+    var allAvailableRecipients = goog.array.map(
+        this.contacts_,
+        function(p) {
+          // map the object to a string
+          var uid = p.firstname + ' <' + p.email + '>';
+
+          // replace email only recipients with uid
+          goog.array.some(intendedRecipients, function(email, i) {
+            if (email == p.email) {
+              intendedRecipients[i] = uid;
+              return true;
+            }
+            return false;
+          });
+
+          return uid;
+        });
+
+    // @yahoo add the sender as one of the available recipients too
+    this.defaultSender_ && allAvailableRecipients.push(this.defaultSender_);
+
+    // var recipientsEmailMap =
+    //     this.getRecipientsEmailMap_(allAvailableRecipients);
+    // goog.array.forEach(providedRecipients, function(recipient) {
+    //   if (recipientsEmailMap.hasOwnProperty(recipient)) {
+    //     goog.array.extend(intendedRecipients,
+    //       recipientsEmailMap[recipient]);
+    //   }
+    // });
+    this.chipHolder_ = new panels.ChipHolder(
+        intendedRecipients, allAvailableRecipients,
+        goog.bind(this.renderEncryptionPassphraseDialog_, this),
+        // @yahoo enhanced ChipHolder with dynamic validation
+        goog.bind(this.hasUnsupportedRecipients_, this));
+    this.addChild(this.chipHolder_, false);
+    this.chipHolder_.decorate(
+        goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
+    resolve();
   }, this);
 };
 
@@ -603,7 +613,10 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
 ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin,
     opt_encrypted) {
   var textArea = this.getElement().querySelector('textarea');
-  var recipients = this.chipHolder_.getSelectedUids();
+  // @yahoo recipients can be broken down as object of name and email
+  // var recipients = this.chipHolder_.getSelectedUids();
+  var recipients = utils.text.uidsToObjects(
+                       this.chipHolder_.getSelectedUids());
   var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
       goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
   // @yahoo not using prompt here

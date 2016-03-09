@@ -17,20 +17,19 @@
 /**
  * @fileoverview Bootstraps the compose glass.
  */
+goog.provide('e2e.ext.ui.glass.compose.bootstrap');
 
 goog.require('e2e.ext.ui.ComposeGlass');
 goog.require('e2e.ext.utils.text');
 
-goog.provide('e2e.ext.ui.glass.compose.bootstrap');
-
 
 var initComposeGlass = function(evt) {
-  window.removeEventListener('message', initComposeGlass);
   if (!e2e.ext.utils.text.isYmailOrigin(evt.origin)) {
     return false;
   }
+  window.removeEventListener('message', initComposeGlass);
+
   var data = evt.data;
-  data.draft = data.draft || null;
   if (!data.draft || !data.hash) {
     return;
   }
@@ -40,9 +39,8 @@ var initComposeGlass = function(evt) {
     data.draft.subject = '';
   }
   /** @type {!e2e.ext.ui.ComposeGlass} */
-  window.composeGlass = new e2e.ext.ui.ComposeGlass(data.draft,
-                                                    evt.origin,
-                                                    data.hash);
+  window.composeGlass = new e2e.ext.ui.ComposeGlass(
+      data.draft, evt.origin, data.hash);
   window.composeGlass.decorate(document.documentElement);
 };
 window.addEventListener('message', initComposeGlass);
