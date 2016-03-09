@@ -193,23 +193,24 @@ goog.inherits(e2e.ext.utils.TabsHelperProxy, e2e.ext.utils.HelperProxy);
 /** @override */
 e2e.ext.utils.TabsHelperProxy.prototype.setupConnection = function(
     callback, errorCallback) {
-  if (goog.isDefAndNotNull(this.tabId_)) {
+  // @yahoo always talk to the active tab
+  // if (goog.isDefAndNotNull(this.tabId_)) {
+  //   this.connectToHelper_(callback, errorCallback);
+  // } else {
+  // Query active tab.
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, goog.bind(function(tabs) {
+    if (!tabs || tabs.length !== 1) {
+      errorCallback(new Error('Cannot determine the active tab.'));
+      return;
+    }
+    var tabId = tabs[0] ? tabs[0].id : undefined;
+    this.tabId_ = tabId;
     this.connectToHelper_(callback, errorCallback);
-  } else {
-    // Query active tab.
-    chrome.tabs.query({
-      active: true,
-      currentWindow: true
-    }, goog.bind(function(tabs) {
-      if (!tabs || tabs.length !== 1) {
-        errorCallback(new Error('Cannot determine the active tab.'));
-        return;
-      }
-      var tabId = tabs[0] ? tabs[0].id : undefined;
-      this.tabId_ = tabId;
-      this.connectToHelper_(callback, errorCallback);
-    }, this));
-  }
+  }, this));
+  // }
 };
 
 
