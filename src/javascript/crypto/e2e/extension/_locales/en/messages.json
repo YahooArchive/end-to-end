@@ -36,7 +36,7 @@
     "description": "A friendly title for the encrypt&sign action."
   },
   "promptEncryptSignActionLabel": {
-    "message": "Send protected message",
+    "message": "Send",
     "description": "A verb prompting the user to encrypt and/or sign a message."
   },
   "promptEncryptSignInsertLabel": {

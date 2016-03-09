@@ -146,7 +146,8 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
       chrome.i18n.getMessage('promptRestoreToNormalComposeLabel')).
       replace('\n', '<br>').
       replace(/#restore#([^#]*)#/,
-          '<label for="' + constants.ElementId.BACK_BUTTON + '">$1</label>');
+          '<label for="' + constants.ElementId.RESTORE_BUTTON +
+          '">$1</label>');
 
   // @yahoo
   soy.renderElement(elem, templates.renderEncrypt, {
@@ -203,7 +204,7 @@ ui.ComposeGlass.prototype.populateUi_ = function() {
 /** @override */
 ui.ComposeGlass.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
-  // var origin = this.getContent().origin;
+  var origin = this.getContent().origin;
 
   this.populateUi_();
 
@@ -234,11 +235,17 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   //       goog.partial(this.insertMessageIntoPage_, origin));
   // }
 
-  //@yahoo has a back button
+  //@yahoo has a hidden back button
   this.getHandler().listen(
       goog.dom.getElement(constants.ElementId.BACK_BUTTON),
       goog.events.EventType.CLICK,
       goog.bind(this.close, this));
+
+  //@yahoo has a hidden restore button
+  this.getHandler().listen(
+      goog.dom.getElement(constants.ElementId.RESTORE_BUTTON),
+      goog.events.EventType.CLICK,
+      goog.partial(this.savePlaintextDraft_, origin, false));
 };
 
 
@@ -556,7 +563,7 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
     // }
 
     // @yahoo proceed injecting the content
-    this.insertMessageIntoPage_(origin, encrypted);
+    this.insertMessageIntoPage_(origin);
 
 
   }, this), goog.bind(this.displayFailure_, this));
@@ -605,13 +612,10 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
 
 /**
  * Inserts the encrypted content into the page and sends it.
- * //@yahoo added opt_encrypted to override the text to be inserted
  * @param {string} origin The web origin for which the PGP action is performed.
- * @param {string=} opt_encrypted The encrypted text to insert into the page.
  * @private
  */
-ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin,
-    opt_encrypted) {
+ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
   var textArea = this.getElement().querySelector('textarea');
   // @yahoo recipients can be broken down as object of name and email
   // var recipients = this.chipHolder_.getSelectedUids();
@@ -633,8 +637,7 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin,
         constants.Actions.SET_AND_SEND_DRAFT :
         constants.Actions.SET_DRAFT,
     content: /** @type {messages.BridgeMessageResponse} */ ({
-      // @yahoo override the text to insert if opt_encrypted is provided
-      value: opt_encrypted || textArea.value || content.value,
+      value: textArea.value || content.value,
       response: true,
       detach: true,
       origin: origin,
@@ -648,7 +651,44 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin,
 };
 
 
+
 // @yahoo the following are all yahoo-specific
+
+/**
+ * Leaves the current draft unencrypted and persists it into the web 
+ * application that the user is interacting with.
+ * @param {string} origin The web origin where the message was created.
+ * @param {goog.events.Event} evt The event that triggers the saving of the
+ *     draft.
+ * @private
+ */
+ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
+  // TODO: add a warning with mute option
+  
+  var formText = /** @type {HTMLTextAreaElement} */
+      (this.getElement().querySelector('textarea'));
+  var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
+      goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
+  var signer = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
+  var recipients = utils.text.uidsToObjects(
+                       this.chipHolder_.getSelectedUids());
+  
+  // @yahoo used sendProxyRequest instead of HelperProxy.updateSelectedContent
+  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
+    action: constants.Actions.SET_DRAFT,
+    content: /** @type {messages.BridgeMessageResponse} */ ({
+      value: formText.value,
+      response: true,
+      detach: true,
+      origin: origin,
+      recipients: recipients,
+      subject: subject,
+      from: signer
+    })
+  }));
+  // @yahoo close the compose glass
+  this.close();
+};
 
 
 /**
