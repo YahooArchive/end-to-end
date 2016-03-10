@@ -419,7 +419,7 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
   if (window) {
     var reposition = function() {
       textArea.style.height = (window.innerHeight -
-          goog.style.getPosition(textArea).y - 66) + 'px';
+          goog.style.getPosition(textArea).y - 65) + 'px';
     };
     goog.events.listen(window, goog.events.EventType.RESIZE, reposition);
     reposition();

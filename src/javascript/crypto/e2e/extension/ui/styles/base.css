@@ -30,8 +30,8 @@ body {
 
 button {
   box-sizing: border-box;
-  height: 34px;
-  line-height: 32px;
+  height: 32px;
+  line-height: 30px;
   padding: 0 25px;
   background-color: BTN_PRIMARY;
   color: BTN_PRIMARY_TEXT;
@@ -40,7 +40,7 @@ button {
   font-weight: 400;
   border: 2px solid transparent;
   cursor: pointer;
-  margin: 16px 15px 16px 0;
+  margin: 15px 15px 15px 0;
   font-size: 13px;
   outline: none;
 }

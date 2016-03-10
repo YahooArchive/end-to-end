@@ -16,9 +16,13 @@
  * Defines the extra styles for the compose glass UI, based on prompt.css
  */
 
- html {
+html {
   overflow: hidden
  }
+
+body {
+  font-size: .85em;
+}
 
 .pgpHead {
   display: none;
@@ -29,7 +33,7 @@
 }
 
 button {
-  margin: 16px 15px 16px 0;
+  margin: 15px 15px 17px 0;
 }
 
 #errorDiv {
@@ -41,8 +45,12 @@ button {
   cursor: text;
 }
 
-#pgpSignerSelect, #pgpKeySelect input, #subjectHolder input, textarea {
-  font-size: .85rem;
+#fromHolder, #chipHolder, #pgpSignerSelect, #pgpKeySelect input, #subjectHolder input {
+  font-size: 13px;
+}
+
+textarea {
+  font-size: 15px;
 }
 
 #fromHolder, #chipHolder {
@@ -56,27 +64,29 @@ button {
   margin-top: 12px;
 }
 
-#pgpKeySelect>.uid-chips {
-  padding: 2px 0;
+#pgpKeySelect > .uid-chips {
+  padding: 0;
 }
 
 #pgpKeySelect > .uid-chips > div {
   border: 0;
   background: inherit;
-  padding: 2px 4px;
+  padding: 0 4px;
+  margin: 0;
+  margin-right: 4px;
 }
 #pgpKeySelect>.uid-chips>.uid-bad-chip {
   background: inherit;
   color: #f44444;
 }
 #pgpKeySelect>.uid-chips>input {
-  margin: 6px;
+  margin: 4px 0 5px 10px;
   height: inherit;
 }
 
 #subjectHolder #subject {
   width: 100%;
-  padding: 8px 28px
+  padding: 4px 28px 5px 28px;
 }
 
 #fromHolder > div:first-child,
@@ -88,7 +98,7 @@ button {
 
 
 #pgpKeySelect > .uid-chips > span {
-  margin-right: 10px;
+  margin-right: 2px;
 }
 
 textarea {
@@ -109,7 +119,7 @@ textarea {
 
 .passphraseEncryptionLink {
   font-size: .75rem;
-  margin-top: 13px;
+  margin-top: 9px;
 }
 
 .passphraseEncryptionLink:hover {
@@ -121,13 +131,14 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-bottom: 3px;
 }
 
 .pgpActions>div {
   display: inline;
   position: absolute;
-  font-size: .9em;
-  margin-top: 18px;
+  font-size: .95em;
+  margin-top: 15px;
   opacity: .7
 }
 

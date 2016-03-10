@@ -98,7 +98,7 @@ panels.Chip.prototype.decorateInternal = function(elem) {
   if (email && email !== displayValue) {
     // just in case everything is removed, use displayValue
     data.opt_name = displayValue.replace(new RegExp(
-                          ' ?<' + email + '>'), '') || displayValue;
+                            ' ?<' + email + '>'), '') || displayValue;
   }
   soy.renderElement(elem, templates.renderChip, data);
 };
