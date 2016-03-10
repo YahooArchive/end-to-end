@@ -280,22 +280,12 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
         this.contacts_,
         function(p) {
           // map the object to a string
-          var uid = p.firstname + ' <' + p.email + '>';
-
-          // replace email only recipients with uid
-          goog.array.some(intendedRecipients, function(email, i) {
-            if (email == p.email) {
-              intendedRecipients[i] = uid;
-              return true;
-            }
-            return false;
-          });
-
-          return uid;
+          return (p.firstname || p.email) + ' <' + p.email + '>';
         });
 
     // @yahoo add the sender as one of the available recipients too
-    this.defaultSender_ && allAvailableRecipients.push(this.defaultSender_);
+    this.defaultSender_ && allAvailableRecipients.push(
+        this.defaultSender_ + ' <' + this.defaultSender_ + '>');
 
     // var recipientsEmailMap =
     //     this.getRecipientsEmailMap_(allAvailableRecipients);
@@ -349,7 +339,7 @@ ui.ComposeGlass.prototype.renderSigningKeys_ = function() {
       }
 
       // @yahoo Set the Signer/Sender field with the correct uid
-      var selectedIndex = 0;
+      var selectedIndex = 0, senderMatched = false;
       goog.array.forEach(availableSigningKeys, function(key, i) {
         var keyElem = document.createElement('option');
         keyElem.textContent = key;
@@ -360,15 +350,18 @@ ui.ComposeGlass.prototype.renderSigningKeys_ = function() {
             goog.string.contains(key.toLowerCase(), this.defaultSender_)) {
           selectedIndex = i;
           keyElem.selected = 'selected';
-
-          // only one sender is present and is selected, then hide sender UI
-          if (availableSigningKeys.length === 1) {
-            goog.style.setElementShown(
-                goog.dom.getElement(constants.ElementId.FROM_HOLDER),
-                false);
-          }
+          senderMatched = true;
         }
       }, this);
+
+      // @yahoo display sender selection if there's a choice,
+      //        or it's different from the mail default
+      if (availableSigningKeys.length > 1 || !senderMatched) {
+        goog.style.setElementShown(
+            goog.dom.getElement(constants.ElementId.FROM_HOLDER),
+            true);
+      }
+
       resolve();
     }, this), goog.bind(function(error) {
       this.errorCallback_(error);
