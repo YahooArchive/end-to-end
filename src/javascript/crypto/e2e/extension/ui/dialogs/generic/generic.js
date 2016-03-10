@@ -210,6 +210,14 @@ dialogs.Generic.prototype.enterDocument = function() {
         this.getElementByClass(constants.CssClass.CANCEL),
         goog.events.EventType.CLICK,
         goog.partial(this.invokeCallback, true));
+
+    // @yahoo added Escape as the cancel shortcut key
+    this.keyboardEscHandler_ = new goog.ui.KeyboardShortcutHandler(parentElem);
+    this.keyboardEscHandler_.registerShortcut('esc', goog.events.KeyCodes.ESC);
+    this.getHandler().listenOnce(
+        this.keyboardEscHandler_,
+        goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
+        goog.partial(this.invokeCallback, true));
   }
 };
 
