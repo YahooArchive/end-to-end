@@ -27,6 +27,7 @@ goog.require('goog.array');
 goog.require('goog.crypt.base64');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
+goog.require('goog.events.EventType'); //@yahoo
 goog.require('goog.style');
 
 goog.scope(function() {
@@ -233,6 +234,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
 
 /**
  * Removes compose glass
+ * @suppress {checkVars}
  */
 ui.ComposeGlassWrapper.prototype.removeGlass = function() {
   this.targetElem_.composeGlass = undefined;
@@ -245,6 +247,9 @@ ui.ComposeGlassWrapper.prototype.removeGlass = function() {
       elem.removeAttribute('hidden_by_compose_glass');
     }
   });
-  // TODO: trigger resize event for targetElem_
+  // trigger YMail's compose to resize, i.e., blur event for To recipients
+  var toElem = this.targetElem_.querySelector('input.cm-to-field');
+  toElem && FocusEvent && toElem.dispatchEvent(
+      new FocusEvent(goog.events.EventType.BLUR));
 };
 });  // goog.scope
