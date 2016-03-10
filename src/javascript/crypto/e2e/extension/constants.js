@@ -161,6 +161,7 @@ e2e.ext.constants.ElementId = {
   CHECK_ICON: 'check-icon',
   BACK_BUTTON: 'back-button',
   RESTORE_BUTTON: 'restore-button', //@yahoo
+  ADD_PASSPHRASE_BUTTON: 'add-passphrase-button', //@yahoo
 
   // Website container
   WEBVIEW: 'webview',

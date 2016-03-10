@@ -454,7 +454,7 @@
     "description": "Message asking user to confirm closing the compose glass"
   },
   "composeGlassConfirmRecipients": {
-    "message": "The following recipients are missing encryption keys:",
+    "message": "Unsupported Recipients\n\n#recipients# do not have keys for now.\n\n#add#Add a per-message passphrase# for encryption first (TODO: plus a tooltip to guide them through the installation of the Yahoo Mail Encryption Extension), you'll contact them separately for the chosen passphrase (e.g., by a phone call).",
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassRemoveRecipients": {
@@ -462,7 +462,7 @@
     "description": "Ask user to remove recipients."
   },
   "composeGlassSendUnencryptedMessage": {
-    "message": "Send unencrypted message",
+    "message": "Send in plaintext",
     "description": "Ask user to send the message unencrypted."
   },
   "keyserverFetchError": {

@@ -44,6 +44,7 @@ goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
 goog.require('goog.style');
+goog.require('goog.ui.KeyboardShortcutHandler'); //@yahoo
 goog.require('goog.userAgent'); //@yahoo
 goog.require('soy');
 
@@ -214,10 +215,18 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       goog.events.EventType.CLICK,
       goog.bind(this.keyMissingWarningThenEncryptSign_, this));
 
-  //@yahoo added shortcut keys
+  // @yahoo added Ctrl+enter and Command+enter shortcut to Send
+  var elem = this.getElement(),
+      sHandler = goog.ui.KeyboardShortcutHandler;
+  this.keyboardSendHandler_ = new goog.ui.KeyboardShortcutHandler(elem);
+  // pressed Cmd + Enter in Mac or Ctrl + Enter otherwise
+  this.keyboardSendHandler_.registerShortcut(
+      'send',
+      goog.events.KeyCodes.ENTER,
+      goog.userAgent.MAC ? sHandler.Modifiers.META : sHandler.Modifiers.CTRL);
   this.getHandler().listen(
-      this.keyHandler_,
-      goog.events.KeyHandler.EventType.KEY,
+      this.keyboardSendHandler_,
+      sHandler.EventType.SHORTCUT_TRIGGERED,
       goog.bind(this.handleKeyEvent_, this));
 
   //@yahoo canSaveDraft is false, as we lack the button
@@ -246,20 +255,27 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       goog.dom.getElement(constants.ElementId.RESTORE_BUTTON),
       goog.events.EventType.CLICK,
       goog.partial(this.savePlaintextDraft_, origin, false));
+
+  //@yahoo has a hidden add passphrase button
+  this.getHandler().listen(
+      goog.dom.getElement(constants.ElementId.ADD_PASSPHRASE_BUTTON),
+      goog.events.EventType.CLICK,
+      goog.bind(function() {
+        // close the keyMissingDialog if it's there
+        this.keyMissingDialog_ && this.keyMissingDialog_.invokeCallback(true);
+        this.renderEncryptionPassphraseDialog_();
+      }, this));
 };
 
 
 /**
  * Handles keyboard events for shortcut keys //@yahoo
- * @param {goog.events.KeyEvent} evt The keyboard event to handle.
  * @private
  */
-ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
-  // pressed Cmd + Enter in Mac or Ctrl + Enter otherwise
-  if ((goog.userAgent.MAC ? evt.metaKey : evt.ctrlKey) &&
-      evt.keyCode === goog.events.KeyCodes.ENTER) {
-    this.keyMissingWarningThenEncryptSign_();
-  }
+ui.ComposeGlass.prototype.handleKeyEvent_ = function() {
+  this.keyMissingDialog_ ?
+      this.keyMissingDialog_.invokeCallback(false) : // click Send Unencrypted
+      this.keyMissingWarningThenEncryptSign_();
 };
 
 
@@ -647,8 +663,9 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
 
 // @yahoo the following are all yahoo-specific
 
+
 /**
- * Leaves the current draft unencrypted and persists it into the web 
+ * Leaves the current draft unencrypted and persists it into the web
  * application that the user is interacting with.
  * @param {string} origin The web origin where the message was created.
  * @param {goog.events.Event} evt The event that triggers the saving of the
@@ -657,7 +674,7 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
  */
 ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
   // TODO: add a warning with mute option
-  
+
   var formText = /** @type {HTMLTextAreaElement} */
       (this.getElement().querySelector('textarea'));
   var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
@@ -665,7 +682,7 @@ ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
   var signer = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
   var recipients = utils.text.uidsToObjects(
                        this.chipHolder_.getSelectedUids());
-  
+
   // @yahoo used sendProxyRequest instead of HelperProxy.updateSelectedContent
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
     action: constants.Actions.SET_DRAFT,
@@ -783,6 +800,12 @@ ui.ComposeGlass.prototype.close = function() {
  * @private
  */
 ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
+  // prevent opening the same dialog twice
+  if (this.keyMissingDialogTriggered_) {
+    return;
+  }
+  this.keyMissingDialogTriggered_ = true;
+
   // given no chipholder or there exists a session passphrase
   if (!this.chipHolder_ ||
       this.chipHolder_.getProvidedPassphrases().length > 0) {
@@ -803,40 +826,51 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
         if (invalidRecipients.length === 0) {
           this.encryptSign_();
         } else {
+          var recipientString = goog.array.map(
+              utils.text.uidsToObjects(invalidRecipients),
+              function(p) {
+                return '<span title="' + p.email.replace(/"/g, '&quot;') +
+                        '">' + p.name.replace(/</g, '&lt;') + '</span>';
+              }).join(', ');
+
           // Show dialog asking user to remove recipients without keys
-          var message = goog.array.concat(
-              chrome.i18n.getMessage('composeGlassConfirmRecipients'),
-              invalidRecipients).join('\n');
+          var msg = chrome.i18n.getMessage('composeGlassConfirmRecipients').
+              replace('\n', '<br>').
+              replace('#recipients#', recipientString).
+              replace(/#add#([^#]*)#/,
+                  '<label for="' + constants.ElementId.ADD_PASSPHRASE_BUTTON +
+                  '">$1</label>');
 
-          var dialog = new ui.dialogs.Generic(message, goog.bind(
-          function(result) {
-            // close the warning
-            goog.dispose(dialog);
-            goog.dom.classlist.remove(this.getElement(),
-                                      constants.CssClass.UNCLICKABLE);
-            // User clicked ok to 'send unencrypted message'
-            if (typeof result !== 'undefined') {
+          var dialog = this.keyMissingDialog_ = new ui.dialogs.Generic(
+              soydata.VERY_UNSAFE.ordainSanitizedHtml(msg),
+              goog.bind(function(result) {
+                this.keyMissingDialogTriggered_ = false;
+                this.keyMissingDialog_ = null;
+                // close the warning
+                goog.dispose(dialog);
+                goog.dom.classlist.remove(this.getElement(),
+                                          constants.CssClass.UNCLICKABLE);
+                // User clicked ok to 'send unencrypted message'
+                if (typeof result !== 'undefined') {
 
-              // disable signing the message
-              var signerCheck = goog.dom.getElement(
-                      constants.ElementId.SIGN_MESSAGE_CHECK);
-              signerCheck && (signerCheck.checked = 'checked');
+                  // disable signing the message
+                  var signerCheck = goog.dom.getElement(
+                          constants.ElementId.SIGN_MESSAGE_CHECK);
+                  signerCheck && (signerCheck.checked = 'checked');
 
-              this.insertMessageIntoPage_(this.getContent().origin);
-            }
-            // User clicked 'provide a passphrase'
-            else {
-              this.renderEncryptionPassphraseDialog_();
-            }
-          }, this), ui.dialogs.InputType.NONE, undefined,
-          chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'),
-          chrome.i18n.getMessage('promptEncryptionPassphraseLink'));
+                  this.insertMessageIntoPage_(this.getContent().origin);
+                }
+              }, this),
+              ui.dialogs.InputType.NONE,
+              undefined,
+              chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'),
+              chrome.i18n.getMessage('actionCancelPgpAction'));
 
           this.renderDialog(dialog);
 
           // Set the background element to be unclickable.
           goog.dom.classlist.add(this.getElement(),
-          constants.CssClass.UNCLICKABLE);
+              constants.CssClass.UNCLICKABLE);
         }
       }, this.displayFailure_, this);
 };
