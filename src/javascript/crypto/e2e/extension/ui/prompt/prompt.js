@@ -163,7 +163,7 @@ ui.Prompt.prototype.processSelectedContent_ =
     case constants.Actions.CONFIGURE_EXTENSION:
       chrome.tabs.create({
         url: 'settings.html',
-        active: false
+        active: true
       }, goog.nullFunction);
       break;
     case constants.Actions.LOCK_KEYRING:
