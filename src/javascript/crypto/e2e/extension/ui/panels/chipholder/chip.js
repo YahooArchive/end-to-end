@@ -91,15 +91,16 @@ panels.Chip.prototype.decorateInternal = function(elem) {
   //   value: displayValue
   // });
 
-  // @yahoo shows the name with uid as title if an email is there
+  // @yahoo shows the name and hide uid as title if an email is there
   displayValue = goog.string.collapseWhitespace(displayValue);
   var email = e2e.ext.utils.text.extractValidEmail(displayValue);
   var data = {value: displayValue};
   if (email && email !== displayValue) {
     // just in case everything is removed, use displayValue
-    data.opt_name = displayValue.replace(new RegExp(
-                            ' ?<' + email + '>'), '') || displayValue;
+    data.opt_name = goog.string.trimRight(
+        displayValue.replace('<' + email + '>', '')) || displayValue;
   }
+
   soy.renderElement(elem, templates.renderChip, data);
 };
 

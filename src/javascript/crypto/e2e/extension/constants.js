@@ -105,6 +105,7 @@ e2e.ext.constants.ElementId = {
   ERROR_DIV: 'errorDiv',
   CALLBACK_DIALOG: 'callbackDialog',
   CHIP_HOLDER: 'chipHolder',
+  CC_CHIP_HOLDER: 'ccChipHolder', //@yahoo
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
   FROM_HOLDER: 'fromHolder',
   FROM_LABEL: 'fromLabel',

@@ -634,7 +634,8 @@ e2ebind.setDraft = function(args) {
       /** @type {messages.e2ebindDraft} */ ({
         to: args.to || [],
         cc: args.cc || [],
-        bcc: args.bcc || [],
+        bcc: [],
+        // bcc: args.bcc || [], //pgp doesn't support bcc
         subject: args.subject || '',
         body: args.body || ''
       }),

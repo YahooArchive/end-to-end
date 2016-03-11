@@ -37,10 +37,11 @@ var messages = e2e.ext.messages;
 
 /**
  * The message type passed from a content script to the extension when a bridge
- * port is used.
+ * port is used. //@yahoo added ccRecipients
  * @typedef {{
  *   selection: string,
  *   recipients: Array.<string>,
+ *   ccRecipients: Array.<string>,
  *   action: (e2e.ext.constants.Actions|undefined),
  *   request: boolean,
  *   origin: string,

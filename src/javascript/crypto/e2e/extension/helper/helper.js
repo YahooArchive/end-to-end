@@ -159,6 +159,7 @@ ext.Helper.prototype.setE2ebindValue_ = function(msg, sendResponse) {
     e2ebind.setDraft({
       send: msg.send,
       to: msg.recipients,
+      cc: msg.ccRecipients,
       body: msg.value,
       subject: msg.subject,
       from: msg.from

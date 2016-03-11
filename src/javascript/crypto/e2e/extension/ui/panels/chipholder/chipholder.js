@@ -52,7 +52,7 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  *     selected.
  * @param {!Array.<string>} allUids All UIDs that are available for selection.
  * @param {Function} renderEncryptionPassphraseCallback Callback for rendering
- *     an encryption passphrase dialog.
+ *     an encryption passphrase dialog. //@yahoo pass null to disable.
  * @param {function(string):e2e.async.Result.<boolean>=} opt_badChipCallback
  *     Callback for checking if a chipValue has to be marked as bad. If
  *     unspecified, mark those not included in allUids as bad.
@@ -135,13 +135,20 @@ panels.ChipHolder.prototype.decorateInternal = function(elem) {
   this.setElementInternal(elem);
   this.keyHandler_ = new goog.events.KeyHandler(elem, true);
 
-  soy.renderElement(elem, templates.renderChipHolder, {
-    recipientsTitle: chrome.i18n.getMessage('promptRecipientsPlaceholder'),
-    passphraseEncryptionLinkTitle: chrome.i18n.getMessage(
-        'promptEncryptionPassphraseLink'),
-    passphraseEncryptionLinkTooltip: chrome.i18n.getMessage(
-        'promptEncryptionPassphraseLinkTooltip')
-  });
+  // @yahoo ccRecipients do not have renderEncryptionPassphraseCallback_
+  if (this.renderEncryptionPassphraseCallback_) {
+    soy.renderElement(elem, templates.renderChipHolder, {
+      recipientsTitle: chrome.i18n.getMessage('promptRecipientsPlaceholder'),
+      passphraseEncryptionLinkTitle: chrome.i18n.getMessage(
+          'promptEncryptionPassphraseLink'),
+      passphraseEncryptionLinkTooltip: chrome.i18n.getMessage(
+          'promptEncryptionPassphraseLinkTooltip')
+    });
+  } else {
+    soy.renderElement(elem, templates.renderChipHolder, {
+      recipientsTitle: chrome.i18n.getMessage('promptCCRecipientsPlaceholder')
+    });
+  }
 
   this.shadowInputElem_ = elem.querySelector('input');
 };
@@ -219,9 +226,12 @@ panels.ChipHolder.prototype.enterDocument = function() {
       goog.events.KeyHandler.EventType.KEY,
       this.handleKeyEvent_);
 
-  this.getHandler().listen(
-      this.getElementByClass(constants.CssClass.PASSPHRASE_ENCRYPTION_LINK),
-      goog.events.EventType.CLICK, this.renderEncryptionPassphraseCallback_);
+  // @yahoo ccRecipients do not have renderEncryptionPassphraseCallback_
+  if (this.renderEncryptionPassphraseCallback_) {
+    this.getHandler().listen(
+        this.getElementByClass(constants.CssClass.PASSPHRASE_ENCRYPTION_LINK),
+        goog.events.EventType.CLICK, this.renderEncryptionPassphraseCallback_);
+  }
 };
 
 
@@ -389,10 +399,13 @@ panels.ChipHolder.prototype.lock = function() {
     chip.lock();
   });
   goog.dom.classlist.add(this.shadowInputElem_, constants.CssClass.INVISIBLE);
-  var passphraseEncryptionLink = this.getElementByClass(
-      constants.CssClass.PASSPHRASE_ENCRYPTION_LINK);
-  goog.dom.classlist.add(
-      passphraseEncryptionLink, constants.CssClass.INVISIBLE);
+  // @yahoo ccRecipients do not have renderEncryptionPassphraseCallback_
+  if (this.renderEncryptionPassphraseCallback_) {
+    var passphraseEncryptionLink = this.getElementByClass(
+        constants.CssClass.PASSPHRASE_ENCRYPTION_LINK);
+    goog.dom.classlist.add(
+        passphraseEncryptionLink, constants.CssClass.INVISIBLE);
+  }
 };
 
 

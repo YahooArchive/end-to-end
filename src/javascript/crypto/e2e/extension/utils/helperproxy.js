@@ -94,17 +94,19 @@ e2e.ext.utils.HelperProxy.prototype.getSelectedContent = function(callback,
  *     encountered.
  * @param {string=} opt_subject The subject of the message if applicable.
  * @param {string=} opt_from The sender of the message if applicable. //@yahoo
+ * @param {Array.<string>=} opt_ccRecipients The CC of the message. //@yahoo
  * @export
  */
 e2e.ext.utils.HelperProxy.prototype.updateSelectedContent =
     function(content, recipients, origin, shouldSend, callback,
-    errorCallback, opt_subject, opt_from) {
+    errorCallback, opt_subject, opt_from, opt_ccRecipients) {
   this.sendMessage({ // @yahoo use sendMessage() instead of sendMessage_()
     value: content,
     response: true,
     send: shouldSend,
     origin: origin,
     recipients: recipients,
+    ccRecipients: opt_ccRecipients || [],
     subject: opt_subject,
     from: opt_from
   }, callback, errorCallback);

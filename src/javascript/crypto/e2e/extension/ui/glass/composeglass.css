@@ -45,7 +45,7 @@ button {
   cursor: text;
 }
 
-#fromHolder, #chipHolder, #pgpSignerSelect, #pgpKeySelect input, #subjectHolder input {
+#fromHolder, #chipHolder, #ccChipHolder, #pgpSignerSelect, #pgpKeySelect input, #subjectHolder input {
   font-size: 13px;
 }
 
@@ -53,7 +53,14 @@ textarea {
   font-size: 15px;
 }
 
-#fromHolder, #chipHolder {
+#chipHolder, #ccChipHolder, #fromHolder, #subjectHolder {
+  border-bottom: 1px solid #cfcfcf;
+  color: #777;
+  line-height: 18px;
+  margin-bottom: 0;
+}
+
+#fromHolder, #chipHolder, #ccChipHolder {
   padding: 0;
   margin: 2px 28px;
   min-height: 26px;
@@ -65,7 +72,7 @@ textarea {
 }
 
 #pgpKeySelect > .uid-chips {
-  padding: 0;
+  padding: 0 160px 0 16px;
 }
 
 #pgpKeySelect > .uid-chips > div {
@@ -80,7 +87,7 @@ textarea {
   color: #f44444;
 }
 #pgpKeySelect>.uid-chips>input {
-  margin: 4px 0 5px 10px;
+  margin: 4px 0 5px 4px;
   height: inherit;
 }
 
@@ -91,14 +98,12 @@ textarea {
 
 #fromHolder > div:first-child,
 #subjectHolder > div:first-child,
-#subjectHolder > input,
-#pgpKeySelect > .uid-chips > span {
+#subjectHolder > input {
   margin-left: 0;
 }
 
-
 #pgpKeySelect > .uid-chips > span {
-  margin-right: 2px;
+  margin: 0 2px 0 -16px;
 }
 
 textarea {
@@ -119,7 +124,8 @@ textarea {
 
 .passphraseEncryptionLink {
   font-size: .75rem;
-  margin-top: 9px;
+  padding: 0;
+  margin: 9px 0 -24px;
 }
 
 .passphraseEncryptionLink:hover {

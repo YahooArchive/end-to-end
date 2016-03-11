@@ -285,6 +285,10 @@
     "message": "To",
     "description": "A phrase to prompt the user to enter the intended recipients of the message."
   },
+  "promptCCRecipientsPlaceholder": {
+    "message": "CC",
+    "description": "A phrase to prompt the user to enter the intended CC recipients of the message."
+  },
   "promptPassphraseEncrypt": {
     "message": "Type the passphrase to your key to sign this message",
     "description": "A sentence to prompt the user to type her passphrase during message signing."

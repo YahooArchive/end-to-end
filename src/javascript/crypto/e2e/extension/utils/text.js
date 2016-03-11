@@ -141,7 +141,10 @@ utils.uidsToObjects = function(uids) {
   return goog.array.map(uids, function(uid) {
     var email = utils.extractValidEmail(goog.string.collapseWhitespace(uid));
     return email && email !== uid ?
-        {name: uid.replace(email, '').replace(' <>', ''), email: email} :
+        {
+          name: goog.string.trimRight(uid.replace('<' + email + '>', '')),
+          email: email
+        } :
         {name: uid, email: uid};
   });
 };

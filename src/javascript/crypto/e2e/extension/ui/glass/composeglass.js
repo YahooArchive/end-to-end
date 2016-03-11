@@ -71,7 +71,8 @@ var dialogs = e2e.ext.ui.dialogs;
 ui.ComposeGlass = function(draft, origin, hash) {
   var content = /** @type {!messages.BridgeMessageRequest} */ ({
     selection: draft.body,
-    recipients: draft.to.concat(draft.cc || []).concat(draft.bcc || []),
+    recipients: draft.to || [],
+    ccRecipients: [].concat(draft.cc || [], draft.bcc || []),
     action: constants.Actions.ENCRYPT_SIGN,
     request: true,
     origin: origin,
@@ -98,6 +99,13 @@ ui.ComposeGlass = function(draft, origin, hash) {
    * @private
    */
   this.chipHolder_ = null;
+
+  /**
+   * A holder for the intended cc recipients of a PGP message.
+   * @type {panels.ChipHolder}
+   * @private
+   */
+  this.ccChipHolder_ = null;
 
   /**
    * Hash to uniquely identify this compose glass instance.
@@ -288,8 +296,6 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function() {
 ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
   return new goog.Promise(function(resolve, reject) {
 
-    var intendedRecipients = this.getContent().recipients || [];
-
     // @yahoo collect all available recipients from contact list instead
     // var allAvailableRecipients = goog.object.getKeys(searchResult);
     var allAvailableRecipients = goog.array.map(
@@ -312,13 +318,23 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
     //   }
     // });
     this.chipHolder_ = new panels.ChipHolder(
-        intendedRecipients, allAvailableRecipients,
+        this.getContent().recipients, allAvailableRecipients,
         goog.bind(this.renderEncryptionPassphraseDialog_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
         goog.bind(this.hasUnsupportedRecipients_, this));
     this.addChild(this.chipHolder_, false);
     this.chipHolder_.decorate(
         goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
+
+    // @yahoo added cc recipients
+    this.ccChipHolder_ = new panels.ChipHolder(
+        this.getContent().ccRecipients, allAvailableRecipients,
+        null,
+        // @yahoo enhanced ChipHolder with dynamic validation
+        goog.bind(this.hasUnsupportedRecipients_, this));
+    this.addChild(this.ccChipHolder_, false);
+    this.ccChipHolder_.decorate(
+        goog.dom.getElement(constants.ElementId.CC_CHIP_HOLDER));
     resolve();
   }, this);
 };
@@ -425,9 +441,11 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
     reposition();
   }
 
-  if (this.chipHolder_.hasChildren()) {
+  // @yahoo added ccChipHolder
+  if (this.chipHolder_.hasChildren() || this.ccChipHolder_.hasChildren()) {
     // Double focus() workarounds a bug that prevents the caret from being
     // displayed in Chrome if setSelectionRange() is used.
+    textArea.focus();
     textArea.focus();
   }
 };
@@ -550,6 +568,12 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
     request.encryptPassphrases = this.chipHolder_.getProvidedPassphrases();
   }
 
+  // @yahoo added ccChipHolder
+  if (this.ccChipHolder_ && this.ccChipHolder_.hasChildren()) {
+    request.recipients = request.recipients.concat(
+        this.ccChipHolder_.getSelectedUids());
+  }
+
   var signerCheck = goog.dom.getElement(constants.ElementId.SIGN_MESSAGE_CHECK);
   request.signMessage = signerCheck && signerCheck.checked;
 
@@ -560,6 +584,8 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
     textArea.disabled = true;
     textArea.value = encrypted;
     this.chipHolder_.lock();
+    // @yahoo added ccChipHolder
+    this.ccChipHolder_.lock();
     var signCheckbox = goog.dom.getElement(
         constants.ElementId.SIGN_MESSAGE_CHECK);
     signCheckbox.disabled = true;
@@ -630,6 +656,9 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
   // var recipients = this.chipHolder_.getSelectedUids();
   var recipients = utils.text.uidsToObjects(
                        this.chipHolder_.getSelectedUids());
+  //@yahoo added ccChipHolder
+  var ccRecipients = utils.text.uidsToObjects(
+                         this.ccChipHolder_.getSelectedUids());
   var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
       goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
   // @yahoo not using prompt here
@@ -651,6 +680,7 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
       detach: true,
       origin: origin,
       recipients: recipients,
+      ccRecipients: ccRecipients, //@yahoo added ccChipHolder
       subject: subject,
       from: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
     })
@@ -682,6 +712,9 @@ ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
   var signer = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
   var recipients = utils.text.uidsToObjects(
                        this.chipHolder_.getSelectedUids());
+  //@yahoo added ccChipHolder
+  var ccRecipients = utils.text.uidsToObjects(
+                         this.ccChipHolder_.getSelectedUids());
 
   // @yahoo used sendProxyRequest instead of HelperProxy.updateSelectedContent
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
@@ -692,6 +725,7 @@ ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
       detach: true,
       origin: origin,
       recipients: recipients,
+      ccRecipients: ccRecipients, //@yahoo added ccChipHolder
       subject: subject,
       from: signer
     })
@@ -807,21 +841,22 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
   this.keyMissingDialogTriggered_ = true;
 
   // given no chipholder or there exists a session passphrase
-  if (!this.chipHolder_ ||
+  if ((!this.chipHolder_ && !this.ccChipHolder_) ||
       this.chipHolder_.getProvidedPassphrases().length > 0) {
     this.encryptSign_();
     return;
   }
 
   var selectedUids = this.chipHolder_.getSelectedUids();
+  var selectedCCUids = this.ccChipHolder_.getSelectedUids();
 
   // do nothing when there're no recipients
-  if (selectedUids.length === 0) {
+  if (selectedUids.length === 0 && selectedCCUids.length === 0) {
     return;
   }
 
   // @yahoo ask to remove invalid recipients or send unencrypted msg
-  this.lackPublicKeys_(selectedUids).
+  this.lackPublicKeys_(selectedUids.concat(selectedCCUids)).
       addCallbacks(function(invalidRecipients) {
         if (invalidRecipients.length === 0) {
           this.encryptSign_();

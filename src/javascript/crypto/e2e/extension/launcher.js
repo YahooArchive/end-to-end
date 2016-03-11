@@ -387,7 +387,8 @@ ext.yExtensionLauncher.prototype.handleGlassRequests_ = function() {
             callback,
             errorCallback,
             content.subject,
-            content.from);
+            content.from,
+            content.ccRecipients);
         break;
 
       case constants.Actions.GET_SELECTED_CONTENT:
