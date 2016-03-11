@@ -204,9 +204,10 @@ panels.ChipHolder.prototype.handleNewChipValue_ = function(chipValue) {
 panels.ChipHolder.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  goog.array.forEach(this.selectedUids_, this.handleNewChipValue_, this);
-
+  // @yahoo swapped the order of autoComplete and handleNewChipValue_
   this.autoComplete_ = this.createAutoComplete_();
+
+  goog.array.forEach(this.selectedUids_, this.handleNewChipValue_, this);
 
   var renderer = this.autoComplete_.getRenderer();
   renderer.setAnchorElement(this.getElement());
@@ -263,6 +264,9 @@ panels.ChipHolder.prototype.addChip = function(opt_chip) {
   this.shadowInputElem_.value = '';
   this.shadowInputElem_.placeholder = '';
   goog.style.setWidth(this.shadowInputElem_, 10);
+
+  // @yahoo avoided duplicate entry by removing it from autocompletion
+  goog.array.remove(this.allUids_, chip.getValue());
 };
 
 
@@ -365,6 +369,9 @@ panels.ChipHolder.prototype.removeChild = function(child, opt_unrender) {
   if (this.getChildCount() == 0) {
     goog.style.setWidth(this.shadowInputElem_, 100);
   }
+
+  // @yahoo restore/add the removed item for autocompletion
+  this.allUids_.push(child.getValue());
 
   return result;
 };
