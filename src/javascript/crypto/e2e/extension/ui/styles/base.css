@@ -305,6 +305,7 @@ input:focus {
 
 #pgpBody.transparent + div#callbackDialog {
   height: 100%;
+  overflow: auto;
 }
 
 #callbackDialog > div {
