@@ -106,9 +106,9 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
   lookupProof.index = b64decode(lookupProof.index);
   lookupProof.index_proof = b64decode(lookupProof.index_proof);
 
-  tree.neighbors = goog.array.map(
-      tree.neighbors,
-      function(n) {return b64decode(n)});
+  tree.neighbors = tree.neighbors ?
+      goog.array.map(tree.neighbors, function(n) {return b64decode(n)}) :
+      [];
   if (tree.existing_index) {
     tree.existing_index = b64decode(tree.existing_index);
   }
@@ -353,24 +353,24 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
       addCallback(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
            profile = pf.profile,
-           verifiedKey;
+           keyByteArray;
 
         if (newProfileBase64 !== profile.toBase64()) {
           throw new Error('server rejected the new profile/key');
         }
-        if (!e2e.coname.verifyLookup(realm, email, pf) ||
-            !profile.keys.has(this.keyName_)) {
+        if (!e2e.coname.verifyLookup(realm, email, pf)) {
           // TODO: poll the server until the update can be verified
-          throw new Error('profile/keys cannot be validated');
+          throw new Error('the keys cannot be validated');
         }
 
-        verifiedKey = Array.prototype.slice.call(new Uint8Array(
-           profile.keys.get(this.keyName_).toBuffer()));
+        keyByteArray = profile && profile.keys &&
+            profile.keys.has(this.keyName_) ?
+            /** @type {e2e.ByteArray} */ (
+            Array.prototype.slice.call(new Uint8Array(profile.keys.get(
+                this.keyName_).toBuffer()))) :
+            null;
 
-        return {
-          keyData: verifiedKey,
-          proof: pf
-        };
+        return {keyData: keyByteArray, proof: pf};
 
       }, this);
 };
