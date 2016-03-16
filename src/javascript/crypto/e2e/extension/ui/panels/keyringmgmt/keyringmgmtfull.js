@@ -242,7 +242,8 @@ panels.KeyringMgmtFull.prototype.resetControls = function() {
  * @private
  */
 panels.KeyringMgmtFull.prototype.getKeysDescription_ = function(keys) {
-  return goog.array.flatten(goog.array.map(keys, function(key) {
+  // @yahoo sort it by fingerprint
+  var ret = goog.array.flatten(goog.array.map(keys, function(key) {
     var type = (key.key.secret ?
         chrome.i18n.getMessage('secretKeyDescription') :
         chrome.i18n.getMessage('publicKeyDescription'));
@@ -252,6 +253,9 @@ panels.KeyringMgmtFull.prototype.getKeysDescription_ = function(keys) {
       fingerprint: key.key.fingerprintHex
     }];
   }));
+
+  goog.array.sortObjectsByKey(ret, 'fingerprint');
+  return ret;
 };
 
 
