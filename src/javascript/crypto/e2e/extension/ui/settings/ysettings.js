@@ -23,6 +23,7 @@ goog.require('e2e.async.Result');
 goog.require('e2e.cipher.Algorithm');
 goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.CssClass'); //@yahoo
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.Settings');
 goog.require('e2e.ext.ui.dialogs.Generic');
@@ -31,13 +32,17 @@ goog.require('e2e.ext.ui.dialogs.SyncConfirmation');
 goog.require('e2e.ext.ui.templates.dialogs.importconfirmation');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
+goog.require('e2e.openpgp.KeyRing'); //@yahoo
 goog.require('e2e.signer.Algorithm');
 goog.require('goog.array');
 goog.require('goog.async.DeferredList');
+goog.require('goog.crypt'); //@yahoo
 goog.require('goog.dom');
+goog.require('goog.dom.classlist'); //@yahoo
+goog.require('goog.events.EventType'); //@yahoo
 goog.require('goog.functions');
 goog.require('goog.string');
-
+goog.require('goog.structs'); //@yahoo
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -72,12 +77,49 @@ goog.inherits(ui.ySettings, ui.Settings);
  * @suppress {accessControls}
  */
 ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
-  goog.base(this, 'renderTemplate_', pgpKeys);
+  //@yahoo switch to single user mode if there's only one/no keypair user
+  var pgpOwnerKeys = goog.structs.filter(pgpKeys, function(keys) {
+    return goog.array.some(keys, function(k) {return k.key.secret});
+  });
+  var pgpOwnerKeysCount = goog.structs.getKeys(pgpOwnerKeys).length;
+  if (pgpOwnerKeysCount < 2) {
+    goog.base(this, 'renderTemplate_', pgpOwnerKeys);
+
+    // enable single-user mode
+    goog.dom.classlist.add(document.documentElement, 'single');
+    var toggleOptions = this.getElementByClass(
+        constants.CssClass.TOGGLE_OPTIONS);
+    goog.dom.classlist.remove(toggleOptions,
+        constants.CssClass.HIDDEN);
+
+    //@yahoo added click handlers
+    this.getHandler().
+        listen(
+            goog.dom.getElement(constants.ElementId.GENERATE_KEY),
+            goog.events.EventType.CLICK,
+            function() {
+              document.querySelector(
+                  '#pgpGenerateKey button.action').click();
+            }).
+        listen(
+            toggleOptions,
+            goog.events.EventType.CLICK,
+            function(evt) {
+              evt.target.textContent = chrome.i18n.getMessage(
+                  goog.dom.classlist.contains(
+                      document.documentElement, 'single') ?
+                  'lessOptionsLabel' : 'moreOptionsLabel');
+              goog.dom.classlist.toggle(document.documentElement, 'single');
+            });
+  } else {
+    goog.base(this, 'renderTemplate_', pgpKeys);
+  }
+
 
   //@yahoo when a email is supplied thru location.hash
   // trigger the key resolution dialogs
   if (location.hash) {
-    var emailField, email = e2e.ext.utils.text.extractValidEmail(
+    var emailField, email = utils.text.extractValidEmail(
         decodeURIComponent(location.hash.substring(1)));
     if (email !== null) {
       this.syncWithRemote('<' + email + '>', 'load');
@@ -99,7 +141,7 @@ ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isOverride) {
   this.pgpContext_
       // @yahoo expected to render only local keys
       // .searchKey(keyUid)
-      .searchLocalKey(keyUid)
+      .searchLocalKey(keyUid, e2e.openpgp.KeyRing.Type.ALL)
       .addCallback(function(pgpKeys) {
         this.keyringMgmtPanel_.addNewKey(keyUid, pgpKeys);
         this.renderPanels_();
@@ -111,33 +153,70 @@ ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isOverride) {
 
 
 /**
+ * Exports the entire keyring of a particular UID to a file.
+ * @param {string} keyUid The UID of the keys to remove.
+ * @suppress {accessControls}
+ * @override
+ * @private
+ */
+ui.ySettings.prototype.exportKey_ = function(keyUid) {
+  var ctx = this.pgpContext_;
+  ctx.isKeyRingEncrypted().addCallbacks(function(isEncrypted) {
+    var filename = (isEncrypted ? '' : 'UNENCRYPTED-') +
+        keyUid.replace(/[\/\\]/g, '.') + 'keyring-private.asc';
+
+    ctx.exportUidKeyring(true, keyUid).addCallbacks(function(armoredKey) {
+      if ('string' != typeof armoredKey) {
+        armoredKey = goog.crypt.byteArrayToString(armoredKey);
+      }
+      utils.writeToFile(armoredKey, function(fileUrl) {
+        var anchor = document.createElement('a');
+        anchor.download = filename;
+        anchor.href = fileUrl;
+        anchor.click();
+      });
+    }, this.displayFailure_, this);
+  }, this.displayFailure_, this);
+};
+
+
+/**
  * Removes a PGP key.
- * @param {string} keyUid The ID of the key to remove.
+ * @param {string} keyUid The UID of the keys to remove.
+ * @param {string=} opt_fingerprintHex The specific key fingerprint to remove
+ * @param {e2e.openpgp.KeyRing.Type=} opt_keyType The specific key type to
+ *     remove.
  * @suppress {accessControls}
  * @override
  */
-ui.ySettings.prototype.removeKey_ = function(keyUid) {
-  this.pgpContext_
-      .searchPrivateKey(keyUid)
-      .addCallback(/** @this {ui.Settings} */ (function(privateKeys) {
-        // TODO(evn): This message should be localized.
-        var prompt = 'Deleting all keys for ' + keyUid;
-        if (privateKeys && privateKeys.length > 0) {
-          prompt += '\n\nWARNING: This will delete some private keys!';
-          //@yahoo let user knows no one can send you encrypted email
-          prompt += '\nYour friends can no longer send you encrypted emails.';
-        }
-        if (window.confirm(prompt)) {
-          this.pgpContext_.deleteKey(keyUid).addCallback(function() {
-            this.keyringMgmtPanel_.removeKey(keyUid);
-            this.renderPanels_();
+ui.ySettings.prototype.removeKey_ = function(
+    keyUid, opt_fingerprintHex, opt_keyType) {
 
-            // @yahoo added sync with remote
-            this.syncWithRemote(keyUid, 'remove');
-          }, this);
+  this.renderDeleteKeysCallback_(keyUid, opt_fingerprintHex, opt_keyType).
+      addCallbacks(function(confirmed) {
+        if (!confirmed) {
+          return;
         }
-      }), this)
-      .addErrback(this.displayFailure_, this);
+        var result = opt_fingerprintHex ?
+            this.pgpContext_.deleteKeyByFingerprint(
+                goog.crypt.hexToByteArray(
+                    opt_fingerprintHex.replace(/\s+/g, '')),
+                opt_keyType) :
+            this.pgpContext_.deleteKey(keyUid);
+
+        result.addCallback(function() {
+          this.keyringMgmtPanel_.removeKey(
+              keyUid, opt_fingerprintHex, opt_keyType);
+          this.renderPanels_();
+
+          // @yahoo added sync with remote. no sync needed to remove a priv key
+          if (!opt_keyType ||
+              opt_keyType !== e2e.openpgp.KeyRing.Type.PRIVATE) {
+            this.syncWithRemote(keyUid, 'remove');
+          }
+        }, this);
+
+      }, this.displayFailure_, this);
 };
 
 
@@ -149,17 +228,15 @@ ui.ySettings.prototype.removeKey_ = function(keyUid) {
  */
 ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
   // sync with remote only if such a keyUid has a private key
-  var email = e2e.ext.utils.text.extractValidEmail(keyUid);
+  var email = utils.text.extractValidEmail(keyUid);
   var constFunction = goog.functions.constant;
   if (email !== null && e2e.coname.getRealmByEmail(email) !== null) {
     this.pgpContext_.searchPrivateKey(keyUid).addCallbacks(function(privKeys) {
 
       if (opt_intention === 'load' || opt_intention === 'remove' ||
           privKeys.length !== 0) {
-        this.pgpContext_.syncWithRemote(keyUid, e2e.ext.utils.openAuthWindow,
+        this.pgpContext_.syncWithRemote(keyUid, utils.openAuthWindow,
             // no reqAction when it's in-sync
-            opt_intention === 'load' ?
-            goog.bind(this.renderWelcomeScreen_, this) :
             constFunction(e2e.async.Result.toResult('noop')),
             // make an update if the inconsistency is acknowledged
             opt_intention === 'keygen' || opt_intention === 'remove' ?
@@ -219,7 +296,7 @@ ui.ySettings.prototype.generateKey_ = function(
   // TODO: enhance this email to uid mapping
   var uid = '<' + email + '>';
 
-  return this.pgpContext_.syncWithRemote(uid, e2e.ext.utils.openAuthWindow,
+  return this.pgpContext_.syncWithRemote(uid, utils.openAuthWindow,
       goog.bind(this.renderKeepExistingKeysCallback_, this),
       goog.bind(function(uid, local, common, remote) {
         var keys = local.concat(common);
@@ -255,37 +332,6 @@ ui.ySettings.prototype.generateKey_ = function(
         return reqActionResult !== null && this.generateKeyAndOverwriteRemote_(
             panel, name, email, comments, expDate);
       }, this.displayFailure_, this);
-};
-
-
-/**
- * TODO: this is temporary
- * Renders the UI elements needed for welcoming the user.
- * @return {!e2e.async.Result<null>} A promise that returns null to disable in
- *     sync notification
- * @private
- */
-ui.ySettings.prototype.renderWelcomeScreen_ = function() {
-
-  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
-  var dialog = new dialogs.Generic(
-      chrome.i18n.getMessage('welcomeHeader') + '\n\n' +
-      chrome.i18n.getMessage('welcomeBasicsLine1') + '\n\n' +
-      'Please proceed by clicking "Add a New Key" to let friends' +
-      ' send you encrypted emails.\n' +
-      'For advanced users, you may like to "Import" your existing' +
-      ' OpenPGP key pair.',
-      function() {
-        goog.dispose(dialog);
-      },
-      dialogs.InputType.NONE,
-      '',
-      chrome.i18n.getMessage('promptOkActionLabel'));
-
-  this.addChild(dialog, false);
-  dialog.render(popupElem);
-
-  return e2e.async.Result.toResult(null);
 };
 
 
@@ -339,6 +385,91 @@ ui.ySettings.prototype.renderMatchRemoteKeysCallback_ = function(
 
   this.addChild(dialog, false);
   dialog.render(popupElem);
+
+  return result;
+};
+
+
+/**
+ * Renders the UI elements needed for confirming whether to delete keys.
+ * @param {string} uid The user id being handled
+ * @param {string=} opt_fingerprintHex The specific key fingerprint to remove
+ * @param {e2e.openpgp.KeyRing.Type=} opt_keyType The specific key type to
+ *     remove.
+ * @return {!e2e.async.Result<?string>} A promise
+ * @suppress {accessControls}
+ * @private
+ */
+ui.ySettings.prototype.renderDeleteKeysCallback_ = function(
+    uid, opt_fingerprintHex, opt_keyType) {
+
+  // // skip the dialog if we have nothing to delete
+  // if (keysToDelete.length === 0) {
+  //   return e2e.async.Result.toResult(/** @type {?string} */ (''));
+  // }
+  var result = new e2e.async.Result();
+
+  goog.async.DeferredList.gatherResults([
+    this.pgpContext_.searchLocalKey(uid, e2e.openpgp.KeyRing.Type.PRIVATE),
+    this.pgpContext_.searchLocalKey(uid)]).
+      addCallbacks(function(keys) {
+        var privKeys = keys[0], pubKeys = keys[1],
+        msg = chrome.i18n.getMessage('promptDeleteKeysConfirmMessage') + '\n';
+
+        // attempting to delete the last public key means opt-out
+        if ((pubKeys.length && !opt_fingerprintHex) || (pubKeys.length === 1 &&
+        pubKeys[0].key.fingerprintHex === opt_fingerprintHex &&
+        opt_keyType === e2e.openpgp.KeyRing.Type.PUBLIC)) {
+          msg += '\n' +
+          chrome.i18n.getMessage('promptDeleteLastPublicKeyWarningMessage');
+        }
+
+        // attempting to delete a private key
+        if (privKeys.length && (!opt_fingerprintHex ||
+        opt_keyType === e2e.openpgp.KeyRing.Type.PRIVATE)) {
+          msg += '\n' +
+          chrome.i18n.getMessage('promptDeletePrivateKeyWarningMessage');
+        }
+
+        var keysToDelete = opt_fingerprintHex ?
+        goog.array.filter(
+            opt_keyType === e2e.openpgp.KeyRing.Type.PRIVATE ?
+                privKeys :
+                pubKeys,
+            function(k) {
+              return k.key.fingerprintHex === opt_fingerprintHex;
+            }) :
+        privKeys.concat(pubKeys);
+
+        // skip the dialog if we have nothing to delete
+        if (keysToDelete.length === 0) {
+          result.callback(undefined);
+          return;
+        }
+
+        var popupElem = goog.dom.getElement(
+            constants.ElementId.CALLBACK_DIALOG);
+        var dialog = new dialogs.Generic(
+        importTemplates.importKeyConfirm({
+          promptImportKeyConfirmLabel: msg,
+          keys: keysToDelete,
+          secretKeyDescription: chrome.i18n.getMessage('secretKeyDescription'),
+          publicKeyDescription: chrome.i18n.getMessage('publicKeyDescription'),
+          keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel')
+        }),
+        function(decision) {
+          goog.dispose(dialog);
+          result.callback(goog.isDef(decision));
+        },
+        ui.dialogs.InputType.NONE,
+        '',
+        chrome.i18n.getMessage('promptOkActionLabel'),
+        chrome.i18n.getMessage('actionCancelPgpAction'));
+
+        this.addChild(dialog, false);
+        dialog.render(popupElem);
+
+      }, goog.bind(result.errback, result), this);
 
   return result;
 };

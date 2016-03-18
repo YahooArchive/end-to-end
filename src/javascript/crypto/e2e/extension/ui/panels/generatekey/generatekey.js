@@ -29,6 +29,7 @@ goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
+goog.require('goog.string'); //@yahoo
 goog.require('goog.ui.Component');
 goog.require('goog.ui.KeyboardShortcutHandler');
 goog.require('soy');
@@ -94,27 +95,43 @@ panels.GenerateKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
   elem.id = constants.ElementId.GENERATE_KEY_FORM;
 
+  var genKeyEmailLabel = goog.string.htmlEscape(
+      chrome.i18n.getMessage('genKeyEmailLabel'));
+  genKeyEmailLabel = genKeyEmailLabel.
+      replace(/\n/g, '<br>').
+      replace(/#email#([^#]*)#/,
+          '<span id="' + constants.ElementId.EMAIL_ADDRESS + '">$1</span>').
+      replace(/#import#([^#]*)#/,
+          '<label for="' + constants.ElementId.KEYRING_IMPORT +
+          '">$1</label>');
+
   soy.renderElement(elem, templates.generateKeyForm, {
     sectionTitle: this.sectionTitle_,
-    emailLabel: chrome.i18n.getMessage('genKeyEmailLabel'),
+    emailLabel: soydata.VERY_UNSAFE.ordainSanitizedHtml(genKeyEmailLabel),
     commentsLabel: chrome.i18n.getMessage('genKeyCommentsLabel'),
     actionButtonTitle: this.actionButtonTitle_,
     signupCancelButtonTitle: chrome.i18n.getMessage('actionCancelPgpAction')
   });
-
-  //@yahoo Prefill the input with the user's email if possible
-  e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
-    var input = this.getElementByClass(constants.CssClass.EMAIL);
-    if (input) {
-      input.value = email || '';
-    }
-  }, this));
 };
 
 
 /** @override */
 panels.GenerateKey.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
+
+  //@yahoo Prefill the input with the user's email if possible
+  e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
+    var input = this.getElementByClass(constants.CssClass.EMAIL);
+    if (input && email) {
+      input.value = email;
+    }
+
+    var elem = goog.dom.getElement(constants.ElementId.EMAIL_ADDRESS);
+    if (elem && email) {
+      elem.innerText = email;
+    }
+
+  }, this));
 
   var keyboardHandler = new goog.ui.KeyboardShortcutHandler(
       this.getElementByClass(constants.CssClass.EMAIL));

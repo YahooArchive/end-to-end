@@ -148,7 +148,7 @@ textarea {
   opacity: .7
 }
 
-.pgpActions label[for] {
+.pgpActions label[for], #pgpGenerateKey label[for] {
   cursor: pointer;
   color: -webkit-link;
   text-decoration: underline;

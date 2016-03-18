@@ -160,11 +160,11 @@
     "description": "A section title signaling that the displayed PGP keys are stored by the extension."
   },
   "keyMgmtExportLabel": {
-    "message": "Export public key",
+    "message": "Export keys",
     "description": "A sentence prompting the user to export the selected PGP key."
   },
   "keyMgmtRemoveLabel": {
-    "message": "Remove key",
+    "message": "Remove",
     "description": "A sentence prompting the user to remove the selected PGP key."
   },
   "keyMgmtNoneLabel": {
@@ -172,7 +172,7 @@
     "description": "A noun indicating that there are no PGP keys to display."
   },
   "keyMgmtSignupPromptLabel": {
-    "message": "New User or Key",
+    "message": "Create a key pair",
     "description": "A sentence prompting the user sign up with a new key."
   },
   "keyMgmtImportKeyringLabel": {
@@ -197,6 +197,22 @@
   "keyMgmtRestoreKeyringLabel": {
     "message": "Restore from backup code",
     "description": "A sentence prompting the user to restore the keyring's ECC seed"
+  },
+  "keyMgmtOptionsLabel": {
+    "message": "Quick Links",
+    "description": "A sentence showing the keyring options"
+  },
+  "keyMgmtHelpLabel": {
+    "message": "Help article",
+    "description": "A sentence prompting the user to see readme."
+  },
+  "keyMgmtImportKeypairLabel": {
+    "message": "Import a key pair",
+    "description": "A sentence prompting the user to import his own existing PGP keyring."
+  },
+  "keyMgmtUidLabel": {
+    "message": "$1 is ready for use with following public keys:",
+    "description": "A sentence showing the user the keys"
   },
   "keyMgmtBackupKeyringWarning": {
     "message": "Write down this code in a safe place:"
@@ -241,6 +257,14 @@
     "message": "Successfully changed the passphrase for the existing keyring!",
     "description": "A sentence confirming that the user has successfully changed the keyring's passphrase."
   },
+  "moreOptionsLabel": {
+    "message": "More options...",
+    "description": "A verb prompting the user to visit the advanced options page."
+  },
+  "lessOptionsLabel": {
+    "message": "Less options...",
+    "description": "A verb prompting the user to visit the simplified options page."
+  },
   "keyMgmtFbImportLabel": {
     "message": "Import key from Facebook",
     "description": "A sentence prompting the user to import a key from Facebook."
@@ -258,19 +282,19 @@
     "description": "Ask the user to enter a valid username."
   },
   "genKeyTitle": {
-    "message": "Sign up to receive secret messages",
+    "message": "Welcome!",
     "description": "A section title indicating where the user can generate a new PGP key."
   },
   "genKeyEmailLabel": {
-    "message": "Please enter your name@yahoo-inc.com email address you will use to receive secret messages.\nNote that everyone will know you can receive secret messages here.",
-    "description": "A sentence fragment prompting the user to provide his/her email address."
+    "message": "A key pair is required for encrypting emails to and from #email#your email address#.\nClick below to create a key pair. Or you can #import#import a key pair#.",
+    "description": "A sentence fragment prompting the user to sign up."
   },
   "genKeyPassphraseLabel": {
     "message": "Passphrase",
     "description": "A noun indicating where the user needs to specify a passphrase for her new PGP key."
   },
   "genKeyGenerateButtonLabel": {
-    "message": "Add a New Key",
+    "message": "Create a new key pair",
     "description": "A verb prompting the user to register to receive secret messages."
   },
   "settingsTitle": {
@@ -362,7 +386,7 @@
     "description": "Modifier before a key algorithm type for a secret or private subkey."
   },
   "welcomeHeader": {
-    "message": "Welcome to End-To-End",
+    "message": "Welcome!",
     "description": "A welcome message to new users."
   },
   "welcomeBasicsTitle": {
@@ -579,6 +603,18 @@
     "message": "Add a new key in addition to the existing one(s) below?",
     "description": "A sentence asking the user whether to keep existing keys while adding a new one."
   },
+  "promptDeleteKeysConfirmMessage": {
+    "message": "Confirm to remove the following keys?",
+    "description": "A sentence asking the user to confirm deleting keys"
+  },
+  "promptDeleteLastPublicKeyWarningMessage": {
+    "message": "By removing all public keys, your friends can no longer send you encrypted emails.",
+    "description": "A sentence asking the user to confirm users opting-out the service"
+  },
+  "promptDeletePrivateKeyWarningMessage": {
+    "message": "Messages encrypted to these private keys can no longer be recovered.",
+    "description": "A sentence asking the user to confirm deleting private keys"
+  },
   "localOnlyKeysLabel": {
     "message": "The following keys are present only locally.",
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only locally."
@@ -592,7 +628,7 @@
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
   },
   "giveUpRemoteKeyCheckboxLabel": {
-    "message": " Take them down from the public listing (e.g., key lost). Update with this unchecked to suppress warnings.",
+    "message": " Take down the remote ones from the public listing (e.g., key lost).",
     "description": "A sentence informing the user that remote keys will be deleted before proceeding."
   },
   "replaceKeyCheckboxLabel": {
@@ -608,11 +644,15 @@
     "description": "A verb prompting the user to add a new key."
   },
   "confirmUserSyncKeys": {
-    "message": "Setup keys to let friends send you encrypted emails?",
+    "message": "The End-to-end keyserver requires your configuration. Can we do it now?",
     "description": "A sentence prompting the user to synchronize local keyring with remote keyserver."
   },
   "promptRestoreToNormalComposeLabel": {
     "message": "Encrypted formatting and attachments not yet supported.\n#restore#Switch# to non encrypted compose.",
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
+  },
+  "keyRingDescriptionLabel": {
+    "message": " is ready for use with the following keys:",
+    "description": "A sentence greeting the user and introducing the keys that s/he has."
   }
 }

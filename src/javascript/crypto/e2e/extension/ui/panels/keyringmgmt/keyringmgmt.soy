@@ -23,6 +23,7 @@
  * @param removeLabel The label to use for the remove link.
  * @param noneLabel The label to display when there are no keys.
  * @param keyFingerprintLabel Text to display as a fingerprint label.
+ * @param keyRingDescriptionLabel The label to tell the user ready for use.
  */
 {template .listKeys}
   <h1>{$sectionTitle}</h1>
@@ -34,6 +35,7 @@
           {param exportLabel: $exportLabel /}
           {param removeLabel: $removeLabel /}
           {param keyFingerprintLabel: $keyFingerprintLabel /}
+          {param keyRingDescriptionLabel: $keyRingDescriptionLabel /}
         {/call}
       </tr>
     {ifempty}
@@ -58,16 +60,20 @@
  * @param exportLabel The label to use for the export link.
  * @param removeLabel The label to use for the remove link.
  * @param keyFingerprintLabel Text to display as a fingerprint label.
+ * @param keyRingDescriptionLabel The label to tell the user ready for use.
  */
 {template .keyEntry}
   <td class="{e2e.ext.constants.CssClass.KEY_INFO}">
-    <div class="{e2e.ext.constants.CssClass.KEY_UID}">{$keyMeta.userId}</div>
+    <div class="{e2e.ext.constants.CssClass.KEY_UID}"
+         data-label="{$keyRingDescriptionLabel}">
+         {$keyMeta.userId}</div>
     {foreach $key in $keyMeta.keys}
       <div class="{e2e.ext.constants.CssClass.KEY_META}">
         <span class="{e2e.ext.constants.CssClass.KEY_FINGERPRINT}" title="{$keyFingerprintLabel}">
           {$key.fingerprint}
-        </span>{sp}(
-        {$key.type} {$key.algorithm})
+        </span>{sp}
+        <span>({$key.type} {$key.algorithm})</span>
+        <span class="{e2e.ext.constants.CssClass.REMOVE}" title="{$removeLabel}"></span>
       </div>
     {/foreach}
   </td>
@@ -97,9 +103,12 @@
  * @param passphraseChangeCancelButtonTitle The title for the passphrase change cancel button.
  * @param content content to show at the top of the panel. @yahoo
  * @param cancelLabel Label for the 'cancel' button @yahoo
+ * @param keyringOptionsLabel Label for the keyring options. @yahoo
+ * @param helpLabel Label for the help button. @yahoo
  * @param fbImportLabel Label for the 'Facebook import' button @yahoo
  * @param fbDescription Description for the 'Facebook import' feature @yahoo
  * @param importButtonLabel Label for the import button. @yahoo
+ * @param toggleOptionsLabel Label for the advanced options @yahoo
  */
 {template .manageKeyring}
   <!-- @yahoo--><div>{$content}</div>
@@ -141,10 +150,18 @@
       {$passphraseChangeCancelButtonTitle}
     </button>
   </div>
-  <div id="{e2e.ext.constants.ElementId.KEYRING_OPTIONS_DIV}">
+  <div id="{e2e.ext.constants.ElementId.KEYRING_OPTIONS_DIV}"
+       data-label="{$keyringOptionsLabel}"> <!-- @yahoo added title -->
     <p id="{e2e.ext.constants.ElementId.SIGNUP_PROMPT}"
        class="{e2e.ext.constants.CssClass.SIGNUP_PROMPT}
               {sp}{e2e.ext.constants.CssClass.HIDDEN}">{$signupPromptLabel}</p>
+    <!-- @yahoo added Help and Key Generate buttons -->
+    <button class="{e2e.ext.constants.CssClass.HIDDEN}
+                   {sp}{e2e.ext.constants.CssClass.CANCEL}"
+            id="{e2e.ext.constants.ElementId.HELP_PROMPT}">{$helpLabel}</button>
+    <button class="{e2e.ext.constants.CssClass.HIDDEN}
+                   {sp}{e2e.ext.constants.CssClass.CANCEL}"
+            id="{e2e.ext.constants.ElementId.GENERATE_KEY}">{$signupPromptLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_IMPORT}
                    {sp}{e2e.ext.constants.CssClass.CANCEL}">
                    <input id="{e2e.ext.constants.ElementId.KEYRING_IMPORT}" type="file">{$importKeyringLabel}</button>
@@ -161,5 +178,8 @@
                    {e2e.ext.constants.CssClass.CANCEL}">{$restoreKeyringLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_CANCEL}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$cancelLabel}</button>
+    <button class="{e2e.ext.constants.CssClass.TOGGLE_OPTIONS}{sp}
+                   {e2e.ext.constants.CssClass.HIDDEN}{sp}
+                   {e2e.ext.constants.CssClass.CANCEL}">{$toggleOptionsLabel}</button>
   </div>
 {/template}

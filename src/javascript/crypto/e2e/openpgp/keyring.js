@@ -793,7 +793,8 @@ e2e.openpgp.KeyRing.prototype.initialize = function(opt_passphrase) {
   // Try to unlock the storage.
   if (this.localStorage_.isLocked()) {
     result.addCallback(function() {
-      return this.localStorage_.unlockWithPassphrase(opt_passphrase || '');
+      return /** @type {!e2e.openpgp.LockableStorage} */ (this.localStorage_).
+          unlockWithPassphrase(opt_passphrase || '');
     }).addErrback(function() {
       if (goog.isDefAndNotNull(opt_passphrase)) {
         throw new e2e.openpgp.error.WrongPassphraseError();

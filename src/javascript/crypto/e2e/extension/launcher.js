@@ -440,12 +440,23 @@ ext.yExtensionLauncher.prototype.stop = function() {
 
 /** @override */
 ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
-  var preferences = this.getPreferences();
-  if (preferences.isWelcomePageEnabled()) {
-    // @yahoo disabled welcome screen for now
-    // this.createWindow('setup.html', true, goog.nullFunction);
-    preferences.setWelcomePageEnabled(false);
-  }
+  // var preferences = this.getPreferences();
+  // if (preferences.isWelcomePageEnabled()) {
+  //   this.createWindow('setup.html', true, goog.nullFunction);
+  //   preferences.setWelcomePageEnabled(false);
+  // }
+
+  // @yahoo open welcome screen when there's no private key
+  var ctx = this.getContext();
+  ctx.getAllKeys(true).addCallback(function(keyMap) {
+    return !goog.structs.some(keyMap, function(keys) {
+      return goog.array.some(keys, function(k) { return k.key.secret; });
+    });
+  }).addCallback(function(hasNoPrivateKeys) {
+    if (hasNoPrivateKeys) {
+      this.createWindow('settings.html', true, goog.nullFunction);
+    }
+  }, this);
 };
 
 

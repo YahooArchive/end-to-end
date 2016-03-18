@@ -177,9 +177,13 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
         chrome.i18n.getMessage('keyMgmtConfirmPassphraseActionLabel'),
     content: this.content_,
     cancelLabel: this.cancelLabel_,
+    // @yahoo following are yahoo-specific
+    keyringOptionsLabel: chrome.i18n.getMessage('keyMgmtOptionsLabel'),
+    helpLabel: chrome.i18n.getMessage('keyMgmtHelpLabel'),
     fbImportLabel: chrome.i18n.getMessage('keyMgmtFbImportLabel'),
     fbDescription: chrome.i18n.getMessage('keyMgmtFbImport'),
-    importButtonLabel: chrome.i18n.getMessage('promptImportKeyActionLabel')
+    importButtonLabel: chrome.i18n.getMessage('promptImportKeyActionLabel'),
+    toggleOptionsLabel: chrome.i18n.getMessage('moreOptionsLabel')
   });
 
   // for display on welcome page

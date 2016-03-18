@@ -313,9 +313,14 @@ input:focus {
   margin: 8% auto;
 }
 
+#callbackDialog > div p:first-child {
+  font-size: 105%;
+  font-weight: 500;
+  margin: 0 0 15px 0;
+}
 
 
-.keyring-signup, #callbackDialog label[for] {
+.keyring-signup, #callbackDialog label[for], #pgpGenerateKey label[for] {
   cursor: pointer;
   color: -webkit-link;
   text-decoration: underline;

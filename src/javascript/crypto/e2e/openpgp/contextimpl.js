@@ -757,11 +757,12 @@ e2e.openpgp.ContextImpl.prototype.restoreKeyring = function(data, email) {
  * //@yahoo
  * Searches a key (either public, private, or both) in the local keyring.
  * @param {string} uid The user id.
+ * @param {e2e.openpgp.KeyRing.Type=} opt_type Key type to search for.
  * @return {!e2e.openpgp.KeyResult} The result of the search.
  */
-e2e.openpgp.ContextImpl.prototype.searchLocalKey = function(uid) {
+e2e.openpgp.ContextImpl.prototype.searchLocalKey = function(uid, opt_type) {
   return e2e.async.Result.toResult(
-      this.keyRing_.searchKey(uid, e2e.openpgp.KeyRing.Type.ALL) || []).
+      this.keyRing_.searchKey(uid, opt_type) || []).
       addCallback(function(keyBlocks) {
         return /** @type {!e2e.openpgp.Keys} */ (goog.array.map(keyBlocks,
             function(keyBlock) {
@@ -832,3 +833,46 @@ e2e.openpgp.ContextImpl.prototype.syncWithRemote = function(uid,
 
   return result;
 };
+
+
+/**
+ * //@yahoo
+ * Deletes a private or public key that has a given key fingerprint from chosen
+ * keyring. Use e2e.openpgp.KeyRing.Type.ALL to delete the whole keypair.
+ * @param  {!e2e.openpgp.KeyFingerprint} fingerprint The fingerprint.
+ * @param  {!e2e.openpgp.KeyRing.Type} keyRingType The keyring to delete the key
+ *     from.
+ * @return {!e2e.async.Result.<undefined>}
+ */
+e2e.openpgp.ContextImpl.prototype.deleteKeyByFingerprint = function(fingerprint,
+    keyRingType) {
+  this.keyRing_.deleteKeyByFingerprint(fingerprint, keyRingType);
+  return e2e.async.Result.toResult(undefined);
+};
+
+
+/**
+ * //@yahoo
+ * Exports the secret keyring for a particular uid.
+ * @param {boolean} armored Whether to export the keyring in radix64 armor.
+ * @param {string} uid The Uid to export
+ * @return {!e2e.async.Result.<!e2e.ByteArray|string>}
+ * @export
+ */
+e2e.openpgp.ContextImpl.prototype.exportUidKeyring = function(armored, uid) {
+  return this.searchLocalKey(uid, e2e.openpgp.KeyRing.Type.ALL).addCallback(
+      function(keys) {
+        keys = new goog.structs.Map(keys);
+        var serialized = goog.array.flatten(goog.array.map(
+            goog.array.flatten(keys.getValues()),
+            function(keyInfo) {
+              return this.keyRing_.getKeyBlock(keyInfo).serialize();
+            }, this));
+        if (armored) {
+          return e2e.openpgp.asciiArmor.encode(
+              'PRIVATE KEY BLOCK', serialized, this.armorHeaders_);
+        }
+        return serialized;
+      }, this);
+};
+

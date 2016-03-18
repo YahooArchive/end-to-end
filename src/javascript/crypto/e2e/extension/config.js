@@ -23,6 +23,7 @@ goog.provide('e2e.ext.config');
 
 goog.require('goog.crypt.base64');
 
+
 /**
  * Keyserver config
  * @const {!Object<string, *>}
@@ -41,20 +42,20 @@ e2e.ext.config = {
       'addr': 'https://localhost:4443',
       'URL': 'https://mail.yahoo.com',
       'VRFPublic': goog.crypt.base64.decodeStringToByteArray(
-          "Dvt4a09K1ZTZQl/JGJ4gQa94XU+RdK4hWmd5hJBp9ww="),
+          'Dvt4a09K1ZTZQl/JGJ4gQa94XU+RdK4hWmd5hJBp9ww='),
       'verification_policy': {
         'public_keys': {
-          "1003492262947017977": {
-            "ed25519": goog.crypt.base64.decodeStringToByteArray(
-                "jU87Wearzbx1duuxKxlIkZFfGqxXQwOV3VEHccqSrcE=")
+          '1003492262947017977': {
+            'ed25519': goog.crypt.base64.decodeStringToByteArray(
+                'jU87Wearzbx1duuxKxlIkZFfGqxXQwOV3VEHccqSrcE=')
           },
-          "6235162068590490013": {
-            "ed25519": goog.crypt.base64.decodeStringToByteArray(
-                "56OAlXk3/+GMxUadaQH9CbYDMp/igmrQ1MlG7l1aKXQ=")
+          '6235162068590490013': {
+            'ed25519': goog.crypt.base64.decodeStringToByteArray(
+                '56OAlXk3/+GMxUadaQH9CbYDMp/igmrQ1MlG7l1aKXQ=')
           },
-          "9687269752368895265": {
-            "ed25519": goog.crypt.base64.decodeStringToByteArray(
-                "xvmwGzeT/OtOt8yBn4QqKjubRnkkeFFYitkF4um+la4=")
+          '9687269752368895265': {
+            'ed25519': goog.crypt.base64.decodeStringToByteArray(
+                'xvmwGzeT/OtOt8yBn4QqKjubRnkkeFFYitkF4um+la4=')
           }
         },
         'quorum': {

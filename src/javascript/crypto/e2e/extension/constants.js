@@ -96,6 +96,7 @@ e2e.ext.constants.ElementId = {
   SIGN_MESSAGE_CHECK: 'pgpSignMessage',
   SIGNER_SELECT: 'pgpSignerSelect',
   SIGNUP_PROMPT: 'signupPrompt',
+  HELP_PROMPT: 'helpPrompt', //@yahoo
   KEYRING_DIV: 'storedKeys',
   KEYRING_IMPORT_DIV: 'keyringImportDiv',
   FB_IMPORT_DIV: 'fbImportDiv',
@@ -114,7 +115,9 @@ e2e.ext.constants.ElementId = {
   SUBJECT: 'subject',
 
   /* Used in settings page //@yahoo */
+  GENERATE_KEY: 'generate-key',
   KEYRING_IMPORT: 'keyring-import',
+  EMAIL_ADDRESS: 'email-address',
 
   /* Used to display menus in the UI. */
   MENU_CONTAINER: 'menu-container',
@@ -210,7 +213,8 @@ e2e.ext.constants.CssClass = {
   KEY_UID: 'key-uid',
   KEY_SUBKEY: 'key-sub',
   SIGNUP_PROMPT: 'keyring-signup',
-  FB_IMPORT: 'fb-import',
+  FB_IMPORT: 'fb-import', //@yahoo
+  TOGGLE_OPTIONS: 'toggle-options', //@yahoo
   KEYRING_IMPORT: 'keyring-import',
   KEYRING_EXPORT: 'keyring-export',
   KEYRING_BACKUP: 'keyring-backup',

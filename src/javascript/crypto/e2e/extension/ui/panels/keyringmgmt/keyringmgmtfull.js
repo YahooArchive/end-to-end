@@ -24,11 +24,13 @@ goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.panels.KeyringMgmtMini');
 goog.require('e2e.ext.ui.templates.panels.keyringmgmt');
+goog.require('e2e.openpgp.KeyRing'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
+goog.require('goog.string'); //@yahoo
 goog.require('goog.structs.Map');
 goog.require('goog.ui.Component');
 goog.require('soy');
@@ -53,8 +55,9 @@ var templates = e2e.ext.ui.templates.panels.keyringmgmt;
  *     the keyring is restored.
  * @param {!function(string)} exportKeyCallback The callback to invoke when a
  *     single PGP key is to be exported.
- * @param {!function(string)} removeKeyCallback The callback to invoke when a
- *     single PGP key is to be removed.
+ * @param {!function(string, string=, e2e.openpgp.KeyRing.Type=)}
+ *     removeKeyCallback The callback to invoke when a single PGP key is to be
+ *     removed. //@yahoo allowed deleting keys by fingerprint and type
  * @constructor
  * @extends {goog.ui.Component}
  */
@@ -88,7 +91,8 @@ panels.KeyringMgmtFull = function(pgpKeys, exportKeyringCallback,
 
   /**
    * The callback to invoke when a single PGP key is to be removed.
-   * @type {!function(string)}
+   * //@yahoo allowed deleting keys by fingerprint and type
+   * @type {!function(string, string=, e2e.openpgp.KeyRing.Type=)}
    * @private
    */
   this.removeKeyCallback_ = removeKeyCallback;
@@ -124,11 +128,14 @@ panels.KeyringMgmtFull.prototype.decorateInternal = function(elem) {
   }, this);
   soy.renderElement(elem, templates.listKeys, {
     storedKeys: storedKeys,
-    sectionTitle: chrome.i18n.getMessage('keyMgmtTitle'),
+    sectionTitle: chrome.i18n.getMessage(
+        storedKeys.length > 1 ? 'keyMgmtTitle' : 'welcomeHeader'), //@yahoo
     exportLabel: chrome.i18n.getMessage('keyMgmtExportLabel'),
     removeLabel: chrome.i18n.getMessage('keyMgmtRemoveLabel'),
     noneLabel: chrome.i18n.getMessage('keyMgmtNoneLabel'),
-    keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel')
+    keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel'),
+    keyRingDescriptionLabel: chrome.i18n.getMessage(
+        'keyRingDescriptionLabel') //@yahoo
   });
 
   var keyringTable = this.getElement().querySelector('table');
@@ -187,10 +194,15 @@ panels.KeyringMgmtFull.prototype.addNewKey = function(userId, pgpKeys) {
 
 
 /**
+ * //@yahoo added specific keys to remove
  * Removes a PGP key from the UI.
  * @param {string} userId The ID of the PGP key to remove.
+ * @param {string=} opt_fingerprintHex The specific key fingerprint to remove
+ * @param {e2e.openpgp.KeyRing.Type=} opt_keyType The specific key type to
+ *     remove.
  */
-panels.KeyringMgmtFull.prototype.removeKey = function(userId) {
+panels.KeyringMgmtFull.prototype.removeKey = function(
+    userId, opt_fingerprintHex, opt_keyType) {
   var tableRows = this.getElement().querySelectorAll('tr');
   tableRows = goog.array.filter(tableRows, function(row) {
     return row.textContent.indexOf(userId) > -1;
@@ -204,7 +216,35 @@ panels.KeyringMgmtFull.prototype.removeKey = function(userId) {
 
   goog.array.forEach(uidElems, function(elem) {
     var parentRow = this.getParentTableRow_(/** @type {!HTMLElement} */ (elem));
-    parentRow.parentElement.removeChild(parentRow);
+
+    // @yahoo delete only the specified ones
+    opt_fingerprintHex && goog.array.some(
+        goog.dom.getElementsByClass(constants.CssClass.KEY_META, parentRow),
+        function(keyRow) {
+          var fpElem = goog.dom.getElementByClass(
+              constants.CssClass.KEY_FINGERPRINT, keyRow);
+          var typeElem = goog.dom.getNextElementSibling(fpElem);
+          var pubString = chrome.i18n.getMessage('publicKeyDescription');
+          var privString = chrome.i18n.getMessage('secretKeyDescription');
+
+          if (fpElem && typeElem) {
+            var keyType = goog.string.contains(
+                                      typeElem.textContent, pubString) ?
+                e2e.openpgp.KeyRing.Type.PUBLIC :
+                goog.string.contains(typeElem.textContent, privString) ?
+                    e2e.openpgp.KeyRing.Type.PRIVATE :
+                    null;
+
+            if (opt_fingerprintHex === fpElem.textContent &&
+                opt_keyType === keyType) {
+              parentRow = fpElem.parentElement;
+              return true;
+            }
+          }
+        });
+
+    // parentRow.parentElement.removeChild(parentRow);
+    goog.dom.removeNode(parentRow);
   }, this);
 
   if (this.getElement().querySelectorAll('tr').length == 0) {
@@ -277,22 +317,57 @@ panels.KeyringMgmtFull.prototype.getParentTableRow_ = function(elem) {
 
 
 /**
+ * //@yahoo
  * Handles events when the user clicks on export/remove icons in the UI.
  * @param {!goog.events.Event} clickEvt The event generated by the user's click.
  * @private
  */
 panels.KeyringMgmtFull.prototype.handleClick_ = function(clickEvt) {
   var icon = /** @type {HTMLElement} */ (clickEvt.target);
-  if (!(icon instanceof HTMLImageElement)) {
-    return;
-  }
+  // if (!(icon instanceof HTMLImageElement)) {
+  //   return;
+  // }
 
+  // var callback = goog.dom.classlist.contains(
+  //       icon, constants.CssClass.REMOVE) ?
+  //     this.removeKeyCallback_ : this.exportKeyCallback_;
+  // var parentTR = this.getParentTableRow_(icon);
+  // var keyUid = goog.dom.getElementByClass(
+  //     constants.CssClass.KEY_UID, parentTR).textContent;
+  // callback(keyUid);
+
+
+  // @yahoo allowed removal of individual key by fingerprint
   var callback = goog.dom.classlist.contains(icon, constants.CssClass.REMOVE) ?
-      this.removeKeyCallback_ : this.exportKeyCallback_;
-  var parentTR = this.getParentTableRow_(icon);
-  var keyUid = goog.dom.getElementByClass(
-      constants.CssClass.KEY_UID, parentTR).textContent;
-  callback(keyUid);
+      this.removeKeyCallback_ :
+      goog.dom.classlist.contains(icon, constants.CssClass.EXPORT) ?
+          this.exportKeyCallback_ :
+          null;
+
+  if (callback) {
+    var parentTR = this.getParentTableRow_(icon);
+    var keyUid = goog.dom.getElementByClass(
+        constants.CssClass.KEY_UID, parentTR).textContent;
+
+    if (icon instanceof HTMLImageElement) {
+      callback(keyUid);
+    } else if (callback === this.removeKeyCallback_) {
+      var fpElem = goog.dom.getElementByClass(
+          constants.CssClass.KEY_FINGERPRINT, icon.parentElement);
+      var typeElem = goog.dom.getNextElementSibling(fpElem);
+      var pubString = chrome.i18n.getMessage('publicKeyDescription');
+      var privString = chrome.i18n.getMessage('secretKeyDescription');
+      if (fpElem && typeElem) {
+        var keyType = goog.string.contains(typeElem.textContent, pubString) ?
+            e2e.openpgp.KeyRing.Type.PUBLIC :
+            goog.string.contains(typeElem.textContent, privString) ?
+                e2e.openpgp.KeyRing.Type.PRIVATE :
+                null;
+
+        callback(keyUid, fpElem.textContent, keyType);
+      }
+    }
+  }
 };
 
 

@@ -308,6 +308,9 @@ e2ebind.focusHandler_ = function(e) {
 * Start listening for responses and requests to/from the provider.
 */
 e2ebind.start = function() {
+  // init the config first
+  window.config = {};
+
   // Initialize the message-passing hash table between e2e and the provider
   e2ebind.messagingTable_ = new e2ebind.MessagingTable_();
 
