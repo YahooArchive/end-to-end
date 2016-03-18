@@ -588,6 +588,8 @@ e2e.openpgp.KeyRing.prototype.deleteKeyByFingerprint = function(fingerprint,
       keyring.remove(uid);
     });
   }, this);
+
+  this.persist_();
 };
 
 
