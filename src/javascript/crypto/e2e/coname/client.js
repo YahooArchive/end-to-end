@@ -286,7 +286,7 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
   };
 
   // TODO: make this possible for polling/retries
-  e2e.coname.getAJAX_('POST', realm.addr + '/lookup', 10000, data).
+  e2e.coname.getAJAX_('POST', realm.addr + '/lookup', 30000, data).
       addCallbacks(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
             profile = pf['profile'],
