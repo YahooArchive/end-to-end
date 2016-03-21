@@ -75,6 +75,7 @@ e2e.ext.constants.Actions = {
 
   // Administration related actions.
   CONFIGURE_EXTENSION: 'configure_extension',
+  REPORT_ISSUE: 'report_issue',
 
   // Default catch-all action.
   USER_SPECIFIED: 'user_specified'

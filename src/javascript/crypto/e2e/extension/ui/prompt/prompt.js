@@ -80,6 +80,9 @@ ui.Prompt = function() {
   }, {
     value: constants.Actions.LOCK_KEYRING,
     title: chrome.i18n.getMessage('actionLockKeyring')
+  }, {
+    value: constants.Actions.REPORT_ISSUE,
+    title: chrome.i18n.getMessage('actionReportIssue')
   }];
 };
 goog.inherits(ui.Prompt, goog.ui.Component);
@@ -160,14 +163,23 @@ ui.Prompt.prototype.processSelectedContent_ =
       goog.dom.classlist.add(menuContainer, constants.CssClass.HIDDEN);
       this.renderMenu_();
       break;
+    //@yahoo
     case constants.Actions.CONFIGURE_EXTENSION:
       chrome.tabs.create({
         url: 'settings.html',
         active: true
       }, goog.nullFunction);
       break;
+    //@yahoo
     case constants.Actions.LOCK_KEYRING:
       this.pgpLauncher_.stop();
+      break;
+    //@yahoo
+    case constants.Actions.REPORT_ISSUE:
+      chrome.tabs.create({
+        url: 'https://help.yahoo.com/kb/yahoo-account',
+        active: true
+      }, goog.nullFunction);
       break;
     case constants.Actions.NO_OP:
       this.close();

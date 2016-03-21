@@ -139,6 +139,10 @@
     "message": "Lock keyring",
     "description": "A short phrase directing the user to lock their keyring."
   },
+  "actionReportIssue": {
+    "message": "Report an issue",
+    "description": "A short phrase directing the user to support request."
+  },
   "actionCancelPgpAction": {
     "message": "Cancel",
     "description": "A verb prompting the user to cancel the current PGP operation."
