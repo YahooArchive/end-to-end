@@ -331,24 +331,25 @@ ext.yExtensionLauncher.prototype.configureWebRequests = function() {
   }),
   ['blocking']);
 
+  this.refreshYmail();
+};
 
 
-  // @yahoo focus or go to ymail instead
-  chrome.tabs.query({
-    // this must match the one declared in manifest
-    url: 'https://*.mail.yahoo.com/*'
-  }, goog.bind(function(tabs) {
-    // All ymail tabs need to be reloaded for the e2ebind API to work
+/**
+ * Refresh all ymail tabs
+ */
+ext.yExtensionLauncher.prototype.refreshYmail  = function() {
+  // TODO: remove reloading requirement?
+  chrome.tabs.query({}, function(tabs) {
     goog.array.forEach(tabs, function(tab) {
-      chrome.tabs.reload(tab.id);
+      goog.isDef(tab.id) && chrome.tabs.executeScript(
+          tab.id, {code: 'typeof window.helper'}, function(results) {
+            if (!chrome.runtime.lastError && goog.isDef(results)) {
+              chrome.tabs.reload(tab.id);
+            }
+          });
     });
-
-    // focus if present, otherwise open a new one
-    tabs.length ?
-        chrome.tabs.update(tabs[0].id, {highlighted: true, active: true}) :
-        this.createWindow(
-            e2e.ext.config.CONAME.realms[0].URL, true, goog.nullFunction);
-  }, this));
+  });
 };
 
 
@@ -433,8 +434,7 @@ ext.yExtensionLauncher.prototype.stop = function() {
   this.ctxApi_.removeApi();
   this.updatePassphraseWarning();
 
-  var tabId = this.helperProxy_.getHelperId();
-  tabId && chrome.tabs.reload(parseInt(tabId, 10));
+  this.refreshYmail();
 };
 
 
