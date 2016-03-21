@@ -32,6 +32,7 @@ goog.require('e2e.ext.constants.e2ebind.responseActions');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.CallbackPair');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.array');
@@ -51,6 +52,14 @@ var ui = e2e.ext.ui;
 
 
 /**
+ * Timeout for requests sent to website API connectors (in ms).
+ * @type {number}
+ * @const
+ */
+e2ebind.REQUEST_TIMEOUT = 5000;
+
+
+/**
  * True if e2ebind has been started.
  * @type {boolean}
  * @private
@@ -67,62 +76,44 @@ e2ebind.isStarted = function() {
 };
 
 
-
 /**
-* Hash table for associating unique IDs with request/response pairs
-* @constructor
-* @private
+* Start listening for responses and requests to/from the provider.
 */
-e2ebind.MessagingTable_ = function() {
-  this.table = {};
+e2ebind.start = function() {
+  // init the config first
+  window.config = {};
+
+  /**
+   * Object storing response callbacks for API calls in progress
+   * @type {!e2e.ext.utils.CallbacksMap}
+   * @private
+   */
+  e2ebind.pendingCallbacks_ = new e2e.ext.utils.CallbacksMap();
+
+  // Register the click handler
+  goog.events.listen(document.body, goog.events.EventType.CLICK,
+                     e2ebind.clickHandler_, true);
+
+  // Register handler for when the compose area is focused
+  goog.events.listen(document.body, goog.events.EventType.FOCUS,
+                     e2ebind.clickHandler_, true);
+
+
+  // Register the handler for messages from the provider
+  window.addEventListener('message', e2ebind.messageHandler_);
 };
 
 
 /**
- * Generates a short, non-cryptographically random string.
- * @return {string}
+ * Stops the e2ebind API
  */
-e2ebind.MessagingTable_.prototype.getRandomString = function() {
-  return goog.string.getRandomString();
-};
-
-
-/**
- * Adds an entry to the hash table.
- * @param {string} action The action associated with the entry.
- * @param {function(messages.e2ebindResponse)=} opt_callback The callback
- *   associated with the entry.
- * @return {string} The hash value.
- */
-e2ebind.MessagingTable_.prototype.add = function(action, opt_callback) {
-  var hash;
-  do {
-    // Ensure uniqueness.
-    hash = this.getRandomString();
-  } while (this.table.hasOwnProperty(hash) && this.table[hash] !== null);
-  this.table[hash] = {
-    action: action,
-    callback: opt_callback
-  };
-  return hash;
-};
-
-
-/**
-* Retrieves the callback associated with a hash value and an action.
-* @param {string} hash
-* @param {string} action
-* @return {{action:string,callback:(function(*)|undefined)}}
-*/
-e2ebind.MessagingTable_.prototype.get = function(hash, action) {
-  var result = null;
-  if (this.table.hasOwnProperty(hash) &&
-      this.table[hash] !== null &&
-      this.table[hash].action === action) {
-    result = this.table[hash];
-  }
-  this.table[hash] = null;
-  return result;
+e2ebind.stop = function() {
+  window.removeEventListener('message', e2ebind.messageHandler_);
+  e2ebind.started_ = false;
+  goog.events.unlisten(document.body, goog.events.EventType.CLICK,
+                       e2ebind.clickHandler_);
+  goog.events.unlisten(document.body, goog.events.EventType.FOCUS,
+                       e2ebind.clickHandler_);
 };
 
 
@@ -141,7 +132,6 @@ e2ebind.messageHandler_ = function(response) {
       return;
     }
 
-    // console.log('got e2ebind msg from provider:', data);
     var action = data.action.toUpperCase();
     if (action in constants.e2ebind.requestActions) {
       e2ebind.handleProviderRequest_(/** @type {messages.e2ebindRequest} */
@@ -152,6 +142,167 @@ e2ebind.messageHandler_ = function(response) {
     }
   } catch (e) {}
 };
+
+
+/**
+* Sends a request to the provider.
+* @param {string} action The action requested.
+* @param {Object} args The arguments to the action.
+* @param {function(messages.e2ebindResponse)} callback The function to
+*   callback with the response
+*/
+e2ebind.sendRequest = function(action, args, callback) {
+  var hash = e2ebind.pendingCallbacks_.addCallbacks(
+      callback, goog.nullFunction);
+
+  var reqObj = /** @type {messages.e2ebindRequest} */ ({
+    api: 'e2ebind',
+    source: 'E2E',
+    action: action,
+    args: args,
+    hash: hash
+  });
+  var timeoutResponse = /** @type {messages.e2ebindResponse} */ ({
+    action: action,
+    error: 'Timeout occurred while processing the request.',
+    hash: hash
+  });
+  // Set a timeout for a function that would simulate an error response.
+  // If the response was processed before the timeout, handleProviderResponse_
+  // will just silently bail out.
+  setTimeout(
+      goog.bind(e2ebind.handleProviderResponse_, e2ebind, timeoutResponse),
+      e2ebind.REQUEST_TIMEOUT);
+  
+  window.postMessage(window.JSON.stringify(reqObj), window.location.origin);
+};
+
+
+/**
+* Handles a response to a request we sent
+* @param {messages.e2ebindResponse} response The provider's response to a
+*   request we sent.
+* @private
+*/
+e2ebind.handleProviderResponse_ = function(response) {
+  if (response.hash) {
+    try {
+      var callbacks = e2ebind.pendingCallbacks_.getAndRemove(response.hash);
+      callbacks && callbacks.callback(response);
+    } catch (err) {}
+  }
+};
+
+
+/**
+* Handle an incoming request from the provider.
+* @param {messages.e2ebindRequest} request The request from the provider.
+* @private
+*/
+e2ebind.handleProviderRequest_ = function(request) {
+  var actions = constants.e2ebind.requestActions;
+
+  if (request.action !== actions.START && !e2ebind.started_) {
+    return;
+  }
+
+  var args = request.args;
+
+  switch (request.action) {
+    case actions.START:
+      if (e2ebind.started_) {
+        // We've already started.
+        e2ebind.sendResponse_(null, request, false);
+        break;
+      }
+
+      // Note that we've attempted to start, and set the config
+      e2ebind.started_ = true;
+      window.config = {
+        signer: String(args.signer),
+        version: String(args.version)
+      };
+
+      // Verify the signer
+      e2ebind.validateSigner_(args.signer);
+      // Always return true to add encryptr button
+      e2ebind.sendResponse_({valid: true}, request, true);
+      break;
+
+    case actions.INSTALL_READ_GLASS:
+      if (args.messages) {
+        try {
+          goog.array.forEach(args.messages, function(message) {
+            // XXX: message.elem is a selector string, not a DOM element
+            e2ebind.installReadGlass_(
+                document.querySelector(message.elem),
+                message.text);
+          });
+          e2ebind.sendResponse_(null, request, true);
+        } catch (ex) {
+          e2ebind.sendResponse_(null, request, false);
+        }
+      }
+      break;
+
+    case actions.INSTALL_COMPOSE_GLASS:
+      // TODO: YMail should send the draft element instead of null!
+      e2ebind.initComposeGlass_(args.elem);
+      break;
+
+    case actions.SET_SIGNER:
+      // TODO: Page doesn't send message when selected signer changes.
+      // validates and updates the signer/validity in E2E
+      if (!args.signer) {
+        break;
+      }
+      window.config.signer = String(args.signer);
+
+    case actions.VALIDATE_SIGNER:
+      try {
+        e2ebind.validateSigner_(args.signer, function(valid) {
+          e2ebind.sendResponse_({valid: valid}, request, true);
+        });
+      } catch (ex) {
+        e2ebind.sendResponse_(null, request, false);
+      }
+      break;
+
+    case actions.VALIDATE_RECIPIENTS:
+      try {
+        e2ebind.validateRecipients_(args.recipients, function(response) {
+          e2ebind.sendResponse_({results: response}, request, true);
+        });
+      } catch (ex) {
+        e2ebind.sendResponse_(null, request, false);
+      }
+      break;
+  }
+};
+
+
+/**
+* Sends a response to a request from a provider
+* @param {Object} result The result field of the response message
+* @param {messages.e2ebindRequest} request The request we are responding to
+* @param {boolean} success Whether or not the request was successful.
+* @private
+*/
+e2ebind.sendResponse_ = function(result, request, success) {
+  var returnObj = /** @type {messages.e2ebindResponse} */ ({
+    api: 'e2ebind',
+    result: result,
+    success: success,
+    action: request.action,
+    hash: request.hash,
+    source: 'E2E'
+  });
+
+  window.postMessage(window.JSON.stringify(returnObj), window.location.origin);
+};
+
+
+
 
 
 /**
@@ -177,6 +328,10 @@ e2ebind.initComposeGlass_ = function(elt, opt_isExplicit) {
     // or we already tried to auto-install the glass.
     return;
   }
+
+  // get parent element whose class is 'compose'
+  e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
+      elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
 
   // // We have to unhide the PGP blob so that text shows up in compose glass
   // var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
@@ -305,195 +460,6 @@ e2ebind.focusHandler_ = function(e) {
 
 
 /**
-* Start listening for responses and requests to/from the provider.
-*/
-e2ebind.start = function() {
-  // init the config first
-  window.config = {};
-
-  // Initialize the message-passing hash table between e2e and the provider
-  e2ebind.messagingTable_ = new e2ebind.MessagingTable_();
-
-  // Register the click handler
-  goog.events.listen(document.body, goog.events.EventType.CLICK,
-                     e2ebind.clickHandler_, true);
-
-  // Register handler for when the compose area is focused
-  goog.events.listen(document.body, goog.events.EventType.FOCUS,
-                     e2ebind.clickHandler_, true);
-
-
-  // Register the handler for messages from the provider
-  window.addEventListener('message', e2ebind.messageHandler_);
-};
-
-
-/**
- * Stops the e2ebind API
- */
-e2ebind.stop = function() {
-  window.removeEventListener('message', e2ebind.messageHandler_);
-  e2ebind.messagingTable_ = undefined;
-  e2ebind.started_ = false;
-  window.config = {};
-  goog.events.unlisten(document.body, goog.events.EventType.CLICK,
-                       e2ebind.clickHandler_);
-  goog.events.unlisten(document.body, goog.events.EventType.FOCUS,
-                       e2ebind.clickHandler_);
-};
-
-
-/**
-* Sends a request to the provider.
-* @param {string} action The action requested.
-* @param {Object} args The arguments to the action.
-* @param {function(messages.e2ebindResponse)=} opt_callback The function to
-*   callback with the response
-*/
-e2ebind.sendRequest = function(action, args, opt_callback) {
-  if (!e2ebind.messagingTable_) {
-    return;
-  }
-
-  var hash = e2ebind.messagingTable_.add(action, opt_callback);
-
-  var reqObj = /** @type {messages.e2ebindRequest} */ ({
-    api: 'e2ebind',
-    source: 'E2E',
-    action: action,
-    args: args,
-    hash: hash
-  });
-
-  window.postMessage(window.JSON.stringify(reqObj), window.location.origin);
-};
-
-
-/**
-* Sends a response to a request from a provider
-* @param {Object} result The result field of the response message
-* @param {messages.e2ebindRequest} request The request we are responding to
-* @param {boolean} success Whether or not the request was successful.
-* @private
-*/
-e2ebind.sendResponse_ = function(result, request, success) {
-  var returnObj = /** @type {messages.e2ebindResponse} */ ({
-    api: 'e2ebind',
-    result: result,
-    success: success,
-    action: request.action,
-    hash: request.hash,
-    source: 'E2E'
-  });
-
-  window.postMessage(window.JSON.stringify(returnObj), window.location.origin);
-};
-
-
-/**
-* Handles a response to a request we sent
-* @param {messages.e2ebindResponse} response The provider's response to a
-*   request we sent.
-* @private
-*/
-e2ebind.handleProviderResponse_ = function(response) {
-  if (e2ebind.messagingTable_) {
-    var request = e2ebind.messagingTable_.get(response.hash, response.action);
-    if (request && request.callback) {
-      request.callback(response);
-    }
-  }
-};
-
-
-/**
-* Handle an incoming request from the provider.
-* @param {messages.e2ebindRequest} request The request from the provider.
-* @private
-*/
-e2ebind.handleProviderRequest_ = function(request) {
-  var actions = constants.e2ebind.requestActions;
-
-  if (request.action !== actions.START && !e2ebind.started_) {
-    return;
-  }
-
-  var args = request.args;
-
-  switch (request.action) {
-    case actions.START:
-      if (e2ebind.started_) {
-        // We've already started.
-        e2ebind.sendResponse_(null, request, false);
-        break;
-      }
-
-      // Note that we've attempted to start, and set the config
-      e2ebind.started_ = true;
-      window.config = {
-        signer: String(args.signer),
-        version: String(args.version)
-      };
-
-      // Verify the signer
-      e2ebind.validateSigner_(args.signer);
-      // Always return true to add encryptr button
-      e2ebind.sendResponse_({valid: true}, request, true);
-      break;
-
-    case actions.INSTALL_READ_GLASS:
-      if (args.messages) {
-        try {
-          goog.array.forEach(args.messages, function(message) {
-            // XXX: message.elem is a selector string, not a DOM element
-            e2ebind.installReadGlass_(
-                document.querySelector(message.elem),
-                message.text);
-          });
-          e2ebind.sendResponse_(null, request, true);
-        } catch (ex) {
-          e2ebind.sendResponse_(null, request, false);
-        }
-      }
-      break;
-
-    case actions.INSTALL_COMPOSE_GLASS:
-      // TODO: YMail should send the draft element instead of null!
-      e2ebind.initComposeGlass_(args.elem);
-      break;
-
-    case actions.SET_SIGNER:
-      // TODO: Page doesn't send message when selected signer changes.
-      // validates and updates the signer/validity in E2E
-      if (!args.signer) {
-        break;
-      }
-      window.config.signer = String(args.signer);
-
-    case actions.VALIDATE_SIGNER:
-      try {
-        e2ebind.validateSigner_(args.signer, function(valid) {
-          e2ebind.sendResponse_({valid: valid}, request, true);
-        });
-      } catch (ex) {
-        e2ebind.sendResponse_(null, request, false);
-      }
-      break;
-
-    case actions.VALIDATE_RECIPIENTS:
-      try {
-        e2ebind.validateRecipients_(args.recipients, function(response) {
-          e2ebind.sendResponse_({results: response}, request, true);
-        });
-      } catch (ex) {
-        e2ebind.sendResponse_(null, request, false);
-      }
-      break;
-  }
-};
-
-
-/**
 * Installs a read looking glass in the page.
 * @param {Element} elem  element to install the glass in
 * @param {string=} opt_text Optional alternative text to elem's innerText
@@ -545,7 +511,7 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
     return;
   }
 
-  var hash = e2ebind.messagingTable_.getRandomString();
+  var hash = goog.string.getRandomString();
   var glassWrapper = new ui.ComposeGlassWrapper(elem, draft, hash);
   window.helper && window.helper.registerDisposable(glassWrapper);
   glassWrapper.installGlass();
@@ -640,15 +606,16 @@ e2ebind.setDraft = function(args) {
         bcc: [],
         // bcc: args.bcc || [], //pgp doesn't support bcc
         subject: args.subject || '',
-        body: args.body || ''
+        body: args.body || '',
+        send: args.send
       }),
       function(response) {
-        if (e2ebind.activeComposeElem_ === null) {
-          console.warn('No active compose element for e2ebind');
-        } else if (args.send) {
-          // Send the message by clicking the "send" button in ymail
-          e2ebind.activeComposeElem_.querySelector(
-              '[data-action=send]').click();
+        // Send the message by clicking the "send" button in ymail
+        // TODO: move this into encryptr
+        var elem = e2ebind.activeComposeElem_;
+        if (args.send && elem &&
+            (elem = elem.querySelector('[data-action=send]'))) {
+          elem.click();
         }
       });
 
