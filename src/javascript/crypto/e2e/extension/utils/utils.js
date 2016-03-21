@@ -154,6 +154,9 @@ utils.showNotification = function(msg, callback) {
  */
 utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
   var port = chrome.runtime.connect();
+  if (!port) {
+    return;
+  }
   port.postMessage(args);
 
   opt_callback = opt_callback || goog.nullFunction;
@@ -185,10 +188,23 @@ utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
 /**
  * Sends a request from a content script to proxy a message to the active tab.
  * @param {messages.proxyMessage} args The message to proxy
+ * @return {e2e.async.Result.<Object>}
  */
 utils.sendProxyRequest = function(args) {
+  var result = new e2e.async.Result;
+
   args.proxy = true;
-  chrome.runtime.sendMessage(args);
+  chrome.runtime.sendMessage(args, function(response) {
+    if (chrome.runtime.lastError) {
+      result.errback(chrome.runtime.lastError);
+    } else if (response.error) {
+      result.errback(new Error(response.error));
+    } else {
+      result.callback(response);
+    }
+  });
+
+  return result;
 };
 
 

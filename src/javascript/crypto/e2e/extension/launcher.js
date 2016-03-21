@@ -305,7 +305,8 @@ goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 /** @override */
 ext.yExtensionLauncher.prototype.start = function(opt_passphrase) {
   this.configureWebRequests();
-  this.handleGlassRequests_();
+  chrome.runtime.onMessage.addListener(
+      goog.bind(this.handleGlassRequests_, this));
 
   return goog.base(this, 'start', opt_passphrase);
 };
@@ -354,19 +355,19 @@ ext.yExtensionLauncher.prototype.refreshYmail  = function() {
 
 
 /**
- * Listen for requests from glasses
+ * The runtime.onMessage handler for glasses
+ * @param {*} args The message to proxy
+ * @param {MessageSender} sender
+ * @param {function (*): undefined} callback The function to invoke with the response.
  * @private
  */
-ext.yExtensionLauncher.prototype.handleGlassRequests_ = function() {
-
-  chrome.runtime.onMessage.addListener(goog.bind(function(args, sender) {
+ext.yExtensionLauncher.prototype.handleGlassRequests_ = function(
+    args, sender, callback) {
+  try {
     var content = args.content,
         shouldSend = false,
-        callback = goog.nullFunction,
-        errorCallback = goog.nullFunction,
-        tabId = this.helperProxy_.getHelperId();
-
-    tabId = tabId === '' ? undefined : parseInt(tabId, 10);
+        tabId = sender.tab && sender.tab.id,
+        nullFunction = goog.nullFunction;
 
     switch (args.action) {
       case constants.Actions.GLASS_CLOSED:
@@ -374,7 +375,7 @@ ext.yExtensionLauncher.prototype.handleGlassRequests_ = function() {
         this.helperProxy_.sendMessage({
           content: content,
           action: args.action
-        }, callback, errorCallback);
+        }, nullFunction, nullFunction);
         break;
 
       case constants.Actions.SET_AND_SEND_DRAFT:
@@ -385,40 +386,46 @@ ext.yExtensionLauncher.prototype.handleGlassRequests_ = function() {
             content.recipients,
             content.origin,
             shouldSend,
-            callback,
-            errorCallback,
+            nullFunction,
+            nullFunction,
             content.subject,
             content.from,
             content.ccRecipients);
         break;
 
       case constants.Actions.GET_SELECTED_CONTENT:
-        this.helperProxy_.getSelectedContent(callback, errorCallback);
+        this.helperProxy_.getSelectedContent(nullFunction, nullFunction);
         break;
 
       case constants.Actions.CHANGE_PAGEACTION:
-        chrome.browserAction.setTitle({
-          tabId: tabId,
-          title: chrome.i18n.getMessage('composeGlassTitle')
-        });
-        chrome.browserAction.setIcon({
-          tabId: tabId,
-          path: 'images/yahoo/icon-128-green.png'
-        });
+        if (tabId) {
+          chrome.browserAction.setTitle({
+            tabId: tabId,
+            title: chrome.i18n.getMessage('composeGlassTitle')
+          });
+          chrome.browserAction.setIcon({
+            tabId: tabId,
+            path: 'images/yahoo/icon-128-green.png'
+          });
+        }
         break;
       case constants.Actions.RESET_PAGEACTION:
-        chrome.browserAction.setTitle({
-          tabId: tabId,
-          title: chrome.i18n.getMessage('extName')
-        });
-        chrome.browserAction.setIcon({
-          tabId: tabId,
-          path: 'images/yahoo/icon-128.png'
-        });
+        if (tabId) {
+          chrome.browserAction.setTitle({
+            tabId: tabId,
+            title: chrome.i18n.getMessage('extName')
+          });
+          chrome.browserAction.setIcon({
+            tabId: tabId,
+            path: 'images/yahoo/icon-128.png'
+          });
+        }
         break;
     }
-
-  }, this));
+    callback(true);
+  } catch (err) {
+    callback({error: err});
+  }
 };
 
 
@@ -433,6 +440,9 @@ ext.yExtensionLauncher.prototype.stop = function() {
   // Remove the API
   this.ctxApi_.removeApi();
   this.updatePassphraseWarning();
+
+  chrome.runtime.onMessage.removeListener(
+      goog.bind(this.handleGlassRequests_, this));
 
   this.refreshYmail();
 };

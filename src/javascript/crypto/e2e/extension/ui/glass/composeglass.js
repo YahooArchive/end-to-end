@@ -684,9 +684,9 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
       subject: subject,
       from: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
     })
-  }));
-  // @yahoo close the compose glass
-  this.close();
+
+    // @yahoo close the compose glass if succeeded
+  })).addCallbacks(this.close, this.displayFailure_, this);
 };
 
 
@@ -729,9 +729,9 @@ ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
       subject: subject,
       from: signer
     })
-  }));
-  // @yahoo close the compose glass
-  this.close();
+
+    // @yahoo close the compose glass if succeeded
+  })).addCallbacks(this.close, this.displayFailure_, this);
 };
 
 
