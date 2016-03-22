@@ -91,7 +91,8 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
 
   var glassFrame = goog.dom.createElement(goog.dom.TagName.IFRAME);
   glassFrame.scrolling = 'no';
-  goog.style.setSize(glassFrame, goog.style.getSize(this.targetElem_));
+  var targetSize = goog.style.getSize(this.targetElem_);
+  goog.style.setSize(glassFrame, '100%', targetSize.height);
   glassFrame.style.border = 0;
 
   var originalContent = this.getOriginalContent();
@@ -198,7 +199,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   var glassFrame = goog.dom.createElement(goog.dom.TagName.IFRAME);
   glassFrame.src = chrome.runtime.getURL('composeglass.html');
   var targetSize = goog.style.getSize(elem);
-  goog.style.setSize(glassFrame, targetSize.width, targetSize.height);
+  goog.style.setSize(glassFrame, '100%', targetSize.height);
   var elemY = goog.style.getClientPosition(elem).y,
       maxHeight = window.innerHeight - elemY;
   if (targetSize.height < 390 || maxHeight < 390) {
