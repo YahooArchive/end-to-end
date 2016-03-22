@@ -105,3 +105,53 @@
 button.keyring-import {
   overflow: hidden
 }
+
+
+
+
+#storedKeys .key-meta {
+  clear: both;
+  padding: 0 0 3px 3px;
+}
+
+#storedKeys .key-info {
+  padding: 0 5px;
+  width: 560px;
+}
+
+#storedKeys .key-uid {
+  height: 35px;
+  vertical-align: top;
+}
+
+#storedKeys .key-meta span.export, #storedKeys .key-meta span.remove {
+  background: url(images/download_item.png) no-repeat 5px 1px;
+  width: 21px;
+  height: 18px;
+  cursor: pointer;
+  opacity: .2;
+  float: right;
+  clear: right;
+}
+
+#storedKeys tr img {
+  padding: 0;
+  margin-right: 2px;
+}
+
+#storedKeys tr img.export{
+  margin-left: -50px;
+}
+
+#storedKeys tr:hover img {
+  opacity: .1;
+}
+
+div#pgpBody .key-info span.remove {
+  background: url(images/delete.png) no-repeat;
+}
+
+div#pgpBody .key-info span.export:hover, div#pgpBody .key-info span.remove:hover, #storedKeys tr img:hover {
+  opacity: .6
+}
+

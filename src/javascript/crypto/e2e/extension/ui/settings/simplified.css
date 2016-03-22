@@ -43,7 +43,7 @@ html.single input.email {
 
 html.single div#keyringOptionsDiv {
   float: right;
-  width: 185px;
+  width: 190px;
   margin-top: -35px;
   border: 1px #DDD solid;
   padding: 10px 15px;
@@ -75,53 +75,12 @@ html.single .keyring-signup:before {
   content: ''
 }
 
-
-html.single div#pgpBody .key-info span.export, html.single div#pgpBody .key-info span.remove {
-  background: url(images/download_item.png) no-repeat 5px 1px;
-  width: 21px;
-  height: 18px;
-  cursor: pointer;
-  opacity: .2;
-  float: right;
-}
-
-html.single div#pgpBody .key-info {
-  padding: 0 5px;
-  width: 550px;
-}
-
-html.single #storedKeys div.key-uid {
-  height: 35px;
-  vertical-align: top;
+html.single #storedKeys tr:hover {
+  background: none;
 }
 
 html.single #storedKeys div.key-uid:after {
   content: attr(data-label);
-}
-
-html.single #storedKeys tr img {
-  padding: 0;
-  margin-right: 2px;
-}
-
-html.single #storedKeys tr img.export{
-  margin-left: -50px;
-}
-
-html.single #storedKeys tr:hover img {
-  opacity: .1;
-}
-
-html.single div#pgpBody .key-info span.remove {
-  background: url(images/delete.png) no-repeat;
-}
-
-html.single div#pgpBody .key-info span.export:hover, html.single div#pgpBody .key-info span.remove:hover, html.single #storedKeys tr img:hover {
-  opacity: .6
-}
-
-html.single #storedKeys tr:hover {
-  background: none;
 }
 
 html.single #callbackDialog>div {
