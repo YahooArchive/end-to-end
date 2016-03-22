@@ -16,6 +16,13 @@
  * Defines the extra styles for the compose glass UI, based on prompt.css
  */
 
+@font-face{
+  font-family:'mail';
+  src:url("images/yahoo/fonts/mail-ltr47.woff2") format("woff2"),url("images/yahoo/fonts/mail-ltr47.woff") format("woff");
+  font-weight:400;
+  font-style:normal
+}
+
 html {
   overflow: hidden
  }
@@ -41,16 +48,24 @@ button {
   line-height: 16px;
 }
 
+label[for=draft-delete-button]:before {
+  content: '\e016';
+  font-family: mail;
+  font-size: 12px;
+  color: #777;
+  position: absolute;
+  right: 8px;
+  top: 5px;
+  padding: 2px;
+  cursor: pointer;
+}
+
 #pgpKeySelect {
   cursor: text;
 }
 
 #fromHolder, #chipHolder, #ccChipHolder, #pgpSignerSelect, #pgpKeySelect input, #subjectHolder input {
   font-size: 13px;
-}
-
-textarea {
-  font-size: 15px;
 }
 
 #chipHolder, #ccChipHolder, #fromHolder, #subjectHolder {
@@ -106,7 +121,46 @@ textarea {
   margin: 0 2px 0 -16px;
 }
 
+
+
+#encryptr-icon span {
+  position: absolute;
+  z-index: -100;
+  display: block;
+  background: #FFF;
+  box-shadow: 1px 1px #EEE;
+  border-radius: 8px;
+  border: 1px solid #CCC;
+  padding: 13px 18px;
+  width: 250px;
+  right: 5px;
+  margin-top: 3px;
+  color: #333;
+  cursor: default;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity .25s ease-in-out;
+}
+
+#encryptr-icon:hover span {
+  visibility: visible;
+  z-index: inherit;
+  opacity: .97;
+}
+
+#encryptr-icon:after {
+  font-family: mail;
+  content: '\e611';
+  cursor: auto;
+  font-size: 20px;
+  position: absolute;
+  right: 6px;
+  padding: 3px;
+  color: #666;
+}
+
 textarea {
+  font-size: 15px;
   width: 100%;
   padding: 10px 28px;
   font-family: lucida console, sans-serif;
@@ -114,7 +168,7 @@ textarea {
   resize: none;
 }
 
-#pgpBody .pgpActions {
+.pgpActions {
   position: fixed;
   bottom: 0;
   width: 100%;
@@ -122,9 +176,43 @@ textarea {
   background: #FFF;
 }
 
+.pgpActions>button {
+  display: inline-block;
+}
+
+.pgpActions>div {
+  display: inline-block;
+  font-size: .95em;
+  opacity: .7;
+  vertical-align: top;
+  padding: 15px 15px 0 0;
+}
+
+.pgpActions label[for], #pgpGenerateKey label[for] {
+  cursor: pointer;
+  color: -webkit-link;
+  text-decoration: underline;
+}
+
+.pgpActions > div > button {
+  font-family: mail;
+  margin: 3px;
+  font-size: 20px;
+  background: none;
+  color: #777;
+  border: none;
+  padding: 0 6px 0 1px;
+  box-shadow: none;
+  line-height: 31px;
+}
+
+.pgpActions button#draft-delete-button:before {
+  content: "\e008"
+}
+
 .passphraseEncryptionLink {
   font-size: .75rem;
-  padding: 0;
+  padding-right: 3px;
   margin: 9px 0 -24px;
 }
 
@@ -138,18 +226,4 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-bottom: 3px;
-}
-
-.pgpActions>div {
-  display: inline;
-  position: absolute;
-  font-size: .95em;
-  margin-top: 15px;
-  opacity: .7
-}
-
-.pgpActions label[for], #pgpGenerateKey label[for] {
-  cursor: pointer;
-  color: -webkit-link;
-  text-decoration: underline;
 }

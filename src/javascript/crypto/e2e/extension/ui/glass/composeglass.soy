@@ -46,10 +46,13 @@
  * @param subjectLabel The label for the subject field
  * @param signerCheckboxTitle The label for the checkbox to sign messages.
  * @param actionButtonTitle The title of the prompt button. 
+ * @param actionDraftDeleteTitle The title of the Delete Draft button.
  * @param restoreToNormalComposeLabel The label for restoring to regular
  *     compose.
+ * @param encryptrMessage The default message to display when the encryptr icon is hovered.
  */
 {template .renderEncrypt}
+  <div><label for="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}"></label></div>
   <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}" style="display: none">
     <div>{$fromLabel}</div>
     <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"></select>
@@ -61,6 +64,7 @@
     <input id="{e2e.ext.constants.ElementId.SUBJECT}" value="{$subject}" placeholder="{$subjectLabel}" />
   </div>
   {/if}
+  <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}"><span>{$encryptrMessage}</span></div>
   <textarea></textarea>
   <div class="{e2e.ext.constants.CssClass.PROMPT_ACTIONS}">
     <div style="display:none"><!-- @yahoo hide the option whether to sign the message -->
@@ -72,8 +76,10 @@
       <button id="{e2e.ext.constants.ElementId.RESTORE_BUTTON}">Restore</button>
       <button id="{e2e.ext.constants.ElementId.BACK_BUTTON}">Back</button>
     </div>
-
     <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
     <div>{$restoreToNormalComposeLabel}</div>
+    <div>
+      <button id="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}" title="{$actionDraftDeleteTitle}"></button>
+    </div>
   </div>
 {/template}

@@ -165,7 +165,9 @@ e2e.ext.constants.ElementId = {
   LOCK_ICON: 'lock-icon',
   CHECK_ICON: 'check-icon',
   BACK_BUTTON: 'back-button',
+  ENCRYPTR_ICON: 'encryptr-icon', //@yahoo
   RESTORE_BUTTON: 'restore-button', //@yahoo
+  DRAFT_DELETE_BUTTON: 'draft-delete-button', //@yahoo
   ADD_PASSPHRASE_BUTTON: 'add-passphrase-button', //@yahoo
 
   // Website container

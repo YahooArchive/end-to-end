@@ -517,12 +517,24 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
   glassWrapper.installGlass();
   elem.hadAutoGlass = true;
 
+  // TODO: move this to encryptr
   var closeHandler = function(incoming) {
     var message = /** @type {messages.proxyMessage} */ (incoming);
-    if (message.action === constants.Actions.GLASS_CLOSED &&
-        message.content === glassWrapper.hash) {
-      glassWrapper.dispose();
-      chrome.runtime.onMessage.removeListener(closeHandler);
+    if (message.action === constants.Actions.GLASS_CLOSED) {
+      if (typeof message.content == 'object' &&
+          message.content.hash == glassWrapper.hash &&
+          message.content.discardDraft) {
+        var elem = e2ebind.activeComposeElem_;
+        if (elem && (elem = elem.querySelector('.draft-delete-btn'))) {
+          elem.click();
+        }
+        glassWrapper.dispose();
+        chrome.runtime.onMessage.removeListener(closeHandler);
+      }
+      if (message.content === glassWrapper.hash) {
+        glassWrapper.dispose();
+        chrome.runtime.onMessage.removeListener(closeHandler);
+      }
     }
   };
 

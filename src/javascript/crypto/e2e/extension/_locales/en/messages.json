@@ -159,6 +159,10 @@
     "message": "Open in a new window",
     "description": "A short phrase describing opening a new window."
   },
+  "actionDraftDeleteTitle": {
+    "message": "Delete Draft",
+    "description": "A short phrase describing deleting the draft."
+  },
   "keyMgmtTitle": {
     "message": "Keyring management",
     "description": "A section title signaling that the displayed PGP keys are stored by the extension."
@@ -346,7 +350,7 @@
     "description": "The label to describe who is the author of the message."
   },
   "promptSubjectLabel": {
-    "message": "Subject (Warning: Subject is NOT protected)",
+    "message": "Subject",
     "description": "The label to describe the subject of the message."
   },
   "promptNoPrivateKeysFound": {
@@ -372,6 +376,10 @@
   "promptPassphraseMask": {
     "message": "(passphrase)",
     "description": "The string that is displayed instead of a passphrase."
+  },
+  "promptEncryptrBodyOnlyMessage": {
+    "message": "The message body will be automatically encrypted as long as all recipients have publicized their keys.",
+    "description": "The default encryptr status message in the encrypted compose window."
   },
   "publicKeyDescription": {
     "message": "Public",

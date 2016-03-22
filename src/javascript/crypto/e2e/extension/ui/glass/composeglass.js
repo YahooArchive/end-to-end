@@ -164,10 +164,13 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
     fromLabel: chrome.i18n.getMessage('promptFromLabel'),
     actionButtonTitle: chrome.i18n.getMessage(
         'promptEncryptSignActionLabel'),
+    actionDraftDeleteTitle: chrome.i18n.getMessage(
+        'actionDraftDeleteTitle'),
     subject: content.subject,
     subjectLabel: chrome.i18n.getMessage('promptSubjectLabel'),
     restoreToNormalComposeLabel: soydata.VERY_UNSAFE.ordainSanitizedHtml(
-        restoreLabel)
+        restoreLabel),
+    encryptrMessage: chrome.i18n.getMessage('promptEncryptrBodyOnlyMessage')
   });
 
 
@@ -252,27 +255,33 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   //       goog.partial(this.insertMessageIntoPage_, origin));
   // }
 
-  //@yahoo has a hidden back button
-  this.getHandler().listen(
-      goog.dom.getElement(constants.ElementId.BACK_BUTTON),
-      goog.events.EventType.CLICK,
-      goog.bind(this.close, this));
-
-  //@yahoo has a hidden restore button
-  this.getHandler().listen(
-      goog.dom.getElement(constants.ElementId.RESTORE_BUTTON),
-      goog.events.EventType.CLICK,
-      goog.partial(this.savePlaintextDraft_, origin, false));
-
-  //@yahoo has a hidden add passphrase button
-  this.getHandler().listen(
-      goog.dom.getElement(constants.ElementId.ADD_PASSPHRASE_BUTTON),
-      goog.events.EventType.CLICK,
-      goog.bind(function() {
-        // close the keyMissingDialog if it's there
-        this.keyMissingDialog_ && this.keyMissingDialog_.invokeCallback(true);
-        this.renderEncryptionPassphraseDialog_();
-      }, this));
+  this.getHandler().
+      //@yahoo does not use the hidden back button anymore
+      // listen(
+      //   goog.dom.getElement(constants.ElementId.BACK_BUTTON),
+      //   goog.events.EventType.CLICK,
+      //   goog.bind(this.close, this)).
+      //@yahoo has a hidden restore button
+      listenOnce(
+          goog.dom.getElement(constants.ElementId.RESTORE_BUTTON),
+          goog.events.EventType.CLICK,
+          goog.partial(this.savePlaintextDraft_, origin, false)).
+      //@yahoo has a hidden add passphrase button
+      listen(
+          goog.dom.getElement(constants.ElementId.ADD_PASSPHRASE_BUTTON),
+          goog.events.EventType.CLICK,
+          goog.bind(function() {
+            // close the keyMissingDialog if it's there
+            if (this.keyMissingDialog_) {
+              this.keyMissingDialog_.invokeCallback(true);
+            }
+            this.renderEncryptionPassphraseDialog_();
+          }, this)).
+      //@yahoo allows discarding the draft
+      listen(
+        goog.dom.getElement(constants.ElementId.DRAFT_DELETE_BUTTON),
+        goog.events.EventType.CLICK,
+        goog.bind(this.discardDraft, this));
 };
 
 
@@ -809,16 +818,29 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
 };
 
 
+
+/**
+ * Discards the draft.
+ */
+ui.ComposeGlass.prototype.discardDraft = function() {
+  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
+    action: constants.Actions.GLASS_CLOSED,
+    content: {hash: this.hash_, discardDraft: true}
+  }));
+  goog.dispose(this);
+}
+
+
 /**
  * Closes the prompt.
  */
 ui.ComposeGlass.prototype.close = function() {
   // Clear all input and text area fields to ensure that no data accidentally
   // leaks to the user.
-  goog.array.forEach(
-      document.querySelectorAll('textarea,input'), function(elem) {
-        elem.value = '';
-      });
+  // goog.array.forEach(
+  //     document.querySelectorAll('textarea,input'), function(elem) {
+  //       elem.value = '';
+  //     });
   goog.dispose(this);
   utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
     action: constants.Actions.GLASS_CLOSED,
