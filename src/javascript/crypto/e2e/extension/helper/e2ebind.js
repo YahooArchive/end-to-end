@@ -608,29 +608,6 @@ e2ebind.hasDraft = function(callback) {
 * @param {Object} args The data to set the draft with.
 */
 e2ebind.setDraft = function(args) {
-  // TODO(yan): Doesn't work when multiple provider compose windows are open
-  // on the same page
-  e2ebind.sendRequest(
-      constants.Actions.SET_DRAFT,
-      /** @type {messages.e2ebindDraft} */ ({
-        to: args.to || [],
-        cc: args.cc || [],
-        bcc: [],
-        // bcc: args.bcc || [], //pgp doesn't support bcc
-        subject: args.subject || '',
-        body: args.body || '',
-        send: args.send
-      }),
-      function(response) {
-        // Send the message by clicking the "send" button in ymail
-        // TODO: move this into encryptr
-        var elem = e2ebind.activeComposeElem_;
-        if (args.send && elem &&
-            (elem = elem.querySelector('[data-action=send]'))) {
-          elem.click();
-        }
-      });
-
   // XXX: ymail doesn't handle setting the 'from' field when user has multiple
   // addresses.
   var selects = document.querySelectorAll('select#from-field');
@@ -646,6 +623,19 @@ e2ebind.setDraft = function(args) {
       });
     });
   }
+
+  // TODO(yan): Doesn't work when multiple provider compose windows are open
+  // on the same page
+  e2ebind.sendRequest(
+      constants.Actions.SET_DRAFT,
+      /** @type {messages.e2ebindDraft} */ ({
+        to: args.to || [],
+        cc: args.cc || [],
+        // bcc must be empty as pgp doesn't support bcc
+        subject: args.subject || '',
+        body: args.body || '',
+        send: args.send
+      }), goog.nullFunction);
 };
 
 
