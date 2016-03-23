@@ -132,6 +132,7 @@ ui.GlassWrapper.prototype.installGlass = function(opt_callback) {
   */
   // Loading the document after an onload handler has been bound.
   glassFrame.src = chrome.runtime.getURL('glass.html');
+  glassFrame.focus();
 };
 
 
@@ -230,6 +231,8 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
       hash: this.hash
     }, chrome.runtime.getURL(''));
   }, this), false);
+
+  glassFrame.focus();
 };
 
 

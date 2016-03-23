@@ -69,8 +69,15 @@ var dialogs = e2e.ext.ui.dialogs;
  * @extends {e2e.ext.ui.panels.prompt.PanelBase}
  */
 ui.ComposeGlass = function(draft, origin, hash) {
+  // @yahoo a space is prepended for linebreak starting string to workaround
+  // the missing caret issue in textarea
+  var selection = goog.string.canonicalizeNewlines(draft.body || '');
+  if (selection.charCodeAt(0) === 10) {
+    selection = ' ' + selection;
+  }
+
   var content = /** @type {!messages.BridgeMessageRequest} */ ({
-    selection: draft.body,
+    selection: selection,
     recipients: draft.to || [],
     ccRecipients: [].concat(draft.cc || [], draft.bcc || []),
     action: constants.Actions.ENCRYPT_SIGN,
@@ -429,7 +436,6 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
 
   // @yahoo adds textarea focus check
   textArea.onfocus = goog.bind(function() {
-    this.clearFailure_();
     // Turn the extension icon into green when the secure text area is in focus
     utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
       action: constants.Actions.CHANGE_PAGEACTION
@@ -454,7 +460,6 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
   if (this.chipHolder_.hasChildren() || this.ccChipHolder_.hasChildren()) {
     // Double focus() workarounds a bug that prevents the caret from being
     // displayed in Chrome if setSelectionRange() is used.
-    textArea.focus();
     textArea.focus();
   }
 };
