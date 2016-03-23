@@ -251,7 +251,8 @@ e2e.ext.constants.CssClass = {
 
   /** e2ebind page classes **/
   COMPOSE_CONTAINER: 'compose',
-  COMPOSE_CONTAINER_EXCEPTION: 'iris-window',
+  COMPOSE_CONTAINER_REPLY_EXCEPTION: 'reply-text',
+  COMPOSE_CONTAINER_IRIS_EXCEPTION: 'iris-window',
   COMPOSE_BODY: 'compose-message',
 
   /* setup page */

@@ -388,13 +388,15 @@ e2ebind.clickHandler_ = function(e) {
     return;
   }
 
-  // get parent element whose class is 'compose'
-  elt = e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
-      elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
-
-  // if such elt element exists, and not nested in COMPOSE_CONTAINER_EXCEPTION
-  if (elt && null === goog.dom.getAncestorByTagNameAndClass(
-      elt, 'div', constants.CssClass.COMPOSE_CONTAINER_EXCEPTION)) {
+  // the event target must not be nested under '.reply-text'
+  if (!goog.dom.getAncestorByTagNameAndClass(
+      elt, 'div', constants.CssClass.COMPOSE_CONTAINER_REPLY_EXCEPTION) &&
+      // get parent element whose class is 'compose'
+      (elt = goog.dom.getAncestorByTagNameAndClass(
+          elt, 'div', constants.CssClass.COMPOSE_CONTAINER)) &&
+      // the parent element must not be nested under '.iris-window'
+      !goog.dom.getAncestorByTagNameAndClass(
+          elt, 'div', constants.CssClass.COMPOSE_CONTAINER_IRIS_EXCEPTION)) {
 
     // default to open the compose glass if so configured
     utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
