@@ -247,7 +247,11 @@ panels.KeyringMgmtFull.prototype.removeKey = function(
 
             if (opt_fingerprintHex === fpElem.textContent &&
                 opt_keyType === keyType) {
-              parentRow = fpElem.parentElement;
+              // remove the whole row if it's the only remaining item
+              if (goog.dom.getElementsByClass(
+                  constants.CssClass.KEY_META, parentRow).length > 1) {
+                parentRow = fpElem.parentElement;
+              }
               return true;
             }
           }
