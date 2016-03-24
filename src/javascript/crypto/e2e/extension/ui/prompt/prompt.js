@@ -68,6 +68,10 @@ ui.Prompt = function() {
   this.actionExecutor_ = new e2e.ext.actions.Executor(
       goog.bind(this.displayFailure_, this));
 
+  //@yahoo adds version
+  var manifest = chrome.runtime && chrome.runtime.getManifest();
+  var version = manifest && manifest.version;
+  var versionString = version ? ' (v' + version + ')' : '';
   /**
    * The End-to-End actions that the user can select in the prompt UI.
    * @type {!Array.<!Object.<constants.Actions,string>>}
@@ -82,7 +86,7 @@ ui.Prompt = function() {
     title: chrome.i18n.getMessage('actionLockKeyring')
   }, {
     value: constants.Actions.REPORT_ISSUE,
-    title: chrome.i18n.getMessage('actionReportIssue')
+    title: chrome.i18n.getMessage('actionReportIssue') + versionString
   }];
 };
 goog.inherits(ui.Prompt, goog.ui.Component);
