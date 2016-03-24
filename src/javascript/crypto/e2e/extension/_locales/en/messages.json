@@ -620,7 +620,7 @@
     "description": "A sentence asking the user to confirm deleting keys"
   },
   "promptDeleteLastPublicKeyWarningMessage": {
-    "message": "By removing all public keys, your friends can no longer send you encrypted emails.",
+    "message": "Your friends can no longer send you encrypted emails after removing all public key.",
     "description": "A sentence asking the user to confirm users opting-out the service"
   },
   "promptDeletePrivateKeyWarningMessage": {

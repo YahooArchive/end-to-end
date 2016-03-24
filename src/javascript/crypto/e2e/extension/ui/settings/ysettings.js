@@ -197,25 +197,31 @@ ui.ySettings.prototype.removeKey_ = function(
         if (!confirmed) {
           return;
         }
-        var result = opt_fingerprintHex ?
-            this.pgpContext_.deleteKeyByFingerprint(
-                goog.crypt.hexToByteArray(
-                    opt_fingerprintHex.replace(/\s+/g, '')),
-                opt_keyType) :
-            this.pgpContext_.deleteKey(keyUid);
+        var ctx = this.pgpContext_;
+        ctx.searchPrivateKey(keyUid).addCallbacks(function(privKeys) {
 
-        result.addCallback(function() {
-          this.keyringMgmtPanel_.removeKey(
-              keyUid, opt_fingerprintHex, opt_keyType);
-          this.renderPanels_();
+          var deleteResult = opt_fingerprintHex ?
+              ctx.deleteKeyByFingerprint(
+                  goog.crypt.hexToByteArray(
+                      opt_fingerprintHex.replace(/\s+/g, '')),
+                  opt_keyType) :
+              ctx.deleteKey(keyUid);
 
-          // @yahoo added sync with remote. no sync needed to remove a priv key
-          if (!opt_keyType ||
-              opt_keyType !== e2e.openpgp.KeyRing.Type.PRIVATE) {
-            this.syncWithRemote(keyUid, 'remove');
-          }
-        }, this);
+          deleteResult.addCallback(function() {
+            this.keyringMgmtPanel_.removeKey(
+                keyUid, opt_fingerprintHex, opt_keyType);
+            this.renderPanels_();
 
+            // @yahoo added sync with remote
+            // sync is needed only for those who used to have private keys
+            // but no sync is required to remove a priv key
+            if (privKeys.length && (!opt_keyType ||
+                opt_keyType !== e2e.openpgp.KeyRing.Type.PRIVATE)) {
+              this.syncWithRemote(keyUid, 'remove');
+            }
+          }, this);
+
+        }, this.displayFailure_, this);
       }, this.displayFailure_, this);
 };
 
@@ -416,19 +422,24 @@ ui.ySettings.prototype.renderDeleteKeysCallback_ = function(
         var privKeys = keys[0], pubKeys = keys[1],
         msg = chrome.i18n.getMessage('promptDeleteKeysConfirmMessage') + '\n';
 
-        // attempting to delete the last public key means opt-out
-        if ((pubKeys.length && !opt_fingerprintHex) || (pubKeys.length === 1 &&
-        pubKeys[0].key.fingerprintHex === opt_fingerprintHex &&
-        opt_keyType === e2e.openpgp.KeyRing.Type.PUBLIC)) {
-          msg += '\n' +
-          chrome.i18n.getMessage('promptDeleteLastPublicKeyWarningMessage');
-        }
+        // warn only those who will need key syncing
+        if (privKeys.length) {
+          // attempting to delete the last public key means opt-out
+          if ((pubKeys.length && !opt_fingerprintHex) ||
+              (pubKeys.length === 1 &&
+              pubKeys[0].key.fingerprintHex === opt_fingerprintHex &&
+              opt_keyType === e2e.openpgp.KeyRing.Type.PUBLIC)) {
+            msg += '\n' + chrome.i18n.getMessage(
+                'promptDeleteLastPublicKeyWarningMessage');
+          }
 
-        // attempting to delete a private key
-        if (privKeys.length && (!opt_fingerprintHex ||
-        opt_keyType === e2e.openpgp.KeyRing.Type.PRIVATE)) {
-          msg += '\n' +
-          chrome.i18n.getMessage('promptDeletePrivateKeyWarningMessage');
+          // attempting to delete all keys or a private key
+          if (!opt_fingerprintHex ||
+              opt_keyType === e2e.openpgp.KeyRing.Type.PRIVATE) {
+            // TODO: deleting the last private key will void syncing
+            msg += '\n' + chrome.i18n.getMessage(
+                'promptDeletePrivateKeyWarningMessage');
+          }
         }
 
         var keysToDelete = opt_fingerprintHex ?
