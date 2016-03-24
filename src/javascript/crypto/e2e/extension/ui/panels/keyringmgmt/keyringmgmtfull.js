@@ -186,7 +186,9 @@ panels.KeyringMgmtFull.prototype.addNewKey = function(userId, pgpKeys) {
       'keys': this.getKeysDescription_(pgpKeys)
     },
     exportLabel: chrome.i18n.getMessage('keyMgmtExportLabel'),
-    removeLabel: chrome.i18n.getMessage('keyMgmtRemoveLabel')
+    removeLabel: chrome.i18n.getMessage('keyMgmtRemoveLabel'),
+    // @yahoo added keyRingDescriptionLabel
+    keyRingDescriptionLabel: chrome.i18n.getMessage('keyRingDescriptionLabel')
   });
   keyringTable.appendChild(tr);
   this.keyringMgmtControls_.refreshOptions();
