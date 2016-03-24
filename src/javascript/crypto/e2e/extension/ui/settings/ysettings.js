@@ -77,43 +77,30 @@ goog.inherits(ui.ySettings, ui.Settings);
  * @suppress {accessControls}
  */
 ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
-  //@yahoo switch to single user mode if there's only one/no keypair user
-  var pgpOwnerKeys = goog.structs.filter(pgpKeys, function(keys) {
-    return goog.array.some(keys, function(k) {return k.key.secret});
-  });
-  var pgpOwnerKeysCount = goog.structs.getKeys(pgpOwnerKeys).length;
-  if (pgpOwnerKeysCount < 2) {
-    goog.base(this, 'renderTemplate_', pgpOwnerKeys);
 
-    // enable single-user mode
-    goog.dom.classlist.add(document.documentElement, 'single');
-    var toggleOptions = this.getElementByClass(
-        constants.CssClass.TOGGLE_OPTIONS);
-    goog.dom.classlist.remove(toggleOptions,
-        constants.CssClass.HIDDEN);
+  goog.base(this, 'renderTemplate_', pgpKeys);
 
-    //@yahoo added click handlers
-    this.getHandler().
-        listen(
-            goog.dom.getElement(constants.ElementId.GENERATE_KEY),
-            goog.events.EventType.CLICK,
-            function() {
-              document.querySelector(
-                  '#pgpGenerateKey button.action').click();
-            }).
-        listen(
-            toggleOptions,
-            goog.events.EventType.CLICK,
-            function(evt) {
-              evt.target.textContent = chrome.i18n.getMessage(
-                  goog.dom.classlist.contains(
-                      document.documentElement, 'single') ?
-                  'lessOptionsLabel' : 'moreOptionsLabel');
-              goog.dom.classlist.toggle(document.documentElement, 'single');
-            });
-  } else {
-    goog.base(this, 'renderTemplate_', pgpKeys);
-  }
+  //@yahoo added click handlers
+  this.getHandler().
+      listen(
+          goog.dom.getElement(constants.ElementId.GENERATE_KEY),
+          goog.events.EventType.CLICK,
+          function() {
+            document.querySelector(
+                '#pgpGenerateKey button.action').click();
+          }).
+      listen(
+          this.getElementByClass(constants.CssClass.TOGGLE_OPTIONS),
+          goog.events.EventType.CLICK,
+          function(evt) {
+            var htmlElement = document.documentElement,
+                liteModeCss = constants.CssClass.LITE_MODE;
+            evt.target.textContent = chrome.i18n.getMessage(
+                goog.dom.classlist.contains(htmlElement, liteModeCss) ?
+                    'fewerOptionsLabel' :
+                    'moreOptionsLabel');
+            goog.dom.classlist.toggle(htmlElement, liteModeCss);
+          });
 
 
   //@yahoo when a email is supplied thru location.hash

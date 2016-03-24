@@ -19,6 +19,7 @@
  * Lists the PGP keys that are stored within the extension.
  * @param storedKeys The metadata of the keys that are stored within the extension.
  * @param sectionTitle The title of the current section.
+ * @param welcomeHeader The welcome header.
  * @param exportLabel The label to use for the export link.
  * @param removeLabel The label to use for the remove link.
  * @param noneLabel The label to display when there are no keys.
@@ -27,9 +28,9 @@
  */
 {template .listKeys}
   <h1>{$sectionTitle}</h1>
-  <table>
+  <table data-label="{$welcomeHeader}">
     {foreach $keyMeta in $storedKeys}
-      <tr data-user-id="{$keyMeta.userId}">
+      <tr data-user-id="{$keyMeta.userId}"{if $keyMeta.hasPrivKey} class="{e2e.ext.constants.CssClass.HAS_PRIV_KEY}"{/if}>
         {call .keyEntry}
           {param keyMeta: $keyMeta /}
           {param exportLabel: $exportLabel /}
@@ -72,6 +73,7 @@
         <span class="{e2e.ext.constants.CssClass.KEY_FINGERPRINT}" title="{$keyFingerprintLabel}">
           {$key.fingerprint}
         </span>{sp}
+        <!-- @yahoo added remove button for individual key -->
         <span>({$key.type} {$key.algorithm})</span>
         <span class="{e2e.ext.constants.CssClass.REMOVE}" title="{$removeLabel}"></span>
       </div>
@@ -179,7 +181,6 @@
     <button class="{e2e.ext.constants.CssClass.KEYRING_CANCEL}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$cancelLabel}</button>
     <button class="{e2e.ext.constants.CssClass.TOGGLE_OPTIONS}{sp}
-                   {e2e.ext.constants.CssClass.HIDDEN}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$toggleOptionsLabel}</button>
   </div>
 {/template}

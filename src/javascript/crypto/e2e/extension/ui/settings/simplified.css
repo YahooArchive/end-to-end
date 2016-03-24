@@ -15,47 +15,61 @@
 /**
  * Defines the styles that are used by the simplified settings page.
  */
-html.single {
+html.lite {
   width: 820px;
   margin: 0 auto;
 }
 
-html.single body {
-  background: url(images/yahoo/ymail.png) no-repeat 96% 8px;
+html.lite body {
+  background: url(images/yahoo/ymail.png) no-repeat 95% 8px;
   background-size: 20%;
   font-size: 95%;
 }
 
-html.single #pgpBody {
+html.lite #pgpBody {
   padding: 50px 0;
 }
 
-html.single .pgpHead,
-html.single #pgpBody > div:first-child,
-html.single div#keyringOptionsDiv p,
-html.single div#pgpGenerateKey:not(.hidden)+div#storedKeys,
-html.single div#keyringOptionsDiv button.fb-import,
-html.single div#keyringOptionsDiv button.keyring-export,
-html.single div#keyringOptionsDiv button.keyring-passphrase-change,
-html.single input.email {
+html.lite .pgpHead,
+html.lite #pgpBody > div:first-child,
+html.lite div#keyringOptionsDiv p,
+html.lite div#pgpGenerateKey:not(.hidden)+div#storedKeys,
+html.lite div#keyringOptionsDiv button.fb-import,
+html.lite div#keyringOptionsDiv button.keyring-export,
+html.lite div#keyringOptionsDiv button.keyring-passphrase-change,
+html.lite div#storedKeys > h1,
+html.lite input.email {
   display: none;
 }
 
-html.single div#keyringOptionsDiv {
+html.lite div#keyringOptionsDiv {
   float: right;
-  width: 190px;
-  margin-top: -35px;
+  width: 195px;
   border: 1px #DDD solid;
   padding: 10px 15px;
 }
 
-html.single #storedKeys > h1, html.single div#keyringOptionsDiv:before {
+html.lite #storedKeys table {
+  margin-top: 20px;
+  padding: 10px 0;
+}
+
+html.lite div#storedKeys table:before, html.lite div#keyringOptionsDiv:before {
   content: attr(data-label);
   font-size: 115%;
   font-weight: 500;
+  line-height: 150%;
 }
 
-html.single div#keyringOptionsDiv button {
+html.lite #storedKeys tr {
+  display: none;
+}
+
+html.lite #storedKeys tr.has-priv-key {
+  display: table-row;
+}
+
+html.lite div#keyringOptionsDiv button {
   padding: 0;
   border: 0;
   background: none;
@@ -63,27 +77,28 @@ html.single div#keyringOptionsDiv button {
   color: -webkit-link;
   text-decoration: underline;
   margin: 6px 0;
-  font-size: 100%;
+  font-size: 15px;
   height: 25px;
+  white-space: nowrap;
 }
 
-html.single #keyringOptionsDiv button[id] {
+html.lite #keyringOptionsDiv button[id] {
   display: block;
 }
 
-html.single .keyring-signup:before {
+html.lite .keyring-signup:before {
   content: ''
 }
 
-html.single #storedKeys tr:hover {
+html.lite #storedKeys tr:hover {
   background: none;
 }
 
-html.single #storedKeys div.key-uid:after {
+html.lite #storedKeys div.key-uid:after {
   content: attr(data-label);
 }
 
-html.single #callbackDialog>div {
+html.lite #callbackDialog>div {
   width: 600px;
   padding: 16px 20px;
 }

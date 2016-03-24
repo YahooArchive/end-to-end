@@ -121,15 +121,18 @@ panels.KeyringMgmtFull.prototype.decorateInternal = function(elem) {
   elem.id = constants.ElementId.KEYRING_DIV;
 
   var storedKeys = goog.array.map(this.pgpKeys_.getKeys(), function(userId) {
+    var pgpKeys = this.pgpKeys_.get(userId);
     return {
       userId: userId,
-      keys: this.getKeysDescription_(this.pgpKeys_.get(userId))
+      hasPrivKey: this.hasPrivKey_(pgpKeys), //@yahoo
+      keys: this.getKeysDescription_(pgpKeys)
+      // keys: this.getKeysDescription_(this.pgpKeys_.get(userId))
     };
   }, this);
   soy.renderElement(elem, templates.listKeys, {
     storedKeys: storedKeys,
-    sectionTitle: chrome.i18n.getMessage(
-        storedKeys.length > 1 ? 'keyMgmtTitle' : 'welcomeHeader'), //@yahoo
+    sectionTitle: chrome.i18n.getMessage('keyMgmtTitle'),
+    welcomeHeader: chrome.i18n.getMessage('welcomeHeader'), //@yahoo
     exportLabel: chrome.i18n.getMessage('keyMgmtExportLabel'),
     removeLabel: chrome.i18n.getMessage('keyMgmtRemoveLabel'),
     noneLabel: chrome.i18n.getMessage('keyMgmtNoneLabel'),
@@ -164,7 +167,8 @@ panels.KeyringMgmtFull.prototype.enterDocument = function() {
  * @param {Array} pgpKeys The keys and subkeys to render into the UI.
  */
 panels.KeyringMgmtFull.prototype.addNewKey = function(userId, pgpKeys) {
-  var keyringTable = this.getElement().querySelector('table');
+  // @yahoo use table tbody instead of table, so <tr> can be properly appended
+  var keyringTable = this.getElement().querySelector('table tbody');
 
   // escaped according to http://www.w3.org/TR/CSS21/syndata.html#characters
   var userIdSel = 'tr[data-user-id="' +
@@ -180,6 +184,10 @@ panels.KeyringMgmtFull.prototype.addNewKey = function(userId, pgpKeys) {
 
   var tr = document.createElement(goog.dom.TagName.TR);
   tr.dataset.userId = userId;
+  // @yahoo annotate if the userId has private keys
+  if (this.hasPrivKey_(pgpKeys)) {
+    goog.dom.classlist.add(tr, constants.CssClass.HAS_PRIV_KEY);
+  }
   soy.renderElement(tr, templates.keyEntry, {
     keyMeta: {
       'userId': userId,
@@ -278,6 +286,20 @@ panels.KeyringMgmtFull.prototype.resetControls = function() {
 
 
 /**
+ * //@yahoo
+ * Returns whether there has a private key in the given collection of PGP keys.
+ * @param {Array} keys Raw collection of PGP keys.
+ * @return {boolean} Whether there has a private key
+ * @private
+ */
+panels.KeyringMgmtFull.prototype.hasPrivKey_ = function(keys) {
+  return goog.array.some(keys, function(key) {
+    return key.key.secret;
+  });
+};
+
+
+/**
  * Returns a human readable representation of the given collection of PGP keys.
  * @param {Array} keys Raw collection of PGP keys.
  * @return {Array} A collection of PGP key metadata.
@@ -285,16 +307,16 @@ panels.KeyringMgmtFull.prototype.resetControls = function() {
  */
 panels.KeyringMgmtFull.prototype.getKeysDescription_ = function(keys) {
   // @yahoo sort it by fingerprint
-  var ret = goog.array.flatten(goog.array.map(keys, function(key) {
+  var ret = goog.array.map(keys, function(key) {
     var type = (key.key.secret ?
         chrome.i18n.getMessage('secretKeyDescription') :
         chrome.i18n.getMessage('publicKeyDescription'));
-    return [{
+    return {
       type: type,
       algorithm: key.key.algorithm,
       fingerprint: key.key.fingerprintHex
-    }];
-  }));
+    };
+  });
 
   goog.array.sortObjectsByKey(ret, 'fingerprint');
   return ret;

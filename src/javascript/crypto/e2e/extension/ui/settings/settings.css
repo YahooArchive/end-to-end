@@ -63,6 +63,7 @@
 
 #storedKeys tr>td {
   vertical-align: top;
+  padding-top: 8px;
 }
 
 
@@ -120,8 +121,7 @@ button.keyring-import {
 }
 
 #storedKeys .key-uid {
-  height: 35px;
-  vertical-align: top;
+  line-height: 35px;
 }
 
 #storedKeys .key-meta span.export, #storedKeys .key-meta span.remove {

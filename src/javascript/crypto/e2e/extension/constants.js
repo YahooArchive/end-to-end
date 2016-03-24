@@ -208,10 +208,12 @@ e2e.ext.constants.CssClass = {
   PASSPHRASE_CONFIRM: 'passphrase-confirm',
 
   /* Used in the keyring management section. */
+  LITE_MODE: 'lite', //@yahoo
   EXPORT: 'export',
   REMOVE: 'remove',
   KEY_FINGERPRINT: 'key-fingerprint',
   KEY_META: 'key-meta',
+  HAS_PRIV_KEY: 'has-priv-key', //@yahoo
   KEY_TYPE_DESC: 'key-type-description',
   KEY_UID: 'key-uid',
   KEY_SUBKEY: 'key-sub',

@@ -4,7 +4,7 @@
     "description": "Name of the extension."
   },
   "extDescription": {
-    "message": "Helps you send end-to-end protected messages in Yahoo mail.",
+    "message": "Send and read user-to-user encrypted messages in Yahoo Mail.",
     "description": "Description of the extension."
   },
   "promptDismissActionLabel": {
@@ -266,11 +266,11 @@
     "description": "A sentence confirming that the user has successfully changed the keyring's passphrase."
   },
   "moreOptionsLabel": {
-    "message": "More options...",
+    "message": "More options and keys...",
     "description": "A verb prompting the user to visit the advanced options page."
   },
-  "lessOptionsLabel": {
-    "message": "Less options...",
+  "fewerOptionsLabel": {
+    "message": "Back to lite mode...",
     "description": "A verb prompting the user to visit the simplified options page."
   },
   "keyMgmtFbImportLabel": {
