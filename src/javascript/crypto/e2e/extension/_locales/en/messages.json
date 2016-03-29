@@ -55,6 +55,18 @@
     "message": "Save encrypted draft",
     "description": "A sentence fragment prompting the user to save the working draft into the visiting page."
   },
+  "promptEncryptSignEncryptingDraftLabel": {
+    "message": "Encrypting...",
+    "description": "A sentence fragment prompting the user the working draft is being encrypted."
+  },
+  "promptEncryptSignSavingDraftLabel": {
+    "message": "Saving...",
+    "description": "A sentence fragment prompting the user the working draft is being saved into the visiting page."
+  },
+  "promptEncryptSignSaveEncryptedDraftLabel": {
+    "message": "Encrypted and saved at $1",
+    "description": "A sentence fragment prompting the user the working draft is saved into the visiting page."
+  },
   "promptEncryptSignReplyHeader": {
     "message": "Original message",
     "description": "A sentence fragment indicating where the original message begins."
@@ -338,7 +350,7 @@
     "description": "A sentence requesting the passphrase for a PGP key."
   },
   "promptNoEncryptionKeysFound": {
-    "message": "No encryption keys that could be used to complete this action were found.",
+    "message": "You have to setup keys before the message can be encrypted and saved as draft. Do it now?",
     "description": "A sentence warning the user that the action cannot be completed due to missing encryption keys."
   },
   "promptSignMessageAs": {

@@ -251,11 +251,12 @@ e2e.ext.constants.CssClass = {
   /** Error messages **/
   ERROR: 'error',
 
-  /** e2ebind page classes **/
+  /** yahoo compose glass **/
   COMPOSE_CONTAINER: 'compose',
   COMPOSE_CONTAINER_REPLY_EXCEPTION: 'reply-text',
   COMPOSE_CONTAINER_IRIS_EXCEPTION: 'iris-window',
   COMPOSE_BODY: 'compose-message',
+  SAVE_DRAFT_MSG: 'save-draft-msg',
 
   /* setup page */
   SETUP_PAGE: 'setup-page'

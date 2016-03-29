@@ -33,13 +33,13 @@ goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Promise');
+goog.require('goog.Timer'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');  //@yahoo
-goog.require('goog.events.KeyHandler');  //@yahoo
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
@@ -84,8 +84,8 @@ ui.ComposeGlass = function(draft, origin, hash) {
     request: true,
     origin: origin,
     subject: draft.subject || '',
-    canInject: false,
-    canSaveDraft: false
+    canInject: true,
+    canSaveDraft: true
   });
 
   this.errorCallback_ = goog.bind(this.displayFailure_, this);
@@ -131,20 +131,9 @@ ui.ComposeGlass = function(draft, origin, hash) {
 goog.inherits(ui.ComposeGlass, e2e.ext.ui.panels.prompt.PanelBase);
 
 
-/**
- * A keyboard shortcut handler.
- * @type {goog.events.KeyHandler}
- * @private
- */
-ui.ComposeGlass.prototype.keyHandler_ = null;
-
-
 /** @override */
 ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
-
-  //@yahoo added shortcut keys
-  this.keyHandler_ = new goog.events.KeyHandler(elem, true);
 
   var content = this.getContent();
 
@@ -235,15 +224,19 @@ ui.ComposeGlass.prototype.enterDocument = function() {
 
   // @yahoo added Ctrl+enter and Command+enter shortcut to Send
   var elem = this.getElement(),
-      sHandler = goog.ui.KeyboardShortcutHandler;
-  this.keyboardSendHandler_ = new goog.ui.KeyboardShortcutHandler(elem);
+      sHandler = goog.ui.KeyboardShortcutHandler,
+      userAgentModifier = goog.userAgent.MAC ?
+          sHandler.Modifiers.META :
+          sHandler.Modifiers.CTRL,
+      keyboardHandler = new goog.ui.KeyboardShortcutHandler(elem);
   // pressed Cmd + Enter in Mac or Ctrl + Enter otherwise
-  this.keyboardSendHandler_.registerShortcut(
-      'send',
-      goog.events.KeyCodes.ENTER,
-      goog.userAgent.MAC ? sHandler.Modifiers.META : sHandler.Modifiers.CTRL);
+  keyboardHandler.registerShortcut(
+      'send', goog.events.KeyCodes.ENTER, userAgentModifier);
+  // pressed Cmd + S in Mac or Ctrl + S otherwise
+  keyboardHandler.registerShortcut(
+      'save', goog.events.KeyCodes.S, userAgentModifier);
   this.getHandler().listen(
-      this.keyboardSendHandler_,
+      keyboardHandler,
       sHandler.EventType.SHORTCUT_TRIGGERED,
       goog.bind(this.handleKeyEvent_, this));
 
@@ -262,12 +255,15 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   //       goog.partial(this.insertMessageIntoPage_, origin));
   // }
 
+  var saveDraftTimer = new goog.Timer(30000); //30s
+  saveDraftTimer.start();
+
   this.getHandler().
-      //@yahoo does not use the hidden back button anymore
-      // listen(
-      //   goog.dom.getElement(constants.ElementId.BACK_BUTTON),
-      //   goog.events.EventType.CLICK,
-      //   goog.bind(this.close, this)).
+      //@yahoo periodically save the encrypted draft
+      listen(
+          saveDraftTimer,
+          goog.Timer.TICK,
+          goog.partial(this.saveDraft_, origin)).
       //@yahoo has a hidden restore button
       listenOnce(
           goog.dom.getElement(constants.ElementId.RESTORE_BUTTON),
@@ -286,20 +282,31 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           }, this)).
       //@yahoo allows discarding the draft
       listen(
-        goog.dom.getElement(constants.ElementId.DRAFT_DELETE_BUTTON),
-        goog.events.EventType.CLICK,
-        goog.bind(this.discardDraft, this));
+          goog.dom.getElement(constants.ElementId.DRAFT_DELETE_BUTTON),
+          goog.events.EventType.CLICK,
+          goog.bind(this.discardDraft, this));
 };
 
 
 /**
  * Handles keyboard events for shortcut keys //@yahoo
+ * @param {goog.ui.KeyboardShortcutEvent} evt The keyboard event to handle.
  * @private
  */
-ui.ComposeGlass.prototype.handleKeyEvent_ = function() {
-  this.keyMissingDialog_ ?
-      this.keyMissingDialog_.invokeCallback(false) : // click Send Unencrypted
-      this.keyMissingWarningThenEncryptSign_();
+ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
+  var content = this.getContent();
+  switch (evt.identifier) {
+    case 'send':
+      this.keyMissingDialog_ ?
+          this.keyMissingDialog_.invokeCallback(false) : // Send in plaintext
+          this.keyMissingWarningThenEncryptSign_();
+      break;
+    case 'save':
+      if (content.canSaveDraft) {
+        this.saveDraft_(content.origin, evt);
+      }
+      break;
+  }
 };
 
 
@@ -615,7 +622,7 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
     this.insertMessageIntoPage_(origin);
 
 
-  }, this), goog.bind(this.displayFailure_, this));
+  }, this), this.errorCallback_);
 };
 
 
@@ -700,10 +707,100 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
     })
 
     // @yahoo close the compose glass if succeeded
-  })).addCallbacks(this.close, this.displayFailure_, this);
+  })).addCallbacks(this.close, this.errorCallback_, this);
 };
 
 
+/**
+ * Encrypts the current draft and persists it into the web application that the
+ * user is interacting with.
+ * @param {string} origin The web origin where the message was created.
+ * @param {goog.events.Event} evt The event that triggers the saving of the
+ *     draft.
+ * @private
+ */
+ui.ComposeGlass.prototype.saveDraft_ = function(origin, evt) {
+  var formText = /** @type {HTMLTextAreaElement} */
+      (this.getElement().querySelector('textarea'));
+  var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
+      goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
+  var signer = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
+  // @yahoo signal to user we're encrypting
+  var saveDraftMsg = this.getElementByClass(constants.CssClass.SAVE_DRAFT_MSG);
+  saveDraftMsg.textContent = chrome.i18n.getMessage(
+      'promptEncryptSignEncryptingDraftLabel');
+
+  // @yahoo save the recipients too
+  var recipients = utils.text.uidsToObjects(
+                       this.chipHolder_.getSelectedUids());
+  var ccRecipients = utils.text.uidsToObjects(
+                         this.ccChipHolder_.getSelectedUids());
+
+  // @yahoo do not trigger saving a draft if nothing has really changed
+  if (goog.string.isEmpty(formText.value) &&
+      goog.string.isEmptySafe(subject) &&
+      recipients.length === 0 &&
+      ccRecipients.length === 0) {
+    return;
+  }
+
+  // @yahoo sendExtensionRequest is used instead of actionExecutor
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
+    action: constants.Actions.ENCRYPT_SIGN,
+    content: formText.value,
+    recipients: [signer],
+    currentUser: signer
+  }), goog.bind(function(encrypted) {
+    // @yahoo signal to user we're saving
+    saveDraftMsg.textContent = chrome.i18n.getMessage(
+        'promptEncryptSignSavingDraftLabel');
+
+    var draft = e2e.openpgp.asciiArmor.markAsDraft(encrypted.content);
+    // Inject the draft into website.
+    //@yahoo used sendProxyRequest instead of HelperProxy.updateSelectedContent
+    utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
+      action: constants.Actions.SET_DRAFT,
+      content: /** @type {messages.BridgeMessageResponse} */ ({
+        value: draft,
+        response: true,
+        detach: true,
+        origin: origin,
+        recipients: recipients,
+        ccRecipients: ccRecipients, //@yahoo added ccChipHolder
+        subject: subject,
+        attachments: [], //@yahoo to force save
+        from: signer
+      })
+    })).addCallbacks(function() {
+      // @yahoo signal to user the encrypted draft is saved
+      saveDraftMsg.textContent = chrome.i18n.getMessage(
+          'promptEncryptSignSaveEncryptedDraftLabel',
+          new Date().toLocaleTimeString().replace(/:\d\d? /, ' '));
+    }, this.errorCallback_, this);
+  }, this), goog.bind(function(error) {
+    if (error.messageId == 'promptNoEncryptionTarget') {
+      var dialog = new dialogs.Generic(
+          chrome.i18n.getMessage('promptNoEncryptionKeysFound'),
+          goog.bind(function(decision) { //@yahoo opens config if clicked ok
+            goog.dispose(dialog);
+            //@yahoo opens config to set up keys if clicked ok
+            if (goog.isDef(decision)) {
+              utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+                action: constants.Actions.CONFIGURE_EXTENSION,
+                content: signer
+              }));
+            } else {
+              // prompt only once per glass
+              this.getContent().canSaveDraft = false;
+            }
+          }, this),
+          dialogs.InputType.NONE);
+      this.renderDialog(dialog);
+    }
+
+    // NOTE(radi): Errors are silenced here on purpose.
+  }, this));
+};
 
 // @yahoo the following are all yahoo-specific
 
@@ -745,7 +842,7 @@ ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
     })
 
     // @yahoo close the compose glass if succeeded
-  })).addCallbacks(this.close, this.displayFailure_, this);
+  })).addCallbacks(this.close, this.errorCallback_, this);
 };
 
 
@@ -823,7 +920,6 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
 };
 
 
-
 /**
  * Discards the draft.
  */
@@ -833,7 +929,7 @@ ui.ComposeGlass.prototype.discardDraft = function() {
     content: {hash: this.hash_, discardDraft: true}
   }));
   goog.dispose(this);
-}
+};
 
 
 /**

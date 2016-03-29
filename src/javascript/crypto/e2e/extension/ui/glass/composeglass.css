@@ -186,6 +186,7 @@ textarea {
   opacity: .7;
   vertical-align: top;
   padding: 15px 15px 0 0;
+  cursor: default;
 }
 
 .pgpActions label[for], #pgpGenerateKey label[for] {
@@ -208,6 +209,10 @@ textarea {
 
 .pgpActions button#draft-delete-button:before {
   content: "\e008"
+}
+
+.pgpActions .save-draft-msg {
+  line-height: 40px
 }
 
 .passphraseEncryptionLink {
