@@ -140,31 +140,26 @@ e2ebind.messageHandler_ = function(response) {
       e2ebind.handleProviderResponse_(/** @type {messages.e2ebindResponse} */
                                       (data));
     }
-  } catch (e) {}
+  } catch (e) {
+    e2ebind.errorHandler_(e);
+  }
 };
 
 
 /**
-* Sends a request to the provider.
-* @param {string} action The action requested.
-* @param {Object} args The arguments to the action.
-* @param {function(messages.e2ebindResponse)} callback The function to
-*   callback with the response
-*/
-e2ebind.sendRequest = function(action, args, callback) {
-  var hash = e2ebind.pendingCallbacks_.addCallbacks(
-      callback, goog.nullFunction);
+ * Sends a request to the provider.
+ * @param {string} action The action requested.
+ * @param {Object} args The arguments to the action.
+ * @param {function(messages.e2ebindResponse)} callback The function to
+ *   callback with the response
+ * @param {function(Error)} errback The function to callback with the error
+ */
+e2ebind.sendRequest = function(action, args, callback, errback) {
+  var hash = e2ebind.pendingCallbacks_.addCallbacks(callback, errback);
 
-  var reqObj = /** @type {messages.e2ebindRequest} */ ({
-    api: 'e2ebind',
-    source: 'E2E',
-    action: action,
-    args: args,
-    hash: hash
-  });
   var timeoutResponse = /** @type {messages.e2ebindResponse} */ ({
     action: action,
-    error: 'Timeout occurred while processing the request.',
+    error: 'Timeout occurred while processing the request (' + action + ')',
     hash: hash
   });
   // Set a timeout for a function that would simulate an error response.
@@ -173,7 +168,14 @@ e2ebind.sendRequest = function(action, args, callback) {
   setTimeout(
       goog.bind(e2ebind.handleProviderResponse_, e2ebind, timeoutResponse),
       e2ebind.REQUEST_TIMEOUT);
-  
+
+  var reqObj = /** @type {messages.e2ebindRequest} */ ({
+    api: 'e2ebind',
+    source: 'E2E',
+    action: action,
+    args: args,
+    hash: hash
+  });
   window.postMessage(window.JSON.stringify(reqObj), window.location.origin);
 };
 
@@ -185,11 +187,19 @@ e2ebind.sendRequest = function(action, args, callback) {
 * @private
 */
 e2ebind.handleProviderResponse_ = function(response) {
+  var callbackPair = /** @type {e2e.ext.utils.CallbackPair} */ ({});
   if (response.hash) {
     try {
-      var callbacks = e2ebind.pendingCallbacks_.getAndRemove(response.hash);
-      callbacks && callbacks.callback(response);
-    } catch (err) {}
+      callbackPair = e2ebind.pendingCallbacks_.getAndRemove(response.hash);
+    } catch (err) {
+      return;
+    }
+
+    if (response.error) {
+      callbackPair.errback(new Error(response.error));
+    } else {
+      callbackPair.callback(response);
+    }
   }
 };
 
@@ -355,7 +365,7 @@ e2ebind.initComposeGlass_ = function(elt, opt_isExplicit) {
         draft.subject = getDraftResult.subject;
         draft.contacts = getDraftResult.contacts;
         e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-      });
+      }, e2ebind.errorHandler_);
     } else {
       e2ebind.getCurrentMessage(function(result) {
         var DOMelem = document.querySelector(result.elem);
@@ -369,9 +379,9 @@ e2ebind.initComposeGlass_ = function(elt, opt_isExplicit) {
               DOMelem.innerText);
         }
         e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-      });
+      }, e2ebind.errorHandler_);
     }
-  });
+  }, e2ebind.errorHandler_);
 };
 
 
@@ -546,12 +556,24 @@ e2ebind.installComposeGlass_ = function(elem, draft) {
 
 
 /**
-* Gets the currently selected message, if any, from the provider
-* @param {!function(Object)} callback The callback to call with the result
-*/
-e2ebind.getCurrentMessage = function(callback) {
-  e2ebind.sendRequest(constants.e2ebind.responseActions.GET_CURRENT_MESSAGE,
-                      null, function(data) {
+ * The default error handler for e2ebind API
+ * @param {Error} error The error
+ */
+e2ebind.errorHandler_ = function(error) {
+  console.error && console.error(error);
+};
+
+
+/**
+ * Gets the currently selected message, if any, from the provider
+ * @param {!function(Object)} callback The callback to call with the result
+ * @param {!function(Error)} errback The callback to call with the error
+ */
+e2ebind.getCurrentMessage = function(callback, errback) {
+  e2ebind.sendRequest(
+      constants.e2ebind.responseActions.GET_CURRENT_MESSAGE,
+      null, 
+      function(data) {
         var result = data.result;
 
         if (result && data.success) {
@@ -563,17 +585,21 @@ e2ebind.getCurrentMessage = function(callback) {
         } else {
           callback({});
         }
-      });
+      },
+      errback);
 };
 
 
 /**
-* Gets the current draft/compose from the provider.
-* @param {!function(messages.e2ebindDraft)} callback The handler for draft
-*/
-e2ebind.getDraft = function(callback) {
-  e2ebind.sendRequest(constants.e2ebind.responseActions.GET_DRAFT, null,
-                      function(data) {
+ * Gets the current draft/compose from the provider.
+ * @param {!function(messages.e2ebindDraft)} callback The handler for draft
+ * @param {!function(Error)} errback The callback to call with the error
+ */
+e2ebind.getDraft = function(callback, errback) {
+  e2ebind.sendRequest(
+      constants.e2ebind.responseActions.GET_DRAFT,
+      null,
+      function(data) {
         var result = null;
 
         if (data.success) {
@@ -581,7 +607,8 @@ e2ebind.getDraft = function(callback) {
         }
 
         callback(result);
-      });
+      },
+      errback);
 };
 
 
@@ -589,10 +616,13 @@ e2ebind.getDraft = function(callback) {
  * Indicates if there is an active draft in the provider.
  * @param {!function(boolean)} callback The callback where the active draft
  *     information should be passed.
+ * @param {!function(Error)} errback The callback to call with the error
  */
-e2ebind.hasDraft = function(callback) {
-  e2ebind.sendRequest(constants.e2ebind.responseActions.HAS_DRAFT, null,
-                      function(data) {
+e2ebind.hasDraft = function(callback, errback) {
+  e2ebind.sendRequest(
+      constants.e2ebind.responseActions.HAS_DRAFT,
+      null,
+      function(data) {
         var result = false;
 
         data.result.has_draft = data.result.has_draft || false;
@@ -601,15 +631,18 @@ e2ebind.hasDraft = function(callback) {
         }
 
         callback(result);
-      });
+      }, 
+      errback);
 };
 
 
 /**
-* Sets the currently active draft/compose in the provider
-* @param {Object} args The data to set the draft with.
-*/
-e2ebind.setDraft = function(args) {
+ * Sets the currently active draft/compose in the provider
+ * @param {Object} args The data to set the draft with.
+ * @param {!function(Object)} callback The callback to call with the result
+ * @param {!function(Error)} errback The callback to call with the error
+ */
+e2ebind.setDraft = function(args, callback, errback) {
   // XXX: ymail doesn't handle setting the 'from' field when user has multiple
   // addresses.
   var selects = document.querySelectorAll('select#from-field');
@@ -637,7 +670,9 @@ e2ebind.setDraft = function(args) {
         subject: args.subject || '',
         body: args.body || '',
         send: args.send
-      }), goog.nullFunction);
+      }),
+      callback,
+      errback);
 };
 
 

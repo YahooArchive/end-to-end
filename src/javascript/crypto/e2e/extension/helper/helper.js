@@ -162,8 +162,9 @@ ext.Helper.prototype.setE2ebindValue_ = function(msg, sendResponse) {
       cc: msg.ccRecipients,
       body: msg.value,
       subject: msg.subject,
-      from: msg.from
-    });
+      from: msg.from,
+      attachments: msg.attachments || []
+    }, sendResponse, goog.bind(this.errorHandler_, this, sendResponse));
   }
 };
 
@@ -246,58 +247,51 @@ ext.Helper.prototype.getE2ebindSelectedContent_ = function(req, sendResponse) {
     return;
   }
 
-  // Check if we have a draft
-  e2ebind.hasDraft(goog.bind(function(has_draft_result) {
-    if (has_draft_result) {
-      // We have a draft, get_draft from it
-      e2ebind.getDraft(goog.bind(function(get_draft_result) {
-        var selectionBody = e2e.openpgp.asciiArmor.
-                                extractPgpBlock(get_draft_result.body);
+  var draft = /** @type {e2e.ext.messages.BridgeMessageRequest} */ ({
+    from: window.config.signer || '',
+    recipients: [],
+    action: constants.Actions.ENCRYPT_SIGN,
+    request: true,
+    origin: this.getOrigin_(),
+    canInject: true,
+    canSaveDraft: true
+  });
 
-        sendResponse({
-          action: constants.Actions.ENCRYPT_SIGN,
-          selection: selectionBody,
-          recipients: [].concat(get_draft_result.to,
-                                get_draft_result.cc,
-                                get_draft_result.bcc),
-          subject: get_draft_result.subject,
-          from: '<' + window.config.signer + '>',
-          request: true,
-          origin: this.getOrigin_(),
-          canInject: true
-        });
-      }, this));
+  // Check if we have a draft
+  e2ebind.hasDraft(goog.bind(function(hasDraftResult) {
+    if (hasDraftResult) {
+      // We have a draft, get_draft from it
+      e2ebind.getDraft(function(getDraftResult) {
+        var selectionBody = e2e.openpgp.asciiArmor.
+                                extractPgpBlock(getDraftResult.body);
+        draft.body = selectionBody;
+        draft.selection = selectionBody;
+        draft.to = getDraftResult.to;
+        draft.cc = getDraftResult.cc;
+        draft.bcc = getDraftResult.bcc;
+        draft.recipients.concat(draft.to, draft.cc, draft.bcc);
+        draft.subject = getDraftResult.subject;
+        draft.contacts = getDraftResult.contacts;
+        sendResponse(draft);
+      }, goog.bind(this.errorHandler_, this, sendResponse));
     } else {
       // No draft, grab current message.
-      e2ebind.getCurrentMessage(goog.bind(function(get_message_result) {
-        var selectionBody;
-        var DOMelem = document.querySelector(get_message_result.elem);
-
-        if (get_message_result.text) {
-          selectionBody = get_message_result.text;
+      e2ebind.getCurrentMessage(function(result) {
+        var DOMelem = document.querySelector(result.elem);
+        draft.contacts = result.contacts || [];
+        if (result.text) {
+          draft.body = result.text;
         } else if (DOMelem) {
-          selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
+          draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
               goog.isDef(DOMelem.lookingGlass) ?
-              DOMelem.lookingGlass.getOriginalContent() :
-              DOMelem.innerText);
-        } else {
-          // no support to get selection text, as in google's
-          return;
+                  DOMelem.lookingGlass.getOriginalContent() :
+                  DOMelem.innerText);
         }
-
-        sendResponse({
-          action: utils.text.getPgpAction(selectionBody),
-          selection: selectionBody,
-          recipients: [],
-          from: '<' + window.config.signer + '>',
-          request: true,
-          origin: this.getOrigin_(),
-          canInject: true
-        });
-      }, this));
+        draft.selection = draft.body;
+        sendResponse(draft);
+      }, goog.bind(this.errorHandler_, this, sendResponse));
     }
-  }, this));
-
+  }, this), goog.bind(this.errorHandler_, this, sendResponse));
 };
 
 
