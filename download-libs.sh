@@ -130,6 +130,7 @@ cd closure-templates-compiler
 # Lock the version to Sep 16, 2015, in which the compiler can build without the follwing error
 # curl https://raw.githubusercontent.com/google/closure-templates/master/javascript/soyutils_usegoog.js -O
 curl https://raw.githubusercontent.com/google/closure-templates/0cbc8543c34d3f7727dd83a2d1938672f16d5c20/javascript/soyutils_usegoog.js -O
+mv soyutils.js soyutils.js.notused
 cd ..
 
 cd ..
