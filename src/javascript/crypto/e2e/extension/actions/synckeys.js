@@ -45,7 +45,7 @@ actions.SyncKeys.prototype.execute =
   // TODO: email to uid mapping
   var uid = '<' + email + '>';
 
-  ctx.syncWithRemote(uid, e2e.ext.utils.openAuthWindow,
+  ctx.syncWithRemote(uid,
       function(uid, commonKeys, keyserverManaged) {
         callback(!keyserverManaged || commonKeys.length !== 0);
         return e2e.async.Result.toResult('');

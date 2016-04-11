@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2014 Google Inc. All rights reserved.
+ * Copyright 2016 Yahoo Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,32 +17,11 @@
 /**
  * @fileoverview Bootstraps the looking glass.
  */
-
-goog.require('e2e.ext.ui.Glass');
-goog.require('e2e.ext.utils.action');
-goog.require('e2e.ext.utils.text');
-goog.require('goog.crypt.base64');
-
 goog.provide('e2e.ext.ui.glass.bootstrap');
 
-e2e.ext.utils.action.getPreferences(function(preferences) {
-  if (preferences.isLookingGlassEnabled()) {
-    // Create the looking glass.
-    window.addEventListener('message', function(evt) {
-      if (!e2e.ext.utils.text.isGmailOrigin(evt.origin)) {
-        return;
-      }
-
-      var pgpMessage = evt.data ? evt.data : '';
-      /** @type {e2e.ext.ui.Glass} */
-      window.lookingGlass = new e2e.ext.ui.Glass(
-          goog.crypt.base64.decodeString(pgpMessage, true));
-      window.lookingGlass.decorate(document.documentElement);
-    });
-
-    e2e.ext.ui.glass.bootstrap = true;
-  }
-}, goog.nullFunction);
+goog.require('e2e.ext.MessageApi');
+goog.require('e2e.ext.ui.Glass');
+goog.require('e2e.ext.utils.text');
 
 
 /**
@@ -50,3 +29,19 @@ e2e.ext.utils.action.getPreferences(function(preferences) {
  * @type {boolean}
  */
 e2e.ext.ui.glass.bootstrap = false;
+
+if (!goog.isDef(window.glass)) {
+  var api = new e2e.ext.MessageApi('ymail-glass');
+  api.bootstrapClient(e2e.ext.utils.text.isYmailOrigin, function(error) {
+    error instanceof Error ?
+        console.error(error) :
+        api.sendRequest('getPgpContent', function(armor) {
+
+          window.glass = new e2e.ext.ui.Glass(armor, api);
+          window.glass.decorate(document.documentElement);
+
+          e2e.ext.ui.glass.bootstrap = true;
+
+    	}, goog.bind(console.error, console));
+  });
+}

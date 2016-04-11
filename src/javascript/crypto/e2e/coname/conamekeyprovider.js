@@ -27,21 +27,23 @@ goog.require('goog.structs.Map');
 
 goog.scope(function() {
 
+var coname = e2e.coname;
+var ConameKeyProvider = coname.KeyProvider;
+
 
 
 /**
  * Constructor for the coname key provider.
+ * @param {function(): !e2e.async.Result} authCallback Callback to
+ *     authenticate the client requests
  * @constructor
  */
-e2e.coname.KeyProvider = function() {
-  this.client_ = new e2e.coname.Client();
+e2e.coname.KeyProvider = function(authCallback) {
+  this.client_ = new e2e.coname.Client(authCallback);
 
   /** @private */
   this.keyIdEmailMap_ = new goog.structs.Map();
 };
-
-
-var ConameKeyProvider = e2e.coname.KeyProvider;
 
 
 /**

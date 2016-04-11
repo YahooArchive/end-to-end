@@ -36,10 +36,12 @@ goog.require('goog.net.XhrIo');
 
 /**
  * Constructor for the coname client.
+ * @param {!function(): !e2e.async.Result} authCallback Callback to
+ *     authenticate the AJAX calls
  * @param {string=} opt_keyName The key name of the keyData Map
  * @constructor
  */
-e2e.coname.Client = function(opt_keyName) {
+e2e.coname.Client = function(authCallback, opt_keyName) {
   /**
    * @type {?Object<string,*>}
    */
@@ -51,6 +53,12 @@ e2e.coname.Client = function(opt_keyName) {
    * @private
    */
   this.keyName_ = opt_keyName || '25519';
+
+  /**
+   * The Callback for authentication
+   * @type {!function(): !e2e.async.Result}
+   */
+  this.authCallback_ = authCallback;
 };
 
 
@@ -222,7 +230,6 @@ e2e.coname.encodeUpdateRequest_ = function(
 
 
 /**
- * @private
  * Send the data over AJAX
  * @param {string} method The HTTP method to use, such as "GET", "POST", "PUT",
  *                        "DELETE", etc. Ignored for non-HTTP(S) URLs
@@ -234,8 +241,10 @@ e2e.coname.encodeUpdateRequest_ = function(
  *                      request body
  * @return {e2e.async.Result.<string>} The raw response text iff the server
  *                                          responds 200 OK
+ * @private
  */
-e2e.coname.getAJAX_ = function(method, url, timeout, data) {
+e2e.coname.Client.prototype.getAJAX_ = function(
+    method, url, timeout, data) {
   var dataString = '';
   try {
     dataString = JSON.stringify(data);
@@ -244,16 +253,25 @@ e2e.coname.getAJAX_ = function(method, url, timeout, data) {
   }
 
   var result = new e2e.async.Result;
-  goog.net.XhrIo.send(url, function(e) {
+  goog.net.XhrIo.send(url, goog.bind(function(e) {
     var xhr = e.target;
     if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
       result.callback(xhr.getResponseText());
+    } else if (xhr.getStatus() === 401) {
+      // invoke the authCallback, and make the AJAX call again
+      this.authCallback_().
+          addCallbacks(function() {
+            this.getAJAX_(method, url, timeout, data).addCallbacks(
+                result.callback, result.errback, result);
+          }, function() {
+            result.errback(new Error(
+                'Error connecting to keyserver: ' + xhr.getLastError()));
+          }, this);
     } else {
-      result.errback(xhr.getStatus() === 401 ?
-          {messageId: 'conameAuthError'} :
-          new Error('Error connecting to keyserver: ' + xhr.getLastError()));
+      result.errback(new Error(
+          'Error connecting to keyserver: ' + xhr.getLastError()));
     }
-  }, method, dataString, {}, timeout);
+  }, this), method, dataString, {}, timeout);
   return result;
 };
 
@@ -286,7 +304,7 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
   };
 
   // TODO: make this possible for polling/retries
-  e2e.coname.getAJAX_('POST', realm.addr + '/lookup', 30000, data).
+  this.getAJAX_('POST', realm.addr + '/lookup', 30000, data).
       addCallbacks(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
             profile = pf['profile'],
@@ -347,7 +365,7 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
         newProfileBase64 = data.profile;
 
         // set 1m timeout
-        return e2e.coname.getAJAX_('POST', realm.addr + '/update', 60000, data);
+        return this.getAJAX_('POST', realm.addr + '/update', 60000, data);
 
       }, this).
       addCallback(function(responseText) {

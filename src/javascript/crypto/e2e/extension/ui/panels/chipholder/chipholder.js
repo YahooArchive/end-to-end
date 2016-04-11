@@ -184,16 +184,14 @@ panels.ChipHolder.prototype.handleNewChipValue_ = function(chipValue) {
 
   // badChipCallback_ works asynchronusly, mark chipValue as bad
   this.badChipCallback_(chipValue).addCallback(function(markChipBad) {
-    if (markChipBad) {
-      // from right to left as more likely it's checking the last one
-      var chipsLeft = this.getChildCount();
-      while (--chipsLeft > -1) {
-        var chip = this.getChildAt(chipsLeft);
-        if (chipValue == chip.getValue()) {
-          goog.dom.classlist.add(
-              chip.getElement(), constants.CssClass.BAD_CHIP);
-          // TODO(adon): can multiple chip carry the same chipValue? return?
-        }
+    // from right to left as more likely it's checking the last one
+    var chipsLeft = this.getChildCount();
+    while (--chipsLeft > -1) {
+      var chip = this.getChildAt(chipsLeft);
+      if (chipValue == chip.getValue()) {
+        goog.dom.classlist.add(chip.getElement(), markChipBad ?
+            constants.CssClass.BAD_CHIP : constants.CssClass.GOOD_CHIP);
+        // TODO(adon): can multiple chip carry the same chipValue? return?
       }
     }
   }, this);

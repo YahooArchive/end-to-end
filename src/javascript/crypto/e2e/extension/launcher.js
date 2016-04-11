@@ -26,12 +26,12 @@ goog.provide('e2e.ext.Launcher');
 goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
 goog.require('e2e.ext.api.Api');
-goog.require('e2e.ext.config'); //@yahoo
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.utils.TabsHelperProxy'); //@yahoo
 goog.require('e2e.ext.yPreferences'); //@yahoo
 goog.require('goog.Uri'); //@yahoo
 goog.require('goog.array'); //@yahoo
+goog.require('goog.structs');
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -339,7 +339,7 @@ ext.yExtensionLauncher.prototype.configureWebRequests = function() {
 /**
  * Refresh all ymail tabs
  */
-ext.yExtensionLauncher.prototype.refreshYmail  = function() {
+ext.yExtensionLauncher.prototype.refreshYmail = function() {
   // TODO: remove reloading requirement?
   chrome.tabs.query({}, function(tabs) {
     goog.array.forEach(tabs, function(tab) {
@@ -358,7 +358,7 @@ ext.yExtensionLauncher.prototype.refreshYmail  = function() {
  * The runtime.onMessage handler for glasses
  * @param {*} args The message to proxy
  * @param {MessageSender} sender
- * @param {function (*): undefined} callback The function to invoke with the response.
+ * @param {function (*)} callback The function to invoke with the response.
  * @private
  */
 ext.yExtensionLauncher.prototype.handleGlassRequests_ = function(
@@ -370,14 +370,6 @@ ext.yExtensionLauncher.prototype.handleGlassRequests_ = function(
         nullFunction = goog.nullFunction;
 
     switch (args.action) {
-      case constants.Actions.GLASS_CLOSED:
-      case constants.Actions.SET_GLASS_SIZE:
-        this.helperProxy_.sendMessage({
-          content: content,
-          action: args.action
-        }, nullFunction, nullFunction);
-        break;
-
       case constants.Actions.SET_AND_SEND_DRAFT:
         shouldSend = true;
       case constants.Actions.SET_DRAFT:

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2015 Yahoo Inc. All rights reserved.
+ * Copyright 2016 Yahoo Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,35 +19,30 @@
  */
 goog.provide('e2e.ext.ui.glass.compose.bootstrap');
 
+goog.require('e2e.ext.MessageApi');
 goog.require('e2e.ext.ui.ComposeGlass');
 goog.require('e2e.ext.utils.text');
 
 
-var initComposeGlass = function(evt) {
-  if (!e2e.ext.utils.text.isYmailOrigin(evt.origin)) {
-    return false;
-  }
-  window.removeEventListener('message', initComposeGlass);
-
-  var data = evt.data;
-  if (!data.draft || !data.hash) {
-    return;
-  }
-  if (data.draft.subject === 'Encrypted Message') {
-    // This is a placeholder subject from Encryptr. let's ignore it for now to
-    // make the unencrypted subject warning visible by default.
-    data.draft.subject = '';
-  }
-  /** @type {!e2e.ext.ui.ComposeGlass} */
-  window.composeGlass = new e2e.ext.ui.ComposeGlass(
-      data.draft, evt.origin, data.hash);
-  window.composeGlass.decorate(document.documentElement);
-};
-window.addEventListener('message', initComposeGlass);
-
-
 /**
- * Specifies whether the looking glass has been bootstrapped.
+ * Specifies whether the glass has been bootstrapped.
  * @type {boolean}
  */
-e2e.ext.ui.glass.compose.bootstrap = true;
+e2e.ext.ui.glass.compose.bootstrap = false;
+
+if (!goog.isDef(window.glass)) {
+  var api = new e2e.ext.MessageApi('ymail-composeglass');
+  api.bootstrapClient(e2e.ext.utils.text.isYmailOrigin, function(origin) {
+    origin instanceof Error ?
+        console.error(origin) :
+        api.sendRequest('getDraft', function(draft) {
+
+          window.glass = new e2e.ext.ui.ComposeGlass(
+              draft, /** @type {!string} */ (origin), api);
+          window.glass.decorate(document.documentElement);
+
+          e2e.ext.ui.glass.compose.bootstrap = true;
+
+        }, goog.bind(console.error, console));
+  });
+}

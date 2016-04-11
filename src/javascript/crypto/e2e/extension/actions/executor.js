@@ -22,7 +22,7 @@ goog.provide('e2e.ext.actions.Executor');
 
 goog.require('e2e.ext.actions.ConfigureExtension'); // @yahoo
 goog.require('e2e.ext.actions.DecryptVerify');
-goog.require('e2e.ext.actions.DecryptVerifyRichInfo'); // @yahoo
+goog.require('e2e.ext.actions.DecryptThenVerify'); // @yahoo
 goog.require('e2e.ext.actions.EncryptSign');
 goog.require('e2e.ext.actions.GetAllKeysByEmails'); // @yahoo
 goog.require('e2e.ext.actions.GetKeyDescription');
@@ -103,8 +103,9 @@ actions.Executor.prototype.getAction_ = function(actionType) {
     case constants.Actions.DECRYPT_VERIFY:
       return new actions.DecryptVerify();
     // @yahoo
-    case constants.Actions.DECRYPT_VERIFY_RICH_INFO:
-      return new actions.DecryptVerifyRichInfo();
+    case constants.Actions.DECRYPT_THEN_VERIFY:
+    case constants.Actions.DECRYPT_THEN_VERIFIED:
+      return new actions.DecryptThenVerify();
     case constants.Actions.ENCRYPT_SIGN:
       return new actions.EncryptSign();
     case constants.Actions.GET_KEY_DESCRIPTION:

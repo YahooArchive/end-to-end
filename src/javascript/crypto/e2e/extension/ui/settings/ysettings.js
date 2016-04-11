@@ -42,7 +42,6 @@ goog.require('goog.dom.classlist'); //@yahoo
 goog.require('goog.events.EventType'); //@yahoo
 goog.require('goog.functions');
 goog.require('goog.string');
-goog.require('goog.structs'); //@yahoo
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -228,7 +227,7 @@ ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
 
       if (opt_intention === 'load' || opt_intention === 'remove' ||
           privKeys.length !== 0) {
-        this.pgpContext_.syncWithRemote(keyUid, utils.openAuthWindow,
+        this.pgpContext_.syncWithRemote(keyUid,
             // no reqAction when it's in-sync
             constFunction(e2e.async.Result.toResult('noop')),
             // make an update if the inconsistency is acknowledged
@@ -289,7 +288,7 @@ ui.ySettings.prototype.generateKey_ = function(
   // TODO: enhance this email to uid mapping
   var uid = '<' + email + '>';
 
-  return this.pgpContext_.syncWithRemote(uid, utils.openAuthWindow,
+  return this.pgpContext_.syncWithRemote(uid,
       goog.bind(this.renderKeepExistingKeysCallback_, this),
       goog.bind(function(uid, local, common, remote) {
         var keys = local.concat(common);

@@ -277,8 +277,6 @@ ext.Helper.prototype.getE2ebindSelectedContent_ = function(req, sendResponse) {
           selectionBody = get_message_result.text;
         } else if (DOMelem) {
           selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
-              goog.isDef(DOMelem.lookingGlass) ?
-              DOMelem.lookingGlass.getOriginalContent() :
               DOMelem.innerText);
         } else {
           // no support to get selection text, as in google's
@@ -309,25 +307,25 @@ ext.Helper.prototype.enableLookingGlass_ = function() {
   if (!this.isGmail_()) {
     return;
   }
-
-  this.api_.getCurrentMessage(goog.bind(function(messageElemSelector) {
-    try {
-      var messageElem = document.querySelector(messageElemSelector);
-      if (!messageElem || Boolean(messageElem.lookingGlass)) {
-        return;
-      }
-    } catch (e) { // document.querySelector might throw.
-      return;
-    }
-    var selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
-        messageElem.innerText);
-    var action = utils.text.getPgpAction(selectionBody);
-    if (action == constants.Actions.DECRYPT_VERIFY) {
-      var glass = new ui.GlassWrapper(messageElem);
-      this.registerDisposable(glass);
-      glass.installGlass();
-    }
-  }, this), goog.bind(this.errorHandler_, this, goog.nullFunction));
+  // @yahoo disabled gmail code
+  // this.api_.getCurrentMessage(goog.bind(function(messageElemSelector) {
+  //   try {
+  //     var messageElem = document.querySelector(messageElemSelector);
+  //     if (!messageElem || Boolean(messageElem.lookingGlass)) {
+  //       return;
+  //     }
+  //   } catch (e) { // document.querySelector might throw.
+  //     return;
+  //   }
+  //   var selectionBody = e2e.openpgp.asciiArmor.extractPgpBlock(
+  //       messageElem.innerText);
+  //   var action = utils.text.getPgpAction(selectionBody);
+  //   if (action == constants.Actions.DECRYPT_VERIFY) {
+  //     var glass = new ui.GlassWrapper(messageElem);
+  //     this.registerDisposable(glass);
+  //     glass.installGlass();
+  //   }
+  // }, this), goog.bind(this.errorHandler_, this, goog.nullFunction));
 };
 
 

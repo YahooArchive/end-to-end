@@ -173,7 +173,8 @@ messages.e2ebindResponse;
  *   bcc: Array.<string>,
  *   subject: (string|undefined),
  *   from: (string|undefined),
- *   contacts: Array.<{email:string,firstname:string}>
+ *   contacts: Array.<{email:string,firstname:string}>,
+ *   insideConv: boolean
  * }}
  */
 messages.e2ebindDraft;

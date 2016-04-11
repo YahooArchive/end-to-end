@@ -131,7 +131,7 @@ function setUp() {
   });
 
   protobuf = new e2e.coname.ProtoBuf();
-  client = new e2e.coname.Client();
+  client = new e2e.coname.Client(e2e.async.Result.toResult(true));
 }
 
 

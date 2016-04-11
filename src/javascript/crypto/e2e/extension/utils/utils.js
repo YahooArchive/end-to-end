@@ -153,35 +153,40 @@ utils.showNotification = function(msg, callback) {
  *     invoked.
  */
 utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
+  
+  opt_errback = opt_errback || function(error) {
+    opt_callback && opt_callback(/** @type {messages.e2ebindResponse} */ ({
+      completedAction: args.action,
+      error: error.message
+    }));
+  };
+
   var port = chrome.runtime.connect();
   if (!port) {
+    opt_errback(new Error(chrome.i18n.getMessage('glassCannotCommunicate')));
     return;
   }
-  port.postMessage(args);
 
-  opt_callback = opt_callback || goog.nullFunction;
-
-  var respHandler = typeof opt_errback === 'function' ?
-      function(response) {
-        if (response.error) {
-          opt_errback(new Error(response.error));
-        } else {
-          try {
-            opt_callback(response);
-          } catch (ex) {
-            opt_errback(ex);
-          }
-        }
-        port.disconnect();
-      } :
-      function(response) {
-        opt_callback(response);
-        port.disconnect();
-      };
-  port.onMessage.addListener(respHandler);
   port.onDisconnect.addListener(function() {
     port = null;
   });
+  port.onMessage.addListener(function(response) {
+    port.disconnect();
+    port = null;
+
+    if (response.error) {
+      opt_errback(new Error(response.error));
+      return;
+    }
+
+    try {
+      opt_callback && opt_callback(response);
+    } catch (err) {
+      opt_errback(err);
+    }
+  });
+
+  port.postMessage(args);
 };
 
 
@@ -276,10 +281,9 @@ utils.isContentScript = function() {
 /**
  * Opens a window to requests for authentication, callback when the user has
  * successfully authenticated.
- * @param {string} email The email address that requires authentication
  * @return {!e2e.async.Result<boolean>} The authentication result
  */
-utils.openAuthWindow = function(email) {
+utils.openAuthWindow = function() {
   var result = new e2e.async.Result;
 
   // TODO: url now hardcoded. support openid type
@@ -289,8 +293,6 @@ utils.openAuthWindow = function(email) {
 
   chrome.windows.create({
     url: authUrl,
-    // url: e2e.coname.getRealmByEmail(email).addr +
-    //         '/auth?email=' + encodeURIComponent(email),
     width: 500,
     height: 640,
     type: 'popup'

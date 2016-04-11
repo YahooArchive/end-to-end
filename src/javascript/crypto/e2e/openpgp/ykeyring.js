@@ -84,7 +84,8 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
   var returnKeyRing = goog.functions.constant(keyRing);
   return /** @type {!goog.async.Deferred.<!e2e.openpgp.KeyRing>} */ (
       keyRing.initialize().addCallback(function() {
-        this.conameKeyProvider_ = new e2e.coname.KeyProvider();
+        this.conameKeyProvider_ = new e2e.coname.KeyProvider(
+            e2e.ext.utils.openAuthWindow);
       }, keyRing).addCallback(returnKeyRing));
 };
 

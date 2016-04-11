@@ -208,6 +208,7 @@ dialogs.Generic.prototype.enterDocument = function() {
         goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
         goog.partial(this.invokeCallback, false));
   }
+  this.keyboardHandler_.setAlwaysStopPropagation(true);
 
   // @yahoo focus on the first input element of all callbacks
   this.focusOnFirstDialog(); //@yahoo
@@ -225,6 +226,7 @@ dialogs.Generic.prototype.enterDocument = function() {
 
     // @yahoo added Escape as the cancel shortcut key
     this.keyboardEscHandler_ = new goog.ui.KeyboardShortcutHandler(parentElem);
+    this.keyboardEscHandler_.setAlwaysStopPropagation(true);
     this.keyboardEscHandler_.registerShortcut('esc', goog.events.KeyCodes.ESC);
     this.getHandler().listenOnce(
         this.keyboardEscHandler_,

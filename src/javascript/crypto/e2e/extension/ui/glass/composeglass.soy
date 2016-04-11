@@ -43,16 +43,16 @@
  * Renders the required UI elements for PGP encryption.
  * @param fromLabel The label to describe the "From:" select box.
  * @param subject The value of the subject field.
- * @param subjectLabel The label for the subject field
+ * @param subjectLabel The label for the subject field.
+ * @param loadingLabel The label for loading message.
  * @param signerCheckboxTitle The label for the checkbox to sign messages.
  * @param actionButtonTitle The title of the prompt button. 
  * @param actionDraftDeleteTitle The title of the Delete Draft button.
- * @param restoreToNormalComposeLabel The label for restoring to regular
- *     compose.
+ * @param unsupportedFormattingLabel The label for informing the formatting is unsupported.
  * @param encryptrMessage The default message to display when the encryptr icon is hovered.
  */
 {template .renderEncrypt}
-  <div><label for="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}"></label></div>
+  <div id="{e2e.ext.constants.ElementId.SAVE_ESC_BUTTON}"></div>
   <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}" style="display: none">
     <div>{$fromLabel}</div>
     <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"></select>
@@ -64,23 +64,28 @@
     <input id="{e2e.ext.constants.ElementId.SUBJECT}" value="{$subject}" placeholder="{$subjectLabel}" />
   </div>
   {/if}
-  <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}"><span>{$encryptrMessage}</span></div>
+  <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}"><div>{$encryptrMessage}</div><label></label></div>
   <textarea></textarea>
   <div class="{e2e.ext.constants.CssClass.PROMPT_ACTIONS}">
-    <div style="display:none"><!-- @yahoo hide the option whether to sign the message -->
+    <div class="{e2e.ext.constants.CssClass.BOTTOM_NOTIFICATION}" style="display:none">
+      <span class="{e2e.ext.constants.CssClass.LOADER}"></span>
+      <div>{$loadingLabel}</div>
+    </div>
+    <div class="{e2e.ext.constants.CssClass.BUTTONS_CONTAINER}">
+      <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
+      <div>{$unsupportedFormattingLabel}</div>
+      <div>
+        <button id="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}" title="{$actionDraftDeleteTitle}"></button>
+      </div>
+      <div class="{e2e.ext.constants.CssClass.SAVE_DRAFT_MSG}"></div>
+    </div>
+    <!-- @yahoo hide extra options -->
+    <div style="display:none">
       <input type="checkbox" id="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
       <label for="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
         {$signerCheckboxTitle}
       </label>
       <button id="{e2e.ext.constants.ElementId.ADD_PASSPHRASE_BUTTON}">Passphrase</button>
-      <button id="{e2e.ext.constants.ElementId.RESTORE_BUTTON}">Restore</button>
-      <button id="{e2e.ext.constants.ElementId.BACK_BUTTON}">Back</button>
     </div>
-    <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
-    <div>{$restoreToNormalComposeLabel}</div>
-    <div>
-      <button id="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}" title="{$actionDraftDeleteTitle}"></button>
-    </div>
-    <div class="{e2e.ext.constants.CssClass.SAVE_DRAFT_MSG}"></div>
   </div>
 {/template}

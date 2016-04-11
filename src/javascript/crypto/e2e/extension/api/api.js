@@ -136,7 +136,8 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   switch (incoming.action) {
     case constants.Actions.ENCRYPT_SIGN:
     case constants.Actions.DECRYPT_VERIFY:
-    case constants.Actions.DECRYPT_VERIFY_RICH_INFO: //@yahoo
+    case constants.Actions.DECRYPT_THEN_VERIFY: //@yahoo
+    case constants.Actions.DECRYPT_THEN_VERIFIED: //@yahoo
     case constants.Actions.LIST_KEYS: //@yahoo
       // Propagate the decryptPassphrase if needed.
       incoming.passphraseCallback = function(uid) {

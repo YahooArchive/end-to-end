@@ -128,7 +128,7 @@ e2e_build_css() {
   csscompile_e2e="java -jar lib/closure-stylesheets/build/closure-stylesheets.jar src/javascript/crypto/e2e/extension/ui/styles/ycolors.css src/javascript/crypto/e2e/extension/ui/styles/base.css"
   set -e
   echo "Compiling CSS files..."
-  $csscompile_e2e "$SRC_EXT_DIR/ui/glass/glass.css" > "$BUILD_EXT_DIR/glass_styles.css"
+  $csscompile_e2e "$SRC_EXT_DIR/ui/prompt/prompt.css" "$SRC_EXT_DIR/ui/glass/glass.css" > "$BUILD_EXT_DIR/glass_styles.css"
   $csscompile_e2e "$SRC_EXT_DIR/ui/prompt/prompt.css" "$SRC_EXT_DIR/ui/glass/composeglass.css" > "$BUILD_EXT_DIR/composeglass_styles.css"
   $csscompile_e2e "$SRC_EXT_DIR/ui/prompt/prompt.css" > "$BUILD_EXT_DIR/prompt_styles.css"
   $csscompile_e2e "$SRC_EXT_DIR/ui/settings/settings.css" "$SRC_EXT_DIR/ui/settings/simplified.css" > "$BUILD_EXT_DIR/settings_styles.css"
@@ -164,7 +164,7 @@ e2e_build_extension() {
   echo "Compiling JS files..."
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.bootstrap" --js_output_file "$BUILD_EXT_DIR/launcher_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.helper.bootstrap" --js_output_file "$BUILD_EXT_DIR/helper_binary.js"
-  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.ybootstrap" --js_output_file "$BUILD_EXT_DIR/glass_binary.js"
+  echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.bootstrap" --js_output_file "$BUILD_EXT_DIR/glass_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.glass.compose.bootstrap" --js_output_file "$BUILD_EXT_DIR/composeglass_binary.js"
   # echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.webview.bootstrap" --js_output_file "$BUILD_EXT_DIR/webview_binary.js"
   echo -n "." && $jscompile_e2e --closure_entry_point "e2e.ext.ui.prompt.bootstrap" --js_output_file "$BUILD_EXT_DIR/prompt_binary.js"

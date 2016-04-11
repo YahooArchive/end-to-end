@@ -43,7 +43,8 @@ e2e.ext.constants.Actions = {
 
   // Decryption/verification related actions.
   DECRYPT_VERIFY: 'decrypt_verify',
-  DECRYPT_VERIFY_RICH_INFO: 'decrypt_verify_rich_info', //@yahoo
+  DECRYPT_THEN_VERIFY: 'decrypt_then_verify', //@yahoo
+  DECRYPT_THEN_VERIFIED: 'decrypt_then_verified', //@yahoo
 
   // Keyring management related actions.
   GET_KEY_DESCRIPTION: 'get_key_description',
@@ -61,13 +62,11 @@ e2e.ext.constants.Actions = {
 
   //@yahoo Actions needed for the glasses.
   SHOW_NOTIFICATION: 'show_notification',
-  GLASS_CLOSED: 'glass_closed',
   SET_DRAFT: 'set_draft',
   SET_AND_SEND_DRAFT: 'set_and_send_draft',
   GET_SELECTED_CONTENT: 'get_selected_content',
   CHANGE_PAGEACTION: 'change_pageaction',
   RESET_PAGEACTION: 'reset_pageaction',
-  SET_GLASS_SIZE: 'set_glass_size',
 
   // Intended no-op. Used for closing the prompt UI when other visual elements
   // (e.g. looking glass) would display data.
@@ -164,9 +163,9 @@ e2e.ext.constants.ElementId = {
   // glass
   LOCK_ICON: 'lock-icon',
   CHECK_ICON: 'check-icon',
-  BACK_BUTTON: 'back-button',
+  BACK_BUTTON: 'back-button', 
   ENCRYPTR_ICON: 'encryptr-icon', //@yahoo
-  RESTORE_BUTTON: 'restore-button', //@yahoo
+  SAVE_ESC_BUTTON: 'save-esc-button', //@yahoo
   DRAFT_DELETE_BUTTON: 'draft-delete-button', //@yahoo
   ADD_PASSPHRASE_BUTTON: 'add-passphrase-button', //@yahoo
 
@@ -196,6 +195,7 @@ e2e.ext.constants.CssClass = {
   CHIP: 'uid-chip',
   CHIPS: 'uid-chips',
   BAD_CHIP: 'uid-bad-chip',
+  GOOD_CHIP: 'uid-good-chip', //@yahoo
 
   /* Common UI components */
   DIALOG_INPUT: 'dialog-input',
@@ -247,9 +247,12 @@ e2e.ext.constants.CssClass = {
   MENU_BUTTON: 'menu-button',
   POPOUT_BUTTON: 'popout-button',
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
+  LOADER: 'loader', //@yahoo
+  BOTTOM_NOTIFICATION: 'bottom-notification', //@yahoo
 
   /** Error messages **/
   ERROR: 'error',
+  WARN: 'warn', //@yahoo
 
   /** yahoo compose glass **/
   COMPOSE_CONTAINER: 'compose',
