@@ -128,7 +128,7 @@ ext.MessageApi.prototype.bootstrapServer = function(
             goog.bind(this.processMessage_, this));
         onReadyCallback();
       } else {
-        onReadyCallback(new Error('Connection Timeout'));
+        onReadyCallback(new Error('MessageAPI Connection Timeout'));
       }
     }
   }, this);
@@ -183,7 +183,7 @@ ext.MessageApi.prototype.bootstrapClient = function(
         onReadyCallback(e.origin);
       } else {
         onReadyCallback(new Error(e.timeout ?
-            'Connection Timeout' :
+            'MessageAPI Connection Timeout' :
             'no HTML5 MessageChannel support'));
       }
     }
