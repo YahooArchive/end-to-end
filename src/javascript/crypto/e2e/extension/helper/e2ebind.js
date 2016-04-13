@@ -29,6 +29,7 @@ goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.constants.StorageKey');
 goog.require('e2e.ext.constants.e2ebind.requestActions');
 goog.require('e2e.ext.constants.e2ebind.responseActions');
+goog.require('e2e.ext.ui.BaseGlassWrapper');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
@@ -256,7 +257,7 @@ e2ebind.sendRequest = function(action, args, callback) {
   // If the response was processed before the timeout, handleProviderResponse_
   // will just silently bail out.
   setTimeout(
-      goog.bind(e2ebind.handleProviderResponse_, e2ebind, timeoutResponse),
+      goog.bind(e2ebind.handleProviderResponse_, null, timeoutResponse),
       e2ebind.REQUEST_TIMEOUT);
 
   window.postMessage(window.JSON.stringify(reqObj), window.location.origin);
@@ -412,11 +413,13 @@ e2ebind.initComposeGlass_ = function(elt, opt_isExplicit) {
   if (!elt || elt.composeGlass || (!opt_isExplicit && elt.glassDisposed)) {
     return;
   }
-  elt.composeGlass = true;
 
   // get parent element whose class is 'compose'
-  e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
+  elt = e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
       elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
+
+  // must set to the compose container
+  elt.composeGlass = true;
 
   // // We have to unhide the PGP blob so that text shows up in compose glass
   // var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
@@ -497,7 +500,7 @@ e2ebind.installReadGlass_ = function(targetElem, opt_text, opt_limit) {
     if (armors.length === 0 || armors[0].type === 'BINARY') {
       return;
     }
-    
+
     goog.array.forEach(armors, function(armor) {
       var isValidDecryptVerifyArmor = false, textStartOffset = 0;
 
@@ -550,7 +553,7 @@ e2ebind.installReadGlass_ = function(targetElem, opt_text, opt_limit) {
       div = document.createElement('div');
       div.className = targetElem.className;
       div.innerHTML = '<hr/>' + goog.string.newLineToBr(
-        goog.string.htmlEscape(plaintext));
+                                  goog.string.htmlEscape(plaintext));
       goog.dom.insertSiblingBefore(div, targetElem);
     }
 
