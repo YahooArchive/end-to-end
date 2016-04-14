@@ -23,6 +23,7 @@ goog.provide('e2e.ext.ui.ComposeGlassWrapper');
 goog.provide('e2e.ext.ui.GlassWrapper');
 
 goog.require('e2e.ext.MessageApi');
+goog.require('e2e.ext.utils');
 goog.require('goog.Disposable');
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
@@ -409,49 +410,6 @@ ui.ComposeGlassWrapper = function(targetElem, draft) {
 goog.inherits(ui.ComposeGlassWrapper, ui.BaseGlassWrapper);
 
 
-/**
- * Maintain a map of throttled event type to event targets
- * @type {goog.structs.Map.<string, !boolean>}
- */
-ui.ComposeGlassWrapper.EventThrottled = new goog.structs.Map();
-
-
-/**
- * Throttle an event until the next animation frame
- * @param {!EventTarget} target The target element to throttle events
- * @param {!string} type The event type
- * @param {function(Event)} handler The event handler
- * @param {!string=} opt_newType The new event type name
- * @return {goog.events.Key} Unique key for the listener.
- * @private
- */
-ui.ComposeGlassWrapper.prototype.listenThrottledEvent_ = function(
-    target, type, handler, opt_newType) {
-  var newType = opt_newType || ('throttled-' + type);
-
-  // register custom event once per element
-  var customEventCreated = ui.ComposeGlassWrapper.EventThrottled.get(type);
-  if (!customEventCreated) {
-    ui.ComposeGlassWrapper.EventThrottled.set(type, true);
-  
-    var running = false;
-    
-    target.addEventListener(type, function() {
-      if (running) {
-        return;
-      }
-      running = true;
-      requestAnimationFrame(function() {
-        target.dispatchEvent(new CustomEvent(newType));
-        running = false;
-      });
-    }, false);
-  }
-
-  return goog.events.listen(target, newType, handler);
-};
-
-
 /** @override */
 ui.ComposeGlassWrapper.prototype.installGlass = function() {
   this.styleTop_ = goog.style.getClientPosition(this.targetElem).y;
@@ -461,7 +419,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   var threadList = goog.dom.getAncestorByTagNameAndClass(
       this.targetElem, 'div', 'thread-item-list');
   this.insideConv_ = Boolean(threadList);
-  
+
   var glassFrame = this.getGlassFrame();
   glassFrame.style.minHeight = '220px';
   this.setHeight('330px'); // do this after initializing insideConv_
@@ -509,7 +467,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   }
 
   // resize the glassFrame when window is resized
-  this.listenThrottledEvent_(window, goog.events.EventType.RESIZE,
+  e2e.ext.utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
       this.boundResizeHandler_);
 
   glassFrame.focus();

@@ -134,7 +134,7 @@ ui.ComposeGlass = function(draft, origin, api) {
    * @type {boolean}
    * @private
    */
-   this.insideConv_ = draft.insideConv;
+  this.insideConv_ = draft.insideConv;
 };
 goog.inherits(ui.ComposeGlass, e2e.ext.ui.panels.prompt.PanelBase);
 
@@ -323,8 +323,8 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       listen(textArea, goog.events.EventType.INPUT,
           goog.bind(this.mirrorSize_, this, textArea));
 
-  // @yahoo sets textarea height
-  goog.events.listen(window, goog.events.EventType.RESIZE,
+  //@yahoo resize the textarea when window is resized
+  utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
       goog.bind(this.resizeTextArea_, this, textArea));
 
   // @yahoo sets the focus

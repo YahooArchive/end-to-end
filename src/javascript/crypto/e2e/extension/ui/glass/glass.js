@@ -32,8 +32,8 @@ goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.templates.glass');
 goog.require('e2e.ext.utils');
-goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.Error');
+goog.require('e2e.ext.utils.action');
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events');
@@ -154,13 +154,15 @@ ui.Glass.prototype.enterDocument = function() {
       sHandler.EventType.SHORTCUT_TRIGGERED,
       goog.bind(this.handleKeyEvent_, this));
 
+  if (window) {
+    //@yahoo resize the glass when window is resized
+    utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
+        goog.bind(this.mirrorSize_, this));
 
-  window && goog.events.listen(window,
-      goog.events.EventType.RESIZE,
-      goog.bind(this.mirrorSize_, this));
-  window && goog.events.listen(window,
-      goog.events.EventType.FOCUS,
-      goog.bind(this.handleKeyEvent_, this));
+    goog.events.listen(window,
+        goog.events.EventType.FOCUS,
+        goog.bind(this.handleKeyEvent_, this));
+  }
 };
 
 
@@ -298,17 +300,17 @@ ui.Glass.prototype.renderPassphraseAndError_ = function(error) {
 ui.Glass.prototype.setContent_ = function(result) {
   var decrypt = result.decrypt;
   e2e.byteArrayToStringAsync(decrypt.data, decrypt.options.charset).
-    addCallback(goog.bind(/** @param {string} text */ function(text) {
+      addCallback(goog.bind(/** @param {string} text */ function(text) {
 
-      var bodyElem = goog.dom.getElement(constants.ElementId.BODY);
+        var bodyElem = goog.dom.getElement(constants.ElementId.BODY);
 
-      bodyElem.classList.remove(constants.CssClass.LOADER);
+        bodyElem.classList.remove(constants.CssClass.LOADER);
 
-      bodyElem.innerHTML = goog.string.newLineToBr(
-          goog.string.htmlEscape(text));
+        bodyElem.innerHTML = goog.string.newLineToBr(
+            goog.string.htmlEscape(text));
 
-      this.mirrorSize_();
-    }, this));
+        this.mirrorSize_();
+      }, this));
 };
 
 

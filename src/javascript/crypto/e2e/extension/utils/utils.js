@@ -25,6 +25,7 @@ goog.require('e2e.async.Result');
 goog.require('e2e.ext.config');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('goog.events');
 goog.require('goog.object');
 
 goog.scope(function() {
@@ -153,7 +154,7 @@ utils.showNotification = function(msg, callback) {
  *     invoked.
  */
 utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
-  
+
   opt_errback = opt_errback || function(error) {
     opt_callback && opt_callback(/** @type {messages.e2ebindResponse} */ ({
       completedAction: args.action,
@@ -308,6 +309,39 @@ utils.openAuthWindow = function() {
 
   });
   return result;
+};
+
+
+/**
+ * Listen to an event, that is throttled until the next animation frame
+ * @param {!EventTarget} target The target element to throttle events
+ * @param {!string} type The event type
+ * @param {function(Event)} handler The event handler
+ * @param {!string=} opt_newType The new event type name
+ * @return {goog.events.Key} Unique key for the listener.
+ */
+utils.listenThrottledEvent = function(target, type, handler, opt_newType) {
+  var newType = opt_newType || ('throttled-' + type);
+
+  // init the event requested only once
+  if (!target['hasInit' + newType]) {
+    target['hasInit' + newType] = true;
+
+    var running = false;
+
+    target.addEventListener(type, function() {
+      if (running) {
+        return;
+      }
+      running = true;
+      requestAnimationFrame(function() {
+        target.dispatchEvent(new CustomEvent(newType));
+        running = false;
+      });
+    }, false);
+  }
+
+  return goog.events.listen(target, newType, handler);
 };
 
 });  // goog.scope
