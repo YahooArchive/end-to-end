@@ -90,15 +90,6 @@ e2ebind.start = function() {
    */
   e2ebind.pendingCallbacks_ = new e2e.ext.utils.CallbacksMap();
 
-  // Register the click handler
-  goog.events.listen(document.body, goog.events.EventType.CLICK,
-                     e2ebind.clickHandler_, true);
-
-  // Register handler for when the compose area is focused
-  goog.events.listen(document.body, goog.events.EventType.FOCUS,
-                     e2ebind.clickHandler_, true);
-
-
   // Register the handler for messages from the provider
   window.addEventListener('message', e2ebind.messageHandler_);
 };
@@ -110,96 +101,6 @@ e2ebind.start = function() {
 e2ebind.stop = function() {
   window.removeEventListener('message', e2ebind.messageHandler_);
   e2ebind.started_ = false;
-  goog.events.unlisten(document.body, goog.events.EventType.CLICK,
-                       e2ebind.clickHandler_);
-  goog.events.unlisten(document.body, goog.events.EventType.FOCUS,
-                       e2ebind.clickHandler_);
-};
-
-
-/**
- * Custom click event handler for e2ebind page elements.
- * @param {Event} e The click event object.
- * @private
- */
-e2ebind.clickHandler_ = function(e) {
-  var elt = e.target || document.activeElement;
-  // The encryptr icon was clicked; initiate the compose glass
-  if (elt.id === constants.ElementId.E2EBIND_ICON && e.type === 'click') {
-    e2ebind.initComposeGlass_(elt, true);
-    return;
-  }
-
-  // the event target must not be nested under '.reply-text'
-  if (!goog.dom.getAncestorByTagNameAndClass(
-      elt, 'div', constants.CssClass.COMPOSE_CONTAINER_REPLY_EXCEPTION) &&
-      // get parent element whose class is 'compose'
-      (elt = goog.dom.getAncestorByTagNameAndClass(
-          elt, 'div', constants.CssClass.COMPOSE_CONTAINER)) &&
-      // the parent element must not be nested under '.iris-window'
-      !goog.dom.getAncestorByTagNameAndClass(
-          elt, 'div', constants.CssClass.COMPOSE_CONTAINER_IRIS_EXCEPTION)) {
-
-    // default to open the compose glass if so configured
-    utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-      action: constants.Actions.GET_PREFERENCE,
-      content: constants.StorageKey.ENABLE_COMPOSE_GLASS
-    }), function(response) {
-      response.content == 'true' && e2ebind.initComposeGlass_(elt);
-    });
-
-  }
-
-};
-
-
-/**
- * On focus event handler.
- * @param {Element} e The element that was focused
- * @private
- */
-e2ebind.focusHandler_ = function(e) {
-  // Default it to require clicking the encryptr icon to install compose glass
-  // TODO: uncomment the following, and make this configurable
-
-  // var elt = e.target;
-  // if (goog.dom.getAncestorByTagNameAndClass(elt,
-  //                                       'div',
-  //                                       constants.CssClass.COMPOSE_BODY)) {
-  //   // The user focused on the email body editor. If all the recipients have
-  //   // keys, initiate the compose glass
-  //   try {
-  //     e2ebind.getDraft(goog.bind(function(draft) {
-  //       draft.to = draft.to || [];
-  //       draft.cc = draft.cc || [];
-  //       draft.bcc = draft.bcc || [];
-  //       var recipients = draft.to.concat(draft.cc).concat(draft.bcc);
-
-  //       utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-  //         action: constants.Actions.LIST_ALL_UIDS,
-  //         content: 'public'
-  //       }), function(response) {
-  //         response.content = response.content || [];
-  //         var invalidRecipients = /** @type {!Array.<string>} */ ([]);
-
-  //         var emails = utils.text.getValidEmailAddressesFromArray(
-  //             response.content, true);
-  //         goog.array.forEach(recipients, function(recipient) {
-  //           var valid = goog.array.contains(emails, recipient);
-  //           if (!valid) {
-  //             invalidRecipients.push(recipient);
-  //           }
-  //         });
-
-  //         if (invalidRecipients.length === 0) {
-  //           e2ebind.initComposeGlass_(null);
-  //         }
-  //       });
-  //     }, this));
-  //   } catch (ex) {
-  //     console.error(ex);
-  //   }
-  // }
 };
 
 
@@ -333,7 +234,7 @@ e2ebind.handleProviderRequest_ = function(request) {
 
     case actions.INSTALL_COMPOSE_GLASS:
       // TODO: YMail should send the draft element instead of null!
-      e2ebind.initComposeGlass_(args.elem);
+      // e2ebind.initComposeGlass_(args.elem);
       break;
 
     case actions.SET_SIGNER:
@@ -385,94 +286,6 @@ e2ebind.sendResponse_ = function(result, request, success) {
   });
 
   window.postMessage(window.JSON.stringify(returnObj), window.location.origin);
-};
-
-
-/**
- * The active compose element.
- * @type {Element}
- * @private
- */
-e2ebind.activeComposeElem_ = null;
-
-
-/**
- * Starts initializing the compose glass if either the lock icon was clicked
- * or if at least one recipient has a PGP key or the message is a PGP message.
- * @param {Element} elt Element for the lock icon or null if one was not clicked
- * @param {boolean=} opt_isExplicit Whether it is explicitly triggered by user.
- * @private
- */
-e2ebind.initComposeGlass_ = function(elt, opt_isExplicit) {
-  elt = elt || e2ebind.activeComposeElem_;
-
-  // quit under the following conditions
-  // - no valid compose element to install the glass in
-  // - the glass is already installed
-  // - skip auto trigger since this is implicitly triggered by clicks/focuses
-  if (!elt || elt.composeGlass || (!opt_isExplicit && elt.glassDisposed)) {
-    return;
-  }
-
-  // get parent element whose class is 'compose'
-  elt = e2ebind.activeComposeElem_ = goog.dom.getAncestorByTagNameAndClass(
-      elt, 'div', constants.CssClass.COMPOSE_CONTAINER);
-
-  // must set to the compose container
-  elt.composeGlass = true;
-
-  // // We have to unhide the PGP blob so that text shows up in compose glass
-  // var textElem = goog.dom.getElement(constants.ElementId.E2EBIND_TEXT);
-  // if (textElem) {
-  //   goog.style.setElementShown(textElem, true);
-  // }
-
-  // Get the compose window associated with the clicked icon
-  var draft = /** @type {messages.e2ebindDraft} */ ({
-    from: window.config.signer || ''
-  });
-
-  e2ebind.hasDraft(function(hasDraftResult) {
-    if (hasDraftResult) {
-      e2ebind.getDraft(function(getDraftResult) {
-        draft.body = e2e.openpgp.asciiArmor.
-            extractPgpBlock(getDraftResult.body);
-        draft.to = getDraftResult.to;
-        draft.cc = getDraftResult.cc;
-        draft.bcc = getDraftResult.bcc;
-        draft.subject = getDraftResult.subject;
-        draft.contacts = getDraftResult.contacts;
-        e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-      });
-    } else {
-      e2ebind.getCurrentMessage(function(result) {
-        var DOMelem = document.querySelector(result.elem);
-        draft.contacts = result.contacts || [];
-        if (result.text) {
-          draft.body = result.text;
-        } else if (DOMelem) {
-          draft.body = e2e.openpgp.asciiArmor.extractPgpBlock(
-              goog.isDef(DOMelem.glass_) ?
-              DOMelem.glass_.getOriginalContent() :
-              DOMelem.innerText);
-        }
-        e2ebind.installComposeGlass_(e2ebind.activeComposeElem_, draft);
-      });
-    }
-  });
-};
-
-
-/**
-* Install a compose glass for the target element
-* @param {Element} elem Element to install the glass in
-* @param {!messages.e2ebindDraft} draft The draft content to put in the glass
-* @private
-*/
-e2ebind.installComposeGlass_ = function(elem, draft) {
-  var glassWrapper = new ui.ComposeGlassWrapper(elem, draft);
-  window.helper && window.helper.registerDisposable(glassWrapper);
-  glassWrapper.installGlass();
 };
 
 

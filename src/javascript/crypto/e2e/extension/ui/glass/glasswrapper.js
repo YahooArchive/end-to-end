@@ -398,14 +398,11 @@ ui.GlassWrapper.prototype.getOriginalContent = function() {
 /**
  * Constructor for the compose glass wrapper.
  * @param {Element} targetElem Element that hosts the looking glass.
- * @param {!messages.e2ebindDraft} draft Draft data
  * @constructor
  * @extends {ui.BaseGlassWrapper}
  */
-ui.ComposeGlassWrapper = function(targetElem, draft) {
+ui.ComposeGlassWrapper = function(targetElem) {
   goog.base(this, targetElem, 'compose');
-
-  this.draft_ = draft;
 };
 goog.inherits(ui.ComposeGlassWrapper, ui.BaseGlassWrapper);
 
@@ -426,13 +423,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
 
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
 
-  this.onApiRequest('getDraft', function() {
-    this.draft_.insideConv = this.insideConv_;
-    return this.draft_;
-  });
-
   this.onApiRequest('exit', function(args) {
-    glassFrame.focus();
     if (this.targetElem) {
       var elem;
 
@@ -442,13 +433,25 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
         elem && elem.click();
       }
 
+      goog.dom.removeNode(glassFrame);
+      this.dispose();
+
+      // refocus the original compose, in particular the encryptr icon
+      if (threadList) {
+        goog.array.forEach(threadList.children, function(thread) {
+          thread.dispatchEvent(this.getFocusEvent('blur'));
+        }, this);
+        
+        this.targetElem.dispatchEvent(this.getFocusEvent('focus'));
+
+        elem = this.targetElem.querySelector('.icon-encrypt');
+        elem && elem.dispatchEvent(this.getFocusEvent('focus'));
+      }
+
       // trigger YMail's compose to resize, i.e., blur event for To recipients
       elem = this.targetElem.querySelector('input.cm-to-field');
       elem && elem.dispatchEvent(this.getFocusEvent('blur'));
 
-      goog.dom.removeNode(glassFrame);
-
-      this.dispose();
       return true;
     }
     return new Error('the original message view is missing');

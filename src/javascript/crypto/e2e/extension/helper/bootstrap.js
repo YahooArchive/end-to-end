@@ -19,6 +19,7 @@
  */
 
 goog.require('e2e.ext.Helper');
+goog.require('e2e.ext.Helper.YmailApi');
 goog.require('e2e.ext.WebsiteApi');
 goog.require('e2e.ext.utils');
 
@@ -36,6 +37,10 @@ e2e.ext.helper.bootstrap = false;
 if (e2e.ext.utils.isContentScript() && !goog.isDef(window.helper)) {
   /** @type {!e2e.ext.Helper} */
   window.helper = new e2e.ext.Helper(new e2e.ext.WebsiteApi());
+
+  //@yahoo
+  window.helper.registerDisposable(new e2e.ext.Helper.YmailApi());
+
   if (e2e.ext.utils.runsInChromeApp()) {
     window.helper.enableWebsiteRequests();
   }

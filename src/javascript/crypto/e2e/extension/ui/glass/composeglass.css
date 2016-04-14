@@ -67,7 +67,7 @@ body {
 }
 
 #chipHolder, #ccChipHolder, #fromHolder, #subjectHolder {
-  border-bottom: 1px solid #cfcfcf;
+  border-bottom: 1px solid #EAEDF0;
   color: #777;
   line-height: 18px;
   margin-bottom: 0;
@@ -75,7 +75,7 @@ body {
 
 #fromHolder, #chipHolder, #ccChipHolder {
   padding: 0;
-  margin: 2px 28px;
+  margin: 2px 23px;
   min-height: 26px;
   line-height: 16px;
 }
@@ -141,7 +141,7 @@ textarea {
   position: fixed;
   bottom: 0;
   width: 100%;
-  border-top: 1px solid #cfcfcf;
+  border-top: 1px solid #EAEDF0;
   background: #FFF;
 }
 

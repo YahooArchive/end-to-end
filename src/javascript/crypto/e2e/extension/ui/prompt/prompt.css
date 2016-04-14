@@ -355,8 +355,8 @@ textarea:focus {
   box-shadow: 1px 1px #EEE;
   border-radius: 8px;
   border: 1px solid #CCC;
-  padding: 13px 18px;
-  right: 30px;
+  padding: 15px 20px;
+  right: 20px;
   margin-top: 4px;
   color: #333;
   cursor: default;
@@ -381,7 +381,7 @@ textarea:focus {
   cursor: auto;
   font-size: 20px;
   position: absolute;
-  right: 32px;
+  right: 20px;
   padding: 3px;
   color: #00b777;
 }

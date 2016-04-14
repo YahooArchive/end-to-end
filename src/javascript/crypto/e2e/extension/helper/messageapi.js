@@ -276,12 +276,20 @@ ext.MessageApi.prototype.getRequestHandler = function() {
  */
 ext.MessageApi.prototype.handleRequest_ = function(port, request) {
   if (request.id && request.call) {
-    var callback = this.requestHandler_.get(request.call);
+    var result, callback = this.requestHandler_.get(request.call),
+        sendResponse_ = goog.bind(this.sendResponse_, this, request.id);
     try {
-      return this.sendResponse_(request.id,
-          callback ? callback(request.args) : new Error('unsupported API call'));
-    } catch (ex) {
-      return this.sendResponse_(request.id, ex);
+      if (!callback) {
+        throw new Error('MessageAPI Unsupported Call');
+      }
+
+      result = callback(request.args);
+      result instanceof goog.async.Deferred ?
+          result.addCallbacks(sendResponse_, sendResponse_) :
+          sendResponse_(result);
+
+    } catch (error) {
+      sendResponse_(error);
     }
   }
 };
