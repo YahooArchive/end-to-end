@@ -103,8 +103,6 @@
  * @param passphraseChangeActionButtonTitle The title for the passphrase change submit button.
  * @param passphraseConfirmActionButtonTitle The title for the passphrase confirm submit button.
  * @param passphraseChangeCancelButtonTitle The title for the passphrase change cancel button.
- * @param content content to show at the top of the panel. @yahoo
- * @param cancelLabel Label for the 'cancel' button @yahoo
  * @param keyringOptionsLabel Label for the keyring options. @yahoo
  * @param helpLabel Label for the help button. @yahoo
  * @param fbImportLabel Label for the 'Facebook import' button @yahoo
@@ -113,7 +111,6 @@
  * @param toggleOptionsLabel Label for the advanced options @yahoo
  */
 {template .manageKeyring}
-  <!-- @yahoo--><div>{$content}</div>
   <!-- @yahoo trigger file upload directly -->
   <!--div id="{e2e.ext.constants.ElementId.KEYRING_IMPORT_DIV}"
        class="{e2e.ext.constants.CssClass.HIDDEN}">
@@ -178,8 +175,6 @@
                    {e2e.ext.constants.CssClass.CANCEL}">{$backupKeyringLabel}</button>
     <button class="{e2e.ext.constants.CssClass.KEYRING_RESTORE}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$restoreKeyringLabel}</button>
-    <button class="{e2e.ext.constants.CssClass.KEYRING_CANCEL}{sp}
-                   {e2e.ext.constants.CssClass.CANCEL}">{$cancelLabel}</button>
     <button class="{e2e.ext.constants.CssClass.TOGGLE_OPTIONS}{sp}
                    {e2e.ext.constants.CssClass.CANCEL}">{$toggleOptionsLabel}</button>
   </div>

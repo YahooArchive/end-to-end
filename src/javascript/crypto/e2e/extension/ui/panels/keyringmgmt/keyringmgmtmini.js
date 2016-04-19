@@ -58,17 +58,12 @@ var templates = e2e.ext.ui.templates.panels.keyringmgmt;
  *     when the passphrase to the keyring is to be updated.
  * @param {!function(string)=} opt_restoreKeyringCallback The callback to invoke
  *     when the keyring is restored.
- * @param {!function()=} opt_cancelCallback Callback to invoke when the action
- *     is cancelled.
- * @param {string=} opt_content Content to show at the top of the panel.
- * @param {string=} opt_cancelLabel Optional custom label for the cancel button
  * @constructor
  * @extends {goog.ui.Component}
  */
 panels.KeyringMgmtMini =
     function(exportCallback, importCallback, updatePassphraseCallback,
-    opt_restoreKeyringCallback, opt_cancelCallback, opt_content,
-    opt_cancelLabel) {
+    opt_restoreKeyringCallback) {
   goog.base(this);
 
   /**
@@ -106,28 +101,6 @@ panels.KeyringMgmtMini =
    */
   this.restoreKeyringCallback_ = opt_restoreKeyringCallback ||
       goog.nullFunction;
-
-  /**
-   * The callback to invoke when the cancel button is clicked.
-   * @type {!function()}
-   * @private
-   */
-  this.cancelCallback_ = opt_cancelCallback || goog.nullFunction;
-
-  /**
-   * Label for the cancel button.
-   * @type {string}
-   * @private
-   */
-  this.cancelLabel_ = opt_cancelLabel ||
-      chrome.i18n.getMessage('actionCancelPgpAction');
-
-  /**
-   * Optional content to show at the top of the panel.
-   * @type {string}
-   * @private
-   */
-  this.content_ = opt_content || '';
 
   /**
    * Executor for the End-to-End actions.
@@ -175,8 +148,6 @@ panels.KeyringMgmtMini.prototype.decorateInternal = function(elem) {
         chrome.i18n.getMessage('keyMgmtConfirmPassphrasePlaceholder'),
     passphraseConfirmActionButtonTitle:
         chrome.i18n.getMessage('keyMgmtConfirmPassphraseActionLabel'),
-    content: this.content_,
-    cancelLabel: this.cancelLabel_,
     // @yahoo following are yahoo-specific
     keyringOptionsLabel: chrome.i18n.getMessage('keyMgmtOptionsLabel'),
     helpLabel: chrome.i18n.getMessage('keyMgmtHelpLabel'),
@@ -258,10 +229,6 @@ panels.KeyringMgmtMini.prototype.enterDocument = function() {
           goog.partial(
               this.showKeyringMgmtForm_,
               constants.ElementId.KEYRING_PASSPHRASE_CHANGE_DIV)).
-      listen(
-          this.getElementByClass(constants.CssClass.KEYRING_CANCEL),
-          goog.events.EventType.CLICK,
-          this.cancelCallback_).
       // @yahoo shows file selector directly
       // listen(
       //     goog.dom.getElementByClass(constants.CssClass.CANCEL, importDiv),
@@ -616,11 +583,6 @@ panels.KeyringMgmtMini.prototype.refreshOptions = function() {
                 constants.CssClass.KEYRING_PASSPHRASE_CHANGE,
                 (hasPrivateKeys &&
                     this.updatePassphraseCallback_ !== goog.nullFunction)
-            );
-            // Show Cancel/SkipPassphrase button only if we can do so
-            showElementOnlyIf(
-                constants.CssClass.KEYRING_CANCEL,
-                (this.cancelCallback_ !== goog.nullFunction)
             );
 
           }), this));

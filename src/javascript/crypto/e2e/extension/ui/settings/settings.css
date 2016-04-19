@@ -93,7 +93,11 @@
   width: 300px;
 }
 
-#pgpBody button.keyring-import input[type="file"] {
+button#generate-key {
+  margin: 8px 0 4px;
+}
+
+button.keyring-import input[type="file"] {
   float: left;
   width: 400px;
   height: 200%;
@@ -106,7 +110,6 @@
 button.keyring-import {
   overflow: hidden
 }
-
 
 
 
