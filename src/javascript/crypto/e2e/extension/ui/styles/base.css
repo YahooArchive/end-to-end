@@ -136,10 +136,6 @@ button.back > img {
   pointer-events: auto;
 }
 
-.overlayDialog .modal-dialog-title {
-  background: inherit;
-}
-
 input {
   border: 1px solid YCOLOR_GREY_6;
   margin: 0;
@@ -280,13 +276,6 @@ input:focus {
   background-size: 32px;
   padding-left: 48px;
   color: YCOLOR_WHITE;
-}
-
-.modal-dialog-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  background: #ccc;
 }
 
 .overlayDialog textarea {

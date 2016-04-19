@@ -82,8 +82,12 @@ html.lite div#keyringOptionsDiv button {
   white-space: nowrap;
 }
 
-html.lite #keyringOptionsDiv button[id] {
+html.lite div#keyringOptionsDiv button[id] {
   display: block;
+}
+
+html.lite div#keyringOptionsDiv button#generate-key {
+  margin: 8px 0 4px;
 }
 
 html.lite .keyring-signup:before {

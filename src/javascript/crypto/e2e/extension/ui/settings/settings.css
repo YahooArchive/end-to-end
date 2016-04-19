@@ -26,16 +26,13 @@
   margin-top: 25px;
 }
 
-#pgpBody input {
-  margin-right: 15px;
-}
-
 #pgpBody input[type="checkbox"] {
   margin-right: 5px;
 }
 
 #pgpBody input[type="text"] {
   margin-top: 10px;
+  margin-right: 15px;
 }
 
 #pgpBody input[type="file"] {
@@ -91,10 +88,6 @@
 
 .passphrase {
   width: 300px;
-}
-
-button#generate-key {
-  margin: 8px 0 4px;
 }
 
 button.keyring-import input[type="file"] {
@@ -158,3 +151,36 @@ div#pgpBody .key-info span.export:hover, div#pgpBody .key-info span.remove:hover
   opacity: .6
 }
 
+.modal-dialog {
+  background: #FFF;
+  border: 1px solid #878c91;
+}
+
+.modal-dialog-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #ccc;
+}
+
+.modal-dialog-title {
+  cursor: move;
+  background: #FFF;
+}
+
+.modal-dialog-title-close {
+  cursor: pointer;
+  background: none;
+  top: 3px;
+}
+
+.modal-dialog-title-close:before {
+  content: '\d7';
+  color: #AAA;
+  font-weight: normal;
+  font-family: sans-serif;
+}
+
+.goog-buttonset-default {
+  font-weight: inherit;
+}

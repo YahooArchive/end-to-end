@@ -69,21 +69,25 @@ dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
         chrome.i18n.getMessage('keyMgmtRestoreKeyringBackupCodeLabel')
   });
 
+  // @yahoo prefill the email address
   e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
-    var input =
-        this.getElementByClass(constants.CssClass.KEYRING_RESTORE_EMAIL);
+    var input = this.getElementByClass(
+        constants.CssClass.KEYRING_RESTORE_EMAIL);
     if (input) {
       input.value = email || '';
     }
   }, this));
+  
+  goog.style.setElementShown(
+      goog.dom.getElementByClass('modal-dialog-title-close', elem), true);
 };
 
 
 /** @override */
 dialogs.RestoreKey.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
-  this.getHandler().listen(this, goog.ui.Dialog.EventType.SELECT,
-      this.executeRestore_);
+  this.getHandler().listen(this.getButtonElement().querySelector('[name=ok]'),
+      goog.events.EventType.CLICK, this.executeRestore_);
 };
 
 
@@ -112,9 +116,10 @@ dialogs.RestoreKey.prototype.getEmailInput_ = function() {
 /**
  * Executes the action for restoring keyring data
  * @private
+ * @param {goog.events.BrowserEvent} event The event object.
  * @return {boolean}
  */
-dialogs.RestoreKey.prototype.executeRestore_ = function() {
+dialogs.RestoreKey.prototype.executeRestore_ = function(event) {
   /* TODO(rcc): Remove email when we can use keyserver for lookups */
   var email = this.getEmailInput_();
   new e2e.ext.actions.Executor().execute(
@@ -135,6 +140,7 @@ dialogs.RestoreKey.prototype.executeRestore_ = function() {
         this.getContentElement().
             querySelector('span').textContent = err.message;
       }, this));
+  event.stopPropagation();
   return false;
 };
 
