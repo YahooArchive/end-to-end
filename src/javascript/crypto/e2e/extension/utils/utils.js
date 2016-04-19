@@ -280,39 +280,6 @@ utils.isContentScript = function() {
 
 
 /**
- * Opens a window to requests for authentication, callback when the user has
- * successfully authenticated.
- * @return {!e2e.async.Result<boolean>} The authentication result
- */
-utils.openAuthWindow = function() {
-  var result = new e2e.async.Result;
-
-  // TODO: url now hardcoded. support openid type
-  var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
-      encodeURIComponent(
-          e2e.ext.config.CONAME.realms[0].addr + '/auth/cookies');
-
-  chrome.windows.create({
-    url: authUrl,
-    width: 500,
-    height: 640,
-    type: 'popup'
-  }, function(win) {
-
-    var onClose_ = function(closedWinId) {
-      if (win.id === closedWinId) {
-        chrome.windows.onRemoved.removeListener(onClose_);
-        result.callback(true);
-      }
-    };
-    chrome.windows.onRemoved.addListener(onClose_);
-
-  });
-  return result;
-};
-
-
-/**
  * Listen to an event, that is throttled until the next animation frame
  * @param {!EventTarget} target The target element to throttle events
  * @param {!string} type The event type

@@ -27,22 +27,56 @@ goog.require('goog.structs.Map');
 
 goog.scope(function() {
 
-var coname = e2e.coname;
-var ConameKeyProvider = coname.KeyProvider;
-
-
-
 /**
  * Constructor for the coname key provider.
- * @param {function(): !e2e.async.Result} authCallback Callback to
- *     authenticate the client requests
  * @constructor
  */
-e2e.coname.KeyProvider = function(authCallback) {
-  this.client_ = new e2e.coname.Client(authCallback);
+e2e.coname.KeyProvider = function() {
+  this.client_ = new e2e.coname.Client(this.authenticate);
 
   /** @private */
   this.keyIdEmailMap_ = new goog.structs.Map();
+};
+
+var ConameKeyProvider = e2e.coname.KeyProvider;
+
+
+/**
+ * Upon HTTP error 401, prompt the user for authentication to the keyserver.
+ * Invokes the callback when the user has successfully authenticated.
+ * @return {!e2e.async.Result<boolean>} Whether it is authenticated.
+ */
+ConameKeyProvider.prototype.authenticate = function() {
+  if (this.authResult_) {
+    return this.authResult_;
+  }
+
+  this.authResult_ = new e2e.async.Result;
+
+  // TODO: url now hardcoded. support openid type
+  var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
+      encodeURIComponent(
+          e2e.ext.config.CONAME.realms[0].addr + '/auth/cookies');
+
+  chrome.windows.create({
+    url: authUrl,
+    width: 500,
+    height: 640,
+    type: 'popup'
+  }, goog.bind(function(win) {
+
+    var onClose_ = goog.bind(function(closedWinId) {
+      if (win.id === closedWinId) {
+        chrome.windows.onRemoved.removeListener(onClose_);
+        this.authResult_.callback(true);
+        this.authResult_ = null;
+      }
+    }, this);
+    chrome.windows.onRemoved.addListener(onClose_);
+
+  }, this));
+
+  return this.authResult_;
 };
 
 
