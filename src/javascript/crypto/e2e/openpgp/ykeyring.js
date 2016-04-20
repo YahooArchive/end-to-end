@@ -57,7 +57,7 @@ goog.inherits(e2e.openpgp.yKeyRing, e2e.openpgp.KeyRing);
  * @type {e2e.coname.KeyProvider}
  * @private
  */
-e2e.openpgp.yKeyRing.conameKeyProvider_ = null;
+e2e.openpgp.yKeyRing.prototype.conameKeyProvider_ = null;
 
 
 /**
@@ -81,57 +81,41 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
   }
 
   var keyRing = new e2e.openpgp.yKeyRing(lockableStorage);
-  var returnKeyRing = goog.functions.constant(keyRing);
   return /** @type {!goog.async.Deferred.<!e2e.openpgp.KeyRing>} */ (
       keyRing.initialize().addCallback(function() {
         this.conameKeyProvider_ = new e2e.coname.KeyProvider();
-      }, keyRing).addCallback(returnKeyRing));
+        return this;
+      }, keyRing));
 };
 
 
 /**
- * Restores serialized data from ECC key backup
- * //@yahoo aligns the uid to email mapping similar to key generation
- * @param {e2e.openpgp.KeyringBackupInfo} data
- *     serialized data to restore
- * @param {string} uid User ID to associate with restored keys.
+ * //@yahoo if uid has an email, search all uids that contain such email
+ * Searches a public or private key associated with a User ID.
+ * @param {string} uid User ID to search for, or empty to search all.
+ * @param {e2e.openpgp.KeyRing.Type=} opt_type Key type to search for.
+ * @return {?Array.<!e2e.openpgp.block.TransferableKey>} An array of keys
+ *     matching the criteria.
  * @override
  */
-e2e.openpgp.yKeyRing.prototype.restoreKeyring = function(data, uid) {
-  // @yahoo aligns the uid to email mapping similar to key generation
+e2e.openpgp.yKeyRing.prototype.searchKey = function(uid, opt_type) {
   var email = e2e.ext.utils.text.extractValidEmail(uid);
-  uid = email === uid ? '<' + email + '>' : uid;
-  return goog.base(this, 'restoreKeyring', data, uid);
+  return (email === null) ?
+      goog.base(this, 'searchKey', uid, opt_type) :
+      this.searchKeysByUidMatcher(
+          goog.bind(this.emailUidMatcher_, this, email), opt_type);
 };
 
 
 /**
- * Imports a key block to the key ring.
- * //@yahoo aligns the uid to email mapping similar to key generation
- * @param {!e2e.openpgp.block.TransferableKey} keyBlock The key block to
- *     import.
- * @param {!e2e.ByteArray=} opt_passphrase The passphrase to use to
- *     import the key.
- * @return {!goog.async.Deferred<?e2e.openpgp.block.TransferableKey>}
- *     The imported key iff it was imported for all User ID packets,
- *     or null if the key was not imported (e.g. a duplicate key). Invalid keys
- *     will call an errback instead.
- * @override
+ * The standard matcher to look up any uids that contains the email
+ * @param {!string} email Email address
+ * @param {!string} uid User ID
+ * @return {!boolean}
+ * @private
  */
-e2e.openpgp.yKeyRing.prototype.importKey = function(
-    keyBlock, opt_passphrase) {
-
-  // @yahoo aligns the uid to email mapping similar to key generation
-  keyBlock.processSignatures(); // to populate uids
-  var uids = keyBlock.getUserIds();
-  keyBlock.getUserIds = function() {
-    return goog.array.map(uids, function(uid) {
-      var email = e2e.ext.utils.text.extractValidEmail(uid);
-      return email === null ? uid : '<' + email + '>';
-    });
-  };
-
-  return goog.base(this, 'importKey', keyBlock, opt_passphrase);
+e2e.openpgp.yKeyRing.prototype.emailUidMatcher_ = function(email, uid) {
+  return goog.string.caseInsensitiveContains(uid, email);
 };
 
 
@@ -159,43 +143,14 @@ e2e.openpgp.yKeyRing.prototype.uploadKeys = function(uid) {
  */
 e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote = function(uid,
     opt_type) {
-  return this.searchKeyLocalAndRemote_(uid, opt_type);
-};
-
-
-/**
- * Searches a public or private key for a User ID asynchronously. The search is
- * first performed locally. If we're searching for public key, then searches
- * and appends the public key from the http key server. Do not import the found
- * key to the local keyring.
- * @param {string} uid User ID to search for, or empty to search all.
- * @param {e2e.openpgp.KeyRing.Type=} opt_type Key type to search for.
- * @param {boolean=} opt_requireRemoteResponse Whether to throw errors if the
- *      server fails.
- * @return {!e2e.async.Result.<!Array.<!e2e.openpgp.block.TransferableKey>>}
- *    An array of keys for the given User ID or [] if not found.
- * @private
- */
-e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote_ = function(uid,
-    opt_type, opt_requireRemoteResponse) {
-
   var email = e2e.ext.utils.text.extractValidEmail(uid);
-  var localKeys = (email === null) ?
-      this.searchKey(uid, opt_type) :
-      this.searchKeysByUidMatcher(function(uid_) {
-        return goog.string.caseInsensitiveContains(
-            uid_, /** @type {string} */ (email));
-      }, opt_type);
-
   // localKeys could be null if none is found
-  if (localKeys === null) {
-    localKeys = [];
-  }
+  var localKeys = this.searchKey(uid, opt_type) || [];
 
   // append remote public keys, if any
   if ((opt_type && opt_type === e2e.openpgp.KeyRing.Type.PRIVATE) ||
       this.conameKeyProvider_ === null ||
-      goog.string.isEmptySafe(email)) {
+      email === null) {
     return e2e.async.Result.toResult(localKeys);
   }
 
@@ -216,12 +171,8 @@ e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote_ = function(uid,
         result.callback(allKeys);
 
       }, function(err) {
-        // in case of any error
-        opt_requireRemoteResponse ?
-            // let error propagates and fail
-            result.errback(err) :
-            // STILL proceed with local keys
-            result.callback(localKeys);
+        // proceed with just the local keys
+        result.callback(localKeys);
       });
 
   return result;
@@ -231,26 +182,28 @@ e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote_ = function(uid,
 /**
  * Obtains a key block corresponding to the given key object or null.
  * @param {!e2e.openpgp.Key} keyObject
- * @return {?e2e.openpgp.block.TransferableKey}
+ * @return {!e2e.async.Result<?e2e.openpgp.block.TransferableKey>}
  * @override
  */
 e2e.openpgp.yKeyRing.prototype.getKeyBlock = function(keyObject) {
   // Obtains a key block from local keyring
-  var localKeyBlock = goog.base(this, 'getKeyBlock', keyObject);
+  return goog.base(this, 'getKeyBlock', keyObject).
+      addCallback(function(localKeyBlock) {
 
-  // always prefer local private key. for public keys, use local if any
-  if (keyObject.key.secret || localKeyBlock !== null ||
-      !keyObject.serialized || keyObject.serialized.length === 0) {
-    return localKeyBlock;
-  }
+        // always prefer local private key. for public keys, use local if any
+        if (keyObject.key.secret || localKeyBlock !== null ||
+            !keyObject.serialized || keyObject.serialized.length === 0) {
+          return localKeyBlock;
+        }
 
-  // in case not present in local, use the serialized one if it is present
-  // this serialized blob is fetched from keyserver
-  var pubKey = e2e.openpgp.block.factory.
-          parseByteArrayTransferableKey(keyObject.serialized);
-  pubKey.processSignatures();
+        // in case not found in local, use the serialized one if it is present
+        // this serialized blob is fetched from keyserver
+        var pubKey = e2e.openpgp.block.factory.
+                parseByteArrayTransferableKey(keyObject.serialized);
+        return pubKey.processSignatures().
+            addCallback(goog.functions.constant(pubKey));
 
-  return pubKey;
+      });
 };
 
 
@@ -259,22 +212,25 @@ e2e.openpgp.yKeyRing.prototype.getKeyBlock = function(keyObject) {
  * or null.
  * @param {!e2e.ByteArray} keyId
  * @param {boolean=} opt_secret Whether to search the private key ring.
- * @return {e2e.async.Result.<e2e.openpgp.block.TransferableKey>}
+ * @return {!e2e.async.Result<?e2e.openpgp.block.TransferableKey>}
+ * @override
  */
-e2e.openpgp.yKeyRing.prototype.getKeyBlockByIdLocalAndRemote = function(keyId,
+e2e.openpgp.yKeyRing.prototype.getKeyBlockById = function(keyId,
     opt_secret) {
   // Obtains a key block from local keyring
-  var localKeyBlock = this.getKeyBlockById(keyId, opt_secret);
+  return goog.base(this, 'getKeyBlockById', keyId, opt_secret).
+      addCallback(function(localKeyBlock) {
 
-  // always prefer local private key. for public keys, use local if any
-  if (opt_secret || localKeyBlock !== null) {
-    return e2e.async.Result.toResult(localKeyBlock);
-  }
+        // always prefer local private key. for public keys, use local if any
+        if (opt_secret || localKeyBlock !== null) {
+          return localKeyBlock;
+        }
 
-  return this.conameKeyProvider_.getVerificationKeysByKeyId(keyId).
-      addCallback(function(keys) {
-        return keys[0] || null;
-      });
+        return this.conameKeyProvider_.getVerificationKeysByKeyId(keyId).
+            addCallback(function(keys) {
+              return keys[0] || null;
+            });
+      }, this);
 };
 
 
@@ -285,10 +241,12 @@ e2e.openpgp.yKeyRing.prototype.getKeyBlockByIdLocalAndRemote = function(keyId,
  */
 e2e.openpgp.yKeyRing.prototype.compareWithRemote = function(uid) {
 
+  var email = e2e.ext.utils.text.extractValidEmail(uid);
+
   // search for the local public keys
   var localKeys = this.searchKey(uid, e2e.openpgp.KeyRing.Type.PUBLIC) || [];
 
-  var email = e2e.ext.utils.text.extractValidEmail(uid);
+
   if (email === null || e2e.coname.getRealmByEmail(email) === null) {
     return e2e.async.Result.toResult({
       syncManaged: false,

@@ -147,20 +147,28 @@ ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isOverride) {
  */
 ui.ySettings.prototype.exportKey_ = function(keyUid) {
   var ctx = this.pgpContext_;
-  ctx.isKeyRingEncrypted().addCallbacks(function(isEncrypted) {
-    var filename = (isEncrypted ? '' : 'UNENCRYPTED-') +
-        keyUid.replace(/[\/\\]/g, '.') + 'keyring-private.asc';
 
-    ctx.exportUidKeyring(true, keyUid).addCallbacks(function(armoredKey) {
-      if ('string' != typeof armoredKey) {
-        armoredKey = goog.crypt.byteArrayToString(armoredKey);
-      }
-      utils.writeToFile(armoredKey, function(fileUrl) {
-        var anchor = document.createElement('a');
-        anchor.download = filename;
-        anchor.href = fileUrl;
-        anchor.click();
-      });
+  ctx.searchPrivateKey(keyUid).addCallbacks(function(keys) {
+    // make use of the original public key export call if no priv keys
+    if (keys.length === 0) {
+      return ui.Settings.prototype.exportKey_.call(this, keyUid);
+    }
+
+    ctx.isKeyRingEncrypted().addCallbacks(function(isEncrypted) {
+      var filename = (isEncrypted ? '' : 'UNENCRYPTED-') +
+          keyUid.replace(/[\/\\]/g, '.') + 'keyring-private.asc';
+
+      ctx.exportUidKeyring(true, keyUid).addCallbacks(function(armoredKey) {
+        if ('string' != typeof armoredKey) {
+          armoredKey = goog.crypt.byteArrayToString(armoredKey);
+        }
+        utils.writeToFile(armoredKey, function(fileUrl) {
+          var anchor = document.createElement('a');
+          anchor.download = filename;
+          anchor.href = fileUrl;
+          anchor.click();
+        });
+      }, this.displayFailure_, this);
     }, this.displayFailure_, this);
   }, this.displayFailure_, this);
 };
