@@ -255,6 +255,7 @@ panels.KeyringMgmtFull.prototype.removeKey = function(
               return true;
             }
           }
+          return false;
         });
 
     // parentRow.parentElement.removeChild(parentRow);

@@ -189,6 +189,7 @@ YmailApi.StormUI.prototype.monitorComposeEvent_ = function() {
         this.dispatchEvent(new goog.events.Event('compose', target));
         return true;
       }
+      return false;
     }, this);
   }, this));
 

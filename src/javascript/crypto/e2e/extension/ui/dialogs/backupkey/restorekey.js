@@ -28,7 +28,8 @@ goog.require('e2e.ext.ui.templates.dialogs.backupkey');
 goog.require('e2e.ext.utils.action');
 goog.require('goog.array');
 goog.require('goog.dom');
-goog.require('goog.ui.Dialog');
+goog.require('goog.events.EventType');
+goog.require('goog.style');
 goog.require('soy');
 
 goog.scope(function() {
