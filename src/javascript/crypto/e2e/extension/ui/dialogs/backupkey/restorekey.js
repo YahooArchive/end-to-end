@@ -26,9 +26,11 @@ goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.dialogs.Overlay');
 goog.require('e2e.ext.ui.templates.dialogs.backupkey');
 goog.require('e2e.ext.utils.action');
+goog.require('e2e.ext.utils.text'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events.EventType');
+goog.require('goog.string'); //@yahoo
 goog.require('goog.style');
 goog.require('soy');
 
@@ -78,7 +80,7 @@ dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
       input.value = email || '';
     }
   }, this));
-  
+
   goog.style.setElementShown(
       goog.dom.getElementByClass('modal-dialog-title-close', elem), true);
 };
@@ -123,6 +125,13 @@ dialogs.RestoreKey.prototype.getEmailInput_ = function() {
 dialogs.RestoreKey.prototype.executeRestore_ = function(event) {
   /* TODO(rcc): Remove email when we can use keyserver for lookups */
   var email = this.getEmailInput_();
+
+  // @yahoo quote email to become uid, aligning with that in key generation
+  email = goog.string.trim(email);
+  if (email === e2e.ext.utils.text.extractValidEmail(email)) {
+    email = '<' + email + '>';
+  }
+
   new e2e.ext.actions.Executor().execute(
       /** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.RESTORE_KEYRING_DATA,

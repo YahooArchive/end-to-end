@@ -129,7 +129,7 @@ e2e.openpgp.ContextImpl.prototype.setArmorHeader = function(name, value) {
 /**
  * KeyRing used to store all of the user's keys.
  * @type {e2e.openpgp.KeyRing}
- * @private
+ * @protected //@yahoo avoid using @private to help yContextImpl
  */
 e2e.openpgp.ContextImpl.prototype.keyRing_ = null;
 
