@@ -1191,16 +1191,20 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
                         '">' + p.name.replace(/</g, '&lt;') + '</span>';
               }).join(', ');
 
-          // Show dialog asking user to remove recipients without keys
-          var msg = chrome.i18n.getMessage('composeGlassConfirmRecipients').
-              replace('\n', '<br>').
-              replace('#recipients#', recipientString).
-              replace(/#add#([^#]*)#/,
-                  '<label for="' + constants.ElementId.ADD_PASSPHRASE_BUTTON +
-                  '">$1</label>');
+          // disabled per message passphrase encryption for now
+          // var msg = chrome.i18n.getMessage(
+          //     'composeGlassAddPassphraseForRecipients', recipientString).
+          //     replace('\n', '<br>').
+          //     replace(/#add#([^#]*)#/,
+          //         '<label for="' + constants.ElementId.ADD_PASSPHRASE_BUTTON +
+          //         '">$1</label>');
+          // msg = soydata.VERY_UNSAFE.ordainSanitizedHtml(msg);
+
+          var msg = chrome.i18n.getMessage(
+              'composeGlassConfirmRecipients', recipientString);
 
           var dialog = this.keyMissingDialog_ = new ui.dialogs.Generic(
-              soydata.VERY_UNSAFE.ordainSanitizedHtml(msg),
+              msg,
               goog.bind(function(result) {
                 this.keyMissingDialogTriggered_ = false;
                 this.keyMissingDialog_ = null;

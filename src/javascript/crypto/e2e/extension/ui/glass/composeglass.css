@@ -225,9 +225,20 @@ textarea {
   font-size: .75rem;
   padding-right: 3px;
   margin: 9px 0 -24px;
+  display: none; /* disabled for now */
 }
 
 .passphraseEncryptionLink:hover {
+  text-decoration: underline;
+}
+
+.CCLink {
+  font-size: .75rem;
+  padding-right: 3px;
+  margin: 9px 0 -24px;
+}
+
+.CCLink:hover {
   text-decoration: underline;
 }
 
