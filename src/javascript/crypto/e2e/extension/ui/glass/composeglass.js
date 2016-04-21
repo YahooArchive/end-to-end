@@ -705,17 +705,21 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
     if (detectedAction == constants.Actions.DECRYPT_VERIFY) {
       // @yahoo sendExtensionRequest is used instead of actionExecutor
       utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-        action: constants.Actions.DECRYPT_VERIFY,
+        action: constants.Actions.DECRYPT,
         content: content
         // @yahoo no passphrase dialog can be hooked from content script
         // passphraseCallback: goog.bind(this.renderPassphraseDialog, this)
       }), goog.bind(function(response) {
-        var decrypted = response.content || '';
-
-        if (e2e.openpgp.asciiArmor.isDraft(content)) {
-          textArea.value = decrypted;
+        var text = response.content;
+        if (text && (text = text.decrypt)) {
+          text = text.text || '';
+          if (e2e.openpgp.asciiArmor.isDraft(content)) {
+            textArea.value = text;
+          } else {
+            this.renderReply_(textArea, text);
+          }
         } else {
-          this.renderReply_(textArea, decrypted);
+          this.renderReply_(textArea, content);
         }
 
         //@yahoo TODO: add onChange once, and avoid setting draft body

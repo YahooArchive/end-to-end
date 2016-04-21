@@ -335,10 +335,10 @@ e2ebind.installReadGlass_ = function(targetElem, opt_text, opt_limit) {
       // insert the text before the next armor
       if (plaintext && goog.string.trim(plaintext)) {
         div = document.createElement('div');
-        div.className = targetElem.className;
-        div.innerHTML = (glassWrapper ? '<hr/>' : '') +
-            goog.string.newLineToBr(goog.string.htmlEscape(plaintext)) +
-            '<hr/>';
+        div.className = targetElem.className +
+            (glassWrapper ? ' plaintext-above' : '') + ' plaintext-below';
+        div.textContent = plaintext;
+
         goog.dom.insertSiblingBefore(div, targetElem);
       }
 
@@ -364,9 +364,8 @@ e2ebind.installReadGlass_ = function(targetElem, opt_text, opt_limit) {
     plaintext = content.slice(lastEndOffset);
     if (plaintext && goog.string.trim(plaintext)) {
       div = document.createElement('div');
-      div.className = targetElem.className;
-      div.innerHTML = '<hr/>' + goog.string.newLineToBr(
-                                  goog.string.htmlEscape(plaintext));
+      div.className = targetElem.className + ' plaintext-above';
+      div.textContent = plaintext;
       goog.dom.insertSiblingBefore(div, targetElem);
     }
 

@@ -104,7 +104,8 @@ actions.Executor.prototype.getAction_ = function(actionType) {
       return new actions.DecryptVerify();
     // @yahoo
     case constants.Actions.DECRYPT_THEN_VERIFY:
-    case constants.Actions.DECRYPT_THEN_VERIFIED:
+    case constants.Actions.VERIFY:
+    case constants.Actions.DECRYPT:
       return new actions.DecryptThenVerify();
     case constants.Actions.ENCRYPT_SIGN:
       return new actions.EncryptSign();

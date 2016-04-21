@@ -219,8 +219,11 @@ YmailApi.StormUI.prototype.monitorComposeEvent_ = function() {
 YmailApi.StormUI.prototype.addCSS = function() {
   var style = document.createElement('style');
   style.appendChild(document.createTextNode(
+      '.plaintext-above,.plaintext-below{white-space:pre-line}' +
+      '.plaintext-above{border-top:1px solid #CCC;padding-top:5px}' +
+      '.plaintext-below{border-bottom:1px solid #CCC;padding-bottom:5px}' +
       '.lozenge-secure .lozenge-static:before,' +
-          ' .lozenge-secure.lozengfy:before {content:""}' +
+          ' .lozenge-secure.lozengfy:before {margin:0;content:""}' +
       '#endtoend.icon-encrypt {display:none}' +
       '.icon-encrypt {position:relative;float:right;padding:0;opacity:.6}' +
       '.icon-encrypt:hover {opacity:1}' +

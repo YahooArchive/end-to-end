@@ -28,6 +28,7 @@ body {
   line-height: normal;
   font-family: monospace!important;
   font-size: 14px!important;
+  white-space: pre-line;
 }
 
 #pgpBody.transparent+div#callbackDialog {

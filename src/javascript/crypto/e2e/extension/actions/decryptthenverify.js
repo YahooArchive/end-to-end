@@ -64,7 +64,7 @@ actions.DecryptThenVerify.prototype.execute =
       deferVerification = false,
       verifiedResultMap = actions.DecryptThenVerify.VerifiedResults;
 
-  if (request.action === e2e.ext.constants.Actions.DECRYPT_THEN_VERIFIED) {
+  if (request.action === e2e.ext.constants.Actions.VERIFY) {
     verifyResultId = request.content;
     // answer the second call for verification result
     if ((verifiedResult = verifiedResultMap.get(verifyResultId))) {
@@ -89,14 +89,19 @@ actions.DecryptThenVerify.prototype.execute =
         deferVerification = true;
         // indicate the presence of second call
         result.verifyResultId = verifyResultId;
-
         // return the content first
-        callback(result);
-
+        e2e.byteArrayToStringAsync(
+            result.decrypt.data, result.decrypt.options.charset).
+            addCallback(function(text) {
+              result.decrypt.text = text;
+              callback(result);
+            }, this);
       }).addCallbacks(function(result) {
         // remove the result from the map as no second call is needed.
         // e.g., a message is clearsigned
-        if (!deferVerification) {
+        // or discard the verification result if it's not needed
+        if (!deferVerification ||
+            request.action === e2e.ext.constants.Actions.DECRYPT) {
           verifiedResultMap.remove(verifyResultId);
           callback(result);
         }

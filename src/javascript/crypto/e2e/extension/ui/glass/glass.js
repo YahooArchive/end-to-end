@@ -258,7 +258,7 @@ ui.Glass.prototype.renderSelectedContent_ = function(opt_decryptPassphrase) {
     if (verifyResultId) {
       utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
         content: verifyResultId,
-        action: constants.Actions.DECRYPT_THEN_VERIFIED,
+        action: constants.Actions.VERIFY,
         decryptPassphrase: opt_decryptPassphrase
       }), goog.bind(function(response) {
         this.setEncryptrMessage_(response.content);
@@ -298,19 +298,11 @@ ui.Glass.prototype.renderPassphraseAndError_ = function(error) {
  * @private
  */
 ui.Glass.prototype.setContent_ = function(result) {
-  var decrypt = result.decrypt;
-  e2e.byteArrayToStringAsync(decrypt.data, decrypt.options.charset).
-      addCallback(goog.bind(/** @param {string} text */ function(text) {
+  var bodyElem = goog.dom.getElement(constants.ElementId.BODY);
+  bodyElem.classList.remove(constants.CssClass.LOADER);
+  bodyElem.textContent = result.decrypt.text;
 
-        var bodyElem = goog.dom.getElement(constants.ElementId.BODY);
-
-        bodyElem.classList.remove(constants.CssClass.LOADER);
-
-        bodyElem.innerHTML = goog.string.newLineToBr(
-            goog.string.htmlEscape(text));
-
-        this.mirrorSize_();
-      }, this));
+  this.mirrorSize_();
 };
 
 
