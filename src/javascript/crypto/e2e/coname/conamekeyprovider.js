@@ -18,14 +18,20 @@ goog.provide('e2e.coname.KeyProvider');
 goog.require('e2e.async.Result');
 goog.require('e2e.coname');
 goog.require('e2e.coname.Client');
+goog.require('e2e.ext.config');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.array');
+goog.require('goog.async.Deferred');
 goog.require('goog.async.DeferredList');
+goog.require('goog.functions');
 goog.require('goog.object');
+goog.require('goog.structs');
 goog.require('goog.structs.Map');
 
 
 goog.scope(function() {
+
+
 
 /**
  * Constructor for the coname key provider.
@@ -34,7 +40,11 @@ goog.scope(function() {
 e2e.coname.KeyProvider = function() {
   this.client_ = new e2e.coname.Client(this.authenticate);
 
-  /** @private */
+  /**
+   * Maps key id to the email (might be deferred)
+   * @type {goog.structs.Map.<string, !string|!e2e.async.Result<?string>>}
+   * @private
+   */
   this.keyIdEmailMap_ = new goog.structs.Map();
 };
 
@@ -85,46 +95,45 @@ ConameKeyProvider.prototype.authenticate = function() {
  * @param {!Array.<e2e.openpgp.block.TransferablePublicKey>} keys The keys to
  *     import.
  * @param {string=} opt_uid The default user id
- * @return {!goog.async.Deferred.<boolean>} True if at least one of the keys
- *     are successfully uploaded according to the specified uids.
+ * @return {!goog.async.Deferred.<boolean>} True if empty key or at least one
+ *     of the keys are successfully updated according to the specified uids.
  */
 ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
-
-  var email, emailKeyMap = {};
-
-  goog.array.forEach(keys, function(key) {
-    try {
-      // validate the keys
-      key.processSignatures();
-
-      // validate a proper email is present in the uids
-      goog.array.forEach(key.getUserIds(), function(uid) {
-
-        email = e2e.coname.getSupportedEmailByUid(uid);
-        if (email !== null) {
-          if (!emailKeyMap[email]) {
-            emailKeyMap[email] = new goog.structs.Map();
-          }
-          // De-duplicate keys
-          emailKeyMap[email].set(
-              key.keyPacket.fingerprint, key.serialize());
-        }
-      });
-    } catch (any) {
-      // Discard invalid keys, and those lacking a uid with yahoo address
-    }
-  });
-
   return this.client_.initialize().
       addCallback(function() {
-
-        if (goog.object.isEmpty(emailKeyMap)) {
-          if (opt_uid && (email = e2e.coname.getSupportedEmailByUid(opt_uid))) {
+        var emailKeyMap = {};
+        return goog.async.DeferredList.gatherResults(
+            goog.array.map(keys, function(key) {
+              return key.processSignatures().
+                  addCallbacks(function() {
+                    // validate a proper email is present in the uids
+                    goog.array.forEach(key.getUserIds(), function(uid) {
+                      var email = e2e.coname.getSupportedEmailByUid(uid);
+                      if (email !== null) {
+                        if (!emailKeyMap[email]) {
+                          emailKeyMap[email] = new goog.structs.Map();
+                        }
+                        // De-duplicate keys
+                        emailKeyMap[email].set(
+                            key.keyPacket.fingerprint, key.serialize());
+                      }
+                    });
+                  }, function(err) {
+                    // Discard invalid keys.
+                    return null;
+                  });
+            })).addCallback(goog.functions.constant(emailKeyMap));
+      }).
+      addCallback(function(emailKeyMap) {
+        var email;
+        if (goog.structs.isEmpty(emailKeyMap)) {
+          if (opt_uid &&
+              (email = e2e.coname.getSupportedEmailByUid(opt_uid))) {
             // update to set empty keys for the opt_uid user
             return this.client_.update(email, null).
                     addCallback(function(result) { return [result]; });
           }
-          return e2e.async.Result.toResult([true]);
+          return [true]; // meaning no keys will be uploaded
         }
 
         return goog.async.DeferredList.gatherResults(
@@ -165,26 +174,45 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
           return [];
         }
 
-        var parsedKeys = e2e.openpgp.block.factory.
-            parseByteArrayAllTransferableKeys(lookupResult.keyData);
+        var keySerialization = lookupResult.keyData;
 
-        return goog.array.filter(parsedKeys, function(key) {
-          try {
-            // validate the keys
-            key.processSignatures();
+        /** @type
+            {!Array<!e2e.async.Result<?e2e.openpgp.block.TransferableKey>>} */
+        var pendingValidations = goog.array.map(
+            e2e.openpgp.block.factory.parseByteArrayAllTransferableKeys(
+                keySerialization, true), function(key) {
+                  return key.processSignatures().addCallback(function() {
+                    return key;
+                  }).addErrback(function(err) {
+                    // Discard invalid keys.
+                    return null;
+                  });
+                });
 
-            // maintain a history mapping of keyId to email
-            this.keyIdEmailMap_.set(key.keyPacket.keyId, email);
-            key.subKeys && goog.array.forEach(key.subKeys, function(subKey) {
-              this.keyIdEmailMap_.set(subKey.keyId, email);
-            }, this);
+        return goog.async.DeferredList.gatherResults(pendingValidations);
+      }, this).
+      addCallback(function(keys) {
 
-            return true;
-          } catch (any) {
-            // Discard those keys without proper signatures
+        return goog.array.filter(keys, function(key) {
+          if (goog.isNull(key)) {
             return false;
           }
+
+          // maintain a history mapping of keyId to email
+          var allKeyPackets = key.subKeys ?
+              key.subKeys.concat(key.keyPacket) :
+              [key.keyPacket.keyId];
+          goog.array.forEach(allKeyPackets, function(kp) {
+            var result = this.keyIdEmailMap_.get(kp.keyId);
+            // notify those pending asks
+            if (result && result instanceof goog.async.Deferred) {
+              result.callback(email);
+            }
+          }, this);
+
+          return true;
         }, this);
+
       }, this);
 };
 
@@ -201,17 +229,50 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
  *     {#getTrustedPublicKeysByEmail}.
  */
 ConameKeyProvider.prototype.getVerificationKeysByKeyId = function(id) {
-  if (!this.keyIdEmailMap_.containsKey(id)) {
-    return e2e.async.Result.toResult([]);
+  var map = this.keyIdEmailMap_,
+      result = map.get(id),
+      returnResult = new e2e.async.Result;
+
+  // if no mapping exists, wait to see if getTrustedPublicKeysByEmail() answers
+  if (!result) {
+    result = new e2e.async.Result;
+    map.set(id, result);
+
+    // say null if no one answers after lookup request timeout
+    setTimeout(function() {
+      var result = map.get(id);
+      if (result && result instanceof goog.async.Deferred) {
+        result.callback(null);
+      }
+    }, e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT);
+
+  }
+  // give the answer if the mapping has been resolved
+  else if (!(result instanceof goog.async.Deferred)) {
+    result = e2e.async.Result.toResult(result);
   }
 
-  // resolve the email that has the keyid associated, then look up the key
-  return this.getTrustedPublicKeysByEmail(this.keyIdEmailMap_.get(id)).
-      addCallback(function(pubKeys) {
-        return goog.array.filter(pubKeys, function(keyBlock) {
-          return keyBlock.hasKeyById(id);
-        });
-      });
+  // resolve the email that has the keyid associated
+  result.addCallback(function(email) {
+    // if timeout happened, return empty keys and forget the mapping
+    if (goog.isNull(email)) {
+      map.remove(id);
+      return [];
+    }
+
+    // update the mapping by specifying the correnspoding email
+    map.set(id, email);
+
+    // look up the key
+    return this.getTrustedPublicKeysByEmail(email);
+  }, this).
+  addCallback(function(pubKeys) {
+    return goog.array.filter(pubKeys, function(keyBlock) {
+      return keyBlock.hasKeyById(id);
+    });
+  }).addCallback(returnResult.callback, returnResult);
+
+  return returnResult;
 };
 
 

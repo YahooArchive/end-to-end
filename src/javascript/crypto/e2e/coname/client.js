@@ -57,13 +57,28 @@ e2e.coname.Client = function(authCallback, opt_keyName) {
   /**
    * The Callback for authentication
    * @type {!function(): !e2e.async.Result}
+   * @private
    */
   this.authCallback_ = authCallback;
 };
 
 
-/** @const {string} */
+/** @const {!string} */
 e2e.coname.Client.PROTO_FILE_PATH = 'coname-client.proto.json';
+
+
+/**
+ * The lookup request timeout in ms
+ * @const {!number}
+ */
+e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT = 30000;
+
+
+/**
+ * The update request timeout in ms
+ * @const {!number}
+ */
+e2e.coname.Client.UPDATE_REQUEST_TIMEOUT = 60000;
 
 
 /**
@@ -304,7 +319,8 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
   };
 
   // TODO: make this possible for polling/retries
-  this.getAJAX_('POST', realm.addr + '/lookup', 30000, data).
+  this.getAJAX_('POST', realm.addr + '/lookup',
+      e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT, data).
       addCallbacks(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
             profile = pf['profile'],
@@ -365,13 +381,14 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
         newProfileBase64 = data.profile;
 
         // set 1m timeout
-        return this.getAJAX_('POST', realm.addr + '/update', 60000, data);
+        return this.getAJAX_('POST', realm.addr + '/update',
+            e2e.coname.Client.UPDATE_REQUEST_TIMEOUT, data);
 
       }, this).
       addCallback(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
-           profile = pf.profile,
-           keyByteArray;
+            profile = pf.profile,
+            keyByteArray;
 
         if (newProfileBase64 !== profile.toBase64()) {
           throw new Error('server rejected the new profile/key');

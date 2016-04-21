@@ -135,30 +135,31 @@ e2e.coname.getRealmByDomain = function(domain) {
   // TODO: duplicate realm for a domain should be checked during config import
   goog.array.some(e2e.ext.config.CONAME.realms, function(realm) {
     var id, keys;
-    if (goog.array.indexOf(realm.domains, domain) !== -1) {
-
-      // initialize the realm config for performance
-
-      // prepare the Ed25519 instance - facilitate ed25519 signature check
-      keys = realm.verification_policy.public_keys;
-      for (id in keys) {
-        if (keys[id].ed25519) {
-          keys[id].ed25519Verifier = new e2e.ecc.Ed25519(
-              e2e.ecc.PrimeCurve.ED_25519, {
-                pubKey: keys[id].ed25519,
-                privKey: []
-              });
-        }
-      }
-
-      // aggregate (nested) quorums and flatten them in an array
-      realm.verification_policy.quorum_list = e2e.coname.flattenRealmQuorums_(
-          realm.verification_policy.quorum);
-
-      e2e.coname.realmConfig_[domain] = ret = realm;
-
-      return true;
+    if (!goog.array.contains(realm.domains, domain)) {
+      return false;
     }
+
+    // initialize the realm config for performance
+
+    // prepare the Ed25519 instance - facilitate ed25519 signature check
+    keys = realm.verification_policy.public_keys;
+    for (id in keys) {
+      if (keys[id].ed25519) {
+        keys[id].ed25519Verifier = new e2e.ecc.Ed25519(
+            e2e.ecc.PrimeCurve.ED_25519, {
+              pubKey: keys[id].ed25519,
+              privKey: []
+            });
+      }
+    }
+
+    // aggregate (nested) quorums and flatten them in an array
+    realm.verification_policy.quorum_list = e2e.coname.flattenRealmQuorums_(
+        realm.verification_policy.quorum);
+
+    e2e.coname.realmConfig_[domain] = ret = realm;
+
+    return true;
   });
 
   return ret;
