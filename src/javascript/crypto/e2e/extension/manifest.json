@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "Yahoo Mail End-To-End (alpha)",
+  "name": "Yahoo Mail Encrypted (alpha)",
   "description": "__MSG_extDescription__",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "permissions": [
     "activeTab",
     "cookies",

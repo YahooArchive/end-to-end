@@ -1,50 +1,30 @@
-# Yahoo End-To-End
+# Yahoo Mail Encrypted
 
-A fork of Google's [End-to-End](https://github.com/google/end-to-end) for Yahoo mail.
+Send and read user-to-user encrypted messages in Yahoo Mail. This is forked from Google's [End-to-End](https://github.com/google/end-to-end).
+
+![Travis Build](https://api.travis-ci.org/yahoo/end-to-end.svg "End to End Travis Build")
 
 ## Build instructions
 
-### Install prerequisites
-
-End-to-End depends on the following:
-* bash
-* git
-* curl
-* unzip
-* ant
-* JDK 1.7
-* Python
-
-On OSX with Homebrew:
-
-    brew install ant git
-
-Or, MacPorts:
-
-    port install apache-ant git
-
 ### Build the extension
 
-The extension requires a keyserver implementing [this API](docs/keyserver.md)
-to fetch keys for other users.
+The extension requires a keyserver implementing [CONAME API](https://github.com/yahoo/coname)
+to update public keys and fetch those for other users.
 
-We do not currently provide a publicly-exposed keyserver, so for now the recommended way is to [follow these instructions](https://github.com/yahoo/keyshop) to run a local keyserver.
+We do not currently provide a publicly-exposed keyserver, so for now the recommended way is to build and run your own CONAME keyserver.
 
-Once that's done, run:
-
-    ./do.sh config [host]
-    ./do.sh install_deps
-
-where `[host]` is the hostname of the keyserver if you're not using the default
-host of `localhost:25519`.
+Once that's done, update the hostnames of the keyserver if you're not using the default host of `localhost:4443`.
 
 Then to build the extension:
 
+    ./do.sh clean
+    ./do.sh clean_deps
+    ./do.sh install_deps
     ./do.sh build_extension debug
 
 ## Installation instructions
 
-Go to `https://localhost:25519` in Chrome and click through the self-signed certificate
+Go to `https://localhost:4443` in Chrome and click through the self-signed certificate
 warning so that the extension can talk to the keyserver.
 
 To load the extension, go to chrome://extensions, check the "developer mode" checkbox, click on "Load
@@ -53,8 +33,7 @@ unpacked extension" and selected `file:///path/to/this/repo/build/extension`.
 
 ## Development
 
-We use Github's built-in issue tracker for tracking issues. The general
-End-to-End mailing list is
+We use Github's built-in issue tracker for tracking issues. The general mailing list is
 [e2e-discuss](https://groups.google.com/forum/#!forum/e2e-discuss). Please put
 [YAHOO] at the start of the subject line if your email is specifically about
 this project.
@@ -63,8 +42,6 @@ We generally ask that you follow Google's [End-to-End Contributing
 Guidelines](docs/CONTRIBUTING.md) for submitting to this repo.
 
 ## Docs
-
-See [docs](docs) for current documentation.
 
 Here is a simplified diagram of the current E2E architecture:
 ![e2e diagram](docs/e2e-diagram.png)
