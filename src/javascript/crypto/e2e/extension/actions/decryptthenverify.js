@@ -23,9 +23,10 @@ goog.provide('e2e.ext.actions.DecryptThenVerify');
 
 goog.require('e2e');
 goog.require('e2e.ext.actions.Action');
-goog.require('e2e.ext.utils');
+goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.utils.Error');
-goog.require('e2e.ext.utils.action');
+goog.require('goog.string');
+goog.require('goog.structs.Map');
 
 goog.scope(function() {
 var actions = e2e.ext.actions;
@@ -76,12 +77,15 @@ actions.DecryptThenVerify.prototype.execute =
     return;
   }
 
-  verifyResultId = goog.string.getRandomString();
+  // ensure that verifyResultId is unique
+  do {
+    verifyResultId = goog.string.getRandomString();
+  } while (verifiedResultMap.containsKey(verifyResultId));
 
   // store the final result to a map
   verifiedResultMap.set(verifyResultId, ctx.decryptThenVerify(
       request.passphraseCallback, request.content, function(result) {
-        // called when a message is encrypted and signed
+        // executed only if a message is encrypted and signed
         deferVerification = true;
         // indicate the presence of second call
         result.verifyResultId = verifyResultId;
@@ -95,8 +99,16 @@ actions.DecryptThenVerify.prototype.execute =
         if (!deferVerification) {
           verifiedResultMap.remove(verifyResultId);
           callback(result);
-        }      
+        }
+        return result;
       }, errorCallback));
+
+  // cleanup if caller doesn't bother to collect the verified result
+  setTimeout(function() {
+    if ((verifiedResult = verifiedResultMap.get(verifyResultId))) {
+      verifiedResultMap.remove(verifyResultId);
+    }
+  }, 120000); //2min
 };
 
 
