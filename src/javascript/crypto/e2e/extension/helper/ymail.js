@@ -103,29 +103,41 @@ Helper.YmailApi.prototype.installComposeGlass = function(evt) {
     elem.composeGlass = true;
     elem.focus();
 
+    var asyncDraftResult = new e2e.async.Result;
+    var draftReady = goog.bind(function(draft) {
+      asyncDraftResult.callback(draft ? {
+        from: this.getUid() || '',
+        to: draft.to,
+        cc: draft.cc,
+        bcc: draft.bcc,
+        subject: draft.subject,
+        body: e2e.openpgp.asciiArmor.extractPgpBlock(draft.body),
+        contacts: draft.contacts,
+        insideConv: Boolean(goog.dom.getAncestorByTagNameAndClass(
+            /** @type {Node} */ (elem), 'div', 'thread-item-list'))
+      } : {from: this.getUid() || ''});
+
+      // hide the original compose and install the glass
+      glassWrapper.installGlass();
+    }, this);
     var glassWrapper = new e2e.ext.ui.ComposeGlassWrapper(elem);
     glassWrapper.onApiRequest('getDraft', function() {
       return asyncDraftResult;
     });
 
     // TODO: draft.body (or equiv., .innerText) preserves line breaks only if
-    // the element is visible.
-    var asyncDraftResult = new e2e.async.Result;
-    e2ebind.getDraft(goog.bind(function(draft) {
-        asyncDraftResult.callback(draft ? {
-          from: this.getUid() || '',
-          to: draft.to,
-          cc: draft.cc,
-          bcc: draft.bcc,
-          subject: draft.subject,
-          body: e2e.openpgp.asciiArmor.extractPgpBlock(draft.body),
-          contacts: draft.contacts,
-          insideConv: Boolean(goog.dom.getAncestorByTagNameAndClass(
-              /** @type {Node} */ (elem), 'div', 'thread-item-list'))
-        } : {from: this.getUid || ''});
-
-        glassWrapper.installGlass();
-      }, this));
+    // the element is visible. so we have to defer hiding it until the draft
+    // is copied. ideally installGlass() should be called first, and getDraft()
+    // should be put inside the onApiRequest
+    e2ebind.getDraft(function(draft) {
+      if (draft) {
+        draftReady(draft);
+      } else {
+        // The getDraft API isn't ready to export a draft yet. so redo 1s later
+        // TODO: fix API so we don't need this timing hack
+        window.setTimeout(goog.bind(e2ebind.getDraft, null, draftReady), 500);
+      }
+    });
 
     this.registerDisposable(glassWrapper);
   }
