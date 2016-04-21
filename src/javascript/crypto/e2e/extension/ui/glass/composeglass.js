@@ -145,14 +145,8 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
 
   var content = this.getContent();
 
-  // @yahoo renders the basic HTML
-  soy.renderElement(elem, templates.main, {});
-  var styles = elem.querySelector('link');
-  styles.href = chrome.runtime.getURL('composeglass_styles.css');
-
-  // @yahoo renders in pgpBody
-  elem = goog.dom.getElement(constants.ElementId.BODY);
-  soy.renderElement(elem, templates.renderEncrypt, {
+  // @yahoo renders the HTML
+  soy.renderElement(elem, templates.main, {
     signerCheckboxTitle: chrome.i18n.getMessage('promptSignMessageAs'),
     fromLabel: chrome.i18n.getMessage('promptFromLabel'),
     actionButtonTitle: chrome.i18n.getMessage(
@@ -379,16 +373,16 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           goog.events.EventType.CLICK,
           goog.bind(this.close, this, true));
 
-  var escButton = goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON);
   // extra things to do when it's opened inside conversation
   if (this.insideConv_) {
+    goog.dom.classlist.add(document.body, constants.CssClass.CONVERSATION);
+
     //@yahoo adjust action buttons position to stick at the bottom
     this.api_.getRequestHandler().set('setScrollOffset',
         goog.bind(this.fixActionButtonsPosition_, this));
 
-    //@yahoo hides the close button
-    goog.dom.classlist.add(escButton, constants.CssClass.HIDDEN);
   } else {
+    var escButton = goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON);
     //@yahoo allows saving and escaping the draft
     this.getHandler().listen(escButton, goog.events.EventType.CLICK, goog.bind(
         this.handleKeyEventAfterSave_, this, {identifier: 'closeCov'}));

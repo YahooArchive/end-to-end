@@ -240,6 +240,7 @@ e2e.ext.constants.CssClass = {
   WELCOME_SUBSECTION_HEADER: 'welcome-subsection-header',
 
   /** Used in prompt. */
+  CONVERSATION: 'conversation', //@yahoo
   PROMPT_HEADER: 'pgpHead',
   PROMPT_TITLE: 'pgpTitle',
   PROMPT_ACTIONS: 'pgpActions',
@@ -247,6 +248,7 @@ e2e.ext.constants.CssClass = {
   MENU_BUTTON: 'menu-button',
   POPOUT_BUTTON: 'popout-button',
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
+  CC_LINK: 'ccLink', //@yahoo
   LOADER: 'loader', //@yahoo
   BOTTOM_NOTIFICATION: 'bottom-notification', //@yahoo
 

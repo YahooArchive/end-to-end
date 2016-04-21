@@ -22,7 +22,6 @@ html {
 }
 
 body {
-  font-size: .85em;
   background: #FFF;
 }
 
@@ -35,10 +34,6 @@ body {
 
 .pgpHead {
   display: none;
-}
-
-#pgpBody .pgpActions {
-  padding: 0 28px;
 }
 
 #errorDiv {
@@ -62,27 +57,39 @@ body {
   cursor: text;
 }
 
-#fromHolder, #chipHolder, #ccChipHolder, #pgpSignerSelect, #pgpKeySelect input, #subjectHolder input {
-  font-size: 13px;
+#pgpSignerSelect {
+  font-size: 13px;  
 }
 
-#chipHolder, #ccChipHolder, #fromHolder, #subjectHolder {
-  border-bottom: 1px solid #EAEDF0;
+#pgpKeySelect input, #subjectHolder input {
+  font-size: 13px;
+  color: #454545;
+}
+
+
+#fromHolder {
+  font-size: 13px;
+  color: #777;
+  padding: 6px 0;
+  margin: 0 28px;
+  border-bottom: 1px solid #D7D5D5;
+}
+
+#chipHolder, #ccChipHolder {
+  font-size: 13px;
   color: #777;
   line-height: 18px;
   margin-bottom: 0;
-}
-
-#fromHolder, #chipHolder, #ccChipHolder {
   padding: 0;
-  margin: 2px 23px;
-  min-height: 26px;
-  line-height: 16px;
+  margin: 2px 28px;
+  border-bottom: 1px solid #D7D5D5;
 }
 
-#fromHolder {
-  margin-top: 12px;
+#subjectHolder {
+  padding: 6px 28px;
+  border-bottom: 1px solid #D7D5D5;
 }
+
 
 #pgpKeySelect > .uid-chips {
   padding: 0 160px 0 16px;
@@ -107,16 +114,18 @@ body {
   height: inherit;
 }
 
-#subjectHolder #subject {
+#subjectHolder input {
   width: 100%;
-  padding: 4px 28px 5px 28px;
 }
 
 #fromHolder > div:first-child,
 #subjectHolder > div:first-child,
 #subjectHolder > input {
   margin-left: 0;
+  float: none;
 }
+
+
 
 #pgpKeySelect > .uid-chips > span {
   margin: 0 2px 0 -16px;
@@ -128,25 +137,27 @@ body {
 
 
 textarea {
-  font-size: 14px !important;
   width: 100%;
-  padding: 10px 55px 10px 28px;
+  padding: 10px 50px 10px 28px;
   font-family: monospace !important;
+  font-size: 14px !important;
   border: 0;
   resize: none;
   white-space: normal;
 }
 
-.pgpActions {
+#pgpBody .pgpActions {
+  padding: 0;
   position: fixed;
   bottom: 0;
   width: 100%;
-  border-top: 1px solid #EAEDF0;
   background: #FFF;
 }
 
 .pgpActions div.buttons-container {
   float: none;
+  border-top: 1px solid #D7D5D5;
+  padding: 0 28px;
 }
 
 .pgpActions div.buttons-container > button {
@@ -155,7 +166,7 @@ textarea {
 
 .pgpActions div.buttons-container > div {
   display: inline-block;
-  font-size: .95em;
+  font-size: 13px;
   opacity: .7;
   vertical-align: top;
   padding: 15px 15px 0 0;
@@ -187,7 +198,8 @@ textarea {
 .pgpActions div.bottom-notification {
   width: 100%;
   background: #FFF;
-  margin: 15px 0;
+  border-top: 1px solid #D7D5D5;
+  padding: 15px 28px;
 }
 
 .pgpActions div.bottom-notification > span.loader {
@@ -226,4 +238,40 @@ textarea {
   white-space: nowrap;
   margin-bottom: 2px;
   font-weight: normal;
+}
+
+
+
+.conversation #save-esc-button {
+  display: none;
+}
+.conversation .pgpActions {
+  padding: 0;
+}
+.conversation .pgpActions div.bottom-notification, .conversation .pgpActions div.buttons-container {
+  border-color: #EAEDF0;
+  padding: 0;
+  margin-left: 23px;
+  margin-right: 23px;
+}
+.conversation #fromHolder {
+  margin: 0 23px;
+  border-color: #EAEDF0;
+}
+.conversation #chipHolder, .conversation #ccChipHolder {
+  margin-left: 23px;
+  margin-right: 23px;
+  border-color: #EAEDF0;
+}
+.conversation #subjectHolder {
+  padding: 6px 0;
+  margin: 0 23px;
+  border-color: #EAEDF0;
+}
+.conversation textarea {
+  padding-left: 23px;
+  padding-right: 45px;
+}
+.conversation #encryptr-icon > div, .conversation #encryptr-icon label:before {
+  right: 20px;
 }
