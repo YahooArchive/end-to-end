@@ -70,15 +70,17 @@ body {
 #fromHolder {
   font-size: 13px;
   color: #777;
-  padding: 6px 0;
+  padding: 7px 0px;
   margin: 0 28px;
   border-bottom: 1px solid #D7D5D5;
+  min-height: inherit;
 }
 
 #chipHolder, #ccChipHolder {
   font-size: 13px;
   color: #777;
   line-height: 18px;
+  height: 34px;
   margin-bottom: 0;
   padding: 0;
   margin: 2px 28px;
@@ -103,18 +105,18 @@ body {
   margin-right: 4px;
 }
 #pgpKeySelect>.uid-chips>.uid-bad-chip {
-  color: #000; /* TODO: make this red */
+  color: #EF2E1A;
   background: inherit;
 }
 #pgpKeySelect>.uid-chips>.uid-good-chip {
-  color: #00b777;
+  color: #00B777;
 }
 #pgpKeySelect>.uid-chips>input {
   margin: 4px 0 5px 4px;
   height: inherit;
 }
 
-#subjectHolder input {
+#subjectHolder input#subject {
   width: 100%;
 }
 
@@ -251,7 +253,23 @@ textarea {
   font-weight: normal;
 }
 
+.ac-renderer {
+  box-shadow: none;
+  border: solid 1px #ddd;
+  padding: 3px 3px 2px 3px;
+  width: 380px;
+}
 
+.ac-row {
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 8px 0 0 42px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 1px;
+  height: 28px;
+}
 
 .conversation #save-esc-button {
   display: none;

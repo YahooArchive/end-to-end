@@ -15,7 +15,7 @@
  */
 
 /**
- * @fileoverview Wrapper for the looking glass. Adds install and remove methods.
+ * @fileoverview Wrapper for the glasses.
  */
 
 goog.provide('e2e.ext.ui.BaseGlassWrapper');
@@ -68,6 +68,7 @@ ui.BaseGlassWrapper = function(targetElem, opt_type) {
    * @protected
    */
   this.api = new e2e.ext.MessageApi('ymail-' + this.glassType_);
+  this.registerDisposable(this.api);
 
   /**
    * The CSS class name for the elements we created
@@ -77,19 +78,6 @@ ui.BaseGlassWrapper = function(targetElem, opt_type) {
   this.cssClass_ = goog.string.getRandomString();
 };
 goog.inherits(ui.BaseGlassWrapper, goog.Disposable);
-
-
-/**
- * Add a request handler.
- * @param {string} reqCall The request call
- * @param {function(*):*} callback The callback function that takes reqArgs and
- *     returns something that will be passed to reqSendResponse.
- * @return {ui.BaseGlassWrapper} this
- */
-ui.BaseGlassWrapper.prototype.onApiRequest = function(reqCall, callback) {
-  this.api.getRequestHandler().set(reqCall, goog.bind(callback, this));
-  return this;
-};
 
 
 /**
@@ -119,20 +107,29 @@ ui.BaseGlassWrapper.prototype.getGlassFrame = function() {
   // configure src
   glassFrame.src = chrome.runtime.getURL(this.glassType_ + '.html');
 
+  this.addAPIHandlers_();
+
+  return glassFrame;
+};
+
+
+/**
+ * Add handlers to serve API calls from the glass
+ * @protected
+ */
+ui.BaseGlassWrapper.prototype.addAPIHandlers_ = function() {
   // configure the default request handler
-  this.
-      onApiRequest('setSize', goog.bind(function(args) {
+  this.api.
+      setRequestHandler('ctrl.setGlassSize', goog.bind(function(args) {
         this.setHeight(args.height);
         return this.getScrollOffset();
       }, this)).
-      onApiRequest('shortcut', goog.bind(function(args) {
-        glassFrame.focus();
+      setRequestHandler('ctrl.shortcut', goog.bind(function(args) {
+        // this.glassFrame.focus(); TODO: no focus needed?
         // possibly have encryptr natively support these ymail specific actions
         this.handleShortcut_(args.keyId);
         return true;
       }, this));
-
-  return glassFrame;
 };
 
 
@@ -327,10 +324,10 @@ ui.BaseGlassWrapper.prototype.installGlass = function() {
  * @override
  */
 ui.BaseGlassWrapper.prototype.disposeInternal = function() {
+  goog.dom.removeNode(this.glassFrame);
+  this.glassFrame = null;
+
   this.targetElem.glassDisposed = true;
-
-  this.api = null;
-
   goog.style.setElementShown(this.targetElem, true);
 
   goog.base(this, 'disposeInternal');
@@ -342,17 +339,18 @@ ui.BaseGlassWrapper.prototype.disposeInternal = function() {
  * @param {Error=} opt_error The error object
  */
 ui.BaseGlassWrapper.prototype.displayFailure = function(opt_error) {
-  if (opt_error) {
-    var div = document.createElement('div');
-    div.style.margin = '6px';
-    div.style.color = '#F00';
-    div.style.textAlign = 'center';
-    div.textContent = opt_error.message;
-    goog.dom.insertSiblingBefore(div, this.glassFrame || this.targetElem);
+  e2e.ext.utils.displayFailure(opt_error);
+  // if (opt_error) {
+  //   var div = document.createElement('div');
+  //   div.style.margin = '6px';
+  //   div.style.color = '#F00';
+  //   div.style.textAlign = 'center';
+  //   div.textContent = opt_error.message;
+  //   goog.dom.insertSiblingBefore(div, this.glassFrame || this.targetElem);
 
-    div.focus();
-    div.scrollIntoView();
-  }
+  //   div.focus();
+  //   div.scrollIntoView();
+  // }
 };
 
 
@@ -369,7 +367,7 @@ ui.GlassWrapper = function(targetElem, armor) {
 
   this.originalContent_ = this.targetElem.innerText;
 
-  this.onApiRequest('getPgpContent', function() {
+  this.api.setRequestHandler('getPgpContent', function() {
     return armor;
   });
 };
@@ -397,12 +395,20 @@ ui.GlassWrapper.prototype.getOriginalContent = function() {
 
 /**
  * Constructor for the compose glass wrapper.
- * @param {Element} targetElem Element that hosts the looking glass.
+ * @param {!Element} targetElem Element that hosts the compose glass.
+ * @param {!e2e.ext.MessageApi} stubApi API that can serve the compose glass.
  * @constructor
  * @extends {ui.BaseGlassWrapper}
  */
-ui.ComposeGlassWrapper = function(targetElem) {
+ui.ComposeGlassWrapper = function(targetElem, stubApi) {
   goog.base(this, targetElem, 'compose');
+
+  /**
+   * The Message API to communicate with the website
+   * @type {!e2e.ext.MessageApi}
+   * @private
+   */
+  this.stubApi_ = stubApi;
 };
 goog.inherits(ui.ComposeGlassWrapper, ui.BaseGlassWrapper);
 
@@ -413,52 +419,71 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
 
   goog.base(this, 'installGlass');
 
-  var threadList = goog.dom.getAncestorByTagNameAndClass(
-      this.targetElem, 'div', 'thread-item-list');
-  this.insideConv_ = Boolean(threadList);
+  this.setResizeAndScrollEventsHandlers_();
 
   var glassFrame = this.getGlassFrame();
   glassFrame.style.minHeight = '220px';
   this.setHeight('330px'); // do this after initializing insideConv_
 
+  // insert the glass into dom, and focus it
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
+  glassFrame.focus();
+};
 
-  this.onApiRequest('exit', function(args) {
-    if (this.targetElem) {
-      var elem;
 
-      // discard the draft if so requested
-      if (args && args['discardDraft']) {
-        elem = this.targetElem.querySelector('.draft-delete-btn');
-        elem && elem.click();
-      }
+/**
+ * Add handlers to serve API calls from the glass
+ * @override
+ */
+ui.ComposeGlassWrapper.prototype.addAPIHandlers_ = function() {
+  goog.base(this, 'addAPIHandlers_');
 
-      goog.dom.removeNode(glassFrame);
+  var stubApi = this.stubApi_;
+
+  // proxy the stub-provided handlers to the composeglass
+  this.api.
+    setRequestHandler('draft.get', goog.bind(function(args) {
+      return stubApi.req('draft.get', args);
+    }, this)).
+    setRequestHandler('draft.set', function(args) {
+      return stubApi.req('draft.set', args);
+    }).
+    setRequestHandler('draft.save', function(args) {
+      return stubApi.req('draft.save', args);
+    }).
+    setRequestHandler('draft.send', function(args) {
+      return stubApi.req('draft.send', args);
+    }).
+    setRequestHandler('draft.discard', function(args) {
+      return stubApi.req('draft.discard', args);
+    }).
+    setRequestHandler('autosuggest.search', function(args) {
+      return stubApi.req('autosuggest.search', args);
+    }).
+    setRequestHandler('ctrl.closeglass', goog.bind(function() {
       this.dispose();
-
-      // refocus the original compose, in particular the encryptr icon
-      if (threadList) {
-        goog.array.forEach(threadList.children, function(thread) {
-          thread.dispatchEvent(this.getFocusEvent('blur'));
-        }, this);
-        
-        this.targetElem.dispatchEvent(this.getFocusEvent('focus'));
-
-        elem = this.targetElem.querySelector('.icon-encrypt');
-        elem && elem.dispatchEvent(this.getFocusEvent('focus'));
-      }
-
-      // trigger YMail's compose to resize, i.e., blur event for To recipients
-      elem = this.targetElem.querySelector('input.cm-to-field');
-      elem && elem.dispatchEvent(this.getFocusEvent('blur'));
-
+      stubApi.req('draft.set', {glassClosing: true});
+      // do not dispose this.stubApi_ here, as it might be switched back on
       return true;
-    }
-    return new Error('the original message view is missing');
-  });
+    }, this));
 
-  // configure events
-  if (this.insideConv_) {
+  // proxy the stub-initiated requests to the composeglass
+  stubApi.setRequestHandler('evt.close', goog.bind(function() {
+    return this.api.req('evt.close').addCallback(function() {
+      this.dispose();
+      stubApi.dispose();
+      return true;
+    });
+  }, this));
+};
+
+
+ui.ComposeGlassWrapper.prototype.setResizeAndScrollEventsHandlers_ = function() {
+  var threadList = goog.dom.getAncestorByTagNameAndClass(
+      this.targetElem, 'div', 'thread-item-list');
+  this.isInConv_ = Boolean(threadList);
+
+  if (this.isInConv_) {
     this.boundResizeHandler_ = this.boundSendScrollOffset_ = goog.bind(
         this.sendScrollOffset_, this, threadList);
 
@@ -472,15 +497,13 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   // resize the glassFrame when window is resized
   e2e.ext.utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
       this.boundResizeHandler_);
-
-  glassFrame.focus();
 };
 
 
 /** @override */
 ui.ComposeGlassWrapper.prototype.setHeight = function(height) {
   goog.base(this, 'setHeight', height);
-  !this.insideConv_ && this.setMinMaxHeight_();
+  !this.isInConv_ && this.setMinMaxHeight_();
 };
 
 
@@ -489,10 +512,14 @@ ui.ComposeGlassWrapper.prototype.setHeight = function(height) {
  * @private
  */
 ui.ComposeGlassWrapper.prototype.setMinMaxHeight_ = function() {
-  var max = Math.max(window.innerHeight - this.styleTop_, 220);
+  if (this.glassFrame) {
+    var max = Math.max(window.innerHeight - this.styleTop_, 220);
 
-  this.glassFrame.style.maxHeight = max + 'px';
-  this.glassFrame.style.minHeight = max > 662 ? '662px' : max + 'px';
+    this.glassFrame.style.maxHeight = max + 'px';
+    this.glassFrame.style.minHeight = max > 662 ? '662px' : max + 'px';
+  } else {
+    goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
+  }
 };
 
 
@@ -503,12 +530,10 @@ ui.ComposeGlassWrapper.prototype.setMinMaxHeight_ = function() {
  */
 ui.ComposeGlassWrapper.prototype.sendScrollOffset_ = function(threadList) {
   if (this.api) {
-    this.api.sendRequest('setScrollOffset',
-        goog.nullFunction, goog.nullFunction, // best effort
-        this.getScrollOffset());
+    this.api.req('evt.scroll', this.getScrollOffset());
   } else {
-    threadList && goog.events.unlisten(threadList, goog.events.EventType.SCROLL,
-        this.boundSendScrollOffset_);
+    threadList && goog.events.unlisten(
+        threadList, goog.events.EventType.SCROLL, this.boundSendScrollOffset_);
     goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
   }
 };

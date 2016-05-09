@@ -26,6 +26,7 @@ goog.require('e2e.coname');
 goog.require('e2e.coname.ProtoBuf');
 goog.require('e2e.coname.sha3');
 goog.require('e2e.coname.verifyLookup');
+goog.require('e2e.ext.utils.Error');
 goog.require('e2e.random');
 goog.require('goog.array');
 goog.require('goog.crypt.base64');
@@ -176,7 +177,6 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
 
 
 /**
- * @private
  * Encode the update request message
  * @param {Object<string,*>} proto The initialized protobuf object
  * @param {string} email The email address
@@ -185,6 +185,7 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
  * @param {e2e.coname.ServerResponse} oldProof The lookup proof just obtained
  * @param {string} keyName The key name being referenced in the key data blob
  * @return {Object<string,*>} The update message
+ * @private
  */
 e2e.coname.encodeUpdateRequest_ = function(
     proto, email, key, realm, oldProof, keyName) {
@@ -269,22 +270,23 @@ e2e.coname.Client.prototype.getAJAX_ = function(
 
   var result = new e2e.async.Result;
   goog.net.XhrIo.send(url, goog.bind(function(e) {
-    var xhr = e.target;
+    var xhr = e.target, statusCode = xhr.getStatus();
     if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
       result.callback(xhr.getResponseText());
-    } else if (xhr.getStatus() === 401) {
+    } else if (statusCode === 401) {
       // invoke the authCallback, and make the AJAX call again
       this.authCallback_().
           addCallbacks(function() {
             this.getAJAX_(method, url, timeout, data).addCallbacks(
                 result.callback, result.errback, result);
-          }, function() {
-            result.errback(new Error(
-                'Error connecting to keyserver: ' + xhr.getLastError()));
+          }, function(err) {
+            result.errback(new e2e.ext.utils.Error(err.message,
+                'conameAuthError'));
           }, this);
     } else {
-      result.errback(new Error(
-          'Error connecting to keyserver: ' + xhr.getLastError()));
+      result.errback(new e2e.ext.utils.Error(
+          'Error connecting to keyserver. ' + xhr.getLastError(),
+          'conameConnectionError'));
     }
   }, this), method, dataString, {}, timeout);
   return result;
@@ -295,56 +297,48 @@ e2e.coname.Client.prototype.getAJAX_ = function(
  * Lookup and validate public keys for an email address
  * @param {string} email The email address to look up a public key
  * @param {boolean=} opt_skipVerify whether skip the verify step
- * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>}
- *    The result if there has a key associated with the email, and it is
- *    validated. The result is null when no realms. The key in KeyData is null
- *    if verified for having no key.
+ * @return {!e2e.async.Result.<?e2e.coname.KeyData>} The result if there has a
+ *    key associated with the email, and it is validated. The result is null
+ *    when no realms. The key in KeyData is null if verified for having no key.
  */
 e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
-  // normalize the email address
-  email = email.toLowerCase();
-
-  var result = new e2e.async.Result;
-  var realm, realm_ = e2e.coname.getRealmByEmail(email);
+  // normalize the email address, and then get realm
+  var realm = e2e.coname.getRealmByEmail((email = email.toLowerCase()));
 
   // no realm, no keys
-  if (realm_ === null) {
-    return e2e.async.Result.toResult(null);
+  if (realm === null) {
+    return e2e.async.Result.toResult(
+        /** @type {?e2e.coname.KeyData} */ (null));
   }
-  realm = /** @type {e2e.coname.RealmConfig} */(realm_);
-
-  var data = {
-    user_id: email,
-    quorum_requirement: realm.verification_policy.quorum
-  };
 
   // TODO: make this possible for polling/retries
-  this.getAJAX_('POST', realm.addr + '/lookup',
-      e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT, data).
-      addCallbacks(function(responseText) {
+  return this.getAJAX_(
+      'POST',
+      realm.addr + '/lookup',
+      e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT, {
+        user_id: email,
+        quorum_requirement: realm.verification_policy.quorum
+      }).
+      addCallback(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
             profile = pf['profile'],
             keyByteArray;
 
-        try {
-          !opt_skipVerify && e2e.coname.verifyLookup(realm, email, pf);
-        } catch (e) {
-          result.errback(e);
-          return;
-        }
+        !opt_skipVerify && e2e.coname.verifyLookup(
+            /** @type {!e2e.coname.RealmConfig} */ (realm), email, pf);
 
         keyByteArray = profile && profile.keys &&
             profile.keys.has(this.keyName_) ?
-            /** @type {e2e.ByteArray} */ (
-            Array.prototype.slice.call(new Uint8Array(profile.keys.get(
-            this.keyName_).toBuffer()))) :
-            null;
+                /** @type {e2e.ByteArray} */ (
+                Array.prototype.slice.call(new Uint8Array(
+                    profile.keys.get(this.keyName_).toBuffer()))) :
+                null;
 
-        result.callback({keyData: keyByteArray, proof: pf});
-
-      }, goog.bind(result.errback, result), this);
-
-  return result;
+        return /** @type {!e2e.coname.KeyData} */ ({
+          keyData: keyByteArray,
+          proof: pf
+        });
+      }, this);
 };
 
 
@@ -353,37 +347,38 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
  * @param {!string} email The email address
  * @param {?e2e.ByteArray} keyData The key blob to upload. Use null to remove
  *     the specific key field.
- * @return {!e2e.async.Result.<null>|!e2e.async.Result.<!e2e.coname.KeyData>}
- *    The result if there has a key associated with the email, and it is
- *    validated. The result is null when no realms. The key in KeyData is null
- *    if verified for having no key.
+ * @return {!e2e.async.Result.<?e2e.coname.KeyData>} The result if there has a
+ *    key associated with the email, and it is validated. The result is null
+ *    when no realms. The key in KeyData is null if verified for having no key.
  */
 e2e.coname.Client.prototype.update = function(email, keyData) {
-  // normalize the email address
-  email = email.toLowerCase();
-  var realm, realm_ = e2e.coname.getRealmByEmail(email);
-  var oldKey, newProfileBase64;
+  // normalize the email address, and then get realm
+  var realm = e2e.coname.getRealmByEmail((email = email.toLowerCase()));
+  var newProfileBase64;
 
   // no realm, no keys
-  if (realm_ === null) {
-    return e2e.async.Result.toResult(null);
+  if (realm === null) {
+    return e2e.async.Result.toResult(
+        /** @type {?e2e.coname.KeyData} */ (null));
   }
-  realm = /** @type {e2e.coname.RealmConfig} */(realm_);
 
   // TODO: save persistently the key in case update fails in the mid way
   return this.lookup(email, true).
-      addCallback(function(oldResult) {
-        oldKey = oldResult.key;
+      addCallback(function(lookupResult) {
+        // lookupResult must not be null, as the case of which has handled
 
         var data = e2e.coname.encodeUpdateRequest_(
-           this.proto, email, keyData, realm, oldResult.proof, this.keyName_);
+            this.proto, email, keyData,
+            /** @type {!e2e.coname.RealmConfig} */ (realm),
+            /** @type {{proof: !e2e.coname.ServerResponse}} */ (
+                lookupResult).proof,
+            this.keyName_);
 
         newProfileBase64 = data.profile;
 
         // set 1m timeout
         return this.getAJAX_('POST', realm.addr + '/update',
             e2e.coname.Client.UPDATE_REQUEST_TIMEOUT, data);
-
       }, this).
       addCallback(function(responseText) {
         var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
@@ -393,17 +388,18 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
         if (newProfileBase64 !== profile.toBase64()) {
           throw new Error('server rejected the new profile/key');
         }
-        if (!e2e.coname.verifyLookup(realm, email, pf)) {
+        if (!e2e.coname.verifyLookup(
+            /** @type {!e2e.coname.RealmConfig} */ (realm), email, pf)) {
           // TODO: poll the server until the update can be verified
           throw new Error('the keys cannot be validated');
         }
 
         keyByteArray = profile && profile.keys &&
             profile.keys.has(this.keyName_) ?
-            /** @type {e2e.ByteArray} */ (
-            Array.prototype.slice.call(new Uint8Array(profile.keys.get(
-                this.keyName_).toBuffer()))) :
-            null;
+                /** @type {e2e.ByteArray} */ (
+                Array.prototype.slice.call(new Uint8Array(profile.keys.get(
+                    this.keyName_).toBuffer()))) :
+                null;
 
         return {keyData: keyByteArray, proof: pf};
 

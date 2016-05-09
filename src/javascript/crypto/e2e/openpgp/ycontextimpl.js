@@ -16,7 +16,7 @@
 
 
 /**
- * @fileoverview Internal implementation of Context.
+ * @fileoverview Internal implementation of Yahoo-specific Context.
  */
 
 goog.provide('e2e.openpgp.yContextImpl');

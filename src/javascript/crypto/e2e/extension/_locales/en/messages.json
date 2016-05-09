@@ -16,11 +16,11 @@
     "description": "A verb prompting the user to accept the current action."
   },
   "promptDecryptionSuccessMsg": {
-    "message": "Decryption successful!",
+    "message": "Message was encrypted",
     "description": "Message informing about a successful decryption of a message."
   },
   "promptMessageNotEncryptedMsg": {
-    "message": "Message was not encrypted.",
+    "message": "Message was unencrypted",
     "description": "Message informing that the message was not encrypted."
   },
   "promptSignatureVerifyingMsg": {
@@ -28,11 +28,11 @@
     "description": "Message informing that the message is being verified."
   },
   "promptVerificationSuccessMsg": {
-    "message": "Message was signed by $1.",
+    "message": "and signed by $1.",
     "description": "Message informing about a successful signature verification."
   },
   "promptVerificationFailureMsg": {
-    "message": "BAD signature(s) from $1!",
+    "message": "but signatures from $1 cannot be validated",
     "description": "Message informing about failure in signature verification."
   },
   "promptEncryptSignTitle": {
@@ -362,7 +362,7 @@
     "description": "A sentence requesting the passphrase for a PGP key."
   },
   "promptNoEncryptionKeysFound": {
-    "message": "You have to setup keys before the message can be encrypted and saved as draft. Do it now?",
+    "message": "Please setup keys for $1 to proceed. Do it now?",
     "description": "A sentence warning the user that the action cannot be completed due to missing encryption keys."
   },
   "promptSignMessageAs": {
@@ -537,17 +537,11 @@
     "message": "Send in plaintext",
     "description": "Ask user to send the message unencrypted."
   },
-  "keyserverFetchError": {
-    "message": "Oops, failed to fetch keys from the keyserver."
-  },
-  "keyserverSendError": {
-    "message": "Oops, failed to send keys to the keyserver."
-  },
-  "keyserverResponseError": {
-    "message": "Invalid response from keyserver. Please try again later."
-  },
   "conameConnectionError": {
-    "message": "There is a connection error to the key server."
+    "message": "Error connecting to keyserver (requires VPN/corp network)."
+  },
+  "conameAuthError": {
+    "message": "Error authenticating to keyserver (requires bouncer)."
   },
   "e2ebindShowEncrypted": {
     "message": "> Show encrypted message"
@@ -688,7 +682,7 @@
     "description": "A verb prompting the user to add a new key."
   },
   "confirmUserSyncKeys": {
-    "message": "The Yahoo Mail Encrypted keyserver requires your configuration. Can we do it now?",
+    "message": "Yahoo Mail Encrypted requires your configuration regarding $1. Do it now?",
     "description": "A sentence prompting the user to synchronize local keyring with remote keyserver."
   },
   "promptUnsupportedFormattingLabel": {

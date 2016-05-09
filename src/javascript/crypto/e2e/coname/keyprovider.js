@@ -13,6 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+
+/**
+ * @fileoverview This almost implmented the interface as defined in
+ *     {@link e2e.openpgp.providers.PublicKeyProvider}, but is slightly
+ *     modified to (e.g., return transferablekeys instead) to fit the needs of
+ *     yContextImpl.
+ */
+
 goog.provide('e2e.coname.KeyProvider');
 
 goog.require('e2e.async.Result');
@@ -21,7 +30,6 @@ goog.require('e2e.coname.Client');
 goog.require('e2e.ext.config');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.array');
-goog.require('goog.async.Deferred');
 goog.require('goog.async.DeferredList');
 goog.require('goog.functions');
 goog.require('goog.object');
@@ -39,13 +47,6 @@ goog.scope(function() {
  */
 e2e.coname.KeyProvider = function() {
   this.client_ = new e2e.coname.Client(this.authenticate);
-
-  /**
-   * Maps key id to the email (might be deferred)
-   * @type {goog.structs.Map.<string, !string|!e2e.async.Result<?string>>}
-   * @private
-   */
-  this.keyIdEmailMap_ = new goog.structs.Map();
 };
 
 var ConameKeyProvider = e2e.coname.KeyProvider;
@@ -154,8 +155,7 @@ ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
 
 /**
  * Searches public keys based on an email.
- * @param {string} email The email which is used to search for the remote
- *    public keys.
+ * @param {!string} email The email to search for the remote public keys.
  * @return {!goog.async.Deferred.<!Array.<!e2e.openpgp.block.TransferableKey>>}
  *    The public keys correspond to the email or [] if not found.
  */
@@ -192,28 +192,10 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
         return goog.async.DeferredList.gatherResults(pendingValidations);
       }, this).
       addCallback(function(keys) {
-
         return goog.array.filter(keys, function(key) {
-          if (goog.isNull(key)) {
-            return false;
-          }
-
-          // maintain a history mapping of keyId to email
-          var allKeyPackets = key.subKeys ?
-              key.subKeys.concat(key.keyPacket) :
-              [key.keyPacket.keyId];
-          goog.array.forEach(allKeyPackets, function(kp) {
-            var result = this.keyIdEmailMap_.get(kp.keyId);
-            // notify those pending asks
-            if (result && result instanceof goog.async.Deferred) {
-              result.callback(email);
-            }
-          }, this);
-
-          return true;
-        }, this);
-
-      }, this);
+          return key !== null;
+        });
+      });
 };
 
 
@@ -223,58 +205,14 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
  * TODO: CONAME needs support to lookup using keyid
  *
  * @see https://tools.ietf.org/html/rfc4880#section-5.1
- * @param {!e2e.openpgp.KeyId} id The key ID.
+ * @param {!e2e.openpgp.KeyId} keyId The key ID.
  * @return {!goog.async.Deferred.<!Array.<!e2e.openpgp.block.TransferableKey>>}
  *     The resulting trusted keys that are once looked up using
  *     {#getTrustedPublicKeysByEmail}.
  */
-ConameKeyProvider.prototype.getVerificationKeysByKeyId = function(id) {
-  var map = this.keyIdEmailMap_,
-      result = map.get(id),
-      returnResult = new e2e.async.Result;
-
-  // if no mapping exists, wait to see if getTrustedPublicKeysByEmail() answers
-  if (!result) {
-    result = new e2e.async.Result;
-    map.set(id, result);
-
-    // say null if no one answers after lookup request timeout
-    setTimeout(function() {
-      var result = map.get(id);
-      if (result && result instanceof goog.async.Deferred) {
-        result.callback(null);
-      }
-    }, e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT);
-
-  }
-  // give the answer if the mapping has been resolved
-  else if (!(result instanceof goog.async.Deferred)) {
-    result = e2e.async.Result.toResult(result);
-  }
-
-  // resolve the email that has the keyid associated
-  result.addCallback(function(email) {
-    // if timeout happened, return empty keys and forget the mapping
-    if (goog.isNull(email)) {
-      map.remove(id);
-      return [];
-    }
-
-    // update the mapping by specifying the correnspoding email
-    map.set(id, email);
-
-    // look up the key
-    return this.getTrustedPublicKeysByEmail(email);
-  }, this).
-  addCallback(function(pubKeys) {
-    return goog.array.filter(pubKeys, function(keyBlock) {
-      return keyBlock.hasKeyById(id);
-    });
-  }).addCallback(returnResult.callback, returnResult);
-
-  return returnResult;
+ConameKeyProvider.prototype.getVerificationKeysByKeyId = function(keyId) {
+  throw new Error('CONAME keyserver does not support ' +
+      'getVerificationKeysByKeyId yet');
 };
-
-
 
 });  // goog.scope

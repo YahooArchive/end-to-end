@@ -120,13 +120,16 @@ e2e_build_closure_lib_() {
   jscompile_e2e+=" --js='!src/javascript/crypto/e2e/compatibility_tests/**.js'"
   # Don't compile the gmonkeystub.js. It is injected uncompiled by the extension.
   jscompile_e2e+=" --js='!src/javascript/crypto/e2e/extension/helper/gmonkeystub.js'"
+  # Don't compile the auth/**.js. It is injected uncompiled by the extension.
+  jscompile_e2e+=" --js='!src/javascript/crypto/e2e/extension/helper/auth/**.js'"
   for var in "${SRC_DIRS[@]}"
   do
     jscompile_e2e+=" --js='$var/**.js' --js='!$var/**_test.js' --js='!$var/**_perf.js'"
   done
   jscompile_e2e+=" --js='!lib/closure-library/closure/goog/demos/**.js'"
   if [ "$4" == "debug" ]; then
-     jscompile_e2e+=" --debug --formatting=PRETTY_PRINT -O WHITESPACE_ONLY"
+#    jscompile_e2e+=" --debug --formatting=PRETTY_PRINT -O WHITESPACE_ONLY"
+     jscompile_e2e+=" --debug --formatting=PRETTY_PRINT"
   elif [ "$4" == "optimized" ]; then
      jscompile_e2e+=" -O ADVANCED"
   fi
@@ -230,6 +233,7 @@ e2e_build_extension() {
   fi
   # compile javascript files
   echo "Compiling JS files..."
+  e2e_build_closure_lib_ "YmailApi.StormUI" "$BUILD_EXT_DIR/stubs/ymail.storm.js" "$BUILD_TPL_DIR" "$1"
   e2e_build_closure_lib_ "e2e.ext.bootstrap" "$BUILD_EXT_DIR/launcher_binary.js" "$BUILD_TPL_DIR" "$1"
   e2e_build_closure_lib_ "e2e.ext.helper.bootstrap" "$BUILD_EXT_DIR/helper_binary.js" "$BUILD_TPL_DIR" "$1"
   e2e_build_closure_lib_ "e2e.ext.ui.prompt.bootstrap" "$BUILD_EXT_DIR/prompt_binary.js" "$BUILD_TPL_DIR" "$1"
@@ -251,7 +255,7 @@ e2e_build_extension() {
   cp -f "$SRC_EXT_DIR/manifest.json" "$BUILD_EXT_DIR"
   cp -f lib/protobufjs/protobuf-light.alldeps.js "$BUILD_EXT_DIR"
   cp -f lib/protobufjs/coname-client.proto.json "$BUILD_EXT_DIR"
-  cp -fr lib/yAuth "$BUILD_EXT_DIR"
+  cp -fr "$SRC_EXT_DIR/helper/auth" "$BUILD_EXT_DIR"
   echo "Done."
 }
 

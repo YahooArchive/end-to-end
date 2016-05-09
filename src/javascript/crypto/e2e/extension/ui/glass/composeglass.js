@@ -20,6 +20,8 @@
 goog.provide('e2e.ext.ui.ComposeGlass');
 
 goog.require('e2e.async.Result');
+goog.require('e2e.ext.MessageApi');
+goog.require('e2e.ext.YmailData');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
@@ -49,6 +51,8 @@ goog.require('goog.ui.KeyboardShortcutHandler'); //@yahoo
 goog.require('goog.userAgent'); //@yahoo
 goog.require('soy');
 
+
+
 goog.scope(function() {
 var constants = e2e.ext.constants;
 var ext = e2e.ext;
@@ -63,28 +67,20 @@ var dialogs = e2e.ext.ui.dialogs;
 
 /**
  * Constructor for the UI compose glass. //@yahoo
- * @param {!messages.e2ebindDraft} draft Message draft
  * @param {string} origin The origin that requested the compose glass
  * @param {e2e.ext.MessageApi} api The Message API
  * @constructor
  * @extends {e2e.ext.ui.panels.prompt.PanelBase}
  */
-ui.ComposeGlass = function(draft, origin, api) {
-  // @yahoo a space is prepended for linebreak starting string to workaround
-  // the missing caret issue in textarea
-  var selection = goog.string.canonicalizeNewlines(draft.body || '');
-  if (selection.charCodeAt(0) === 10) {
-    selection = ' ' + selection;
-  }
+ui.ComposeGlass = function(origin, api) {
 
   var content = /** @type {!messages.BridgeMessageRequest} */ ({
-    selection: selection,
-    recipients: draft.to || [],
-    ccRecipients: [].concat(draft.cc || [], draft.bcc || []),
+    selection: '',
+    recipients: [],
+    ccRecipients: [],
     action: constants.Actions.ENCRYPT_SIGN,
     request: true,
     origin: origin,
-    subject: draft.subject || '',
     canInject: true,
     canSaveDraft: true
   });
@@ -95,11 +91,11 @@ ui.ComposeGlass = function(draft, origin, api) {
       content, this.errorCallback_);
 
   /**
-   * The contacts data for autocompletion
-   * @type {Array.<{email:string, firstname:string}>}
+   * The email of the sender
+   * @type {?e2e.ext.YmailData.EmailUser}
    * @private
    */
-  this.contacts_ = draft.contacts || [];
+  this.defaultSender_ = null;
 
   /**
    * A holder for the intended recipients of a PGP message.
@@ -121,20 +117,6 @@ ui.ComposeGlass = function(draft, origin, api) {
    * @private
    */
   this.api_ = api;
-
-  /**
-   * The email of the sender
-   * @type {string}
-   * @private
-   */
-  this.defaultSender_ = draft.from ? draft.from.toLowerCase() : '';
-
-  /**
-   * Whether the compose glass is installed inside a conversation
-   * @type {boolean}
-   * @private
-   */
-  this.insideConv_ = draft.insideConv;
 };
 goog.inherits(ui.ComposeGlass, e2e.ext.ui.panels.prompt.PanelBase);
 
@@ -142,8 +124,6 @@ goog.inherits(ui.ComposeGlass, e2e.ext.ui.panels.prompt.PanelBase);
 /** @override */
 ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
-
-  var content = this.getContent();
 
   // @yahoo renders the HTML
   soy.renderElement(elem, templates.main, {
@@ -153,19 +133,13 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
         'promptEncryptSignActionLabel'),
     actionDraftDeleteTitle: chrome.i18n.getMessage(
         'actionDraftDeleteTitle'),
-    subject: content.subject,
+    subject: '',
     subjectLabel: chrome.i18n.getMessage('promptSubjectLabel'),
     loadingLabel: chrome.i18n.getMessage('promptLoadingLabel'),
     unsupportedFormattingLabel: chrome.i18n.getMessage(
         'promptUnsupportedFormattingLabel'),
     encryptrMessage: chrome.i18n.getMessage('promptEncryptrBodyOnlyMessage')
   });
-
-
-  // @yahoo This tells the helper to attach the set_draft handler in e2ebind
-  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
-    action: constants.Actions.GET_SELECTED_CONTENT
-  }));
 };
 
 
@@ -188,16 +162,38 @@ ui.ComposeGlass.prototype.canSend_ = function(origin) {
  * @private
  */
 ui.ComposeGlass.prototype.populateUi_ = function() {
-  goog.Promise.all([
-    // Populate the UI with the available encryption keys.
-    this.renderEncryptionKeys_(),
-    // Populate the UI with the available signing keys.
-    this.renderSigningKeys_(),
-    // Load selected content.
-    this.loadSelectedContent_()
-  ]).then(
-      // When all of the above steps completed, set up focus.
-      this.focusRelevantElement_, undefined, this);
+  //@yahoo defer getDraft() until populateUi() is called
+  this.api_.req('draft.get').addCallbacks(function(draft) {
+    var content = this.getContent();
+
+    this.defaultSender_ = draft.from;
+    content.recipients = goog.array.map(
+        draft.to || [],
+        utils.text.userObjectToUid);
+    content.ccRecipients = goog.array.map(
+        [].concat(draft.cc || [], draft.bcc || []),
+        utils.text.userObjectToUid);
+    content.selection = draft.body;
+
+    // set subject
+    var subject = goog.dom.getElement(constants.ElementId.SUBJECT);
+    subject && (subject.value = draft.subject);
+
+    // set event handlers based on whether the glass is in conversation
+    this.setConversationDependentEventHandlers_(draft.isInConv);
+
+    goog.Promise.all([
+      // Populate the UI with the available encryption keys.
+      this.renderEncryptionKeys_(),
+      // Populate the UI with the available signing keys.
+      this.renderSigningKeys_(),
+      // Load selected content.
+      this.loadSelectedContent_()
+    ]).then(
+        // When all of the above steps completed, set up focus.
+        this.focusRelevantElement_, undefined, this);
+
+  }, this.errorCallback_, this);
 };
 
 
@@ -261,7 +257,8 @@ ui.ComposeGlass.prototype.getShortcuts = function() {
 /** @override */
 ui.ComposeGlass.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
-  var origin = this.getContent().origin;
+  var content = this.getContent();
+  var origin = content.origin;
 
   this.populateUi_();
 
@@ -288,6 +285,15 @@ ui.ComposeGlass.prototype.enterDocument = function() {
             (key.ctrl ? sHandler.Modifiers.CTRL : sHandler.Modifiers.NONE));
   });
 
+  // @yahoo set the subject on KEYUP
+  var subjectElem = goog.dom.getElement(constants.ElementId.SUBJECT);
+  if (subjectElem) {
+    this.getHandler().listen(
+        subjectElem,
+        goog.events.EventType.KEYUP,
+        goog.bind(this.setSubject_, this));
+  }
+
   var textArea = /** @type {HTMLTextAreaElement} */
       (elem.querySelector('textarea'));
 
@@ -299,19 +305,14 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       listen(
           afterSaveKeyboardHandler,
           sHandler.EventType.SHORTCUT_TRIGGERED,
-          goog.bind(this.handleKeyEventAfterSave_, this));
-
-
-  // @yahoo turn the extension icon into green when the text area is in focus
-  this.getHandler().
-      listen(textArea, goog.events.EventType.FOCUS, goog.bind(function() {
-        utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
-          action: constants.Actions.CHANGE_PAGEACTION
-        }));
-        this.mirrorSize_(textArea);
-      }, this)).
-      listen(textArea, goog.events.EventType.BLUR,
-          goog.bind(utils.sendProxyRequest, null, {
+          goog.bind(this.handleKeyEventAfterSave_, this)).
+      // @yahoo turn extension icon into green when the text area is in focus
+      listen(textArea, goog.events.EventType.FOCUS, goog.bind(
+          utils.sendExtensionRequest, null, {
+            action: constants.Actions.CHANGE_PAGEACTION
+          })).
+      listen(textArea, goog.events.EventType.BLUR, goog.bind(
+          utils.sendExtensionRequest, null, {
             action: constants.Actions.RESET_PAGEACTION
           })).
       listen(textArea, goog.events.EventType.INPUT,
@@ -321,7 +322,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
       goog.bind(this.resizeTextArea_, this, textArea));
 
-  // @yahoo sets the focus
+  // @yahoo on focus
   goog.events.listen(window, goog.events.EventType.FOCUS,
       goog.bind(this.handleKeyEvent_, this));
 
@@ -355,7 +356,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           goog.dom.getElement(
               constants.ElementId.ENCRYPTR_ICON).querySelector('label'),
           goog.events.EventType.CLICK,
-          goog.partial(this.savePlaintextDraft_, origin, false)).
+          goog.bind(this.switchToUnencrypted_, this)).
       //@yahoo has a hidden add passphrase button
       listen(
           goog.dom.getElement(constants.ElementId.ADD_PASSPHRASE_BUTTON),
@@ -371,22 +372,18 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       listen(
           goog.dom.getElement(constants.ElementId.DRAFT_DELETE_BUTTON),
           goog.events.EventType.CLICK,
-          goog.bind(this.close, this, true));
+          goog.bind(this.discard, this));
 
-  // extra things to do when it's opened inside conversation
-  if (this.insideConv_) {
-    goog.dom.classlist.add(document.body, constants.CssClass.CONVERSATION);
 
-    //@yahoo adjust action buttons position to stick at the bottom
-    this.api_.getRequestHandler().set('setScrollOffset',
-        goog.bind(this.fixActionButtonsPosition_, this));
+  //@yahoo save encrypted draft when it is closed externally
+  this.api_.setRequestHandler('evt.close',
+      goog.bind(this.saveDraft_, this, origin, goog.nullFunction, null));
 
-  } else {
-    var escButton = goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON);
-    //@yahoo allows saving and escaping the draft
-    this.getHandler().listen(escButton, goog.events.EventType.CLICK, goog.bind(
-        this.handleKeyEventAfterSave_, this, {identifier: 'closeCov'}));
-  }
+  // clear prior failure when any item is on clicked
+  this.getHandler().listen(
+      this.getElement(),
+      goog.events.EventType.CLICK,
+      goog.bind(this.displayFailure_, this, null), true);
 };
 
 
@@ -398,20 +395,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
  */
 ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
   return new goog.Promise(function(resolve, reject) {
-
-    // @yahoo collect all available recipients from contact list instead
     // var allAvailableRecipients = goog.object.getKeys(searchResult);
-    var allAvailableRecipients = goog.array.map(
-        this.contacts_,
-        function(p) {
-          // map the object to a string
-          return (p.firstname || p.email) + ' <' + p.email + '>';
-        });
-
-    // @yahoo add the sender as one of the available recipients too
-    this.defaultSender_ && allAvailableRecipients.push(
-        this.defaultSender_ + ' <' + this.defaultSender_ + '>');
-
     // var recipientsEmailMap =
     //     this.getRecipientsEmailMap_(allAvailableRecipients);
     // goog.array.forEach(providedRecipients, function(recipient) {
@@ -421,20 +405,24 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
     //   }
     // });
     this.chipHolder_ = new panels.ChipHolder(
-        this.getContent().recipients, allAvailableRecipients,
-        goog.bind(this.renderEncryptionPassphraseDialog_, this),
+        this.getContent().recipients,
+        // @yahoo allAvailableRecipients made async with requestMatchingRows_()
+        goog.bind(this.requestMatchingRows_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
-        goog.bind(this.hasUnsupportedRecipients_, this));
+        goog.bind(this.queryPublicKey_, this),
+        goog.bind(this.renderEncryptionPassphraseDialog_, this));
     this.addChild(this.chipHolder_, false);
     this.chipHolder_.decorate(
         goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
 
     // @yahoo added cc recipients
     this.ccChipHolder_ = new panels.ChipHolder(
-        this.getContent().ccRecipients, allAvailableRecipients,
-        null,
+        this.getContent().ccRecipients,
+        // @yahoo allAvailableRecipients made async with requestMatchingRows_()
+        goog.bind(this.requestMatchingRows_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
-        goog.bind(this.hasUnsupportedRecipients_, this));
+        goog.bind(this.queryPublicKey_, this),
+        null);
     this.addChild(this.ccChipHolder_, false);
     this.ccChipHolder_.decorate(
         goog.dom.getElement(constants.ElementId.CC_CHIP_HOLDER));
@@ -482,7 +470,8 @@ ui.ComposeGlass.prototype.renderSigningKeys_ = function() {
 
         // @yahoo choose the first UID associated with the 'from' address
         if (this.defaultSender_ && selectedIndex == 0 &&
-            goog.string.contains(key.toLowerCase(), this.defaultSender_)) {
+            goog.string.caseInsensitiveContains(
+                key, '<' + this.defaultSender_.email + '>')) {
           selectedIndex = i;
           keyElem.selected = 'selected';
           senderMatched = true;
@@ -697,10 +686,11 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
  */
 ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
   return new goog.Promise(function(resolve, reject) {
-    var origin = this.getContent().origin;
+    // var origin = this.getContent().origin;
     var textArea = /** @type {HTMLTextAreaElement} */
         (this.getElement().querySelector('textarea'));
     var content = this.getContent().selection || '';
+    //@yahoo TODO: convert it to plaintext
     var detectedAction = utils.text.getPgpAction(content);
     if (detectedAction == constants.Actions.DECRYPT_VERIFY) {
       // @yahoo sendExtensionRequest is used instead of actionExecutor
@@ -730,6 +720,7 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
         resolve();
       }, this));
     } else {
+      textArea.value = content;
       resolve();
     }
   }, this);
@@ -754,30 +745,17 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
       goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
   // @yahoo not using prompt here
   // var prompt = /** @type {e2e.ext.ui.Prompt} */ (this.getParent());
-  var shouldSend = false;
+  var shouldSend = this.canSend_(origin);
   var content = this.getContent();
-  if (content && this.canSend_(content.origin)) {
-    shouldSend = true;
-  }
 
-  // @yahoo used sendProxyRequest instead of HelperProxy.updateSelectedContent
-  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
-    action: shouldSend ?
-        constants.Actions.SET_AND_SEND_DRAFT :
-        constants.Actions.SET_DRAFT,
-    content: /** @type {messages.BridgeMessageResponse} */ ({
-      value: textArea.value || content.value,
-      response: true,
-      detach: true,
-      origin: origin,
-      recipients: recipients,
-      ccRecipients: ccRecipients, //@yahoo added ccChipHolder
-      subject: subject,
-      from: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
-    })
-
-    // @yahoo close the compose glass if succeeded
-  })).addCallbacks(goog.bind(this.close, this, false), this.errorCallback_);
+  // @yahoo used the ymail API to sendDraft or setDraft
+  this.api_.req(shouldSend ? 'draft.send' : 'draft.set', {
+    from: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value,
+    to: recipients,
+    cc: ccRecipients,
+    subject: subject,
+    body: textArea.value || content.value
+  }).addCallbacks(this.close, this.errorCallback_, this);
 };
 
 
@@ -792,7 +770,7 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
  * @private
  */
 ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
-  if (document && !document.hasFocus()) {
+  if (!this.getContent().canSaveDraft || document && !document.hasFocus()) {
     return;
   }
 
@@ -814,9 +792,9 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
 
   // @yahoo save the recipients too
   var recipients = utils.text.uidsToObjects(
-                       this.chipHolder_.getSelectedUids());
+                       this.chipHolder_.getSelectedUids(true));
   var ccRecipients = utils.text.uidsToObjects(
-                         this.ccChipHolder_.getSelectedUids());
+                         this.ccChipHolder_.getSelectedUids(true));
 
   // @yahoo do not trigger saving a draft if nothing has really changed
   if (goog.string.isEmpty(formText.value) &&
@@ -839,24 +817,16 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
 
     var draft = e2e.openpgp.asciiArmor.markAsDraft(encrypted.content);
 
-    // set the focus before setting draft
-
     // Inject the draft into website.
-    //@yahoo used sendProxyRequest instead of HelperProxy.updateSelectedContent
-    utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
-      action: constants.Actions.SET_DRAFT,
-      content: /** @type {messages.BridgeMessageResponse} */ ({
-        value: draft,
-        response: true,
-        detach: true,
-        origin: origin,
-        recipients: recipients,
-        ccRecipients: ccRecipients, //@yahoo added ccChipHolder
-        subject: subject,
-        attachments: [], //@yahoo to force save
-        from: signer
-      })
-    })).addCallbacks(function() {
+
+    // @yahoo used the ymail API to saveDraft
+    this.api_.req('draft.save', {
+      from: signer,
+      to: recipients,
+      cc: ccRecipients,
+      subject: subject,
+      body: draft
+    }).addCallbacks(function() {
       // @yahoo signal to user the encrypted draft is saved
       saveDraftMsg.textContent = chrome.i18n.getMessage(
           'promptEncryptSignSaveEncryptedDraftLabel',
@@ -868,7 +838,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
   }, this), goog.bind(function(error) {
     if (error.messageId == 'promptNoEncryptionTarget') {
       var dialog = new dialogs.Generic(
-          chrome.i18n.getMessage('promptNoEncryptionKeysFound'),
+          chrome.i18n.getMessage('promptNoEncryptionKeysFound', signer),
           goog.bind(function(decision) { //@yahoo opens config if clicked ok
             goog.dispose(dialog);
             //@yahoo opens config to set up keys if clicked ok
@@ -894,14 +864,25 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
 
 
 /**
- * Leaves the current draft unencrypted and persists it into the web
- * application that the user is interacting with.
- * @param {string} origin The web origin where the message was created.
- * @param {goog.events.Event} evt The event that triggers the saving of the
- *     draft.
+ * Put the subject back to original compose
+ * @param {goog.events.KeyEvent} evt The key event
  * @private
  */
-ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
+ui.ComposeGlass.prototype.setSubject_ = function(evt) {
+  var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
+      goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
+
+  this.api_.req('draft.set', {
+    subject: subject
+  }).addCallbacks(goog.nullFunction, this.errorCallback_);
+};
+
+
+/**
+ * Put the draft content back to the original compose unencrypted
+ * @private
+ */
+ui.ComposeGlass.prototype.switchToUnencrypted_ = function() {
   // TODO: add a warning with mute option
 
   var formText = /** @type {HTMLTextAreaElement} */
@@ -915,22 +896,14 @@ ui.ComposeGlass.prototype.savePlaintextDraft_ = function(origin, evt) {
   var ccRecipients = utils.text.uidsToObjects(
                          this.ccChipHolder_.getSelectedUids());
 
-  // @yahoo used sendProxyRequest instead of HelperProxy.updateSelectedContent
-  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
-    action: constants.Actions.SET_DRAFT,
-    content: /** @type {messages.BridgeMessageResponse} */ ({
-      value: formText.value,
-      response: true,
-      detach: true,
-      origin: origin,
-      recipients: recipients,
-      ccRecipients: ccRecipients, //@yahoo added ccChipHolder
-      subject: subject,
-      from: signer
-    })
-
-    // @yahoo close the compose glass if succeeded
-  })).addCallbacks(goog.bind(this.close, this, false), this.errorCallback_);
+  // @yahoo used the ymail API to setDraft
+  this.api_.req('draft.set', {
+    from: signer,
+    to: recipients,
+    cc: ccRecipients,
+    subject: subject,
+    body: formText.value
+  }).addCallbacks(this.close, this.errorCallback_, this);
 };
 
 
@@ -960,24 +933,79 @@ ui.ComposeGlass.prototype.lackPublicKeys_ = function(recipients) {
 
 
 /**
+ * @param {!boolean} isInConv Whether the glass is inserted in a conversation
+ * @private
+ */
+ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
+    isInConv) {
+  if (isInConv) {
+    goog.dom.classlist.add(document.body, constants.CssClass.CONVERSATION);
+
+    //@yahoo adjust action buttons position to stick at the bottom
+    this.api_.setRequestHandler('evt.scroll',
+        goog.bind(this.fixActionButtonsPosition_, this));
+
+  } else {
+    var escButton = goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON);
+    //@yahoo allows saving and escaping the draft
+    this.getHandler().listen(escButton, goog.events.EventType.CLICK, goog.bind(
+        this.handleKeyEventAfterSave_, this, {identifier: 'closeCov'}));
+  }
+};
+
+
+/**
+ * Implements the requestMatchingRows() api for recipient autocompletion
+ * @param {string} token
+ * @param {number} maxMatches
+ * @param {function(string, !Array<string>)} matchHandler
+ * @private
+ */
+ui.ComposeGlass.prototype.requestMatchingRows_ = function(
+    token, maxMatches, matchHandler) {
+  this.api_.req('autosuggest.search', {
+    from: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value,
+    to: goog.array.map(
+        [].concat(
+            this.chipHolder_.getSelectedUids(true),
+            this.ccChipHolder_.getSelectedUids(true)),
+        utils.text.extractValidEmail),
+    query: token
+  }).addCallbacks(
+      function(contacts) {
+        matchHandler(token, goog.array.map(contacts, function(contact) {
+          contact.toString = goog.bind(
+              utils.text.userObjectToUid, null, contact);
+          return contact;
+        }));
+      },
+      function(err) {
+        // ignore timeout as request might be debounced/throttled
+        if (!(err instanceof e2e.ext.MessageApi.TimeoutError)) {
+          this.displayFailure_(err);
+        }
+      }, this);
+};
+
+
+/**
  * Return if any of the recipients lacks a public key
  * @param {string|!Array.<string>} recipients an recipient or a list of
  *     recipients
- * @return {!e2e.async.Result.<!boolean>}
+ * @return {!goog.async.Deferred.<!boolean>}
  * @private
  */
-ui.ComposeGlass.prototype.hasUnsupportedRecipients_ = function(recipients) {
-  if (typeof recipients === 'string') {
+ui.ComposeGlass.prototype.queryPublicKey_ = function(recipients) {
+  if (goog.isString(recipients)) {
     recipients = [recipients];
   } else if (recipients.length === 0) {
     return e2e.async.Result.toResult(false);
   }
 
-  var result = new e2e.async.Result;
-  this.lackPublicKeys_(recipients).addCallbacks(function(invalidOnes) {
-    result.callback(invalidOnes.length > 0);
-  }, this.displayFailure_, this);
-  return result;
+  return this.lackPublicKeys_(recipients).
+      addCallbacks(function(invalidOnes) {
+        return invalidOnes.length > 0;
+      }, this.displayFailure_, this);
 };
 
 
@@ -987,13 +1015,15 @@ ui.ComposeGlass.prototype.hasUnsupportedRecipients_ = function(recipients) {
  * @private
  */
 ui.ComposeGlass.prototype.displayFailure_ = function(error) {
-  // hide loading
+  // @yahoo hide loading
   goog.style.setElementShown(
       this.getElementByClass(constants.CssClass.BOTTOM_NOTIFICATION), false);
   goog.style.setElementShown(
       this.getElementByClass(constants.CssClass.BUTTONS_CONTAINER), true);
 
   var errorDiv = goog.dom.getElement(constants.ElementId.ERROR_DIV);
+  var encryptrIcon = goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON).
+      querySelector('label');
   if (error) {
     var errorMsg = goog.isDef(error.messageId) ?
         chrome.i18n.getMessage(error.messageId) : error.message;
@@ -1001,10 +1031,11 @@ ui.ComposeGlass.prototype.displayFailure_ = function(error) {
     errorDiv.textContent = errorMsg;
 
     //@yahoo
-    goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON).
-        querySelector('label').classList.add(constants.CssClass.ERROR);
+    encryptrIcon.classList.add(constants.CssClass.ERROR);
   } else {
     errorDiv.textContent = '';
+    //@yahoo
+    encryptrIcon.classList.remove(constants.CssClass.ERROR);
   }
 };
 
@@ -1043,14 +1074,15 @@ ui.ComposeGlass.prototype.mirrorSize_ = function(textArea) {
   t.style.height = '0px';
   t.style.opacity = 0;
   document.body.appendChild(t);
+  // diff + innerHeight
   var diff = t.scrollHeight - textArea.clientHeight;
   document.body.removeChild(t);
 
+  var height = diff + window.innerHeight;
+
   if (diff !== 0) {
-    this.api_.sendRequest('setSize',
-        goog.bind(this.fixActionButtonsPosition_, this),
-        this.errorCallback_,
-        {height: (diff + window.innerHeight) + 'px'});
+    this.api_.req('ctrl.setGlassSize', {height: height + 'px'}).addCallbacks(
+        this.fixActionButtonsPosition_, this.errorCallback_, this);
   }
 };
 
@@ -1084,7 +1116,6 @@ ui.ComposeGlass.prototype.fixActionButtonsPosition_ = function(offset) {
  */
 ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
   var args = evt.identifier ? {keyId: evt.identifier} : undefined;
-  var content = this.getContent();
   if (evt.identifier === 'send') {
     this.keyMissingDialog_ ?
         this.keyMissingDialog_.invokeCallback(false) : // Send in plaintext
@@ -1092,8 +1123,8 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
     return;
   }
 
-  this.api_.sendRequest('shortcut',
-      goog.nullFunction, this.errorCallback_, args);
+  this.api_.req('ctrl.shortcut', args).
+      addCallbacks(goog.nullFunction, this.errorCallback_);
 };
 
 
@@ -1122,7 +1153,7 @@ ui.ComposeGlass.prototype.disposeInternal = function() {
       });
 
   // @yahoo no more green in the icon
-  utils.sendProxyRequest(/** @type {messages.proxyMessage} */ ({
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.RESET_PAGEACTION
   }));
 
@@ -1131,13 +1162,20 @@ ui.ComposeGlass.prototype.disposeInternal = function() {
 
 
 /**
- * Closes the glass, and optionally discard the draft
- * @param {boolean=} opt_discardDraft Whether to discard the draft
+ * Close the glass
  */
-ui.ComposeGlass.prototype.close = function(opt_discardDraft) {
-  this.api_.sendRequest('exit',
-      goog.bind(goog.dispose, null, this), this.errorCallback_,
-      {discardDraft: opt_discardDraft === true});
+ui.ComposeGlass.prototype.close = function() {
+  this.api_.req('ctrl.closeglass').
+      addCallbacks(this.dispose, this.errorCallback_, this);
+};
+
+
+/**
+ * Discard the draft, and let the glass be destroyed
+ */
+ui.ComposeGlass.prototype.discard = function() {
+  this.api_.req('draft.discard').
+      addCallbacks(this.dispose, this.errorCallback_, this);
 };
 
 
@@ -1200,15 +1238,15 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
           //     'composeGlassAddPassphraseForRecipients', recipientString).
           //     replace('\n', '<br>').
           //     replace(/#add#([^#]*)#/,
-          //         '<label for="' + constants.ElementId.ADD_PASSPHRASE_BUTTON +
+          //         '<label for="' +
+          //         constants.ElementId.ADD_PASSPHRASE_BUTTON +
           //         '">$1</label>');
-          // msg = soydata.VERY_UNSAFE.ordainSanitizedHtml(msg);
 
           var msg = chrome.i18n.getMessage(
               'composeGlassConfirmRecipients', recipientString);
 
           var dialog = this.keyMissingDialog_ = new ui.dialogs.Generic(
-              msg,
+              soydata.VERY_UNSAFE.ordainSanitizedHtml(msg),
               goog.bind(function(result) {
                 this.keyMissingDialogTriggered_ = false;
                 this.keyMissingDialog_ = null;

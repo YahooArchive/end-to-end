@@ -20,6 +20,7 @@
 
 goog.provide('e2e.ext.utils');
 goog.provide('e2e.ext.utils.Error');
+goog.provide('e2e.ext.utils.Warn');
 
 goog.require('e2e.async.Result');
 goog.require('e2e.ext.config');
@@ -116,9 +117,25 @@ utils.errorHandler = function(error) {
  */
 utils.Error = function(defaultMsg, msgId) {
   goog.base(this, defaultMsg);
+  this.defaultMsg = defaultMsg;
   this.messageId = msgId;
 };
 goog.inherits(utils.Error, Error);
+
+
+/**
+ * Display an error
+ * @param {Error=} opt_err The error object
+ */
+utils.displayFailure = function(opt_err) {
+  if (opt_err instanceof Error) {
+    // @yahoo This is specific to Ymail/Storm
+    document.body.dispatchEvent(new CustomEvent('displayError', {
+      detail: '[' + chrome.i18n.getMessage('extName') + '] ' + opt_err.message
+    }));
+    // console.error(opt_err);
+  }
+};
 
 
 /**
@@ -188,29 +205,6 @@ utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
   });
 
   port.postMessage(args);
-};
-
-
-/**
- * Sends a request from a content script to proxy a message to the active tab.
- * @param {messages.proxyMessage} args The message to proxy
- * @return {e2e.async.Result.<Object>}
- */
-utils.sendProxyRequest = function(args) {
-  var result = new e2e.async.Result;
-
-  args.proxy = true;
-  chrome.runtime.sendMessage(args, function(response) {
-    if (chrome.runtime.lastError) {
-      result.errback(chrome.runtime.lastError);
-    } else if (response.error) {
-      result.errback(new Error(response.error));
-    } else {
-      result.callback(response);
-    }
-  });
-
-  return result;
 };
 
 
@@ -309,6 +303,22 @@ utils.listenThrottledEvent = function(target, type, handler, opt_newType) {
   }
 
   return goog.events.listen(target, newType, handler);
+};
+
+
+/**
+ * Execute the callback with the fetched config
+ * @param {!string} property The config property name
+ * @param {!function(*)} callback The callback to receive the config value
+ * @param {!function(Error)} errback The errback to call with Error
+ */
+utils.getConfig = function(property, callback, errback) {
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.GET_PREFERENCE,
+    content: property
+  }), /** @param response {messages.e2ebindResponse} */ function(response) {
+    callback(response.content);
+  }, errback);
 };
 
 });  // goog.scope
