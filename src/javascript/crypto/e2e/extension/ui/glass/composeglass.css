@@ -18,11 +18,13 @@
 
 
 html {
-  overflow: hidden
+  overflow: hidden;
+  cursor: text;
 }
 
 body {
   background: #FFF;
+  cursor: default;
 }
 
 .transparent {

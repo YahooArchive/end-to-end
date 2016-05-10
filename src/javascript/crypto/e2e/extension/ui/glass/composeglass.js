@@ -307,11 +307,12 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           afterSaveKeyboardHandler,
           sHandler.EventType.SHORTCUT_TRIGGERED,
           goog.bind(this.handleKeyEventAfterSave_, this)).
-      // @yahoo turn extension icon into green when the text area is in focus
+      // @yahoo update extension icon as green when the editor is in focus
       listen(this.editor_, goog.events.EventType.FOCUS, goog.bind(
           utils.sendExtensionRequest, null, {
             action: constants.Actions.CHANGE_PAGEACTION
           })).
+      // @yahoo update extension icon when the editor is in blur
       listen(this.editor_, goog.events.EventType.BLUR, goog.bind(
           utils.sendExtensionRequest, null, {
             action: constants.Actions.RESET_PAGEACTION
@@ -323,10 +324,16 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
       goog.bind(this.resizeEditor_, this, true));
 
-  // @yahoo on focus
-  goog.events.listen(window, goog.events.EventType.FOCUS,
+  // @yahoo handle generic click and focus events
+  goog.events.listen(document.documentElement, goog.events.EventType.FOCUS,
       goog.bind(this.handleKeyEvent_, this));
 
+  // @yahoo default a click on nowhere to focus on the editor
+  goog.events.listen(document.body, goog.events.EventType.CLICK, function(evt) {
+    evt.stopPropagation();
+  });
+  goog.events.listen(document.documentElement, goog.events.EventType.CLICK,
+      goog.bind(this.editor_.focus, this.editor_));
 
   //@yahoo canSaveDraft is false, as we lack the button
   // if (this.getContent().canSaveDraft) {
@@ -873,7 +880,7 @@ ui.ComposeGlass.prototype.setSubject_ = function(evt) {
 
   this.api_.req('draft.set', {
     subject: subject
-  }).addCallbacks(goog.nullFunction, this.errorCallback_);
+  }).addErrback(this.errorCallback_);
 };
 
 
@@ -1093,7 +1100,7 @@ ui.ComposeGlass.prototype.resizeGlass_ = function(skipScroll) {
     this.api_.req('ctrl.resizeGlass', {
       height: height,
       scrollByDeltaHeight: !skipScroll && this.actionBar_.style.top !== 'auto'
-    }).addCallbacks(goog.nullFunction, this.errorCallback_);
+    }).addErrback(this.errorCallback_);
   }
 };
 
@@ -1133,8 +1140,7 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
     return;
   }
 
-  this.api_.req('ctrl.shortcut', args).
-      addCallbacks(goog.nullFunction, this.errorCallback_);
+  this.api_.req('ctrl.shortcut', args).addErrback(this.errorCallback_);
 };
 
 
