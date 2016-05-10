@@ -18,6 +18,7 @@ html,body {
 }
 
 body {
+  min-height: 60px;
   margin-top: 4px;
 }
 
@@ -36,7 +37,7 @@ body {
 }
 
 #encryptr-icon > div {
-  padding: 15px 25px;
+  padding: 8px 25px;
 }
 
 #encryptr-icon > label:before {
