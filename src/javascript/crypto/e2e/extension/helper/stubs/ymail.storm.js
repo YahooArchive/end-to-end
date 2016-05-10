@@ -110,7 +110,7 @@ YmailApi.APP_VERSION = '';
  * The YUI structure
  * @typedef {{
  *   use: function(...),
- *   on: function(string, Function),
+ *   on: function(string, Function) : {detach: function()},
  *   common: {
  *     ui: {
  *       NotificationV2: {
@@ -200,9 +200,11 @@ YmailApi.StormUI.Header;
  *       isImage: function() : boolean,
  *       getDownloadUrl: function() : string
  *     }>,
- *     on: function(string, function(Event))
+ *     on: function(string, function(Event)) : {detach: function()}
  *   },
- *   on: function(string, function(Event)),
+ *   before: function(string, function(Event)) : {detach: function()},
+ *   on: function(string, function(Event)) : {detach: function()},
+ *   once: function(string, function(Event)) : {detach: function()},
  *   setFocus: function(string),
  *   handleComposeAction: function(string),
  *   save: function(),
@@ -526,47 +528,6 @@ YmailApi.StormUI.ComposeApi.prototype.monitorComposeEvents_ = function() {
  */
 YmailApi.StormUI.DraftApi = function(composeView) {
   this.composeView_ = composeView;
-  this.monitorSaveSendEvents_();
-};
-
-
-/**
- * @private
- */
-YmailApi.StormUI.DraftApi.prototype.monitorSaveSendEvents_ = function() {
-  this.saveResult_ = null;
-  this.sendResult_ = null;
-
-  // monitor progress of save and send
-  this.composeView_.draft.on('stateChanged', goog.bind(function(evt) {
-    var e = /** @type {{prev: string, next: string, err: string}} */ (evt);
-    if (e.prev === 'savingAndSending' ||
-        e.prev === 'sending' ||
-        e.prev === 'sent' ||
-        (e.prev === 'captchaing' && e.next === 'unsaved')) {
-      if (e.next === 'final') {
-        if (this.sendResult_) {
-          this.sendResult_.callback(true);
-          this.sendResult_ = null;
-        }
-      } else if (e.err) { // unsaved
-        if (this.sendResult_) {
-          this.sendResult_.errback(e.err);
-          this.sendResult_ = null;
-        }
-      }
-    } else if (e.next === 'saved') {
-      if (this.saveResult_) {
-        this.saveResult_.callback(true);
-        this.saveResult_ = null;
-      }
-    } else if (e.next === 'unsaved' && e.err) {
-      if (this.saveResult_) {
-        this.saveResult_.errback(e.err);
-        this.saveResult_ = null;
-      }
-    }
-  }, this));
 };
 
 
@@ -643,11 +604,15 @@ YmailApi.StormUI.DraftApi.prototype.set = function(draft) {
  * @return {!goog.async.Deferred.<boolean>}
  */
 YmailApi.StormUI.DraftApi.prototype.save = function(draft) {
+  var result;
   this.set(draft);
-  this.saveResult_ = new goog.async.Deferred;
-  // this.composeView_.handleComposeAction('send') isn't as reliable
-  this.composeView_.save();
-  return this.saveResult_;
+  // in case the draft is being saved by autoSave, before calling our save()
+  // be prepared for next set of save events
+  do {
+    result = this.saveResult_();
+  } while (result.hasFired());
+  this.composeView_.save(); // avoid less reliable handleComposeAction('save')
+  return result;
 };
 
 
@@ -656,10 +621,10 @@ YmailApi.StormUI.DraftApi.prototype.save = function(draft) {
  * @return {!goog.async.Deferred.<boolean>}
  */
 YmailApi.StormUI.DraftApi.prototype.send = function(draft) {
+  var result = this.sendResult_(); // rely on the next send event. no auto send
   this.set(draft);
-  this.sendResult_ = new goog.async.Deferred;
   this.composeView_.handleComposeAction('send');
-  return this.sendResult_;
+  return result;
 };
 
 
@@ -688,6 +653,48 @@ YmailApi.StormUI.DraftApi.prototype.getQuoted = function() {
 YmailApi.StormUI.DraftApi.prototype.discard = function() {
   this.composeView_.handleComposeAction('delete');
   return true;
+};
+
+
+/**
+ * @return {!goog.async.Deferred.<boolean>}
+ * @private
+ */
+YmailApi.StormUI.DraftApi.prototype.saveResult_ = function() {
+  var result = new goog.async.Deferred,
+      successHandler = this.composeView_.once('compose:saveSuccess',
+          goog.bind(result.callback, result, true)),
+      failureHandler = this.composeView_.once('compose:saveFailure',
+          goog.bind(result.errback, result, new Error('saveFailed')));
+  return result.addBoth(function() {
+    successHandler.detach();
+    failureHandler.detach();
+  });
+};
+
+
+/**
+ * @return {!goog.async.Deferred.<boolean>}
+ * @private
+ */
+YmailApi.StormUI.DraftApi.prototype.sendResult_ = function() {
+  var result = new goog.async.Deferred;
+  var listener = this.composeView_.draft.on('stateChanged', function(evt) {
+    var e = /** @type {{prev: string, next: string, err: string}} */ (evt);
+    if (e.prev === 'savingAndSending' ||
+        e.prev === 'sending' ||
+        e.prev === 'sent' ||
+        (e.prev === 'captchaing' && e.next === 'unsaved')) {
+      if (e.next === 'final') {
+        listener.detach();
+        result.callback(true);
+      } else if (e.err) { // unsaved
+        listener.detach();
+        result.errback(new Error('sendFailure'));
+      }
+    }
+  });
+  return result;
 };
 
 
