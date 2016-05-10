@@ -108,7 +108,7 @@ actions.DecryptThenVerify.prototype.execute =
         return result;
       }, errorCallback));
 
-  // cleanup if caller doesn't bother to collect the verified result
+  // cleanup if no second call comes to collect and remove the verified result
   setTimeout(function() {
     if ((verifiedResult = verifiedResultMap.get(verifyResultId))) {
       verifiedResultMap.remove(verifyResultId);

@@ -26,6 +26,7 @@ goog.provide('e2e.openpgp.yKeyRing');
 goog.require('e2e');
 goog.require('e2e.async.Result');
 goog.require('e2e.coname.KeyProvider');
+goog.require('e2e.coname.CachedKeyProvider');
 goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.KeyRing');
@@ -83,7 +84,7 @@ e2e.openpgp.yKeyRing.launch = function(lockableStorage, opt_keyServerUrl) {
   var keyRing = new e2e.openpgp.yKeyRing(lockableStorage);
   return /** @type {!goog.async.Deferred.<!e2e.openpgp.KeyRing>} */ (
       keyRing.initialize().addCallback(function() {
-        this.conameKeyProvider_ = new e2e.coname.KeyProvider();
+        this.conameKeyProvider_ = new e2e.coname.CachedKeyProvider();
         return this;
       }, keyRing));
 };
@@ -133,8 +134,10 @@ e2e.openpgp.yKeyRing.prototype.uploadKeys = function(uid) {
 /**
  * Searches a public or private key for a User ID asynchronously. The search is
  * first performed locally. If we're searching for public key, then searches
- * and appends the public key from the http key server. Do not import the found
- * key to the local keyring.
+ * and appends the public key from the http key server. If the server does not
+ * respond properly, proceed with the local keys if any. Otherwise, propagate
+ * the server-returned error. In no case, the remote keys are imported into the
+ * local keyring.
  * @param {string} uid User ID to search for, or empty to search all.
  * @param {e2e.openpgp.KeyRing.Type=} opt_type Key type to search for.
  * @return {!e2e.async.Result.<!Array.<!e2e.openpgp.block.TransferableKey>>}
@@ -171,8 +174,10 @@ e2e.openpgp.yKeyRing.prototype.searchKeyLocalAndRemote = function(uid,
         result.callback(allKeys);
 
       }, function(err) {
-        // proceed with just the local keys
-        result.callback(localKeys);
+        // TODO: revisit this to see if we want to ignore other errors
+        localKeys.length === 0 && err.messageId === 'conameConnectionError' ?
+            result.errback(err) :
+            result.callback(localKeys); // proceed with just the local keys
       });
 
   return result;

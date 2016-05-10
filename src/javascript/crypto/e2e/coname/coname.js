@@ -178,7 +178,7 @@ e2e.coname.getRealmByEmail = function(email) {
 
 
 /**
- * Get the email address if it is CONAME-capable.
+ * Get and normalize the email address if it is CONAME-capable.
  * @param {string} uid The OpenPGP User Id that may contain an email address
  * @return {?string} The email address of which a realm profile can be located
  */
