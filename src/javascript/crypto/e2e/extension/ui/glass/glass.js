@@ -358,9 +358,8 @@ ui.Glass.prototype.setEncryptrMessage_ = function(result) {
  * Mirror the glass size back to the parent frame
  * @private
  */
-ui.Glass.prototype.mirrorSize_ = function() {
-  var height = goog.style.getComputedStyle(document.documentElement, 'height');
-  this.api_.req('ctrl.setGlassSize', {height: height}).
+ui.Glass.prototype.mirrorSize_ = function() {;
+  this.api_.req('ctrl.resizeGlass', {height: window.innerHeight}).
       addErrback(this.displayFailure_, this);
 };
 

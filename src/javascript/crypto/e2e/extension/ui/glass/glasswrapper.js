@@ -115,47 +115,28 @@ ui.BaseGlassWrapper.prototype.getGlassFrame = function() {
 
 /**
  * Add handlers to serve API calls from the glass
+ * @return {e2e.ext.MessageApi}
  * @protected
  */
 ui.BaseGlassWrapper.prototype.addAPIHandlers_ = function() {
   // configure the default request handler
-  this.api.
-      setRequestHandler('ctrl.setGlassSize', goog.bind(function(args) {
-        this.setHeight(args.height);
-        return this.getScrollOffset();
-      }, this)).
-      setRequestHandler('ctrl.shortcut', goog.bind(function(args) {
-        // this.glassFrame.focus(); TODO: no focus needed?
-        // possibly have encryptr natively support these ymail specific actions
-        this.handleShortcut_(args.keyId);
-        return true;
-      }, this));
+  this.api.setRequestHandler('ctrl.shortcut', goog.bind(function(args) {
+    this.glassFrame.focus();
+    // possibly have encryptr natively support these ymail specific actions
+    this.handleShortcut_(args.keyId);
+    return true;
+  }, this));
+  return this.api;
 };
 
 
 /**
  * Set the height of the glassFrame
- * @param {!string} height
+ * @param {!number} height
  * @protected
  */
 ui.BaseGlassWrapper.prototype.setHeight = function(height) {
-  this.glassFrame.style.height = height;
-};
-
-
-/**
- * Calculate the scrolling offset of glassFrame relative to the thread list.
- * @return {{y: ?number}} The offset
- * @protected
- */
-ui.BaseGlassWrapper.prototype.getScrollOffset = function() {
-  var threadList = goog.dom.getAncestorByTagNameAndClass(
-      this.glassFrame, 'div', 'thread-item-list');
-  return {
-    y: threadList ?
-        threadList.clientHeight -
-        goog.style.getRelativePosition(this.glassFrame, threadList).y :
-        null};
+  this.glassFrame.style.height = height + 'px';
 };
 
 
@@ -383,12 +364,16 @@ ui.GlassWrapper.prototype.installGlass = function() {
 
 
 /**
- * Returns the original content of the target element where the looking glass is
- * installed.
- * @return {string} The original content.
+ * Add handlers to serve API calls from/to the glass
+ * @override
  */
-ui.GlassWrapper.prototype.getOriginalContent = function() {
-  return this.originalContent_;
+ui.GlassWrapper.prototype.addAPIHandlers_ = function() {
+  // proxy the stub-provided handlers to the glass
+  return goog.base(this, 'addAPIHandlers_').
+      setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {
+        this.setHeight(args.height);
+        return true;
+      }, this));
 };
 
 
@@ -422,8 +407,8 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   this.setResizeAndScrollEventsHandlers_();
 
   var glassFrame = this.getGlassFrame();
-  glassFrame.style.minHeight = '220px';
-  this.setHeight('330px'); // do this after initializing insideConv_
+  glassFrame.style.minHeight = '252px';
+  this.setHeight(330); // do this after initializing insideConv_
 
   // insert the glass into dom, and focus it
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
@@ -432,16 +417,23 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
 
 
 /**
- * Add handlers to serve API calls from the glass
+ * Add handlers to serve API calls from/to the glass
  * @override
  */
 ui.ComposeGlassWrapper.prototype.addAPIHandlers_ = function() {
-  goog.base(this, 'addAPIHandlers_');
-
   var stubApi = this.stubApi_;
 
+  // proxy the stub-initiated requests to the composeglass
+  stubApi.setRequestHandler('evt.close', goog.bind(function() {
+    return this.api.req('evt.close').addCallback(function() {
+      this.dispose();
+      stubApi.dispose();
+      return true;
+    });
+  }, this));
+
   // proxy the stub-provided handlers to the composeglass
-  this.api.
+  return goog.base(this, 'addAPIHandlers_').
     setRequestHandler('draft.get', goog.bind(function(args) {
       return stubApi.req('draft.get', args);
     }, this)).
@@ -460,40 +452,45 @@ ui.ComposeGlassWrapper.prototype.addAPIHandlers_ = function() {
     setRequestHandler('autosuggest.search', function(args) {
       return stubApi.req('autosuggest.search', args);
     }).
-    setRequestHandler('ctrl.closeglass', goog.bind(function() {
+    setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {
+      var threadList = this.threadList_,
+          diff = this.glassFrame.clientHeight - args.height;
+      if (diff !== 0) {
+        this.setHeight(args.height);
+        if (threadList) {
+          // scroll up by delta height when action bar is affixed to show caret
+          if (args.scrollByDeltaHeight) {
+            threadList.scrollTop -= diff;
+          }
+          this.sendScrollOffset_();
+        }
+      }
+      return true;
+    }, this)).
+    setRequestHandler('ctrl.closeGlass', goog.bind(function() {
       this.dispose();
       stubApi.req('draft.set', {glassClosing: true});
       // do not dispose this.stubApi_ here, as it might be switched back on
       return true;
     }, this));
-
-  // proxy the stub-initiated requests to the composeglass
-  stubApi.setRequestHandler('evt.close', goog.bind(function() {
-    return this.api.req('evt.close').addCallback(function() {
-      this.dispose();
-      stubApi.dispose();
-      return true;
-    });
-  }, this));
 };
 
 
 ui.ComposeGlassWrapper.prototype.setResizeAndScrollEventsHandlers_ = function() {
-  var threadList = goog.dom.getAncestorByTagNameAndClass(
+  this.threadList_ = goog.dom.getAncestorByTagNameAndClass(
       this.targetElem, 'div', 'thread-item-list');
-  this.isInConv_ = Boolean(threadList);
 
-  if (this.isInConv_) {
-    this.boundResizeHandler_ = this.boundSendScrollOffset_ = goog.bind(
-        this.sendScrollOffset_, this, threadList);
-
-    // Send scroll offset to compose glass for positioning action buttons
-    goog.events.listen(threadList, goog.events.EventType.SCROLL,
+  if (this.threadList_) {
+    // Send scroll offset to compose glass for positioning action bar
+    this.boundSendScrollOffset_ = goog.bind(this.sendScrollOffset_, this);
+    goog.events.listen(this.threadList_,
+        goog.events.EventType.SCROLL,
         this.boundSendScrollOffset_);
+
+    this.boundResizeHandler_ = this.boundSendScrollOffset_;
   } else {
     this.boundResizeHandler_ = goog.bind(this.setMinMaxHeight_, this);
   }
-
   // resize the glassFrame when window is resized
   e2e.ext.utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
       this.boundResizeHandler_);
@@ -503,7 +500,7 @@ ui.ComposeGlassWrapper.prototype.setResizeAndScrollEventsHandlers_ = function() 
 /** @override */
 ui.ComposeGlassWrapper.prototype.setHeight = function(height) {
   goog.base(this, 'setHeight', height);
-  !this.isInConv_ && this.setMinMaxHeight_();
+  !this.threadList_ && this.setMinMaxHeight_();
 };
 
 
@@ -513,7 +510,7 @@ ui.ComposeGlassWrapper.prototype.setHeight = function(height) {
  */
 ui.ComposeGlassWrapper.prototype.setMinMaxHeight_ = function() {
   if (this.glassFrame) {
-    var max = Math.max(window.innerHeight - this.styleTop_, 220);
+    var max = Math.max(window.innerHeight - this.styleTop_, 252);
 
     this.glassFrame.style.maxHeight = max + 'px';
     this.glassFrame.style.minHeight = max > 662 ? '662px' : max + 'px';
@@ -525,17 +522,34 @@ ui.ComposeGlassWrapper.prototype.setMinMaxHeight_ = function() {
 
 /**
  * Send scroll offset to compose glass
- * @param {Element} threadList
  * @private
  */
-ui.ComposeGlassWrapper.prototype.sendScrollOffset_ = function(threadList) {
+ui.ComposeGlassWrapper.prototype.sendScrollOffset_ = function() {
   if (this.api) {
-    this.api.req('evt.scroll', this.getScrollOffset());
+    this.api.req('evt.scroll', this.computeScrollOffset_());
   } else {
-    threadList && goog.events.unlisten(
-        threadList, goog.events.EventType.SCROLL, this.boundSendScrollOffset_);
+    this.threadList_ && goog.events.unlisten(
+        this.threadList_,
+        goog.events.EventType.SCROLL,
+        this.boundSendScrollOffset_);
     goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
   }
+};
+
+
+/**
+ * Calculate the scrolling offset of glassFrame relative to the thread list.
+ * @return {{y: ?number}} The offset
+ * @protected
+ */
+ui.ComposeGlassWrapper.prototype.computeScrollOffset_ = function() {
+  var threadList = this.threadList_;
+  return {
+    y: threadList ?
+        threadList.clientHeight - goog.style.getRelativePosition(
+            this.glassFrame, threadList).y :
+        null
+  };
 };
 
 });  // goog.scope
