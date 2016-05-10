@@ -110,7 +110,7 @@ ui.Glass.prototype.displayFailure_ = function(error) {
     errorDiv.textContent = '';
   }
 
-  this.mirrorSize_();
+  this.resizeGlass_();
 };
 
 
@@ -157,7 +157,7 @@ ui.Glass.prototype.enterDocument = function() {
   if (window) {
     //@yahoo resize the glass when window is resized
     utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
-        goog.bind(this.mirrorSize_, this));
+        goog.bind(this.resizeGlass_, this));
 
     goog.events.listen(window,
         goog.events.EventType.FOCUS,
@@ -301,7 +301,7 @@ ui.Glass.prototype.setContent_ = function(result) {
   bodyElem.classList.remove(constants.CssClass.LOADER);
   bodyElem.textContent = result.decrypt.text;
 
-  this.mirrorSize_();
+  this.resizeGlass_();
 };
 
 
@@ -358,8 +358,9 @@ ui.Glass.prototype.setEncryptrMessage_ = function(result) {
  * Mirror the glass size back to the parent frame
  * @private
  */
-ui.Glass.prototype.mirrorSize_ = function() {;
-  this.api_.req('ctrl.resizeGlass', {height: window.innerHeight}).
+ui.Glass.prototype.resizeGlass_ = function() {
+  var height = goog.style.getComputedStyle(document.documentElement, 'height');
+  this.api_.req('ctrl.resizeGlass', {height: height}).
       addErrback(this.displayFailure_, this);
 };
 
