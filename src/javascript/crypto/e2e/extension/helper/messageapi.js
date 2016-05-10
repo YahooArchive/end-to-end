@@ -380,7 +380,7 @@ ext.MessageApi.prototype.sendRequest = function(call, callback,
   };
   var timeoutEvent = {
     data: {
-      error: 'Timeout occurred while processing the request.',
+      error: 'Timeout occurred while processing the request: ' + call,
       requestId: requestId,
       timeout: true
     }

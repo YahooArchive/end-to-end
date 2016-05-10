@@ -304,10 +304,9 @@ goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 ext.yExtensionLauncher.prototype.configureWebRequests = function() {
   // TODO: redirect non-e2e.mail.yahoo.com to e2e.mail.yahoo.com
   chrome.webRequest.onBeforeRequest.addListener(function(details) {
-    var url = new goog.Uri(details.url);
-    if (goog.isDef(url.getParameterValue('encryptr'))) {
+    if (details.url && details.url.indexOf('encryptr') !== -1) {
       return /** @type {!BlockingResponse} */ ({
-        redirectUrl: url.removeParameter('encryptr').toString()
+        redirectUrl: 'https://mail.yahoo.com/'
       });
     }
   },

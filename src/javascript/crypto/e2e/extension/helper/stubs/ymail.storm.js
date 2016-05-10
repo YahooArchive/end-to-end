@@ -242,39 +242,21 @@ YmailApi.StormUI.AutoSuggestFactory;
 
 /**
  * Constructor for the YMail Event Target Helper class.
- * It propagtes the openCompose and openMessage events amid adding an
- * openEncryptedCompose event when the encryptr/lock button is clicked.
+ * @param {YmailApi.StormUI.YUI} Y
+ * @param {YmailApi.StormUI.NeoConfig} NeoConfig
  * @constructor
  */
-YmailApi.StormUI = function() {
-  var global_ = /** @type {{
-    yui: YmailApi.StormUI.YUI,
-    NeoConfig: YmailApi.StormUI.NeoConfig}} */ (goog.global);
-  this.Y = global_.yui;
-  this.NeoConfig = global_.NeoConfig;
-
-  if (!this.Y || !this.NeoConfig) {
+YmailApi.StormUI = function(Y, NeoConfig) {
+  if (!Y || !NeoConfig) {
     throw new Error('YUI not found. Is it YMail Storm?');
   }
+
+  this.Y = Y;
+  this.NeoConfig = NeoConfig;
 
   this.monitorStormEvents_();
   this.monitorExtensionEvents_();
   this.addCSS();
-};
-
-
-/**
- * Use the YMail API for display notification message
- * @param {!string} message A message
- * @param {string=} opt_type If unspecified, display it as error
- */
-YmailApi.StormUI.prototype.displayFailure = function(message, opt_type) {
-  this.Y.common.ui.NotificationV2.notify(message, {
-    type: opt_type || 'error',
-    close: true,
-    closeOnExternalClick: true,
-    duration: 5000
-  });
 };
 
 
@@ -436,6 +418,21 @@ YmailApi.StormUI.prototype.addEncryptrIcon = function(target) {
   }, false);
 
   textArea.parentElement.insertBefore(encryptrIcon, textArea);
+};
+
+
+/**
+ * Use the YMail API for display notification message
+ * @param {!string} message A message
+ * @param {string=} opt_type If unspecified, display it as error
+ */
+YmailApi.StormUI.prototype.displayFailure = function(message, opt_type) {
+  this.Y.common.ui.NotificationV2.notify(message, {
+    type: opt_type || 'error',
+    close: true,
+    closeOnExternalClick: true,
+    duration: 5000
+  });
 };
 
 
@@ -761,7 +758,28 @@ YmailApi.StormUI.AutoSuggestApi.prototype.initApi_ = function() {
   return result;
 };
 
+
+YmailApi.StormUI.bootstrap = function() {
+  // this should generally not happen. remove when everyone updated
+  if (window.location.href.indexOf('encryptr') !== -1) {
+    window.location.href = 'https://mail.yahoo.com/';
+    return;
+  }
+
+  var globalVar = /** @type {{
+    yui: YmailApi.StormUI.YUI,
+    NeoConfig: YmailApi.StormUI.NeoConfig}} */ (goog.global);
+
+  if (globalVar.yui) {
+    if (typeof globalVar.yui.on === 'function') {
+      new YmailApi.StormUI(globalVar.yui, globalVar.NeoConfig);
+      return;
+    }
+    window.setTimeout(YmailApi.StormUI.bootstrap, 300);
+  }
+}
+
 // bootstrap the stub
-new YmailApi.StormUI();
+YmailApi.StormUI.bootstrap();
 
 });  // goog.scope
