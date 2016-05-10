@@ -429,11 +429,13 @@ YmailApi.StormUI.prototype.addEncryptrIcon = function(target) {
  * @param {string=} opt_type If unspecified, display it as error
  */
 YmailApi.StormUI.prototype.displayFailure = function(message, opt_type) {
-  this.Y.common.ui.NotificationV2.notify(message, {
-    type: opt_type || 'error',
-    close: true,
-    closeOnExternalClick: true,
-    duration: 5000
+  this.Y.use('common-ui-notification-v2', function(Y) {
+    Y.common.ui.NotificationV2.notify(message, {
+      type: opt_type || 'error',
+      close: true,
+      closeOnExternalClick: true,
+      duration: 5000
+    });
   });
 };
 
@@ -639,7 +641,7 @@ YmailApi.StormUI.DraftApi.prototype.getQuoted = function() {
     return goog.async.Deferred.succeed(oMsg.body.display);
   }
   var result = new goog.async.Deferred;
-  this.composeView_.on('draftLoaded', function() {
+  this.composeView_.once('draftLoaded', function() {
     var oMsg = this.draft.origin.oMsg;
     oMsg && oMsg.body && result.callback(oMsg.body.display);
   });
