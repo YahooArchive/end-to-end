@@ -322,6 +322,9 @@ ext.YmailHelper.prototype.initComposeStubApi_ = function(evt, opt_callback) {
 
   if (!elem.stubApi_) {
     elem.stubApi_ = new e2e.ext.MessageApi(detail.apiId);
+    elem.stubApi_.setRequestHandler('evt.close', function() {
+      elem.stubApi_.dispose();
+    });
     // TODO: inserting an error message on ymail top doesn't look good
     elem.stubApi_.bootstrapServer(
         window, window.location.origin, function(err) {
