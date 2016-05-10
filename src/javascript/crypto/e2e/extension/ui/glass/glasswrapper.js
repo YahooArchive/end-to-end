@@ -394,6 +394,7 @@ ui.ComposeGlassWrapper = function(targetElem, stubApi) {
    * @private
    */
   this.stubApi_ = stubApi;
+  this.addStubAPIHandlers_();
 };
 goog.inherits(ui.ComposeGlassWrapper, ui.BaseGlassWrapper);
 
@@ -415,23 +416,33 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   glassFrame.focus();
 };
 
+/**
+ * Add handlers to serve API calls from the stub
+ */
+ui.ComposeGlassWrapper.prototype.addStubAPIHandlers_ = function() {
+  var stubApi = this.stubApi_;
+  // override evt.close
+  stubApi.setRequestHandler('evt.close', goog.bind(function() {
+    this.dispose();
+    stubApi.dispose();
+    // TODO: support save before close?
+    // return (this.api ?
+    //     this.api.req('evt.close') :
+    //     goog.async.Deferred.succeed(undefined)).addCallback(function() {
+    //       this.dispose();
+    //       stubApi.dispose();
+    //       return true;
+    //     }, this);
+  }, this));
+};
+
 
 /**
- * Add handlers to serve API calls from/to the glass
+ * Add handlers to serve API calls from the glass
  * @override
  */
 ui.ComposeGlassWrapper.prototype.addAPIHandlers_ = function() {
   var stubApi = this.stubApi_;
-
-  // proxy the stub-initiated requests to the composeglass
-  stubApi.setRequestHandler('evt.close', goog.bind(function() {
-    return this.api.req('evt.close').addCallback(function() {
-      this.dispose();
-      stubApi.dispose();
-      return true;
-    });
-  }, this));
-
   // proxy the stub-provided handlers to the composeglass
   return goog.base(this, 'addAPIHandlers_').
     setRequestHandler('draft.get', goog.bind(function(args) {
