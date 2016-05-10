@@ -25,8 +25,6 @@ goog.provide('e2e.ext.constants.CssClass');
 goog.provide('e2e.ext.constants.ElementId');
 goog.provide('e2e.ext.constants.Keyserver');
 goog.provide('e2e.ext.constants.StorageKey');
-goog.provide('e2e.ext.constants.e2ebind.requestActions');
-goog.provide('e2e.ext.constants.e2ebind.responseActions');
 
 goog.require('e2e.ext.config');
 
@@ -155,11 +153,6 @@ e2e.ext.constants.ElementId = {
 
   // Chrome notifications
   NOTIFICATION_SUCCESS: 'e2e-success',
-
-  // e2ebind page elements
-  E2EBIND_ICON: 'endtoend',
-  E2EBIND_TEXT: 'rtetext',
-  E2EBIND_SHOW_ENCRYPTED_LINK: 'show-encrypted-link',
 
   // glass
   LOCK_ICON: 'lock-icon',
@@ -340,33 +333,6 @@ e2e.ext.constants.BackupCode = {
  * @const
  */
 e2e.ext.constants.BACKUP_CODE_LENGTH = 24;
-
-
-/**
- * e2ebind API response actions.
- * @const
- */
-e2e.ext.constants.e2ebind.responseActions = {
-  HAS_DRAFT: 'has_draft',
-  GET_DRAFT: 'get_draft',
-  SET_DRAFT: 'set_draft',
-  SET_AND_SEND_DRAFT: 'set_and_send_draft',
-  GET_CURRENT_MESSAGE: 'get_current_message'
-};
-
-
-/**
- * e2ebind API request actions.
- * @const
- */
-e2e.ext.constants.e2ebind.requestActions = {
-  START: 'start',
-  INSTALL_READ_GLASS: 'install_read_glass',
-  INSTALL_COMPOSE_GLASS: 'install_compose_glass',
-  VALIDATE_SIGNER: 'validate_signer',
-  VALIDATE_RECIPIENTS: 'validate_recipients',
-  SET_SIGNER: 'set_signer'
-};
 
 
 /**
