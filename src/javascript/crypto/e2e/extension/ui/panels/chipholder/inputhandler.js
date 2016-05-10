@@ -50,6 +50,7 @@ goog.inherits(panels.ChipHolderInputHandler, goog.ui.ac.InputHandler);
 
 /** @override */
 panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
+  var autoComplete = this.getAutoComplete();
   switch (evt.keyCode) {
     case goog.events.KeyCodes.COMMA: //@yahoo
     case goog.events.KeyCodes.SEMICOLON: //@yahoo
@@ -66,9 +67,24 @@ panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
         this.onSelectCallback_(evt.target.value);
         return false;
       }
+    case goog.events.KeyCodes.DOWN: //@yahoo
+      !autoComplete.isOpen() && autoComplete.setToken('');
+    break;
   }
   return goog.base(this, 'handleKeyEvent', evt);
 };
+
+
+// // @yahoo trigger autocomplete when on focus
+// /** @override */
+// panels.ChipHolderInputHandler.prototype.handleFocus = function(opt_e) {
+//   goog.base(this, 'handleFocus', opt_e);
+
+//   if (opt_e && !this.getAutoComplete().isOpen() && opt_e.target) {
+//     // @yahoo make an empty auto complete search for related recipients
+//     this.getAutoComplete().setToken(opt_e.target.value);
+//   }
+// };
 
 
 // @yahoo trigger onSelectCallback_ when on blur

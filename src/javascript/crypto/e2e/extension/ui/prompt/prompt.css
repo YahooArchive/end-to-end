@@ -88,7 +88,7 @@ textarea:focus {
   text-align: center;
 }
 
-#chipHolder, #fromHolder {
+#chipHolder {
   min-height: 33px;
 }
 

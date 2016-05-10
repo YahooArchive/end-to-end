@@ -151,6 +151,18 @@ utils.uidsToObjects = function(uids) {
 
 
 /**
+ * Convert an user object to uid, of which the format is "username &lt;email&gt;"
+ * @param {{name:(string|undefined), firstname:(string|undefined),
+ *     email:!string}} userObj
+ * @return {!string}
+ */
+utils.userObjectToUid = function(userObj) {
+  return (userObj.name || userObj.firstname || userObj.email) +
+      ' <' + userObj.email + '>';
+};
+
+
+/**
  * Extracts valid email addresses out of a string with comma-separated full
  *  email labels (e.g. "John Smith" <john@example.com>, Second
  *  <second@example.org>).

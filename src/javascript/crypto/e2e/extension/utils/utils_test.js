@@ -156,20 +156,20 @@ function testSendExtensionRequest() {
 }
 
 
-function testSendProxyRequest() {
-  var args = {foo: 'bar'};
-  stubs.replace(chrome.runtime, 'sendMessage',
-                mockControl.createFunctionMock());
-  chrome.runtime.sendMessage(new goog.testing.mockmatchers.ArgumentMatcher(
-      function(arg) {
-        assertEquals(args, arg);
-        return true;
-      }
-      ));
-  mockControl.$replayAll();
-  utils.sendProxyRequest(args);
-  mockControl.$verifyAll();
-}
+// function testSendProxyRequest() {
+//   var args = {foo: 'bar'};
+//   stubs.replace(chrome.runtime, 'sendMessage',
+//                 mockControl.createFunctionMock());
+//   chrome.runtime.sendMessage(new goog.testing.mockmatchers.ArgumentMatcher(
+//       function(arg) {
+//         assertEquals(args, arg);
+//         return true;
+//       }
+//       ));
+//   mockControl.$replayAll();
+//   utils.sendProxyRequest(args);
+//   mockControl.$verifyAll();
+// }
 
 
 function testShowNotification() {

@@ -179,8 +179,6 @@ function setUp() {
   launcher = new e2e.ext.ExtensionLauncher(context, fakeStorage);
   launcher.start();
 
-  stubs.replace(e2e.ext.utils, 'sendProxyRequest', goog.nullFunction);
-
   stubs.setPath('chrome.runtime.getBackgroundPage', function(callback) {
     callback({launcher: launcher});
   });

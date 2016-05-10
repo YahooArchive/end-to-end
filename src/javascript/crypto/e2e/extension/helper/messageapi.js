@@ -23,7 +23,9 @@ goog.provide('e2e.ext.MessageApi.Request');
 goog.provide('e2e.ext.MessageApi.Response');
 
 goog.require('e2e.ext.utils.CallbacksMap');
-goog.require('goog.object');
+goog.require('goog.async.Deferred');
+goog.require('goog.disposable.IDisposable');
+goog.require('goog.structs.Map');
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -31,8 +33,10 @@ var ext = e2e.ext;
 
 
 /**
+ * The message API that makes use of Message Channel
  * @param {string} id The id for bootstraping the message channel.
  * @constructor
+ * @implements {goog.disposable.IDisposable}
  */
 ext.MessageApi = function(id) {
   /**
@@ -65,6 +69,20 @@ ext.MessageApi = function(id) {
 };
 
 
+
+/**
+ * Constructor for a timeout error.
+ * @param {string} message The error message.
+ * @constructor
+ * @extends {Error}
+ */
+ext.MessageApi.TimeoutError = function(message) {
+  goog.base(this, message);
+  this.message = message;
+};
+goog.inherits(ext.MessageApi.TimeoutError, Error);
+
+
 /**
  * Message API request.
  * @typedef {{id:string,call:string,args}}
@@ -74,7 +92,7 @@ ext.MessageApi.Request;
 
 /**
  * Message API response.
- * @typedef {{result:*,error:*,requestId:string}}
+ * @typedef {{result:*,error:string,requestId:string}}
  */
 ext.MessageApi.Response;
 
@@ -84,7 +102,7 @@ ext.MessageApi.Response;
  * @type {number}
  * @const
  */
-ext.MessageApi.REQUEST_TIMEOUT = 10000;
+ext.MessageApi.REQUEST_TIMEOUT = 1500;
 
 
 /**
@@ -92,7 +110,7 @@ ext.MessageApi.REQUEST_TIMEOUT = 10000;
  * @type {number}
  * @const
  */
-ext.MessageApi.BOOTSTRAP_TIMEOUT = 1500;
+ext.MessageApi.BOOTSTRAP_TIMEOUT = 2500;
 
 
 /**
@@ -128,17 +146,23 @@ ext.MessageApi.prototype.bootstrapServer = function(
             goog.bind(this.processMessage_, this));
         onReadyCallback();
       } else {
-        onReadyCallback(new Error('MessageAPI Connection Timeout'));
+        onReadyCallback(
+            new ext.MessageApi.TimeoutError('MessageAPI Connection Timeout'));
       }
     }
   }, this);
 
   channel.port1.addEventListener('message', initChannelListener, false);
   channel.port1.start();
-  messageTarget.postMessage({
-    api: this.name_,
-    version: this.version_
-  }, messageTargetOrigin, [channel.port2]);
+  try {
+    messageTarget.postMessage({
+      api: this.name_,
+      version: this.version_
+    }, messageTargetOrigin, [channel.port2]);
+  } catch (err) {
+    // postMessage fails if messageTarget is missing, or origin is mismatched
+    onReadyCallback(err);
+  }
 
   // Set a timeout for a function that would simulate an 'api not available'
   // response. If the response was processed before the timeout,
@@ -182,9 +206,9 @@ ext.MessageApi.prototype.bootstrapClient = function(
         });
         onReadyCallback(e.origin);
       } else {
-        onReadyCallback(new Error(e.timeout ?
-            'MessageAPI Connection Timeout' :
-            'no HTML5 MessageChannel support'));
+        onReadyCallback(e.timeout ?
+            new ext.MessageApi.TimeoutError('MessageAPI Connection Timeout') :
+            new Error('no HTML5 MessageChannel support'));
       }
     }
   }, this);
@@ -243,15 +267,19 @@ ext.MessageApi.prototype.processMessage_ = function(event) {
  * @private
  */
 ext.MessageApi.prototype.processResponse_ = function(response) {
+  var callbacks;
   try {
-    var callbacks = this.pendingCallbacks_.getAndRemove(response.requestId);
-    if (goog.object.containsKey(response, 'error')) {
+    callbacks = this.pendingCallbacks_.getAndRemove(response.requestId);
+    if (response.hasOwnProperty('timeout')) {
+      callbacks.errback(new ext.MessageApi.TimeoutError(response.error));
+    } else if (response.hasOwnProperty('error')) {
       callbacks.errback(new Error(response.error));
     } else {
       callbacks.callback(response.result);
     }
     return true;
   } catch (e) {
+    callbacks && callbacks.errback(e);
     return false;
   }
 };
@@ -261,10 +289,23 @@ ext.MessageApi.prototype.processResponse_ = function(response) {
  * Expose the map for request handler, which maps request call to a callback
  * function that takes args and whatever returned will be passed to
  * sendResponse.
- * @return {!goog.structs.Map<string, function(*):*>} 
+ * @return {!goog.structs.Map<string, function(*):*>}
  */
 ext.MessageApi.prototype.getRequestHandler = function() {
   return this.requestHandler_;
+};
+
+
+/**
+ * A shorthand to set a handler for a particular call. Note that each call can
+ * take only one handler
+ * @param {string} call Name of the Message API function to listen on.
+ * @param {function(*):*} callback
+ * @return {ext.MessageApi} this
+ */
+ext.MessageApi.prototype.setRequestHandler = function(call, callback) {
+  this.requestHandler_.set(call, callback);
+  return this;
 };
 
 
@@ -280,7 +321,7 @@ ext.MessageApi.prototype.handleRequest_ = function(port, request) {
         sendResponse_ = goog.bind(this.sendResponse_, this, request.id);
     try {
       if (!callback) {
-        throw new Error('MessageAPI Unsupported Call');
+        throw new Error('MessageAPI Unsupported call: ' + request.call);
       }
 
       result = callback(request.args);
@@ -297,19 +338,20 @@ ext.MessageApi.prototype.handleRequest_ = function(port, request) {
 
 /**
  * Sends a response to a remotely-initiated request.
- * @param  {string} requestId The request ID.
- * @param  {*} response Response.
+ * @param {string} requestId The request ID.
+ * @param {*} response Response.
  * @private
  */
 ext.MessageApi.prototype.sendResponse_ = function(requestId, response) {
-  this.port_.postMessage(response instanceof Error ? {
-    error: response.message,
-    result: null,
-    requestId: requestId
-  } : {
-    result: response,
-    requestId: requestId
-  });
+  var message = {requestId: requestId};
+  if (response instanceof Error) {
+    message.error = response.message;
+    // print the error and stack before it is sent as response
+    console.error(response);
+  } else {
+    message.result = response;
+  }
+  this.port_.postMessage(message);
 };
 
 
@@ -319,7 +361,7 @@ ext.MessageApi.prototype.sendResponse_ = function(requestId, response) {
  * @param {function(...)} callback The callback where the result should be
  *     passed.
  * @param {function(Error)} errback The function to be called upon error.
- * @param {Object=} opt_args The arguments to pass to the Message API.
+ * @param {*=} opt_args The arguments to pass to the Message API.
  */
 ext.MessageApi.prototype.sendRequest = function(call, callback,
     errback, opt_args) {
@@ -339,7 +381,8 @@ ext.MessageApi.prototype.sendRequest = function(call, callback,
   var timeoutEvent = {
     data: {
       error: 'Timeout occurred while processing the request.',
-      requestId: requestId
+      requestId: requestId,
+      timeout: true
     }
   };
   // Set a timeout for a function that would simulate an error response.
@@ -350,5 +393,40 @@ ext.MessageApi.prototype.sendRequest = function(call, callback,
   port.postMessage(request);
 };
 
+
+/**
+ * A shorthand to {@link #sendRequest} that uses {@link goog.async.Deferred}
+ * @param {string} call Name of the Message API function to call.
+ * @param {*=} opt_args The arguments to pass to the Message API.
+ * @return {!goog.async.Deferred} The deferred result
+ */
+ext.MessageApi.prototype.req = function(call, opt_args) {
+  var result = new goog.async.Deferred;
+  this.sendRequest(call,
+      goog.bind(result.callback, result),
+      goog.bind(result.errback, result),
+      opt_args);
+  return result;
+};
+
+
+/**
+ * Disposes of the object and its resources.
+ * @return {void} Nothing.
+ * @override
+ */
+ext.MessageApi.prototype.dispose = function() {
+  this.port_ && this.port_.close();
+  this.disposed_ = true;
+};
+
+
+/**
+ * @return {boolean} Whether the object has been disposed of.
+ * @override
+ */
+ext.MessageApi.prototype.isDisposed = function() {
+  return Boolean(this.disposed_);
+};
 
 });  // goog.scope

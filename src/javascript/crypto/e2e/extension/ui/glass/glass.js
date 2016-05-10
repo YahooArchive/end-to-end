@@ -222,8 +222,7 @@ ui.Glass.prototype.getShortcuts = function() {
  */
 ui.Glass.prototype.handleKeyEvent_ = function(evt) {
   var args = evt.identifier ? {keyId: evt.identifier} : undefined;
-  this.api_.sendRequest('shortcut', goog.nullFunction,
-      goog.bind(this.displayFailure_, this), args);
+  this.api_.req('ctrl.shortcut', args).addErrback(this.displayFailure_, this);
 };
 
 
@@ -361,9 +360,8 @@ ui.Glass.prototype.setEncryptrMessage_ = function(result) {
  */
 ui.Glass.prototype.mirrorSize_ = function() {
   var height = goog.style.getComputedStyle(document.documentElement, 'height');
-  this.api_.sendRequest('setSize',
-      goog.nullFunction, goog.bind(this.displayFailure_, this),
-      {height: height});
+  this.api_.req('ctrl.setGlassSize', {height: height}).
+      addErrback(this.displayFailure_, this);
 };
 
 

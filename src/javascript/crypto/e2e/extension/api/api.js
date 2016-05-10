@@ -115,6 +115,8 @@ api.Api.prototype.removeApi = function() {
  * @private
  */
 api.Api.prototype.openPort_ = function(port) {
+  //@yahoo remember the tabId
+  this.tabId_ = port.sender && port.sender.tab && port.sender.tab.id;
   port.onMessage.addListener(
       goog.bind(this.executeAction_, this, goog.bind(port.postMessage, port)));
 };
@@ -158,7 +160,33 @@ api.Api.prototype.executeAction_ = function(callback, req) {
             new e2e.openpgp.error.MissingPassphraseError();
       };
       break;
-    //@yahoo, the following 3 actions are now yahoo-specific
+    //@yahoo, the following 5 actions are yahoo-specific
+    case constants.Actions.CHANGE_PAGEACTION:
+      if (this.tabId_) {
+        chrome.browserAction.setTitle({
+          tabId: this.tabId_,
+          title: chrome.i18n.getMessage('composeGlassTitle')
+        });
+        chrome.browserAction.setIcon({
+          tabId: this.tabId_,
+          path: 'images/yahoo/icon-128-green.png'
+        });
+      }
+      callback(outgoing);
+      return;
+    case constants.Actions.RESET_PAGEACTION:
+      if (this.tabId_) {
+        chrome.browserAction.setTitle({
+          tabId: this.tabId_,
+          title: chrome.i18n.getMessage('extName')
+        });
+        chrome.browserAction.setIcon({
+          tabId: this.tabId_,
+          path: 'images/yahoo/icon-128.png'
+        });
+      }
+      callback(outgoing);
+      return;
     case constants.Actions.CONFIGURE_EXTENSION:
     case constants.Actions.SYNC_KEYS:
     case constants.Actions.GET_ALL_KEYS_BY_EMAILS:
@@ -204,6 +232,8 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   }, function(error) {
     outgoing.error = goog.isDef(error.messageId) ?
         chrome.i18n.getMessage(error.messageId) : error.message;
+    // @yahoo before it is sent to the other end, log the error and stack
+    console.error(error);
     callback(outgoing);
   });
 };

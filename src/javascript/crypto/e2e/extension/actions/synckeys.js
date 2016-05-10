@@ -41,17 +41,28 @@ actions.SyncKeys = function() {};
 actions.SyncKeys.prototype.execute =
     function(ctx, request, requestor, callback, errorCallback) {
 
-  var email = request.content;
-  // TODO: email to uid mapping
-  var uid = '<' + email + '>';
+  var uid = request.content;
+  ctx.searchPrivateKey(uid).addCallbacks(function(privKeys) {
+    // if the user has no private keys, no further sync check is needed
+    if (!privKeys || privKeys.length === 0) {
+      callback(false);
+      return;
+    }
 
-  ctx.syncWithRemote(uid,
-      function(uid, commonKeys, keyserverManaged) {
-        callback(!keyserverManaged || commonKeys.length !== 0);
-        return e2e.async.Result.toResult('');
-      },
-      function() { callback(false); return e2e.async.Result.toResult(''); }).
-      addErrback(errorCallback);
+    var noFurtherAction = e2e.async.Result.toResult('');
+    ctx.syncWithRemote(uid,
+        function(uid, commonKeys, keyserverManaged) {
+          callback(!keyserverManaged || commonKeys.length !== 0);
+          return noFurtherAction;
+        },
+        function() {
+          callback(false);
+          return noFurtherAction;
+        }).
+        addErrback(errorCallback);
+
+  }, errorCallback);
+
 };
 
 });  // goog.scope

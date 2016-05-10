@@ -27,7 +27,6 @@ goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
 goog.require('e2e.ext.api.Api');
 goog.require('e2e.ext.constants.Actions');
-goog.require('e2e.ext.utils.TabsHelperProxy'); //@yahoo
 goog.require('e2e.ext.yPreferences'); //@yahoo
 goog.require('goog.Uri'); //@yahoo
 goog.require('goog.array'); //@yahoo
@@ -288,13 +287,9 @@ ext.AppLauncher.prototype.createWindow = function(url, isForeground, callback) {
  * @extends {ext.ExtensionLauncher}
  */
 ext.yExtensionLauncher = function(pgpContext, preferencesStorage) {
+  this.configureWebRequests();
 
-  /**
-   * Helper proxy object.
-   * @type {!e2e.ext.utils.HelperProxy}
-   * @private
-   */
-  this.helperProxy_ = new e2e.ext.utils.TabsHelperProxy(false);
+  chrome.runtime.onInstalled.addListener(goog.bind(this.onInstall, this));
 
   ext.yExtensionLauncher.base(this, 'constructor', pgpContext,
       preferencesStorage);
@@ -302,152 +297,34 @@ ext.yExtensionLauncher = function(pgpContext, preferencesStorage) {
 goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 
 
-/** @override */
-ext.yExtensionLauncher.prototype.start = function(opt_passphrase) {
-  this.configureWebRequests();
-  chrome.runtime.onMessage.addListener(
-      goog.bind(this.handleGlassRequests_, this));
-
-  return goog.base(this, 'start', opt_passphrase);
-};
-
-
 /**
  * Configure web requests to boost up redirection speeds
+ * @protected
  */
 ext.yExtensionLauncher.prototype.configureWebRequests = function() {
-  // mainframe access only
   // TODO: redirect non-e2e.mail.yahoo.com to e2e.mail.yahoo.com
   chrome.webRequest.onBeforeRequest.addListener(function(details) {
     var url = new goog.Uri(details.url);
-    if (!goog.isDef(url.getParameterValue('encryptr'))) {
+    if (goog.isDef(url.getParameterValue('encryptr'))) {
       return /** @type {!BlockingResponse} */ ({
-        redirectUrl: url.setParameterValue('encryptr', 1).toString()
+        redirectUrl: url.removeParameter('encryptr').toString()
       });
     }
   },
   /** @type {!RequestFilter} */ ({
     urls: ['https://*.mail.yahoo.com/*'],
-    types: ['main_frame']
+    types: ['main_frame'] // mainframe access only
   }),
   ['blocking']);
 
-  this.refreshYmail();
 };
 
 
 /**
- * Refresh all ymail tabs
+ * Open a new tab to display the setup page
+ * @protected
  */
-ext.yExtensionLauncher.prototype.refreshYmail = function() {
-  // TODO: remove reloading requirement?
-  chrome.tabs.query({}, function(tabs) {
-    goog.array.forEach(tabs, function(tab) {
-      goog.isDef(tab.id) && chrome.tabs.executeScript(
-          tab.id, {code: 'typeof window.helper'}, function(results) {
-            if (!chrome.runtime.lastError && goog.isDef(results)) {
-              chrome.tabs.reload(tab.id);
-            }
-          });
-    });
-  });
-};
-
-
-/**
- * The runtime.onMessage handler for glasses
- * @param {*} args The message to proxy
- * @param {MessageSender} sender
- * @param {function (*)} callback The function to invoke with the response.
- * @private
- */
-ext.yExtensionLauncher.prototype.handleGlassRequests_ = function(
-    args, sender, callback) {
-  try {
-    var content = args.content,
-        shouldSend = false,
-        tabId = sender.tab && sender.tab.id,
-        nullFunction = goog.nullFunction;
-
-    switch (args.action) {
-      case constants.Actions.SET_AND_SEND_DRAFT:
-        shouldSend = true;
-      case constants.Actions.SET_DRAFT:
-        this.helperProxy_.updateSelectedContent(
-            content.value,
-            content.recipients,
-            content.origin,
-            shouldSend,
-            nullFunction,
-            nullFunction,
-            content.subject,
-            content.from,
-            content.ccRecipients);
-        break;
-
-      case constants.Actions.GET_SELECTED_CONTENT:
-        this.helperProxy_.getSelectedContent(nullFunction, nullFunction);
-        break;
-
-      case constants.Actions.CHANGE_PAGEACTION:
-        if (tabId) {
-          chrome.browserAction.setTitle({
-            tabId: tabId,
-            title: chrome.i18n.getMessage('composeGlassTitle')
-          });
-          chrome.browserAction.setIcon({
-            tabId: tabId,
-            path: 'images/yahoo/icon-128-green.png'
-          });
-        }
-        break;
-      case constants.Actions.RESET_PAGEACTION:
-        if (tabId) {
-          chrome.browserAction.setTitle({
-            tabId: tabId,
-            title: chrome.i18n.getMessage('extName')
-          });
-          chrome.browserAction.setIcon({
-            tabId: tabId,
-            path: 'images/yahoo/icon-128.png'
-          });
-        }
-        break;
-    }
-    callback(true);
-  } catch (err) {
-    callback({error: err});
-  }
-};
-
-
-/**
- * Stops the launcher. Called to lock keyring in extension/ui/prompt/prompt.js
- */
-ext.yExtensionLauncher.prototype.stop = function() {
-  this.started_ = false;
-  // Unset the passphrase on the keyring
-  // TODO: add unsetKeyringPassphrase() into Context
-  this.getContext().keyring_ = null;
-  // Remove the API
-  this.ctxApi_.removeApi();
-  this.updatePassphraseWarning();
-
-  chrome.runtime.onMessage.removeListener(
-      goog.bind(this.handleGlassRequests_, this));
-
-  this.refreshYmail();
-};
-
-
-/** @override */
-ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
-  // var preferences = this.getPreferences();
-  // if (preferences.isWelcomePageEnabled()) {
-  //   this.createWindow('setup.html', true, goog.nullFunction);
-  //   preferences.setWelcomePageEnabled(false);
-  // }
-
+ext.yExtensionLauncher.prototype.openSetupPage = function() {
   // @yahoo open welcome screen when there's no private key
   var ctx = this.getContext();
   ctx.getAllKeys(true).addCallback(function(keyMap) {
@@ -463,12 +340,62 @@ ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
 
 
 /**
- * Returns the helper proxy object.
- * @return  {!e2e.ext.utils.HelperProxy}
+ * Inject helper script to all ymail tabs after installation. If none is there,
+ * open the setup page
+ * @param {Object} detail It details the OnInstalledReason
+ * @protected
  */
-ext.yExtensionLauncher.prototype.getHelperProxy = function() {
-  return this.helperProxy_;
+ext.yExtensionLauncher.prototype.onInstall = function(detail) {
+  detail = /** @type {{reason: !string}} */ (detail);
+  if (detail.reason !== 'install') {
+    return;
+  }
+
+  chrome.tabs.query({}, goog.bind(function(tabs) {
+    // Inject the content script to every ymail tab, if any
+    var tabResults = goog.array.map(tabs, function(tab) {
+      var result = new goog.async.Deferred;
+      try {
+        if (goog.isDef(tab.id)) {
+          chrome.tabs.executeScript(
+              tab.id,
+              {file: chrome.runtime.getURL('helper_binary.js')},
+              function(ret) {
+                result.callback(!chrome.runtime.lastError && goog.isDef(ret));
+              });
+        }
+      } catch(e) {
+        result.callback(false);
+      }
+      return result;
+    });
+
+    // If no ymail tab is found, open the setup page
+    goog.async.DeferredList.gatherResults(tabResults).
+        addCallback(function(injected) {
+          if (!goog.array.contains(injected, true)) {
+            this.openSetupPage();
+          }
+        }, this);
+  }, this));
 };
 
+
+/**
+ * Stops the launcher. Called to lock keyring in extension/ui/prompt/prompt.js
+ */
+ext.yExtensionLauncher.prototype.stop = function() {
+  this.started_ = false;
+  // Unset the passphrase on the keyring
+  // TODO: add unsetKeyringPassphrase() into Context
+  this.getContext().keyring_ = null;
+  // Remove the API
+  this.ctxApi_.removeApi();
+  this.updatePassphraseWarning();
+};
+
+
+/** @override */
+ext.yExtensionLauncher.prototype.showWelcomeScreen = goog.nullFunction;
 
 });  // goog.scope

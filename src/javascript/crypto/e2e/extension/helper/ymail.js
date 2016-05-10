@@ -15,29 +15,32 @@
  */
 
 /**
- * @fileoverview Respond to different kinds of events in Yahoo Mail
+ * @fileoverview Respond to events from Yahoo Mail stub
  */
+goog.provide('e2e.ext.YmailHelper');
 
-goog.provide('e2e.ext.Helper.YmailApi');
-goog.provide('e2e.ext.Helper.YmailApi.StormUI');
-
-goog.require('e2e.ext.e2ebind');
+goog.require('e2e.ext.MessageApi');
+/** @suppress {extraRequire} */
+goog.require('e2e.ext.YmailData');
+goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.StorageKey');
+goog.require('e2e.ext.ui.ComposeGlassWrapper');
+goog.require('e2e.ext.ui.GlassWrapper');
+goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.text');
+goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Disposable');
 goog.require('goog.array');
-goog.require('goog.events');
-goog.require('goog.events.Event');
-goog.require('goog.events.EventTarget');
-
+goog.require('goog.dom');
+goog.require('goog.string');
+goog.require('goog.style');
 
 goog.scope(function() {
 var ext = e2e.ext;
 var constants = ext.constants;
 var messages = ext.messages;
 var utils = ext.utils;
-var e2ebind = ext.e2ebind;
-
-var Helper = e2e.ext.Helper;
-var YmailApi = Helper.YmailApi;
+var ui = ext.ui;
 
 
 
@@ -46,98 +49,100 @@ var YmailApi = Helper.YmailApi;
  * @constructor
  * @extends {goog.Disposable}
  */
-Helper.YmailApi = function() {
+ext.YmailHelper = function() {
 
-  var websiteEvents = new YmailApi.StormUI();
+  // assummed ymail storm
+  this.injectStub('ymail.storm.js');
 
-  goog.events.listen(websiteEvents, 'compose',
-      goog.bind(this.installAutoComposeGlass, this));
-
-  goog.events.listen(websiteEvents, 'encrypted-compose',
-      goog.bind(this.installComposeGlass, this));
-
-
-  this.registerDisposable(websiteEvents);
+  var body = document.body;
+  body.addEventListener('openCompose',
+      goog.bind(this.installAutoComposeGlass, this), true);
+  body.addEventListener('openEncryptedCompose',
+      goog.bind(this.installComposeGlass, this), true);
+  body.addEventListener('openMessage',
+      goog.bind(this.installReadGlasses, this), true);
+  body.addEventListener('queryPublicKey',
+      goog.bind(this.queryPublicKey, this), true);
+  body.addEventListener('loadUser',
+      goog.bind(this.loadUser, this), true);
 };
-goog.inherits(Helper.YmailApi, goog.Disposable);
+goog.inherits(ext.YmailHelper, goog.Disposable);
 
 
 /**
- * Execute the callback with the fetched config
- * @param {!string} property The config property name
- * @param {!function(*)} callback The callback to receive the config value
+ * Injects stub script into the web application DOM
+ * @param {string} stubFilename name of the stub to inject
  */
-Helper.YmailApi.prototype.getConfig = function(property, callback) {
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
-    action: constants.Actions.GET_PREFERENCE,
-    content: property
-  }), function(response) {
-    callback(response.content);
-  }, callback);
+ext.YmailHelper.prototype.injectStub = function(stubFilename) {
+  if (this.stubInjected_) {
+    return;
+  }
+
+  var script = document.createElement('script');
+  script.src = chrome.runtime.getURL('stubs/' + stubFilename);
+  script.setAttribute('data-version', chrome.runtime.getManifest().version);
+  document.documentElement.appendChild(script);
+
+  this.stubInjected_ = true;
 };
 
 
 /**
  * Trigger auto installation of compose glass
- * @param {Event} evt The compose event
+ * @param {Event} evt The openCompose event
  * @protected
  */
-Helper.YmailApi.prototype.installAutoComposeGlass = function(evt) {
+ext.YmailHelper.prototype.installAutoComposeGlass = function(evt) {
+  evt.stopPropagation();
+
+  var detail = /** @type {e2e.ext.YmailData.OpenComposeDetail} */ (
+      evt.detail);
+
+  // always initialize the stub api regardless of auto-open config
+  var stubApi = this.initComposeStubApi_(evt, goog.bind(function() {
+    // install glass if the original message has a PGP blob
+    stubApi.req('draft.getQuoted').addCallbacks(function(quotedBody) {
+      if (quotedBody &&
+          goog.string.contains(quotedBody, '-----BEGIN PGP')) {
+        this.installComposeGlass(evt);
+      }
+    }, utils.displayFailure, this);
+
+  }, this));
+
+  // install glass if the current body is a draft
+  if (detail.isEncryptedDraft) {
+    this.installComposeGlass(evt);
+    return;
+  }
+
   // default to open the compose glass if so configured
-  this.getConfig(constants.StorageKey.ENABLE_COMPOSE_GLASS, 
-    goog.bind(function(value) {
-      value === 'true' && this.installComposeGlass(evt);
-    }, this));
+  utils.getConfig(constants.StorageKey.ENABLE_COMPOSE_GLASS,
+      goog.bind(function(isEnabled) {
+        isEnabled === 'true' && this.installComposeGlass(evt);
+      }, this), utils.displayFailure);
 };
 
 
 /**
  * Trigger auto installation of compose glass
- * @param {Event} evt The encrypted-compose event
+ * @param {Event} evt The openCompose event
  * @protected
  */
-Helper.YmailApi.prototype.installComposeGlass = function(evt) {
+ext.YmailHelper.prototype.installComposeGlass = function(evt) {
+  evt.stopPropagation();
+
   var elem = /** @type {Element} */ (evt.target);
+  var detail = /** @type {e2e.ext.YmailData.OpenComposeDetail} */ (
+      evt.detail);
 
   if (!elem.composeGlass || elem.glassDisposed) {
     elem.composeGlass = true;
     elem.focus();
 
-    var asyncDraftResult = new e2e.async.Result;
-    var draftReady = goog.bind(function(draft) {
-      asyncDraftResult.callback(draft ? {
-        from: this.getUid() || '',
-        to: draft.to,
-        cc: draft.cc,
-        bcc: draft.bcc,
-        subject: draft.subject,
-        body: e2e.openpgp.asciiArmor.extractPgpBlock(draft.body),
-        contacts: draft.contacts,
-        insideConv: Boolean(goog.dom.getAncestorByTagNameAndClass(
-            /** @type {Node} */ (elem), 'div', 'thread-item-list'))
-      } : {from: this.getUid() || ''});
-
-      // hide the original compose and install the glass
-      glassWrapper.installGlass();
-    }, this);
-    var glassWrapper = new e2e.ext.ui.ComposeGlassWrapper(elem);
-    glassWrapper.onApiRequest('getDraft', function() {
-      return asyncDraftResult;
-    });
-
-    // TODO: draft.body (or equiv., .innerText) preserves line breaks only if
-    // the element is visible. so we have to defer hiding it until the draft
-    // is copied. ideally installGlass() should be called first, and getDraft()
-    // should be put inside the onApiRequest
-    e2ebind.getDraft(function(draft) {
-      if (draft) {
-        draftReady(draft);
-      } else {
-        // The getDraft API isn't ready to export a draft yet. so redo 1s later
-        // TODO: fix API so we don't need this timing hack
-        window.setTimeout(goog.bind(e2ebind.getDraft, null, draftReady), 500);
-      }
-    });
+    var glassWrapper = new ui.ComposeGlassWrapper(
+        elem, this.initComposeStubApi_(evt));
+    glassWrapper.installGlass();
 
     this.registerDisposable(glassWrapper);
   }
@@ -145,125 +150,199 @@ Helper.YmailApi.prototype.installComposeGlass = function(evt) {
 
 
 /**
- * Return the current user id
- * @return {string|null} The user id
- */
-Helper.YmailApi.prototype.getUid = function() {
-  var metaData = document.getElementById('yucs-meta');
-  return metaData && metaData.getAttribute('data-userid');
-};
-
-
-
-/**
- * Constructor for the YMail Event Target Helper class.
- * @constructor
- * @extends {goog.events.EventTarget}
- */
-YmailApi.StormUI = function() {
-  goog.base(this);
-
-  this.addCSS();
-  this.monitorComposeEvent_();
-};
-goog.inherits(YmailApi.StormUI, goog.events.EventTarget);
-
-
-/** @override */
-YmailApi.StormUI.prototype.disposeInternal = function() {
-  this.composeObserver_ && this.composeObserver_.disconnect();
-  goog.base(this, 'disposeInternal');
-};
-
-
-/**
- * Monitor for creations of compose element, firing compose event
- * @private
- */
-YmailApi.StormUI.prototype.monitorComposeEvent_ = function() {
-  var target = document.querySelector('#shellinner');
-  if (!target) {
-    return;
-  }
-
-  // monitor the compose creation
-  this.composeObserver_ = new MutationObserver(goog.bind(function(mutations) {
-    goog.array.some(mutations, function(mutation) {
-      var target = mutation.target && mutation.addedNodes.length &&
-          (mutation.target.classList.contains('thread-item') ||
-              mutation.target.classList.contains('tab-content')) &&
-          goog.array.find(mutation.addedNodes, function(node) {
-            return node.classList.contains('compose');
-          });
-      if (target) {
-        // this.monitorComposeRemovalEvent_(target);
-        this.addEncryptrIcon_(target);
-        this.dispatchEvent(new goog.events.Event('compose', target));
-        return true;
-      }
-      return false;
-    }, this);
-  }, this));
-
-  this.composeObserver_.observe(target, /** @type {MutationObserverInit} */ ({
-    childList: true, subtree: true
-  }));
-};
-
-
-/**
- * //@yahoo TODO: put these CSS inside Ymail
- * Add inline CSS to the page
+ * Trigger auto installation of read glass
+ * @param {Event} evt The openMessage event
+ * @param {number=} opt_limit Stop parsing once opt_limit armors have been
+ *     parsed. Otherwise, the limit is hardcoded as 20.
  * @protected
  */
-YmailApi.StormUI.prototype.addCSS = function() {
-  var style = document.createElement('style');
-  style.appendChild(document.createTextNode(
-      '.plaintext-above,.plaintext-below{white-space:pre-line}' +
-      '.plaintext-above{border-top:1px solid #CCC;padding-top:5px}' +
-      '.plaintext-below{border-bottom:1px solid #CCC;padding-bottom:5px}' +
-      '.lozenge-secure .lozenge-static:before,' +
-          ' .lozenge-secure.lozengfy:before {margin:0;content:""}' +
-      '#endtoend.icon-encrypt {display:none}' +
-      '.icon-encrypt {position:relative;float:right;padding:0;opacity:.6}' +
-      '.icon-encrypt:hover {opacity:1}' +
-      '.icon-encrypt + .cm-rtetext {padding-right:25px}'));
-  document.head.appendChild(style);
+ext.YmailHelper.prototype.installReadGlasses = function(evt, opt_limit) {
+  evt.stopPropagation();
+
+  var elem = /** @type {Element} */ (evt.target);
+  var detail = /** @type {ext.YmailData.OpenMessageDetail} */ (
+      evt.detail);
+
+  if (elem.lookingGlass) {
+    return;
+  }
+  elem.lookingGlass = true;
+
+  try {
+    // TODO: support rich text and let PGP message quotable
+    var message = detail.body + detail.quotedBody;
+    var armors = e2e.openpgp.asciiArmor.parseAll(message, opt_limit || 20);
+
+    // no armor needs glass, or ignore binary OpenPGP message
+    if (armors.length === 0 || armors[0].type === 'BINARY') {
+      return;
+    }
+
+    this.installReadGlassPerArmor(elem, message, armors);
+
+  } catch (err) {
+    utils.displayFailure(err);
+  }
 };
 
 
 /**
- * Add encryptr icon to compose, firing encrypted-compose event when clicked.
- * @param {Element} target The compose element
- * @private
+ * Install read glass for every valid armor found, and preserve surronding text
+ * @param {!Element} elem The elem where the glasses and texts will be inserted
+ * @param {!string} message The message body
+ * @param {!Array.<!e2e.openpgp.ArmoredMessage>} armors The valid armors
+ * @protected
  */
-YmailApi.StormUI.prototype.addEncryptrIcon_ = function(target) {
-  var textArea = target.querySelector('.cm-rtetext');
-  var encryptrIcon = document.createElement('div');
-  encryptrIcon.classList.add('icon', 'icon-encrypt');
-  encryptrIcon.addEventListener('click', goog.bind(function(evt) {
-    this.dispatchEvent(new goog.events.Event('encrypted-compose', target));
-  }, this), false);
+ext.YmailHelper.prototype.installReadGlassPerArmor = function(
+    elem, message, armors) {
+  var div, plaintext, glassWrapper, lastEndOffset = 0;
 
-  textArea.parentElement.insertBefore(encryptrIcon, textArea);
+  goog.array.forEach(armors, function(armor) {
+    var isValidDecryptVerifyArmor = false, textStartOffset = 0;
+
+    if (armor.type === 'SIGNATURE') {
+      // adjust startOffset to also capture whole message body
+      textStartOffset = lastEndOffset + message.slice(lastEndOffset).
+          indexOf('-----BEGIN PGP SIGNED MESSAGE-----');
+
+      isValidDecryptVerifyArmor = true;
+    } else if (armor.type === 'MESSAGE') {
+      textStartOffset = armor.startOffset;
+      isValidDecryptVerifyArmor = true;
+    }
+
+    // capture the text upto the next valid armor (or include it if invalid)
+    plaintext = message.slice(lastEndOffset,
+        isValidDecryptVerifyArmor ? textStartOffset : armor.endOffset);
+
+    // insert the text before the next armor
+    if (plaintext && goog.string.trim(plaintext)) {
+      div = document.createElement('div');
+      div.className = elem.className +
+          (glassWrapper ? ' plaintext-above' : '') + ' plaintext-below';
+      div.textContent = plaintext;
+
+      goog.dom.insertSiblingBefore(div, elem);
+    }
+
+    // insert a glass to decrypt the next armor
+    if (isValidDecryptVerifyArmor) {
+      // add the original text to the armor object
+      armor.text = message.slice(textStartOffset, armor.endOffset);
+
+      glassWrapper = new ui.GlassWrapper(elem, armor);
+      window.helper && window.helper.registerDisposable(glassWrapper);
+      glassWrapper.installGlass();
+    }
+
+    lastEndOffset = armor.endOffset;
+  });
+
+  // hide the original target element if it's not hidden by a glass.
+  if (!glassWrapper) {
+    goog.style.setElementShown(elem, false);
+  }
+
+  // insert the remaining text
+  plaintext = message.slice(lastEndOffset);
+  if (plaintext && goog.string.trim(plaintext)) {
+    div = document.createElement('div');
+    div.className = elem.className + ' plaintext-above';
+    div.textContent = plaintext;
+    goog.dom.insertSiblingBefore(div, elem);
+  }
+
+  elem.focus();
 };
 
 
-// YmailApi.StormUI.prototype.monitorComposeRemovalEvent_ = function(target) {
-//   this.removalObserver_ = new MutationObserver(
-//       goog.bind(function(mutations) {
-//         goog.array.forEach(mutations, function(mutation) {
-//           mutation.removedNodes.length &&
-//               mutation.removedNodes[0] === target &&
-//               this.dispatchEvent(
-//                   new goog.events.Event('composeRemoved', target));
-//         }, this);
-//       }, this));
+/**
+ * Add has-key or no-key as className to the event target depending if the
+ * email address specified in event detail has a public key. No className is
+ * added in case an error (e.g., keyserver unreachable) has occurred
+ * @param {Event} evt The queryPublicKey event
+ * @protected
+ */
+ext.YmailHelper.prototype.queryPublicKey = function(evt) {
+  var elem = /** @type {Element} */ (evt.target);
+  var email = /** @type {!string} */ (evt.detail);
 
-//   target.parentElement &&
-//       this.removalObserver_.observe(
-//           target.parentElement, {childList: true});
-// };
+  // Check if a public can be found for the email
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
+    recipients: [email],
+    content: 'public_exist'
+  }), function(response) {
+    var hasKey = response.content && response.content[0];
+    elem.classList.add(hasKey ? 'has-key' : 'no-key');
+  }, utils.displayFailure); // no additional color in error
+};
+
+
+/**
+ * Check if the YMail user has a key that is in sync with server
+ * @param {Event} evt The queryPublicKey event
+ * @protected
+ */
+ext.YmailHelper.prototype.loadUser = function(evt) {
+  var uid, elem = /** @type {Element} */ (evt.target);
+
+  this.primaryUser_ = /** @type {!ext.YmailData.EmailUser} */ (
+      evt.detail);
+  uid = utils.text.userObjectToUid(this.primaryUser_);
+
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.SYNC_KEYS,
+    content: uid
+  }), function(response) {
+    if (response.content === false) {
+      if (window.confirm(chrome.i18n.getMessage('confirmUserSyncKeys', uid))) {
+        utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+          action: constants.Actions.CONFIGURE_EXTENSION,
+          content: uid
+        }));
+      }
+    }
+  }, utils.displayFailure);
+
+};
+
+
+/**
+ * Initialize a stub api for compose-related calls
+ * @param {Event} evt The OpenCompose or OpenEncryptedCompose event
+ * @param {Function=} opt_callback Callback when the Message API is initiated
+ * @return {!e2e.ext.MessageApi} the stub api
+ * @private
+ */
+ext.YmailHelper.prototype.initComposeStubApi_ = function(evt, opt_callback) {
+  var elem = /** @type {Element} */ (evt.target);
+  var detail = /** @type {e2e.ext.YmailData.OpenComposeDetail} */ (
+      evt.detail);
+
+  if (!elem.stubApi_) {
+    elem.stubApi_ = new e2e.ext.MessageApi(detail.apiId);
+    // TODO: inserting an error message on ymail top doesn't look good
+    elem.stubApi_.bootstrapServer(
+        window, window.location.origin, function(err) {
+          if (err instanceof Error) {
+            utils.displayFailure(err);
+          } else if (opt_callback) {
+            opt_callback();
+          }
+        });
+  }
+  return elem.stubApi_;
+};
+
+
+/**
+ * Return the primary account user
+ * @return {ext.YmailData.EmailUser} The user
+ */
+ext.YmailHelper.prototype.getUser = function() {
+  return this.primaryUser_;
+};
 
 
 });  // goog.scope

@@ -105,11 +105,8 @@ ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
   //@yahoo when a email is supplied thru location.hash
   // trigger the key resolution dialogs
   if (location.hash) {
-    var emailField, email = utils.text.extractValidEmail(
-        decodeURIComponent(location.hash.substring(1)));
-    if (email !== null) {
-      this.syncWithRemote('<' + email + '>', 'load');
-    }
+    var uid = decodeURIComponent(location.hash.substring(1));
+    this.syncWithRemote(uid, 'load');
   }
 };
 
@@ -244,8 +241,8 @@ ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
                 goog.bind(this.renderConfirmSyncKeysCallback_, this)).
             addCallbacks(function(reqActionResult) {
               reqActionResult !== null && utils.showNotification(
-              chrome.i18n.getMessage('keyUpdateSuccessMsg'),
-              goog.nullFunction);
+                  chrome.i18n.getMessage('keyUpdateSuccessMsg'),
+                  goog.nullFunction);
             }, this.displayFailure_, this);
       }
     }, this.displayFailure_, this);

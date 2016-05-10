@@ -33,16 +33,13 @@ e2e.ext.ui.glass.compose.bootstrap = false;
 if (!goog.isDef(window.glass)) {
   var api = new e2e.ext.MessageApi('ymail-composeglass');
   api.bootstrapClient(e2e.ext.utils.text.isYmailOrigin, function(origin) {
-    origin instanceof Error ?
-        console.error(origin) :
-        api.sendRequest('getDraft', function(draft) {
-
-          window.glass = new e2e.ext.ui.ComposeGlass(
-              draft, /** @type {!string} */ (origin), api);
-          window.glass.decorate(document.documentElement);
-
-          e2e.ext.ui.glass.compose.bootstrap = true;
-
-        }, goog.bind(console.error, console));
+    if (origin instanceof Error) {
+      console.error(origin);
+    } else {
+      window.glass = new e2e.ext.ui.ComposeGlass(
+          /** @type {!string} */ (origin), api);
+      window.glass.decorate(document.body);
+      e2e.ext.ui.glass.compose.bootstrap = true;
+    }
   });
 }
