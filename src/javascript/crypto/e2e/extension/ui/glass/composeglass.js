@@ -259,6 +259,11 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
   var content = this.getContent();
   var origin = content.origin;
+  var elem = this.getElement();
+
+  this.editor_ = /** @type {HTMLTextAreaElement} */ (
+          elem.querySelector('textarea'));
+  this.actionBar_ = this.getElementByClass(constants.CssClass.PROMPT_ACTIONS);
 
   this.populateUi_();
 
@@ -269,8 +274,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       goog.bind(this.keyMissingWarningThenEncryptSign_, this));
 
   // @yahoo added shortcut keys
-  var elem = this.getElement(),
-      sHandler = goog.ui.KeyboardShortcutHandler,
+  var sHandler = goog.ui.KeyboardShortcutHandler,
       userAgentModifier = goog.userAgent.MAC ?
           sHandler.Modifiers.META :
           sHandler.Modifiers.CTRL,
@@ -294,9 +298,6 @@ ui.ComposeGlass.prototype.enterDocument = function() {
         goog.bind(this.setSubject_, this));
   }
 
-  var textArea = /** @type {HTMLTextAreaElement} */
-      (elem.querySelector('textarea'));
-
   this.getHandler().
       listen(
           keyboardHandler,
@@ -307,20 +308,20 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           sHandler.EventType.SHORTCUT_TRIGGERED,
           goog.bind(this.handleKeyEventAfterSave_, this)).
       // @yahoo turn extension icon into green when the text area is in focus
-      listen(textArea, goog.events.EventType.FOCUS, goog.bind(
+      listen(this.editor_, goog.events.EventType.FOCUS, goog.bind(
           utils.sendExtensionRequest, null, {
             action: constants.Actions.CHANGE_PAGEACTION
           })).
-      listen(textArea, goog.events.EventType.BLUR, goog.bind(
+      listen(this.editor_, goog.events.EventType.BLUR, goog.bind(
           utils.sendExtensionRequest, null, {
             action: constants.Actions.RESET_PAGEACTION
           })).
-      listen(textArea, goog.events.EventType.INPUT,
-          goog.bind(this.mirrorSize_, this, textArea));
+      listen(this.editor_, goog.events.EventType.INPUT,
+          goog.bind(this.resizeEditor_, this, false));
 
   //@yahoo resize the textarea when window is resized
   utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
-      goog.bind(this.resizeTextArea_, this, textArea));
+      goog.bind(this.resizeEditor_, this, true));
 
   // @yahoo on focus
   goog.events.listen(window, goog.events.EventType.FOCUS,
@@ -383,7 +384,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   this.getHandler().listen(
       this.getElement(),
       goog.events.EventType.CLICK,
-      goog.bind(this.displayFailure_, this, null), true);
+      goog.bind(this.clearFailure_, this), true);
 };
 
 
@@ -504,14 +505,12 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
   if (!this.getElement()) {
     return;
   }
-  var textArea = /** @type {HTMLTextAreaElement} */
-      (this.getElement().querySelector('textarea'));
+  var textArea = this.editor_;
   textArea.scrollTop = 0;
-  textArea.setSelectionRange(0, 0);
+  window.setTimeout(function() {textArea.setSelectionRange(0, 0);}, 0);
 
   // @yahoo trigger textarea and glass resize
-  this.resizeTextArea_(textArea);
-  this.mirrorSize_(textArea);
+  this.resizeEditor_(true);
 
   this.chipHolder_.focus();
 
@@ -943,7 +942,7 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
 
     //@yahoo adjust action buttons position to stick at the bottom
     this.api_.setRequestHandler('evt.scroll',
-        goog.bind(this.fixActionButtonsPosition_, this));
+        goog.bind(this.setActionBarPosition_, this));
 
   } else {
     var escButton = goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON);
@@ -1050,60 +1049,71 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
 
 
 /**
- * Resize the textarea //@yahoo
- * @param {HTMLTextAreaElement} textArea The textarea element
+ * Resize the textarea according to the content //@yahoo
+ * @param {!boolean} skipScroll Whether to skip scrolling by delta height
  * @private
  */
-ui.ComposeGlass.prototype.resizeTextArea_ = function(textArea) {
-  textArea.style.height = (
-      window.innerHeight - goog.style.getPosition(textArea).y - 65) + 'px';
+ui.ComposeGlass.prototype.resizeEditor_ = function(skipScroll) {
+  var textArea = this.editor_,
+      currentHeight = textArea.clientHeight,
+      canScroll = textArea.scrollHeight > currentHeight,
+      newHeight, t;
+  if (canScroll) {
+    newHeight = textArea.scrollHeight;
+  } else {
+    // determine the textarea height that just fit the content
+    t = document.createElement('textarea');
+    t.value = textArea.value;
+    t.style.width = textArea.clientWidth + 'px';
+    t.style.height = '0px';
+    t.style.opacity = 0;
+    document.body.appendChild(t);
+    newHeight = t.scrollHeight;
+    document.body.removeChild(t);
+  }
+
+  if (currentHeight !== newHeight) {
+    textArea.style.height = newHeight + 'px';
+    this.resizeGlass_(skipScroll);
+  }
   textArea.focus();
 };
 
 
 /**
- * Trigger the iframe to resize //@yahoo
- * @param {HTMLTextAreaElement} textArea The textarea element
+ * Trigger the iframe to resize, and scroll up by delta height to prevent caret
+ * from covered by the action bar.
+ * @param {!boolean} skipScroll Whether to skip scrolling by delta height
  * @private
  */
-ui.ComposeGlass.prototype.mirrorSize_ = function(textArea) {
-  // create a temp textarea element to compute scrollHeight
-  var t = document.createElement('textarea');
-  t.value = textArea.value;
-  t.style.width = window.innerWidth + 'px';
-  t.style.height = '0px';
-  t.style.opacity = 0;
-  document.body.appendChild(t);
-  // diff + innerHeight
-  var diff = t.scrollHeight - textArea.clientHeight;
-  document.body.removeChild(t);
-
-  var height = diff + window.innerHeight;
-
-  if (diff !== 0) {
-    this.api_.req('ctrl.setGlassSize', {height: height + 'px'}).addCallbacks(
-        this.fixActionButtonsPosition_, this.errorCallback_, this);
+ui.ComposeGlass.prototype.resizeGlass_ = function(skipScroll) {
+  var height = goog.style.getPosition(this.editor_).y +
+      this.editor_.clientHeight + 65;
+  if (height !== window.innerHeight) {
+    this.api_.req('ctrl.resizeGlass', {
+      height: height,
+      scrollByDeltaHeight: !skipScroll && this.actionBar_.style.top !== 'auto'
+    }).addCallbacks(goog.nullFunction, this.errorCallback_);
   }
 };
 
 
 /**
- * Fix the action buttons position //@yahoo
+ * Fix the position of action bar //@yahoo
  * @param {*} offset The offset for positioning action buttons.
  * @return {boolean} always true
  * @private
  */
-ui.ComposeGlass.prototype.fixActionButtonsPosition_ = function(offset) {
-  var elem = this.getElementByClass(constants.CssClass.PROMPT_ACTIONS),
-      textArea = /** @type {HTMLTextAreaElement} */ (
-          this.getElement().querySelector('textarea')),
-      yOffset = offset.y;
+ui.ComposeGlass.prototype.setActionBarPosition_ = function(offset) {
+  var yOffset = offset.y;
   if (goog.isDef(yOffset)) {
     yOffset = yOffset < window.innerHeight &&
-        yOffset > (goog.style.getPosition(textArea).y + 100) ?
+        yOffset > (goog.style.getPosition(this.editor_).y + 100) ?
             (yOffset - 65) + 'px' :
             'auto';
-    elem.style.top != yOffset && (elem.style.top = yOffset);
+    if (this.actionBar_.style.top != yOffset) {
+      this.actionBar_.style.top = yOffset;
+    }
   }
   return true;
 };
@@ -1165,7 +1175,7 @@ ui.ComposeGlass.prototype.disposeInternal = function() {
  * Close the glass
  */
 ui.ComposeGlass.prototype.close = function() {
-  this.api_.req('ctrl.closeglass').
+  this.api_.req('ctrl.closeGlass').
       addCallbacks(this.dispose, this.errorCallback_, this);
 };
 
