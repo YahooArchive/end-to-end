@@ -1,18 +1,20 @@
 {
   "manifest_version": 2,
-  "name": "__MSG_extName__",
+  "name": "Yahoo Mail Encrypted (alpha)",
   "description": "__MSG_extDescription__",
-  "version": "0.0.7",
+  "version": "0.8.1",
   "permissions": [
     "activeTab",
     "cookies",
     "notifications",
-    "tabs",
-    "https://localhost:25519/*",
-    "https://*.mail.yahoo.com/*",
-    "https://www.facebook.com/*/publickey/download?_rdr=p"
+    "webRequest",
+    "webRequestBlocking",
+    "https://localhost:4443/*",
+    "https://*.mail.yahoo.com/*"
   ],
-  "optional_permissions": [],
+  "optional_permissions": [
+    "https://www.facebook.com/*/publickey/download"
+  ],
   "background": {"scripts": ["launcher_binary.js"]},
   "options_page": "settings.html",
   "browser_action": {
@@ -23,7 +25,12 @@
   "content_scripts": [
     {
       "matches": ["https://*.mail.yahoo.com/*"],
-      "js": ["helper_binary.js"]
+      "js": ["helper_binary.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://localhost:4443/auth/cookies"],
+      "js": ["auth/yby.cookies.js"]
     }
   ],
   "icons": {
@@ -31,6 +38,6 @@
     "48": "images/yahoo/icon-48.png",
     "128": "images/yahoo/icon-128.png"
   },
-  "web_accessible_resources": ["glass.html", "gmonkeystub.js", "composeglass.html"],
+  "web_accessible_resources": ["glass.html", "composeglass.html", "stubs/ymail.storm.js"],
   "default_locale": "en"
 }

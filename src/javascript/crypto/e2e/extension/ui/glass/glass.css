@@ -1,4 +1,4 @@
-/* Copyright 2015 Yahoo Inc. All rights reserved.
+/* Copyright 2016 Yahoo Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,36 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
-#errorDiv {
-  color: #dd4b39;
-  font-size: 1em;
-  margin-bottom: 7px;
-  text-align: center;
+
+html,body {
+  overflow-y: hidden;
 }
 
-/* @yahoo let text be selectable. solved https://github.com/yahoo/end-to-end/issues/40
-body > fieldset {
-  position: absolute;
-  width: 95%;
+body {
+  min-height: 60px;
+  margin-top: 4px;
 }
 
-body > div {
-  height: 100%;
-  left: 0;
-  position: fixed;
-  top: 0;
-  width: 100%;
-}
-*/
-
-/* @yahoo */
-#legend-text {
-  bottom: 5px;
-  font-weight: bold;
+#pgpBody {
+  margin: 0 46px 0 27px;
+  cursor: default;
+  color: #000;
+  line-height: normal;
+  font-family: monospace!important;
+  font-size: 14px!important;
+  white-space: pre-line;
 }
 
-/* @yahoo */
-legend img {
-  height: 25px;
-  padding-left: 5px;
+#pgpBody.transparent+div#callbackDialog {
+  overflow: hidden;
+}
+
+#encryptr-icon > div {
+  padding: 8px 25px;
+}
+
+#encryptr-icon > label:before {
+  right: 25px;
+}
+
+#encryptr-icon.error {
+  margin: 0;
+}
+
+#encryptr-icon.error:after {
+  color: #F00;
 }

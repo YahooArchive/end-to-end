@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "Yahoo Mail End-To-End",
+    "message": "Yahoo Mail Encrypted",
     "description": "Name of the extension."
   },
   "extDescription": {
-    "message": "Helps you send end-to-end protected messages in Yahoo mail.",
+    "message": "Send and read user-to-user encrypted messages in Yahoo Mail.",
     "description": "Description of the extension."
   },
   "promptDismissActionLabel": {
@@ -16,27 +16,35 @@
     "description": "A verb prompting the user to accept the current action."
   },
   "promptDecryptionSuccessMsg": {
-    "message": "Decryption successful!",
+    "message": "Message was encrypted",
     "description": "Message informing about a successful decryption of a message."
   },
   "promptMessageNotEncryptedMsg": {
-    "message": "Message was not encrypted.",
+    "message": "Message was unencrypted",
     "description": "Message informing that the message was not encrypted."
   },
+  "promptSignatureVerifyingMsg": {
+    "message": "Verifying signature...",
+    "description": "Message informing that the message is being verified."
+  },
   "promptVerificationSuccessMsg": {
-    "message": "Good signature(s) from $1.",
+    "message": "and signed by $1.",
     "description": "Message informing about a successful signature verification."
   },
   "promptVerificationFailureMsg": {
-    "message": "BAD signature(s) from $1!",
+    "message": "but signatures from $1 cannot be validated",
     "description": "Message informing about failure in signature verification."
   },
   "promptEncryptSignTitle": {
     "message": "Compose a Protected Message",
     "description": "A friendly title for the encrypt&sign action."
   },
+  "promptLoadingLabel": {
+    "message": "Encrypting and Sending...",
+    "description": "A verb notifying the user the message is being encrypted and sending."
+  },
   "promptEncryptSignActionLabel": {
-    "message": "Send protected message",
+    "message": "Send",
     "description": "A verb prompting the user to encrypt and/or sign a message."
   },
   "promptEncryptSignInsertLabel": {
@@ -54,6 +62,18 @@
   "promptEncryptSignSaveDraftLabel": {
     "message": "Save encrypted draft",
     "description": "A sentence fragment prompting the user to save the working draft into the visiting page."
+  },
+  "promptEncryptSignEncryptingDraftLabel": {
+    "message": "Encrypting...",
+    "description": "A sentence fragment prompting the user the working draft is being encrypted."
+  },
+  "promptEncryptSignSavingDraftLabel": {
+    "message": "Saving...",
+    "description": "A sentence fragment prompting the user the working draft is being saved into the visiting page."
+  },
+  "promptEncryptSignSaveEncryptedDraftLabel": {
+    "message": "Encrypted and saved at $1",
+    "description": "A sentence fragment prompting the user the working draft is saved into the visiting page."
   },
   "promptEncryptSignReplyHeader": {
     "message": "Original message",
@@ -83,6 +103,10 @@
     "message": "Do you want to import the following keys?\n\nYou should verify (e.g. with a phone call) that the key owners displayed below use the same key fingerprints.",
     "description": "A sentence asking the user to confirm the key import."
   },
+  "promptImportPrivateKeyConfirmLabel": {
+    "message": "Do you want to import the following keys?",
+    "description": "A sentence asking the user to confirm the key import."
+  },
   "promptImportKeyVerifyLabel": {
     "message": "Please verify all keys!",
     "description": "A sentence asking the user to verify all keys to import."
@@ -100,12 +124,16 @@
     "description": "A sentence notifying that user needs to chose a passphrase or recipients in order to encrypt and sign a message."
   },
   "glassKeyringLockedError": {
-    "message": "Please unlock the KeyRing before reading messages inline. To do this, please click the End-To-End icon in the upper-right area of the screen.",
+    "message": "Please unlock the KeyRing before reading messages inline. To do this, please click the Yahoo Mail Encrypted icon in the upper-right area of the screen.",
     "description": "An error message indicating that the user must unlock their KeyRing before reading messages inline."
   },
   "glassCannotDecrypt": {
     "message": "Unable to decrypt contents. Please try unlocking the keyring and reloading the page.",
     "description": "A generic error message indicating that something went wrong while reading messages inline."
+  },
+  "glassCannotCommunicate": {
+    "message": "Unable to communicate with the extension launcher. Please reload the mail application.",
+    "description": "A generic error message indicating that something went wrong while communicating with the launcher."
   },
   "actionLoading": {
     "message": "Loading...",
@@ -135,6 +163,10 @@
     "message": "Lock keyring",
     "description": "A short phrase directing the user to lock their keyring."
   },
+  "actionReportIssue": {
+    "message": "Report an issue",
+    "description": "A short phrase directing the user to support request."
+  },
   "actionCancelPgpAction": {
     "message": "Cancel",
     "description": "A verb prompting the user to cancel the current PGP operation."
@@ -151,16 +183,20 @@
     "message": "Open in a new window",
     "description": "A short phrase describing opening a new window."
   },
+  "actionDraftDeleteTitle": {
+    "message": "Delete Draft",
+    "description": "A short phrase describing deleting the draft."
+  },
   "keyMgmtTitle": {
     "message": "Keyring management",
     "description": "A section title signaling that the displayed PGP keys are stored by the extension."
   },
   "keyMgmtExportLabel": {
-    "message": "Export public key",
+    "message": "Export keys",
     "description": "A sentence prompting the user to export the selected PGP key."
   },
   "keyMgmtRemoveLabel": {
-    "message": "Remove key",
+    "message": "Remove",
     "description": "A sentence prompting the user to remove the selected PGP key."
   },
   "keyMgmtNoneLabel": {
@@ -168,8 +204,8 @@
     "description": "A noun indicating that there are no PGP keys to display."
   },
   "keyMgmtSignupPromptLabel": {
-      "message": "Generate a new key",
-      "description": "A sentence prompting the user sign up with a new key."
+    "message": "Create a key pair",
+    "description": "A sentence prompting the user sign up with a new key."
   },
   "keyMgmtImportKeyringLabel": {
     "message": "Import a keyring",
@@ -193,6 +229,22 @@
   "keyMgmtRestoreKeyringLabel": {
     "message": "Restore from backup code",
     "description": "A sentence prompting the user to restore the keyring's ECC seed"
+  },
+  "keyMgmtOptionsLabel": {
+    "message": "Quick Links",
+    "description": "A sentence showing the keyring options"
+  },
+  "keyMgmtHelpLabel": {
+    "message": "Help article",
+    "description": "A sentence prompting the user to see readme."
+  },
+  "keyMgmtImportKeypairLabel": {
+    "message": "Import a key pair",
+    "description": "A sentence prompting the user to import his own existing PGP keyring."
+  },
+  "keyMgmtUidLabel": {
+    "message": "$1 is ready for use with following public keys:",
+    "description": "A sentence showing the user the keys"
   },
   "keyMgmtBackupKeyringWarning": {
     "message": "Write down this code in a safe place:"
@@ -237,6 +289,14 @@
     "message": "Successfully changed the passphrase for the existing keyring!",
     "description": "A sentence confirming that the user has successfully changed the keyring's passphrase."
   },
+  "moreOptionsLabel": {
+    "message": "More options and keys...",
+    "description": "A verb prompting the user to visit the advanced options page."
+  },
+  "fewerOptionsLabel": {
+    "message": "Back to lite mode...",
+    "description": "A verb prompting the user to visit the simplified options page."
+  },
   "keyMgmtFbImportLabel": {
     "message": "Import key from Facebook",
     "description": "A sentence prompting the user to import a key from Facebook."
@@ -254,23 +314,23 @@
     "description": "Ask the user to enter a valid username."
   },
   "genKeyTitle": {
-    "message": "Sign up to receive secret messages",
+    "message": "Welcome!",
     "description": "A section title indicating where the user can generate a new PGP key."
   },
   "genKeyEmailLabel": {
-    "message": "Please enter your name@yahoo-inc.com email address you will use to receive secret messages.\nNote that everyone will know you can receive secret messages here.",
-    "description": "A sentence fragment prompting the user to provide his/her email address."
+    "message": "A key pair is required for encrypting emails to and from #email#your email address#.\nClick below to create a key pair. Or you can #import#import a key pair#.",
+    "description": "A sentence fragment prompting the user to sign up."
   },
   "genKeyPassphraseLabel": {
     "message": "Passphrase",
     "description": "A noun indicating where the user needs to specify a passphrase for her new PGP key."
   },
   "genKeyGenerateButtonLabel": {
-    "message": "Sign Up",
+    "message": "Create a new key pair",
     "description": "A verb prompting the user to register to receive secret messages."
   },
   "settingsTitle": {
-    "message": "End-To-End Keys and Settings",
+    "message": "Yahoo Mail Encrypted",
     "description": "A page title indicating to the user that the current page will allow her to modify the extension's settings."
   },
   "settingsKeyringLockedError": {
@@ -278,8 +338,12 @@
     "description": "An error message indicating that the user must unlock their KeyRing and/or choose an initial passphrase for the KeyRing before using the Options page."
   },
   "promptRecipientsPlaceholder": {
-    "message": "To:",
+    "message": "To",
     "description": "A phrase to prompt the user to enter the intended recipients of the message."
+  },
+  "promptCCRecipientsPlaceholder": {
+    "message": "CC",
+    "description": "A phrase to prompt the user to enter the intended CC recipients of the message."
   },
   "promptPassphraseEncrypt": {
     "message": "Type the passphrase to your key to sign this message",
@@ -298,7 +362,7 @@
     "description": "A sentence requesting the passphrase for a PGP key."
   },
   "promptNoEncryptionKeysFound": {
-    "message": "No encryption keys that could be used to complete this action were found.",
+    "message": "Please setup keys for $1 to proceed. Do it now?",
     "description": "A sentence warning the user that the action cannot be completed due to missing encryption keys."
   },
   "promptSignMessageAs": {
@@ -306,16 +370,20 @@
     "description": "A sentence prompting the user to specify their PGP key to sign and encrypt."
   },
   "promptFromLabel": {
-    "message": "From:",
+    "message": "From",
     "description": "The label to describe who is the author of the message."
   },
   "promptSubjectLabel": {
-    "message": "Subject: (Warning: Subject is NOT protected)",
+    "message": "Subject",
     "description": "The label to describe the subject of the message."
   },
   "promptNoPrivateKeysFound": {
     "message": "Generate or import private key(s) to sign or decrypt messages",
     "description": "The label to inform the user that he needs a private key to use signing/decryption functionality"
+  },
+  "promptDecryptionPassphraseMessage": {
+    "message": "Please enter a passphrase for this message.",
+    "description": "A sentence prompting the user to specify a passphrase for symmetric decryption."
   },
   "promptEncryptionPassphraseMessage": {
     "message": "Please enter a passphrase for this message.\nAnyone who knows the passphrase will be able to read the message.",
@@ -337,6 +405,10 @@
     "message": "(passphrase)",
     "description": "The string that is displayed instead of a passphrase."
   },
+  "promptEncryptrBodyOnlyMessage": {
+    "message": "Only the message body will be encrypted.",
+    "description": "The default encryptr status message in the encrypted compose window."
+  },
   "publicKeyDescription": {
     "message": "Public",
     "description": "Modifier before a key algorithm type for a public key."
@@ -354,7 +426,7 @@
     "description": "Modifier before a key algorithm type for a secret or private subkey."
   },
   "welcomeHeader": {
-    "message": "Welcome to End-To-End",
+    "message": "Welcome!",
     "description": "A welcome message to new users."
   },
   "welcomeBasicsTitle": {
@@ -417,6 +489,10 @@
     "message": "Show the decrypted text inside supported email providers when possible.",
     "description": "A sentence prompting the user to enable the looking glass in supported providers."
   },
+  "preferenceComposeGlass": {
+    "message": "Default to show the secure compose for mail encryption.",
+    "description": "A sentence prompting the user to enable the compose glass."
+  },
   "throttleErrorMsg": {
     "message": "The requested operation cannot be performed at this time. Please try again in 1 minute.",
     "description": "A sentence to display when the requested operation cannot be executed due to throttling."
@@ -433,12 +509,16 @@
     "message": "Unable to import key.",
     "description": "A sentence describing that the extension is unable to import the provided key(s)."
   },
+  "errorUnableToDecryptVerifyMessage": {
+    "message": "Unable to decrypt or verify message.",
+    "description": "A sentence describing that the extension is unable to decrypt or verify the message."
+  },
   "dialogSelectAll": {
     "message": "Select all",
     "description": "A fragment indicating to the user to select all items in the dialog."
   },
   "composeGlassTitle": {
-    "message": "Composing an end-to-end encrypted message",
+    "message": "Composing a Yahoo Mail Encrypted message",
     "description": "Title of the pageAction when Secure Compose is active."
   },
   "composeGlassConfirmBack": {
@@ -446,25 +526,22 @@
     "description": "Message asking user to confirm closing the compose glass"
   },
   "composeGlassConfirmRecipients": {
-    "message": "The following recipients are missing encryption keys:",
+    "message": "Unsupported Recipients\n\n$1 do not have keys for now.",
     "description": "Message warning user that some recipients are missing keys."
   },
-  "composeGlassRemoveRecipients": {
-    "message": "Remove these recipients",
-    "description": "Ask user to remove recipients."
+  "composeGlassAddPassphraseForRecipients": {
+    "message": "Unsupported Recipients\n\n$1 do not have keys for now.\n\n#add#Add a per-message passphrase# for encryption first (TODO: plus a tooltip to guide them through the installation of the Yahoo Mail Encrypted Extension), you'll contact them separately for the chosen passphrase (e.g., by a phone call).",
+    "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassSendUnencryptedMessage": {
-    "message": "Send unencrypted message",
+    "message": "Send in plaintext",
     "description": "Ask user to send the message unencrypted."
   },
-  "keyserverFetchError": {
-    "message": "Oops, failed to fetch keys from the keyserver."
+  "conameConnectionError": {
+    "message": "Error connecting to keyserver (requires VPN/corp network)."
   },
-  "keyserverSendError": {
-    "message": "Oops, failed to send keys to the keyserver."
-  },
-  "keyserverResponseError": {
-    "message": "Invalid response from keyserver. Please try again later."
+  "conameAuthError": {
+    "message": "Error authenticating to keyserver (requires bouncer)."
   },
   "e2ebindShowEncrypted": {
     "message": "> Show encrypted message"
@@ -544,21 +621,76 @@
     "message": "Key fingerprint",
     "description": "The OpenPGP key fingerprint"
   },
-
-  "duplicateKeyWarning": {
-    "message": "There is already a key for this address in the keyring. Please remove it before generating a new one.",
-    "description": "Warning that a key already exists for the given email address"
-  },
-  "invalidEmailWarning": {
-    "message": "Please enter a valid Yahoo email address.",
-    "description": "Warning that an email is not valid."
-  },
   "passphraseIncorrectWarning": {
     "message": "Passphrase is incorrect.",
     "description": "A message informing the user that passphrase validation failed."
   },
-  "lookingGlassTitle": {
-    "message": "Secure message",
-    "description": "Text that appears at the top of a looking glass."
+  "keyUpdateSuccessMsg": {
+    "message": "The keys are now in sync with the server.",
+    "description": "A sentence informing the user that the local keys are in-sync with server."
+  },
+  "promptKeepSyncKeysMessage": {
+    "message": "The local keyring is found inconsistent with the remote keyserver.\n\nYou might have just imported a key that is unknown to the keyserver. If this is unexpected, we apologize for the inconvenience as we might have reset the keyserver during the alpha stage, or a recent change (within 5-min) to key registration is still being processed.",
+    "description": "A sentence asking the user to confirm overriding the conflicts with local keyring."
+  },
+  "promptMatchRemoteKeysMessage": {
+    "message": "Some key(s) registered with the following email address is missing.",
+    "description": "A sentence recommending the user to import private keys of those publicized ones."
+  },
+  "promptAddReplaceKeysConfirmMessage": {
+    "message": "Add a new key in addition to the existing one(s) below?",
+    "description": "A sentence asking the user whether to keep existing keys while adding a new one."
+  },
+  "promptDeleteKeysConfirmMessage": {
+    "message": "Confirm to remove the following keys?",
+    "description": "A sentence asking the user to confirm deleting keys"
+  },
+  "promptDeleteLastPublicKeyWarningMessage": {
+    "message": "Your friends can no longer send you encrypted emails after removing all public key.",
+    "description": "A sentence asking the user to confirm users opting-out the service"
+  },
+  "promptDeletePrivateKeyWarningMessage": {
+    "message": "Messages encrypted to these private keys can no longer be recovered.",
+    "description": "A sentence asking the user to confirm deleting private keys"
+  },
+  "localOnlyKeysLabel": {
+    "message": "The following keys are present only locally.",
+    "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only locally."
+  },
+  "commonKeysLabel": {
+    "message": "The following keys are common to both local keyring and remote keyserver.",
+    "description": "A sentence informing the user the key synchronization conflicts, particularly those keys that exists both locally and remotely."
+  },
+  "remoteOnlyKeysLabel": {
+    "message": "To read emails encrypted to the following registered key(s), please #import#Import# or Restore the corresponding private key(s).",
+    "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
+  },
+  "giveUpRemoteKeyCheckboxLabel": {
+    "message": " Take down the remote ones from the public listing (e.g., key lost).",
+    "description": "A sentence informing the user that remote keys will be deleted before proceeding."
+  },
+  "replaceKeyCheckboxLabel": {
+    "message": " Replace the existing ones with a new one.",
+    "description": "A sentence informing the user that existing keys will be deleted before getting a new one."
+  },
+  "actionOverwriteRemoteKeys": {
+    "message": "Update",
+    "description": "A verb prompting the user to update keyserver with local keyrings."
+  },
+  "actionAddNewKey": {
+    "message": "Add a New Key",
+    "description": "A verb prompting the user to add a new key."
+  },
+  "confirmUserSyncKeys": {
+    "message": "Yahoo Mail Encrypted requires your configuration regarding $1. Do it now?",
+    "description": "A sentence prompting the user to synchronize local keyring with remote keyserver."
+  },
+  "promptUnsupportedFormattingLabel": {
+    "message": "Encrypted formatting and attachments not yet supported.",
+    "description": "A sentence informing the user formatting is not yet supported."
+  },
+  "keyRingDescriptionLabel": {
+    "message": " is ready for use with the following keys:",
+    "description": "A sentence greeting the user and introducing the keys that s/he has."
   }
 }

@@ -11,6 +11,7 @@ goog.provide('e2e.ext.ui.dialogs.InputType');
  */
 e2e.ext.ui.dialogs.InputType = {
   NONE: '',
+  CHECKBOX: 'checkbox', //@yahoo
   TEXT: 'text',
   SECURE_TEXT: 'password'
 };

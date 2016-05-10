@@ -25,8 +25,6 @@ goog.provide('e2e.ext.constants.CssClass');
 goog.provide('e2e.ext.constants.ElementId');
 goog.provide('e2e.ext.constants.Keyserver');
 goog.provide('e2e.ext.constants.StorageKey');
-goog.provide('e2e.ext.constants.e2ebind.requestActions');
-goog.provide('e2e.ext.constants.e2ebind.responseActions');
 
 goog.require('e2e.ext.config');
 
@@ -43,6 +41,9 @@ e2e.ext.constants.Actions = {
 
   // Decryption/verification related actions.
   DECRYPT_VERIFY: 'decrypt_verify',
+  DECRYPT_THEN_VERIFY: 'decrypt_then_verify', //@yahoo
+  DECRYPT: 'decrypt', //@yahoo
+  VERIFY: 'verify', //@yahoo
 
   // Keyring management related actions.
   GET_KEY_DESCRIPTION: 'get_key_description',
@@ -50,22 +51,21 @@ e2e.ext.constants.Actions = {
   GET_KEYRING_BACKUP_DATA: 'get_keyring_backup_data',
   RESTORE_KEYRING_DATA: 'restore_keyring_data',
   IMPORT_KEY: 'import_key',
-  SHARE_KEY: 'share_key',
   LIST_KEYS: 'list_keys',
-  LIST_ALL_UIDS: 'list_all_uids',
-  GET_KEYRING_UNLOCKED: 'get_keyring_unlocked',
+
+  //@yahoo
+  GET_PREFERENCE: 'get_preference',
+  SYNC_KEYS: 'sync_keys',
+  GET_ALL_KEYS_BY_EMAILS: 'get_all_keys_by_emails',
   LOCK_KEYRING: 'lock_keyring',
 
-  // Actions needed for the glasses.
+  //@yahoo Actions needed for the glasses.
   SHOW_NOTIFICATION: 'show_notification',
-  GLASS_CLOSED: 'glass_closed',
   SET_DRAFT: 'set_draft',
   SET_AND_SEND_DRAFT: 'set_and_send_draft',
   GET_SELECTED_CONTENT: 'get_selected_content',
-  OPEN_OPTIONS: 'open_options',
   CHANGE_PAGEACTION: 'change_pageaction',
   RESET_PAGEACTION: 'reset_pageaction',
-  SET_GLASS_SIZE: 'set_glass_size',
 
   // Intended no-op. Used for closing the prompt UI when other visual elements
   // (e.g. looking glass) would display data.
@@ -73,6 +73,7 @@ e2e.ext.constants.Actions = {
 
   // Administration related actions.
   CONFIGURE_EXTENSION: 'configure_extension',
+  REPORT_ISSUE: 'report_issue',
 
   // Default catch-all action.
   USER_SPECIFIED: 'user_specified'
@@ -94,6 +95,7 @@ e2e.ext.constants.ElementId = {
   SIGN_MESSAGE_CHECK: 'pgpSignMessage',
   SIGNER_SELECT: 'pgpSignerSelect',
   SIGNUP_PROMPT: 'signupPrompt',
+  HELP_PROMPT: 'helpPrompt', //@yahoo
   KEYRING_DIV: 'storedKeys',
   KEYRING_IMPORT_DIV: 'keyringImportDiv',
   FB_IMPORT_DIV: 'fbImportDiv',
@@ -103,12 +105,18 @@ e2e.ext.constants.ElementId = {
   ERROR_DIV: 'errorDiv',
   CALLBACK_DIALOG: 'callbackDialog',
   CHIP_HOLDER: 'chipHolder',
+  CC_CHIP_HOLDER: 'ccChipHolder', //@yahoo
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
   FROM_HOLDER: 'fromHolder',
   FROM_LABEL: 'fromLabel',
   TO_LABEL: 'toLabel',
   SUBJECT_HOLDER: 'subjectHolder',
   SUBJECT: 'subject',
+
+  /* Used in settings page //@yahoo */
+  GENERATE_KEY: 'generate-key',
+  KEYRING_IMPORT: 'keyring-import',
+  EMAIL_ADDRESS: 'email-address',
 
   /* Used to display menus in the UI. */
   MENU_CONTAINER: 'menu-container',
@@ -146,14 +154,14 @@ e2e.ext.constants.ElementId = {
   // Chrome notifications
   NOTIFICATION_SUCCESS: 'e2e-success',
 
-  // e2ebind page elements
-  E2EBIND_ICON: 'endtoend',
-  E2EBIND_TEXT: 'rtetext',
-  E2EBIND_SHOW_ENCRYPTED_LINK: 'show-encrypted-link',
-
   // glass
   LOCK_ICON: 'lock-icon',
   CHECK_ICON: 'check-icon',
+  BACK_BUTTON: 'back-button', 
+  ENCRYPTR_ICON: 'encryptr-icon', //@yahoo
+  SAVE_ESC_BUTTON: 'save-esc-button', //@yahoo
+  DRAFT_DELETE_BUTTON: 'draft-delete-button', //@yahoo
+  ADD_PASSPHRASE_BUTTON: 'add-passphrase-button', //@yahoo
 
   // Website container
   WEBVIEW: 'webview',
@@ -181,6 +189,7 @@ e2e.ext.constants.CssClass = {
   CHIP: 'uid-chip',
   CHIPS: 'uid-chips',
   BAD_CHIP: 'uid-bad-chip',
+  GOOD_CHIP: 'uid-good-chip', //@yahoo
 
   /* Common UI components */
   DIALOG_INPUT: 'dialog-input',
@@ -193,15 +202,18 @@ e2e.ext.constants.CssClass = {
   PASSPHRASE_CONFIRM: 'passphrase-confirm',
 
   /* Used in the keyring management section. */
+  LITE_MODE: 'lite', //@yahoo
   EXPORT: 'export',
   REMOVE: 'remove',
   KEY_FINGERPRINT: 'key-fingerprint',
   KEY_META: 'key-meta',
+  HAS_PRIV_KEY: 'has-priv-key', //@yahoo
   KEY_TYPE_DESC: 'key-type-description',
   KEY_UID: 'key-uid',
   KEY_SUBKEY: 'key-sub',
   SIGNUP_PROMPT: 'keyring-signup',
-  FB_IMPORT: 'fb-import',
+  FB_IMPORT: 'fb-import', //@yahoo
+  TOGGLE_OPTIONS: 'toggle-options', //@yahoo
   KEYRING_IMPORT: 'keyring-import',
   KEYRING_EXPORT: 'keyring-export',
   KEYRING_BACKUP: 'keyring-backup',
@@ -212,12 +224,17 @@ e2e.ext.constants.CssClass = {
   /* TODO(rcc): Remove when we can use keyserver for lookups. */
   KEYRING_RESTORE_EMAIL: 'keyring-restore-email',
   KEYRING_PASSPHRASE_CHANGE: 'keyring-passphrase-change',
+  /** Used in the sync resolution */
+  KEY_INFO: 'key-info',
+  KEY_INFO_PLUS: 'key-info-plus',
+  KEY_INFO_MINUS: 'key-info-minus',
 
   /** Used in the welcome page */
   WELCOME_MENU_ICON: 'welcome-menu-icon',
   WELCOME_SUBSECTION_HEADER: 'welcome-subsection-header',
 
   /** Used in prompt. */
+  CONVERSATION: 'conversation', //@yahoo
   PROMPT_HEADER: 'pgpHead',
   PROMPT_TITLE: 'pgpTitle',
   PROMPT_ACTIONS: 'pgpActions',
@@ -225,13 +242,20 @@ e2e.ext.constants.CssClass = {
   MENU_BUTTON: 'menu-button',
   POPOUT_BUTTON: 'popout-button',
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
+  CC_LINK: 'ccLink', //@yahoo
+  LOADER: 'loader', //@yahoo
+  BOTTOM_NOTIFICATION: 'bottom-notification', //@yahoo
 
   /** Error messages **/
   ERROR: 'error',
+  WARN: 'warn', //@yahoo
 
-  /** e2ebind page classes **/
+  /** yahoo compose glass **/
   COMPOSE_CONTAINER: 'compose',
+  COMPOSE_CONTAINER_REPLY_EXCEPTION: 'reply-text',
+  COMPOSE_CONTAINER_IRIS_EXCEPTION: 'iris-window',
   COMPOSE_BODY: 'compose-message',
+  SAVE_DRAFT_MSG: 'save-draft-msg',
 
   /* setup page */
   SETUP_PAGE: 'setup-page'
@@ -245,6 +269,7 @@ e2e.ext.constants.CssClass = {
  * @enum {string}
  */
 e2e.ext.constants.StorageKey = {
+  ENABLE_COMPOSE_GLASS: 'enable-compose-glass', //@yahoo
   ENABLE_WELCOME_SCREEN: 'enable-welcome',
   ENABLE_ACTION_SNIFFING: 'enable-action-sniff',
   ENABLE_AUTO_SAVE: 'enable-auto-save',
@@ -311,42 +336,10 @@ e2e.ext.constants.BACKUP_CODE_LENGTH = 24;
 
 
 /**
- * e2ebind API response actions.
- * @const
- */
-e2e.ext.constants.e2ebind.responseActions = {
-  HAS_DRAFT: 'has_draft',
-  GET_DRAFT: 'get_draft',
-  SET_DRAFT: 'set_draft',
-  SET_AND_SEND_DRAFT: 'set_and_send_draft',
-  GET_CURRENT_MESSAGE: 'get_current_message'
-};
-
-
-/**
- * e2ebind API request actions.
- * @const
- */
-e2e.ext.constants.e2ebind.requestActions = {
-  START: 'start',
-  INSTALL_READ_GLASS: 'install_read_glass',
-  INSTALL_COMPOSE_GLASS: 'install_compose_glass',
-  VALIDATE_SIGNER: 'validate_signer',
-  VALIDATE_RECIPIENTS: 'validate_recipients',
-  SET_SIGNER: 'set_signer'
-};
-
-
-/**
  * Keyserver data constants
  * @const
  */
 e2e.ext.constants.Keyserver = {
-  //TODO(dlg): separate Kauth key from Keyserver response key
-  KAUTH_PUB: e2e.ext.config.KAUTH_PUB,
-  TESTSERVER_ORIGIN: e2e.ext.config.TESTSERVER_ORIGIN,
-  API_V1: 'v1/k',
   DEFAULT_LOCATION: e2e.ext.config.AUTH_DEFAULT_ORIGIN,
   AUTH_COOKIE: e2e.ext.config.AUTH_COOKIE,
-  AUTH_ENABLED: e2e.ext.config.AUTH_ENABLED
 };

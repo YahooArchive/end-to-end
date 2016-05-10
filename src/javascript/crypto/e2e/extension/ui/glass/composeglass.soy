@@ -17,62 +17,82 @@
 
 /**
  * The base layout for the compose glass page.
- * @param pageTitle The title for the compose glass page.
+ * @param fromLabel The label to describe the "From:" select box.
+ * @param subject The value of the subject field.
+ * @param subjectLabel The label for the subject field.
+ * @param loadingLabel The label for loading message.
+ * @param signerCheckboxTitle The label for the checkbox to sign messages.
+ * @param actionButtonTitle The title of the prompt button. 
+ * @param actionDraftDeleteTitle The title of the Delete Draft button.
+ * @param unsupportedFormattingLabel The label for informing the formatting is unsupported.
+ * @param encryptrMessage The default message to display when the encryptr icon is hovered.
  */
 {template .main}
-  <html>
-    <head>
-      <title>{$pageTitle}</title>
-      <link rel="stylesheet"/>
-    </head>
-    <body>
-      <div class="{e2e.ext.constants.CssClass.PROMPT_HEADER}">
-        <div>
-          <h1>{$pageTitle}</h1>
-        </div>
-      </div>
-      <div id="{e2e.ext.constants.ElementId.ERROR_DIV}"></div>
-      <div id="{e2e.ext.constants.ElementId.BODY}"></div>
-      <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
-    </body>
-  </html>
+  <div id="{e2e.ext.constants.ElementId.ERROR_DIV}"></div>
+  <div id="{e2e.ext.constants.ElementId.BODY}">
+    {call .renderEncrypt}
+      {param fromLabel: $fromLabel /}
+      {param subject: $subject /}
+      {param subjectLabel: $subjectLabel /}
+      {param loadingLabel: $loadingLabel /}
+      {param signerCheckboxTitle: $signerCheckboxTitle /}
+      {param actionButtonTitle: $actionButtonTitle /}
+      {param actionDraftDeleteTitle: $actionDraftDeleteTitle /}
+      {param unsupportedFormattingLabel: $unsupportedFormattingLabel /}
+      {param encryptrMessage: $encryptrMessage /}
+    {/call}
+  </div>
+  <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
 {/template}
 
 
 /**
  * Renders the required UI elements for PGP encryption.
  * @param fromLabel The label to describe the "From:" select box.
- * @param noPrivateKeysFound The label to inform the user that he needs a private key to use
- *      signing functionality
- * @param availableSigningKeys The keys that can be used to sign a message.
- * @param backButtonTitle The title for the back button.
- * @param actionButtonTitle The title of the prompt button.
  * @param subject The value of the subject field.
- * @param subjectLabel The label for the subject field
+ * @param subjectLabel The label for the subject field.
+ * @param loadingLabel The label for loading message.
+ * @param signerCheckboxTitle The label for the checkbox to sign messages.
+ * @param actionButtonTitle The title of the prompt button. 
+ * @param actionDraftDeleteTitle The title of the Delete Draft button.
+ * @param unsupportedFormattingLabel The label for informing the formatting is unsupported.
+ * @param encryptrMessage The default message to display when the encryptr icon is hovered.
  */
 {template .renderEncrypt}
-  <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}">
+  <div id="{e2e.ext.constants.ElementId.SAVE_ESC_BUTTON}"></div>
+  <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}" style="display: none">
     <div>{$fromLabel}</div>
-    <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"
-      {if length($availableSigningKeys) == 0}disabled{/if}
-    >
-      {foreach $key in $availableSigningKeys}
-        <option>{$key}</option>
-      {/foreach}
-    </select>
-    {if length($availableSigningKeys) == 0}{$noPrivateKeysFound}{/if}
+    <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"></select>
   </div>
   <div id="{e2e.ext.constants.ElementId.CHIP_HOLDER}"></div>
-  <div id="subjectHolder">
-    <input type="text" placeholder="{$subjectLabel}" value="{$subject}" />
+  <div id="{e2e.ext.constants.ElementId.CC_CHIP_HOLDER}"></div>
+  {if isNonnull($subject)}
+  <div id="{e2e.ext.constants.ElementId.SUBJECT_HOLDER}">
+    <input id="{e2e.ext.constants.ElementId.SUBJECT}" value="{$subject}" placeholder="{$subjectLabel}" />
   </div>
-  <div>
-    <textarea autofocus></textarea>
-  </div>
-  <div>
-  <button class="{e2e.ext.constants.CssClass.INSERT}">{$actionButtonTitle}</button>
-  <button class="{e2e.ext.constants.CssClass.BACK}">
-    <img src="images/back.png" title="{$backButtonTitle}"/>
-  </button>
+  {/if}
+  <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}"><div>{$encryptrMessage}</div><label></label></div>
+  <textarea></textarea>
+  <div class="{e2e.ext.constants.CssClass.PROMPT_ACTIONS}">
+    <div class="{e2e.ext.constants.CssClass.BOTTOM_NOTIFICATION}" style="display:none">
+      <span class="{e2e.ext.constants.CssClass.LOADER}"></span>
+      <div>{$loadingLabel}</div>
+    </div>
+    <div class="{e2e.ext.constants.CssClass.BUTTONS_CONTAINER}">
+      <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
+      <div>{$unsupportedFormattingLabel}</div>
+      <div>
+        <button id="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}" title="{$actionDraftDeleteTitle}"></button>
+      </div>
+      <div class="{e2e.ext.constants.CssClass.SAVE_DRAFT_MSG}"></div>
+    </div>
+    <!-- @yahoo hide extra options -->
+    <div style="display:none">
+      <input type="checkbox" id="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
+      <label for="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
+        {$signerCheckboxTitle}
+      </label>
+      <button id="{e2e.ext.constants.ElementId.ADD_PASSPHRASE_BUTTON}">Passphrase</button>
+    </div>
   </div>
 {/template}

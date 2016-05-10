@@ -16,34 +16,18 @@
 
 /**
  * Renders the frame where decrypted PGP content will be displayed.
- * @param label The label for the decrypted content.
  * @param content The content to display to the user.
- * @param error The error message (if any) to display to the user.
  */
 {template .contentFrame}
 <html>
   <head>
-    <link rel="stylesheet"/>
+    <link rel="stylesheet" href="glass_styles.css" />
   </head>
   <body>
-    <fieldset>
-      <legend>
-        <span id="legend-text">
-        {$label}
-        </span>
-        <span>
-        <img id="{e2e.ext.constants.ElementId.LOCK_ICON}"
-             src="images/yahoo/lock-circle.png" />
-        <img id="{e2e.ext.constants.ElementId.CHECK_ICON}"
-             src="images/yahoo/check-circle.png" />
-        <span>
-      </legend>
-      {if $error}
-        <div id="{e2e.ext.constants.ElementId.ERROR_DIV}">{$error}</div>
-      {/if}
-      <div id="content">{$content|changeNewlineToBr}</div>
-    </fieldset>
-    <div></div>
+    <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}"><div></div><label></label></div>
+    <div id="{e2e.ext.constants.ElementId.ERROR_DIV}"></div>
+    <div id="{e2e.ext.constants.ElementId.BODY}">{$content}</div>
+    <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
   </body>
 </html>
 {/template}

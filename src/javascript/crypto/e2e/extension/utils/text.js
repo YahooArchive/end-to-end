@@ -121,14 +121,44 @@ utils.extractValidYahooEmail = function(recipient) {
   var email = utils.extractValidEmail(recipient);
   var domain;
   if (email) {
-    domain = email.split('@')[1];
+    domain = email.split('@')[1].toLowerCase();
     // TODO: This needs other yahoo domains like yahoo.jp
-    if (goog.string.caseInsensitiveEquals(domain, 'yahoo-inc.com') ||
-        goog.string.caseInsensitiveEquals(domain, 'yahoo.com')) {
+    if (domain === 'yahoo-inc.com' || domain === 'yahoo.com') {
       return email;
     }
   }
   return null;
+};
+
+
+/**
+ * Map an array of emails in string to array of objects, of which each has a
+ * name and email address.
+ * @param {Array.<string>} uids array of "username &lt;email&gt;" string.
+ * @return {Array.<{name:string, email:string}>}
+ */
+utils.uidsToObjects = function(uids) {
+  return goog.array.map(uids, function(uid) {
+    var email = utils.extractValidEmail(goog.string.collapseWhitespace(uid));
+    return email && email !== uid ?
+        {
+          name: goog.string.trimRight(uid.replace('<' + email + '>', '')),
+          email: email
+        } :
+        {name: uid, email: uid};
+  });
+};
+
+
+/**
+ * Convert an user object to uid, of which the format is "username &lt;email&gt;"
+ * @param {{name:(string|undefined), firstname:(string|undefined),
+ *     email:!string}} userObj
+ * @return {!string}
+ */
+utils.userObjectToUid = function(userObj) {
+  return (userObj.name || userObj.firstname || userObj.email) +
+      ' <' + userObj.email + '>';
 };
 
 

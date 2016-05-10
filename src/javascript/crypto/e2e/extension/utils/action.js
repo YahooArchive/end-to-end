@@ -21,8 +21,7 @@
 
 goog.provide('e2e.ext.utils.action');
 
-goog.require('e2e.ext.constants');
-goog.require('e2e.ext.utils');
+goog.require('e2e.ext.constants.Keyserver');
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
 goog.require('goog.string');
@@ -111,67 +110,21 @@ action.getPreferences = function(callback, errorCallback, opt_scope) {
 
 
 /**
- * Retrieves the content that the user has selected.
- * @param {!function(!messages.BridgeMessageRequest)} callback The callback
- *     where the selected content will be passed.
- * @param {!function(Error)} errorCallback The callback to invoke if an error is
- *     encountered.
- * @param {T=} opt_scope Optional. The scope in which the function and the
- *     callbacks will be called.
- * @template T
- */
-action.getSelectedContent = function(callback, errorCallback, opt_scope) {
-  var scope = opt_scope || goog.global;
-  action.getLauncher(function(launcher) {
-    /** @type {!e2e.ext.yExtensionLauncher} */ (launcher).
-        getSelectedContent(goog.bind(callback, scope));
-  }, errorCallback, opt_scope);
-};
-
-
-/**
- * Sets the provided content into the element on the page that the user has
- * selected.
- * Note: This function might not work while debugging the extension.
- * @param {string} content The content to write inside the selected element.
- * @param {!Array.<string>} recipients The recipients of the message.
- * @param {string} origin The web origin where the original message was created.
- * @param {boolean} expectMoreUpdates True if more updates are expected. False
- *     if this is the final update to the selected content.
- * @param {!function(...)} callback The function to invoke once the content has
- *     been updated.
- * @param {!function(Error)} errorCallback The callback to invoke if an error is
- *     encountered.
- * @param {string=} opt_subject The subject of the message if applicable.
- * @param {T=} opt_scope Optional. The scope in which the function and the
- *     callbacks will be called.
- * @template T
- */
-action.updateSelectedContent = function(content, recipients, origin,
-    expectMoreUpdates, callback, errorCallback, opt_subject, opt_scope) {
-  var scope = opt_scope || goog.global;
-  action.getLauncher(function(launcher) {
-    /** @type {!e2e.ext.yExtensionLauncher} */ (launcher).
-        updateSelectedContent(content, recipients, origin,
-        expectMoreUpdates, goog.bind(callback, scope), opt_subject);
-  }, errorCallback, opt_scope);
-};
-
-
-/**
+ * //@yahoo
  * Tries to guess the user's ymail address. Will not work from a content script
  * due to potential security issues with exposing YBY.
  * @param {!function((string|undefined|null))} callback
  */
 action.getUserYmailAddress = function(callback) {
-  var email, text = e2e.ext.utils.text;
+  var email;
   try {
     // If this is called in the context of a ymail page, get the email from
     // NeoConfig
-    if (text.isYmailOrigin(window.location.href) &&
+    if (e2e.ext.utils.text.isYmailOrigin(window.location.href) &&
         typeof window.NeoConfig === 'object' &&
         window.NeoConfig.emailAddress) {
-      email = text.extractValidYahooEmail(window.NeoConfig.emailAddress);
+      email = e2e.ext.utils.text.extractValidYahooEmail(
+          window.NeoConfig.emailAddress);
       callback(email);
     } else {
       action.getAddressFromYBY_(callback);
@@ -189,13 +142,14 @@ action.getUserYmailAddress = function(callback) {
 
 
 /**
+ * //@yahoo
  * Tries to get an email address from the YBY cookie. Only useful for yahoo-inc
  * users right now. Sorry open source.
  * @param {!function((string|undefined|null))} callback
  * @private
  */
 action.getAddressFromYBY_ = function(callback) {
-  var email, constants = e2e.ext.constants;
+  var email;
 
   if (!chrome.cookies || !chrome.cookies.get) {
     // Someone tried to call this from a content script. Abort.
@@ -203,8 +157,8 @@ action.getAddressFromYBY_ = function(callback) {
     return;
   }
 
-  chrome.cookies.get({url: constants.Keyserver.DEFAULT_LOCATION,
-    name: constants.Keyserver.AUTH_COOKIE},
+  chrome.cookies.get({url: e2e.ext.constants.Keyserver.DEFAULT_LOCATION,
+    name: e2e.ext.constants.Keyserver.AUTH_COOKIE},
   function(cookie) {
     var params;
     var param;
@@ -225,18 +179,6 @@ action.getAddressFromYBY_ = function(callback) {
     }
 
     callback(email);
-  });
-};
-
-
-/**
- * Refreshes active ymail tabs so e2ebind is reloaded.
- */
-action.refreshYmail = function() {
-  chrome.tabs.query({url: 'https://*.mail.yahoo.com/*'}, function(tabs) {
-    goog.array.forEach(tabs, function(tab) {
-      chrome.tabs.reload(tab.id);
-    });
   });
 };
 

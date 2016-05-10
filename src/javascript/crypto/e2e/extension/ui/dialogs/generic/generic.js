@@ -198,7 +198,20 @@ dialogs.Generic.prototype.enterDocument = function() {
         this.keyboardHandler_,
         goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
         goog.partial(this.invokeCallback, false));
+  } else {
+    // @yahoo added Enter as shortcut key for the default action
+    this.keyboardHandler_ =
+        new goog.ui.KeyboardShortcutHandler(parentElem);
+    this.keyboardHandler_.registerShortcut('enter', goog.events.KeyCodes.ENTER);
+    this.getHandler().listenOnce(
+        this.keyboardHandler_,
+        goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
+        goog.partial(this.invokeCallback, false));
   }
+  this.keyboardHandler_.setAlwaysStopPropagation(true);
+
+  // @yahoo focus on the first input element of all callbacks
+  this.focusOnFirstDialog(); //@yahoo
 
   this.getHandler().listen(
       this.getElementByClass(constants.CssClass.ACTION),
@@ -210,6 +223,15 @@ dialogs.Generic.prototype.enterDocument = function() {
         this.getElementByClass(constants.CssClass.CANCEL),
         goog.events.EventType.CLICK,
         goog.partial(this.invokeCallback, true));
+
+    // @yahoo added Escape as the cancel shortcut key
+    this.keyboardEscHandler_ = new goog.ui.KeyboardShortcutHandler(parentElem);
+    this.keyboardEscHandler_.setAlwaysStopPropagation(true);
+    this.keyboardEscHandler_.registerShortcut('esc', goog.events.KeyCodes.ESC);
+    this.getHandler().listenOnce(
+        this.keyboardEscHandler_,
+        goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
+        goog.partial(this.invokeCallback, true));
   }
 };
 
@@ -217,11 +239,28 @@ dialogs.Generic.prototype.enterDocument = function() {
 /** @override */
 dialogs.Generic.prototype.exitDocument = function() {
   var body = goog.dom.getElement(constants.ElementId.BODY);
-  if (body) {
+
+  //@yahoo remove the transparent class if it's the only callback dialog left
+  if (body && this.getElement().parentNode.childNodes.length === 1) {
     goog.dom.classlist.remove(body, constants.CssClass.TRANSPARENT);
   }
 
   goog.base(this, 'exitDocument');
+  this.focusOnFirstDialog(); //@yahoo
+};
+
+
+/**
+ * Focus on the input element or action button of the first dialog
+ * @protected
+ */
+dialogs.Generic.prototype.focusOnFirstDialog = function() {
+  window.setTimeout(goog.bind(function() {
+    var firstElem = this.querySelector('input,textarea,button.action');
+    if (firstElem) {
+      firstElem.focus();
+    }
+  }, this.getElement().parentNode), 5);
 };
 
 
@@ -233,7 +272,10 @@ dialogs.Generic.prototype.exitDocument = function() {
  */
 dialogs.Generic.prototype.invokeCallback = function(sendBlank) {
   if (this.inputElem_) {
-    var returnValue = sendBlank ? '' : this.inputElem_.value;
+    var returnValue = sendBlank ? '' :
+        this.inputElem_.type.toLowerCase() === 'checkbox' ? //@yahoo
+            this.inputElem_.checked.toString() :
+            this.inputElem_.value;
     this.inputElem_.value = '';
     this.dialogCallback_(returnValue);
   } else {

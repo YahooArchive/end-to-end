@@ -23,13 +23,14 @@
  */
 {template .renderChipHolder}
   <div id="{e2e.ext.constants.ElementId.KEY_SELECT_FORM}">
-    <!-- passphraseEncryption not supported by @yahoo yet -->
+    {if $passphraseEncryptionLinkTitle}
     <div class="{e2e.ext.constants.CssClass.PASSPHRASE_ENCRYPTION_LINK}"
-      title="{$passphraseEncryptionLinkTooltip}" style="display:none">
+      title="{$passphraseEncryptionLinkTooltip}">
       + {$passphraseEncryptionLinkTitle}
     </div>
+    {/if}
     <div class="{e2e.ext.constants.CssClass.CHIPS}">
-      <span id="{e2e.ext.constants.ElementId.TO_LABEL}">{$recipientsTitle}</span>
+      <span>{$recipientsTitle}</span>
       <input type="text">
     </div>
   </div>
@@ -39,10 +40,15 @@
 /**
  * Renders a chip that represents a PGP UID or passphrase.
  * @param value The UID or passphrase to render.
+ * @param opt_name The optional name to render.//@yahoo
  */
 {template .renderChip}
   <div class="{e2e.ext.constants.CssClass.CHIP}">
-    <div>{$value}</div>
+  {if $opt_name}
+    <div title="{$value}">{$opt_name}</div>
+  {else}
+    <div title="{$value}">{$value}</div>
+  {/if}
     <img src="images/close.png">
   </div>
 {/template}

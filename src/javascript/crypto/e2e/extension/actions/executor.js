@@ -20,15 +20,17 @@
 
 goog.provide('e2e.ext.actions.Executor');
 
+goog.require('e2e.ext.actions.ConfigureExtension'); // @yahoo
 goog.require('e2e.ext.actions.DecryptVerify');
+goog.require('e2e.ext.actions.DecryptThenVerify'); // @yahoo
 goog.require('e2e.ext.actions.EncryptSign');
+goog.require('e2e.ext.actions.GetAllKeysByEmails'); // @yahoo
 goog.require('e2e.ext.actions.GetKeyDescription');
 goog.require('e2e.ext.actions.GetKeyringBackupData');
 goog.require('e2e.ext.actions.ImportKey');
-// @yahoo
-goog.require('e2e.ext.actions.ListAllUids');
 goog.require('e2e.ext.actions.ListKeys');
 goog.require('e2e.ext.actions.RestoreKeyringData');
+goog.require('e2e.ext.actions.SyncKeys'); // @yahoo
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.action');
@@ -100,6 +102,11 @@ actions.Executor.prototype.getAction_ = function(actionType) {
   switch (actionType) {
     case constants.Actions.DECRYPT_VERIFY:
       return new actions.DecryptVerify();
+    // @yahoo
+    case constants.Actions.DECRYPT_THEN_VERIFY:
+    case constants.Actions.VERIFY:
+    case constants.Actions.DECRYPT:
+      return new actions.DecryptThenVerify();
     case constants.Actions.ENCRYPT_SIGN:
       return new actions.EncryptSign();
     case constants.Actions.GET_KEY_DESCRIPTION:
@@ -109,8 +116,14 @@ actions.Executor.prototype.getAction_ = function(actionType) {
     case constants.Actions.IMPORT_KEY:
       return new actions.ImportKey();
     // @yahoo
-    case constants.Actions.LIST_ALL_UIDS:
-      return new actions.ListAllUids();
+    case constants.Actions.SYNC_KEYS:
+      return new actions.SyncKeys();
+    // @yahoo
+    case constants.Actions.GET_ALL_KEYS_BY_EMAILS:
+      return new actions.GetAllKeysByEmails();
+    // @yahoo
+    case constants.Actions.CONFIGURE_EXTENSION:
+      return new actions.ConfigureExtension();
     case constants.Actions.LIST_KEYS:
       return new actions.ListKeys();
     case constants.Actions.RESTORE_KEYRING_DATA:

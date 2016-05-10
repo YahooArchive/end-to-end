@@ -68,6 +68,10 @@ ui.Prompt = function() {
   this.actionExecutor_ = new e2e.ext.actions.Executor(
       goog.bind(this.displayFailure_, this));
 
+  //@yahoo adds version
+  var manifest = chrome.runtime && chrome.runtime.getManifest();
+  var version = manifest && manifest.version;
+  var versionString = version ? ' (v' + version + ')' : '';
   /**
    * The End-to-End actions that the user can select in the prompt UI.
    * @type {!Array.<!Object.<constants.Actions,string>>}
@@ -80,6 +84,9 @@ ui.Prompt = function() {
   }, {
     value: constants.Actions.LOCK_KEYRING,
     title: chrome.i18n.getMessage('actionLockKeyring')
+  }, {
+    value: constants.Actions.REPORT_ISSUE,
+    title: chrome.i18n.getMessage('actionReportIssue') + versionString
   }];
 };
 goog.inherits(ui.Prompt, goog.ui.Component);
@@ -160,14 +167,23 @@ ui.Prompt.prototype.processSelectedContent_ =
       goog.dom.classlist.add(menuContainer, constants.CssClass.HIDDEN);
       this.renderMenu_();
       break;
+    //@yahoo
     case constants.Actions.CONFIGURE_EXTENSION:
       chrome.tabs.create({
         url: 'settings.html',
-        active: false
+        active: true
       }, goog.nullFunction);
       break;
+    //@yahoo
     case constants.Actions.LOCK_KEYRING:
       this.pgpLauncher_.stop();
+      break;
+    //@yahoo
+    case constants.Actions.REPORT_ISSUE:
+      chrome.tabs.create({
+        url: 'https://help.yahoo.com/kb/yahoo-account',
+        active: true
+      }, goog.nullFunction);
       break;
     case constants.Actions.NO_OP:
       this.close();

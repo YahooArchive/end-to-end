@@ -25,6 +25,7 @@ goog.require('e2e.ext.util.ChromeStorageLocal');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.yExtensionLauncher');
 goog.require('e2e.openpgp.ContextImpl');
+goog.require('e2e.openpgp.yContextImpl');
 goog.require('goog.storage.mechanism.HTML5LocalStorage');
 goog.require('goog.storage.mechanism.PrefixedMechanism');
 
@@ -69,7 +70,7 @@ e2e.ext.bootstrap_ = function() {
     // We don't use chrome.storage.local, because it's accessible from content
     // scripts, that may share processes with arbitrary web origins.
     var storage = new goog.storage.mechanism.HTML5LocalStorage();
-    var contextImpl = new e2e.openpgp.ContextImpl(storage);
+    var contextImpl = new e2e.openpgp.yContextImpl(storage);
     var prefStorage = new goog.storage.mechanism.PrefixedMechanism(storage,
         e2e.ext.constants.StorageKey.PREFERENCES);
     // @yahoo, using yExtensionLauncher instead of ExtensionLauncher

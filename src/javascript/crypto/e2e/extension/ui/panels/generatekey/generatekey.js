@@ -22,19 +22,14 @@ goog.provide('e2e.ext.ui.panels.GenerateKey');
 
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
-goog.require('e2e.ext.constants.Keyserver');
-//@yahoo added 2 requires
-goog.require('e2e.ext.keyserver.Client');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
-//@yahoo added 3 requires
-goog.require('e2e.ext.utils');
-goog.require('e2e.ext.utils.action');
-goog.require('e2e.ext.utils.text');
+goog.require('e2e.ext.utils.action'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
+goog.require('goog.string'); //@yahoo
 goog.require('goog.ui.Component');
 goog.require('goog.ui.KeyboardShortcutHandler');
 goog.require('soy');
@@ -70,15 +65,6 @@ panels.GenerateKey = function(callback, opt_hideTitle, opt_actionBtnTitle) {
   this.callback_ = callback;
 
   /**
-   * //@yahoo
-   * The keyserver client component associated with this panel.
-   * @type {!e2e.ext.keyserver.Client}
-   * @private
-   */
-  this.keyserverClient_ = new e2e.ext.keyserver.Client(
-      e2e.ext.constants.Keyserver.DEFAULT_LOCATION);
-
-  /**
    * The title for the generate key section. If empty, it will not be displayed.
    * @type {string}
    * @private
@@ -109,27 +95,43 @@ panels.GenerateKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
   elem.id = constants.ElementId.GENERATE_KEY_FORM;
 
+  var genKeyEmailLabel = goog.string.htmlEscape(
+      chrome.i18n.getMessage('genKeyEmailLabel'));
+  genKeyEmailLabel = genKeyEmailLabel.
+      replace(/\n/g, '<br>').
+      replace(/#email#([^#]*)#/,
+          '<span id="' + constants.ElementId.EMAIL_ADDRESS + '">$1</span>').
+      replace(/#import#([^#]*)#/,
+          '<label for="' + constants.ElementId.KEYRING_IMPORT +
+          '">$1</label>');
+
   soy.renderElement(elem, templates.generateKeyForm, {
     sectionTitle: this.sectionTitle_,
-    emailLabel: chrome.i18n.getMessage('genKeyEmailLabel'),
+    emailLabel: soydata.VERY_UNSAFE.ordainSanitizedHtml(genKeyEmailLabel),
     commentsLabel: chrome.i18n.getMessage('genKeyCommentsLabel'),
     actionButtonTitle: this.actionButtonTitle_,
     signupCancelButtonTitle: chrome.i18n.getMessage('actionCancelPgpAction')
   });
-
-  //@yahoo Prefill the input with the user's email if possible
-  e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
-    var input = this.getElementByClass(constants.CssClass.EMAIL);
-    if (input) {
-      input.value = email || '';
-    }
-  }, this));
 };
 
 
 /** @override */
 panels.GenerateKey.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
+
+  //@yahoo Prefill the input with the user's email if possible
+  e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
+    var input = this.getElementByClass(constants.CssClass.EMAIL);
+    if (input && email) {
+      input.value = email;
+    }
+
+    var elem = goog.dom.getElement(constants.ElementId.EMAIL_ADDRESS);
+    if (elem && email) {
+      elem.innerText = email;
+    }
+
+  }, this));
 
   var keyboardHandler = new goog.ui.KeyboardShortcutHandler(
       this.getElementByClass(constants.CssClass.EMAIL));
@@ -155,8 +157,6 @@ panels.GenerateKey.prototype.enterDocument = function() {
  * @private
  */
 panels.GenerateKey.prototype.generate_ = function() {
-  //@yahoo
-  this.clearFailure_();
   var name = '';
   var email = this.getElementByClass(constants.CssClass.EMAIL).value;
   var comments = '';
@@ -176,45 +176,6 @@ panels.GenerateKey.prototype.reset = function() {
   goog.array.forEach(inputs, function(input) {
     input.value = '';
   });
-};
-
-
-/**
- * //@yahoo
- * Sends an OpenPGP public key(s) to the keyserver.
- * @param {!e2e.openpgp.Keys} keys
- * @param {function(string)} callback
- * @param {e2e.openpgp.ContextImpl} ctx
- */
-panels.GenerateKey.prototype.sendKeys = function(keys, callback, ctx) {
-  goog.array.forEach(keys, goog.bind(function(key) {
-    if (!key.key.secret) {
-      var email = e2e.ext.utils.text.extractValidYahooEmail(key.uids[0]);
-      if (email) {
-        try {
-          this.keyserverClient_.sendKey(email, key.serialized, goog.bind(
-              function(response) {
-                // Key was successfully registered, and response is valid
-                e2e.ext.utils.action.refreshYmail();
-                callback(response);
-                window.alert(chrome.i18n.getMessage('sendKeySuccess'));
-              }, this),
-              goog.bind(function(err) {
-                // The key wasn't sent to the server or the server signature
-                // was invalid, so delete it for now.
-                // TODO: Separate key generation and import to keyring.
-                if (ctx !== null) {
-                  ctx.deleteKey(key.uids[0]);
-                }
-                this.displayFailure_(err);
-              }, this));
-        } catch (e) {
-          console.error('got key send failure in generate key', email);
-          this.displayFailure_(e);
-        }
-      }
-    }
-  }, this));
 };
 
 
@@ -239,38 +200,5 @@ panels.GenerateKey.prototype.hideSignupForm_ = function() {
 
 };
 
-
-/**
- * //@yahoo
- * Displays error message.
- * @param {Error} error The error to display.
- * @private
- */
-panels.GenerateKey.prototype.displayFailure_ = function(error) {
-  var errorDiv = goog.dom.getElementByClass(constants.CssClass.ERROR);
-  if (error) {
-    var errorMsg = goog.isDef(error.messageId) ?
-        chrome.i18n.getMessage(error.messageId) : error.message;
-    e2e.ext.utils.errorHandler(error);
-    if (errorDiv) {
-      errorDiv.textContent = errorMsg;
-    } else {
-      // The errorDiv might be destroyed by the time displayFailure_ fires
-      window.alert('Error: ' + errorMsg);
-    }
-  } else if (errorDiv) {
-    errorDiv.textContent = '';
-  }
-};
-
-
-/**
- * //@yahoo
- * Clears error messages.
- * @private
- */
-panels.GenerateKey.prototype.clearFailure_ = function() {
-  this.displayFailure_(null);
-};
 
 });  // goog.scope

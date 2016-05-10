@@ -53,8 +53,6 @@ function setUp() {
   stubs.setPath('window.setTimeout', function(callback) {
     callback();
   });
-  // @yahoo
-  stubs.replace(e2e.ext.utils, 'sendProxyRequest', goog.nullFunction);
 }
 
 

@@ -20,9 +20,13 @@
 
 goog.provide('e2e.ext.utils');
 goog.provide('e2e.ext.utils.Error');
+goog.provide('e2e.ext.utils.Warn');
 
+goog.require('e2e.async.Result');
+goog.require('e2e.ext.config');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.ElementId');
+goog.require('goog.events');
 goog.require('goog.object');
 
 goog.scope(function() {
@@ -113,9 +117,25 @@ utils.errorHandler = function(error) {
  */
 utils.Error = function(defaultMsg, msgId) {
   goog.base(this, defaultMsg);
+  this.defaultMsg = defaultMsg;
   this.messageId = msgId;
 };
 goog.inherits(utils.Error, Error);
+
+
+/**
+ * Display an error
+ * @param {Error=} opt_err The error object
+ */
+utils.displayFailure = function(opt_err) {
+  if (opt_err instanceof Error) {
+    // @yahoo This is specific to Ymail/Storm
+    document.body.dispatchEvent(new CustomEvent('displayError', {
+      detail: '[' + chrome.i18n.getMessage('extName') + '] ' + opt_err.message
+    }));
+    // console.error(opt_err);
+  }
+};
 
 
 /**
@@ -142,35 +162,49 @@ utils.showNotification = function(msg, callback) {
 
 
 /**
-* Sends a request to the launcher to perform some action.
-* @param {messages.ApiRequest} args The message we wish to send to the launcher
-* @param {function(messages.e2ebindResponse)=} opt_callback optional callback
-*   to call with the result.
-*/
-utils.sendExtensionRequest = function(args, opt_callback) {
-  var port = chrome.runtime.connect();
-  port.postMessage(args);
+ * Sends a request to the launcher to perform some action.
+ * @param {messages.ApiRequest} args The message to send to the launcher
+ * @param {function(messages.e2ebindResponse)=} opt_callback optional callback
+ *   to call with the result.
+ * @param {function(Error)=} opt_errback The callback to invoke if an
+ *     error is encountered. If omitted, the default error callback will be
+ *     invoked.
+ */
+utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
 
-  var respHandler = function(response) {
-    if (opt_callback) {
-      opt_callback(response);
-    }
-    port.disconnect();
+  opt_errback = opt_errback || function(error) {
+    opt_callback && opt_callback(/** @type {messages.e2ebindResponse} */ ({
+      completedAction: args.action,
+      error: error.message
+    }));
   };
-  port.onMessage.addListener(respHandler);
+
+  var port = chrome.runtime.connect();
+  if (!port) {
+    opt_errback(new Error(chrome.i18n.getMessage('glassCannotCommunicate')));
+    return;
+  }
+
   port.onDisconnect.addListener(function() {
     port = null;
   });
-};
+  port.onMessage.addListener(function(response) {
+    port.disconnect();
+    port = null;
 
+    if (response.error) {
+      opt_errback(new Error(response.error));
+      return;
+    }
 
-/**
- * Sends a request from a content script to proxy a message to the active tab.
- * @param {messages.proxyMessage} args The message to proxy
- */
-utils.sendProxyRequest = function(args) {
-  args.proxy = true;
-  chrome.runtime.sendMessage(args);
+    try {
+      opt_callback && opt_callback(response);
+    } catch (err) {
+      opt_errback(err);
+    }
+  });
+
+  port.postMessage(args);
 };
 
 
@@ -236,6 +270,55 @@ utils.isContentScript = function() {
   return Boolean(chrome.runtime) &&
       Boolean(chrome.runtime.getURL) && // Running as Chrome extension/app
       !Boolean(chrome.runtime.getBackgroundPage); // Running in a content script
+};
+
+
+/**
+ * Listen to an event, that is throttled until the next animation frame
+ * @param {!EventTarget} target The target element to throttle events
+ * @param {!string} type The event type
+ * @param {function(Event)} handler The event handler
+ * @param {!string=} opt_newType The new event type name
+ * @return {goog.events.Key} Unique key for the listener.
+ */
+utils.listenThrottledEvent = function(target, type, handler, opt_newType) {
+  var newType = opt_newType || ('throttled-' + type);
+
+  // init the event requested only once
+  if (!target['hasInit' + newType]) {
+    target['hasInit' + newType] = true;
+
+    var running = false;
+
+    target.addEventListener(type, function() {
+      if (running) {
+        return;
+      }
+      running = true;
+      requestAnimationFrame(function() {
+        target.dispatchEvent(new CustomEvent(newType));
+        running = false;
+      });
+    }, false);
+  }
+
+  return goog.events.listen(target, newType, handler);
+};
+
+
+/**
+ * Execute the callback with the fetched config
+ * @param {!string} property The config property name
+ * @param {!function(*)} callback The callback to receive the config value
+ * @param {!function(Error)} errback The errback to call with Error
+ */
+utils.getConfig = function(property, callback, errback) {
+  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+    action: constants.Actions.GET_PREFERENCE,
+    content: property
+  }), /** @param response {messages.e2ebindResponse} */ function(response) {
+    callback(response.content);
+  }, errback);
 };
 
 });  // goog.scope

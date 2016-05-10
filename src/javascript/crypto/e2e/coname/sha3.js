@@ -78,7 +78,7 @@ e2e.coname.sha3.Keccak = function(bits, padding, outputBits) {
 
 
 /**
- * @param {!e2e.ByteArray} message a byte array to hash
+ * @param {!Array<number>|Uint8Array} message a byte array to hash
  * @return {!e2e.coname.sha3.Keccak} the Keccak instance
  */
 e2e.coname.sha3.Keccak.prototype.update = function(message) {
@@ -169,7 +169,7 @@ e2e.coname.sha3.Keccak.prototype.finalize_ = function() {
 
 /**
  *
- * @return {!e2e.ByteArray} the output stored in an array of bytes
+ * @return {!Array<number>} the output stored in an array of bytes
  */
 e2e.coname.sha3.Keccak.prototype.digest = function() {
   this.finalize_();

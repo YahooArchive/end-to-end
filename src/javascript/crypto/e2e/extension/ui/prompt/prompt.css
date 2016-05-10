@@ -16,6 +16,14 @@
  * Defines the styles for the prompt UI.
  */
 
+/* @yahoo */
+@font-face{
+  font-family:'mail';
+  src:url("images/yahoo/fonts/mail-ltr47.woff2") format("woff2"),url("images/yahoo/fonts/mail-ltr47.woff") format("woff");
+  font-weight:400;
+  font-style:normal
+}
+
 button {
   margin-bottom: 10px;
 }
@@ -75,12 +83,12 @@ textarea:focus {
   color: #dd4b39;
   display: block;
   font-size: 1em;
-  height: 16px;
+  line-height: 20px;
   margin-bottom: 7px;
   text-align: center;
 }
 
-#chipHolder, #fromHolder {
+#chipHolder {
   min-height: 33px;
 }
 
@@ -334,4 +342,86 @@ textarea:focus {
   height: 1px;
   overflow: hidden;
   width: 1px;
+}
+
+
+
+
+/* the following is yahoo-specific */
+#encryptr-icon > div {
+  position: absolute;
+  z-index: -100;
+  background: #FFF;
+  box-shadow: 1px 1px #EEE;
+  border-radius: 8px;
+  border: 1px solid #CCC;
+  padding: 15px 20px;
+  right: 25px;
+  margin-top: 4px;
+  color: #333;
+  cursor: default;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity .25s ease-in-out;
+}
+
+#encryptr-icon:hover > div {
+  visibility: visible;
+  z-index: inherit;
+  opacity: .97;
+}
+
+#encryptr-icon > div > p {
+  margin: 0;
+}
+
+#encryptr-icon > label:before {
+  font-family: mail;
+  content: '\e611';
+  cursor: auto;
+  font-size: 20px;
+  position: absolute;
+  right: 25px;
+  padding: 3px;
+  color: #00b777;
+}
+
+#encryptr-icon > label.error:before {
+  color: #dd4b39;
+}
+
+#encryptr-icon > label.warn:before {
+  color: #FC3;
+}
+
+/** loader from http://projects.lukehaas.me/css-loaders/ */
+.loader {
+  height: 16px;
+  width: 16px;
+  margin: 10px auto;
+  position: relative;
+  animation: rotation 0.4s infinite linear;
+  border-radius: 100%;
+}
+.loader:before {
+  content: '';
+  display: block;
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  height: 100%;
+  width: 100%;
+  border: 3px solid rgba(0,0,0,0.2);
+  border-top-color: rgba(0,0,0,0.8);
+  border-radius: 100%;
+}
+#pgpBody.loader {
+  display: block;
+  margin: 50px auto;
+  color: rgba(0,0,0,0);
+}
+
+@keyframes rotation{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(359deg)}
 }

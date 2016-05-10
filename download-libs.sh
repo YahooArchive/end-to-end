@@ -20,6 +20,11 @@
 
 export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
 
+# symlink function with fallback on cp in case of failure.
+symlink() {
+  ln -s "$@" || cp -R "$@"
+}
+
 type ant >/dev/null 2>&1 || {
   echo >&2 "Ant is required to build End-To-End dependencies."
   exit 1
@@ -54,7 +59,7 @@ cd lib
 # symlink typedarray
 if [ ! -d typedarray ]; then
   mkdir typedarray
-  ln -s ../zlib.js/define/typedarray/use.js typedarray/use.js
+  symlink ../zlib.js/define/typedarray/use.js typedarray/use.js
 fi
 
 # build closure compiler
@@ -120,11 +125,11 @@ fi
 # Soy file bundled with the compiler does not compile with strict settings:
 # lib/closure-templates-compiler/soyutils_usegoog.js:1762: ERROR - element JS_STR_CHARS does not exist on this enum
 cd closure-templates-compiler
-
-# Temporary fix
-# Lock the version to Sep 16, 2015, in which the compiler can build without the follwing error
-# curl https://raw.githubusercontent.com/google/closure-templates/master/javascript/soyutils_usegoog.js -O
-curl https://raw.githubusercontent.com/google/closure-templates/0cbc8543c34d3f7727dd83a2d1938672f16d5c20/javascript/soyutils_usegoog.js -O
+curl https://raw.githubusercontent.com/google/closure-templates/05890ed973229bb8ae8a718b01b6ad80560243eb/javascript/soyutils_usegoog.js -O
+if [ -f soyutils.js ]; then
+  # soyutuls.js re-declares goog, which breaks closure
+  mv soyutils.js soyutils.js.notused
+fi
 cd ..
 
 cd ..

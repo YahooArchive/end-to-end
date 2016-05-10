@@ -26,16 +26,13 @@
   margin-top: 25px;
 }
 
-#pgpBody input {
-  margin-right: 15px;
-}
-
 #pgpBody input[type="checkbox"] {
   margin-right: 5px;
 }
 
 #pgpBody input[type="text"] {
   margin-top: 10px;
+  margin-right: 15px;
 }
 
 #pgpBody input[type="file"] {
@@ -63,6 +60,7 @@
 
 #storedKeys tr>td {
   vertical-align: top;
+  padding-top: 8px;
 }
 
 
@@ -90,4 +88,99 @@
 
 .passphrase {
   width: 300px;
+}
+
+button.keyring-import input[type="file"] {
+  float: left;
+  width: 400px;
+  height: 200%;
+  margin: 0 -400px 0 -230px;
+  cursor: pointer;
+  opacity: 0;
+  border: 0;
+}
+
+button.keyring-import {
+  overflow: hidden
+}
+
+
+
+#storedKeys .key-meta {
+  clear: both;
+  padding: 0 0 3px 3px;
+}
+
+#storedKeys .key-info {
+  padding: 0 5px;
+  width: 560px;
+}
+
+#storedKeys .key-uid {
+  line-height: 35px;
+}
+
+#storedKeys .key-meta span.export, #storedKeys .key-meta span.remove {
+  background: url(images/download_item.png) no-repeat 5px 1px;
+  width: 21px;
+  height: 18px;
+  cursor: pointer;
+  opacity: .2;
+  float: right;
+  clear: right;
+}
+
+#storedKeys tr img {
+  padding: 0;
+  margin-right: 2px;
+}
+
+#storedKeys tr img.export{
+  margin-left: -50px;
+}
+
+#storedKeys tr:hover img {
+  opacity: .1;
+}
+
+div#pgpBody .key-info span.remove {
+  background: url(images/delete.png) no-repeat;
+}
+
+div#pgpBody .key-info span.export:hover, div#pgpBody .key-info span.remove:hover, #storedKeys tr img:hover {
+  opacity: .6
+}
+
+.modal-dialog {
+  background: #FFF;
+  border: 1px solid #878c91;
+}
+
+.modal-dialog-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #ccc;
+}
+
+.modal-dialog-title {
+  cursor: move;
+  background: #FFF;
+}
+
+.modal-dialog-title-close {
+  cursor: pointer;
+  background: none;
+  top: 3px;
+}
+
+.modal-dialog-title-close:before {
+  content: '\d7';
+  color: #AAA;
+  font-weight: normal;
+  font-family: sans-serif;
+}
+
+.goog-buttonset-default {
+  font-weight: inherit;
 }

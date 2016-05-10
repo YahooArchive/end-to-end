@@ -23,10 +23,12 @@ goog.provide('e2e.ext.ui.panels.Chip');
 
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.templates.panels.chipholder');
+goog.require('e2e.ext.utils.text'); //@yahoo
 goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
+goog.require('goog.string'); //@yahoo
 goog.require('goog.ui.Component');
 goog.require('soy');
 
@@ -85,9 +87,21 @@ panels.Chip.prototype.decorateInternal = function(elem) {
 
   var displayValue = this.isPassphrase() ?
       chrome.i18n.getMessage('promptPassphraseMask') : this.value_;
-  soy.renderElement(elem, templates.renderChip, {
-    value: displayValue
-  });
+  // soy.renderElement(elem, templates.renderChip, {
+  //   value: displayValue
+  // });
+
+  // @yahoo shows the name and hide uid as title if an email is there
+  displayValue = goog.string.collapseWhitespace(displayValue);
+  var email = e2e.ext.utils.text.extractValidEmail(displayValue);
+  var data = {value: displayValue};
+  if (email && email !== displayValue) {
+    // just in case everything is removed, use displayValue
+    data.opt_name = goog.string.trimRight(
+        displayValue.replace('<' + email + '>', '')) || displayValue;
+  }
+
+  soy.renderElement(elem, templates.renderChip, data);
 };
 
 

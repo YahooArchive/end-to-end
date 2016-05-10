@@ -29,8 +29,9 @@ goog.require('e2e.ext.api.RequestThrottle');
 goog.require('e2e.ext.constants.Actions');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
-// @yahoo
-goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils'); // @yahoo
+goog.require('e2e.openpgp.error.MissingPassphraseError'); // @yahoo
+goog.require('e2e.openpgp.error.WrongPassphraseError'); // @yahoo
 goog.require('goog.ui.Component');
 
 goog.scope(function() {
@@ -114,6 +115,8 @@ api.Api.prototype.removeApi = function() {
  * @private
  */
 api.Api.prototype.openPort_ = function(port) {
+  //@yahoo remember the tabId
+  this.tabId_ = port.sender && port.sender.tab && port.sender.tab.id;
   port.onMessage.addListener(
       goog.bind(this.executeAction_, this, goog.bind(port.postMessage, port)));
 };
@@ -130,42 +133,80 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   var outgoing = {
     completedAction: incoming.action
   };
-  var content;
 
   // Ensure that only certain actions are exposed via the API.
   switch (incoming.action) {
     case constants.Actions.ENCRYPT_SIGN:
     case constants.Actions.DECRYPT_VERIFY:
-    // @yahoo, the following 4 actions are now yahoo-specific
-    case constants.Actions.LIST_ALL_UIDS:
-    case constants.Actions.LIST_KEYS:
-    case constants.Actions.IMPORT_KEY:
-    case constants.Actions.GET_KEYRING_UNLOCKED:
+    case constants.Actions.DECRYPT_THEN_VERIFY: //@yahoo
+    case constants.Actions.DECRYPT: //@yahoo
+    case constants.Actions.VERIFY: //@yahoo
+    case constants.Actions.LIST_KEYS: //@yahoo
       // Propagate the decryptPassphrase if needed.
       incoming.passphraseCallback = function(uid) {
         // Note: The passphrase needs to be known when calling executeAction_.
-        return e2e.async.Result.toResult(incoming.decryptPassphrase || '');
+
+        // @yahoo feedback the need of decrypt passphrase
+        // return e2e.async.Result.toResult(incoming.decryptPassphrase || '');
+        if (incoming.decryptPassphrase && !incoming.passphraseAttempted) {
+          incoming.passphraseAttempted = true;
+          return e2e.async.Result.toResult(incoming.decryptPassphrase);
+        }
+
+        outgoing.error = chrome.i18n.getMessage('actionEnterPassphrase');
+        callback(outgoing);
+        throw incoming.passphraseAttempted ?
+            new e2e.openpgp.error.WrongPassphraseError() :
+            new e2e.openpgp.error.MissingPassphraseError();
       };
       break;
-    // @yahoo
-    case constants.Actions.SHOW_NOTIFICATION:
-      if (typeof incoming.content === 'string') {
-        content = incoming.content;
-      } else {
-        content = '';
+    //@yahoo, the following 5 actions are yahoo-specific
+    case constants.Actions.CHANGE_PAGEACTION:
+      if (this.tabId_) {
+        chrome.browserAction.setTitle({
+          tabId: this.tabId_,
+          title: chrome.i18n.getMessage('composeGlassTitle')
+        });
+        chrome.browserAction.setIcon({
+          tabId: this.tabId_,
+          path: 'images/yahoo/icon-128-green.png'
+        });
       }
-      e2e.ext.utils.showNotification(content, function() {
-        callback(outgoing);
-      });
-      return;
-    // @yahoo
-    case constants.Actions.OPEN_OPTIONS:
-      chrome.tabs.create({
-        url: 'settings.html',
-        active: true
-      });
       callback(outgoing);
       return;
+    case constants.Actions.RESET_PAGEACTION:
+      if (this.tabId_) {
+        chrome.browserAction.setTitle({
+          tabId: this.tabId_,
+          title: chrome.i18n.getMessage('extName')
+        });
+        chrome.browserAction.setIcon({
+          tabId: this.tabId_,
+          path: 'images/yahoo/icon-128.png'
+        });
+      }
+      callback(outgoing);
+      return;
+    case constants.Actions.CONFIGURE_EXTENSION:
+    case constants.Actions.SYNC_KEYS:
+    case constants.Actions.GET_ALL_KEYS_BY_EMAILS:
+      break;
+    //@yahoo
+    case constants.Actions.SHOW_NOTIFICATION:
+      if (typeof incoming.content === 'string') {
+        e2e.ext.utils.showNotification(incoming.content, function() {
+          callback(outgoing);
+        });
+      }
+      return;
+    //@yahoo
+    case constants.Actions.GET_PREFERENCE:
+      if (window.launcher) {
+        outgoing.content = window.launcher.
+                               getPreferences().getItem(incoming.content);
+        callback(outgoing);
+        return;
+      }
     default:
       outgoing.error = chrome.i18n.getMessage('errorUnsupportedAction');
       callback(outgoing);
@@ -176,10 +217,6 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     callback({
       error: chrome.i18n.getMessage('glassKeyringLockedError')
     });
-    return;
-  } else if (incoming.action === constants.Actions.GET_KEYRING_UNLOCKED) {
-    outgoing.content = true;
-    callback(outgoing);
     return;
   }
 
@@ -195,6 +232,8 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   }, function(error) {
     outgoing.error = goog.isDef(error.messageId) ?
         chrome.i18n.getMessage(error.messageId) : error.message;
+    // @yahoo before it is sent to the other end, log the error and stack
+    console.error(error);
     callback(outgoing);
   });
 };

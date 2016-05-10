@@ -317,6 +317,7 @@ function testWithAppLauncher() {
 }
 
 
+//@yahoo
 function testLockedKeyring() {
   stubs.setPath(
       'window.launcher.hasPassphrase', mockControl.createFunctionMock());
@@ -333,27 +334,6 @@ function testLockedKeyring() {
   mockControl.$replayAll();
   api.executeAction_(callbackMock, {
     action: constants.Actions.DECRYPT_VERIFY
-  });
-  mockControl.$verifyAll();
-}
-
-// @yahoo
-function testUnlockedKeyring() {
-  stubs.setPath(
-      'window.launcher.hasPassphrase', mockControl.createFunctionMock());
-  window.launcher.hasPassphrase().$returns(true);
-
-  var callbackMock = mockControl.createFunctionMock();
-  callbackMock(new goog.testing.mockmatchers.ArgumentMatcher(function(arg) {
-    assertTrue(arg.content);
-    assertEquals(constants.Actions.GET_KEYRING_UNLOCKED, arg.completedAction);
-    assertFalse(goog.isDef(arg.error));
-    return true;
-  }));
-
-  mockControl.$replayAll();
-  api.executeAction_(callbackMock, {
-    action: constants.Actions.GET_KEYRING_UNLOCKED
   });
   mockControl.$verifyAll();
 }

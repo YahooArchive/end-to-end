@@ -1,4 +1,4 @@
-/* Copyright 2015 Yahoo Inc. All rights reserved.
+/* Copyright 2016 Yahoo Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,217 +13,296 @@
 // limitations under the License.
 */
 /**
- * Defines the styles for the compose glass UI.
+ * Defines the extra styles for the compose glass UI, based on prompt.css
  */
 
-button {
-  margin-bottom: 10px;
+
+html {
+  overflow: hidden;
+  cursor: text;
 }
 
-.insert {
-  margin-left: 8px;
+body {
+  background: #FFF;
+  cursor: default;
 }
 
-form {
-  margin-top: 10px;
+.transparent {
+  opacity: 1;
 }
-
-input[type="text"],
-input[type="password"] {
-  width: 548px;
-}
-
-textarea {
-  border: none;
-  border-bottom: 1px solid YCOLOR_GREY_4;
-  height: 200px;
-  width: 95%;
-  padding-left: 15px;
-  padding-top: 15px;
-}
-
-textarea:hover,
-textarea:focus,
-#pgpKeySelect:hover,
-#pgpKeySelect:focus,
-#subjectHolder:hover,
-#subjectHolder:focus,
-#fromHolder:hover,
-#fromHolder:focus {
-  outline: none;
+#callbackDialog {
+  background: rgba(50,50,50,0.35);
 }
 
 .pgpHead {
-  margin-bottom: 2px;
-  padding: 1px;
-  background: YCOLOR_GREY_3;
+  display: none;
 }
 
-.pgpHead h1 {
-  line-height: 34px;
-  color: YCOLOR_PURPLE_14C;
-  font-size: 18px;
-  font-weight: normal;
+#errorDiv {
+  height: inherit;
+  line-height: 16px;
 }
 
-#pgpBody input[type="checkbox"],
-#pgpBody input[type="password"] {
-  margin: 8px 8px 0 0;
-}
-
-#pgpBody ul {
-  list-style: none;
-  padding: 0 15px;
-  width: 270px;
-}
-
-#pgpBody ul>li {
-  border-bottom: 1px solid YCOLOR_GREY_3;
-  padding: 5px;
-}
-
-#pgpBody ul>li:hover {
-  background-color: YCOLOR_GREY_2;
+#save-esc-button:before {
+  content: '\e016';
+  font-family: mail;
+  font-size: 12px;
+  color: #777;
+  position: absolute;
+  right: 8px;
+  top: 5px;
+  padding: 2px;
   cursor: pointer;
 }
 
-#pgpBody > #pgpKeySelect {
-  margin-bottom: 8px;
+#pgpKeySelect {
+  cursor: text;
 }
 
-#pgpKeySelect,
-#fromHolder,
+#pgpSignerSelect {
+  font-size: 13px;  
+}
+
+#pgpKeySelect input, #subjectHolder input {
+  font-size: 13px;
+  color: #454545;
+}
+
+
+#fromHolder {
+  font-size: 13px;
+  color: #777;
+  padding: 7px 0px;
+  margin: 0 28px;
+  border-bottom: 1px solid #D7D5D5;
+  min-height: inherit;
+}
+
+#chipHolder, #ccChipHolder {
+  font-size: 13px;
+  color: #777;
+  line-height: 18px;
+  height: 34px;
+  margin-bottom: 0;
+  padding: 0;
+  margin: 2px 28px;
+  border-bottom: 1px solid #D7D5D5;
+}
+
 #subjectHolder {
-  border-bottom: 1px solid YCOLOR_GREY_4;
-  color: YCOLOR_GREY_6;
-  line-height: 24px;
-  padding-left: 10px;
+  padding: 6px 28px;
+  border-bottom: 1px solid #D7D5D5;
 }
 
-#fromHolder > * {
-  display: inline-block;
-  margin: 2px;
+
+#pgpKeySelect > .uid-chips {
+  padding: 0 160px 0 16px;
+}
+
+#pgpKeySelect > .uid-chips > div {
+  border: 0;
+  background: inherit;
+  padding: 0 4px;
+  margin: 0;
+  margin-right: 4px;
+}
+#pgpKeySelect>.uid-chips>.uid-bad-chip {
+  color: #EF2E1A;
+  background: inherit;
+}
+#pgpKeySelect>.uid-chips>.uid-good-chip {
+  color: #00B777;
+}
+#pgpKeySelect>.uid-chips>input {
+  margin: 4px 0 5px 4px;
+  height: inherit;
+}
+
+#subjectHolder input#subject {
+  width: 100%;
 }
 
 #fromHolder > div:first-child,
 #subjectHolder > div:first-child,
-#pgpKeySelect > .uid-chips > input,
+#subjectHolder > input {
+  margin-left: 0;
+  float: none;
+}
+
+
+
 #pgpKeySelect > .uid-chips > span {
-  margin-left: 7px;
+  margin: 0 2px 0 -16px;
+}
+
+#encryptr-icon label:before {
+  cursor: pointer;
 }
 
 
-#pgpKeySelect:focus,
-#subjectHolder:focus,
-#fromHolder:focus {
-  color: YCOLOR_GREY_8;
-  content: '';
-}
-
-#pgpKeySelect input,
-#pgpKeySelect input:hover,
-#pgpKeySelect input:focus {
+textarea {
+  width: 100%;
+  padding: 10px 50px 10px 28px;
+  font-family: monospace !important;
+  font-size: 14px !important;
   border: 0;
-  display: inline-block;
-  overflow: hidden;
+  resize: none;
+  white-space: normal;
+}
+
+#pgpBody .pgpActions {
   padding: 0;
-  width: 100px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #FFF;
 }
 
-#subjectHolder input {
-  width: 97%;
-  height: 32px;
-  border: 0;
+.pgpActions div.buttons-container {
+  float: none;
+  border-top: 1px solid #D7D5D5;
+  padding: 0 28px;
+}
+
+.pgpActions div.buttons-container > button {
+  margin: 15px 15px 17px 0;
+}
+
+.pgpActions div.buttons-container > div {
   display: inline-block;
+  font-size: 13px;
+  opacity: .7;
+  vertical-align: top;
+  padding: 15px 15px 0 0;
+  cursor: default;
+  line-height: 35px;
+}
+
+.pgpActions div.buttons-container > div > button {
+  display: inline-block;
+  font-family: mail;
+  margin: 3px;
+  font-size: 20px;
+  background: none;
+  color: #777;
+  border: none;
+  padding: 0 6px 0 1px;
+  box-shadow: none;
+  line-height: 31px;
+}
+
+.pgpActions div.buttons-container button#draft-delete-button:before {
+  content: "\e008"
+}
+
+.pgpActions div.buttons-container .save-draft-msg {
+  line-height: 40px
+}
+
+.pgpActions div.bottom-notification {
+  width: 100%;
+  background: #FFF;
+  border-top: 1px solid #D7D5D5;
+  padding: 15px 28px;
+}
+
+.pgpActions div.bottom-notification > span.loader {
+  float: left;
+}
+
+.pgpActions div.bottom-notification > div {
+  display: inline-block;
+  vertical-align: top;
+  line-height: 35px;
+  padding: 0 8px;
+  opacity: .7;
+}
+
+.pgpActions label[for], #pgpGenerateKey label[for] {
+  cursor: pointer;
+  color: -webkit-link;
+  text-decoration: underline;
+}
+
+
+.passphraseEncryptionLink {
+  font-size: .75rem;
+  padding-right: 3px;
+  margin: 9px 0 -24px;
+  display: none; /* disabled for now */
+}
+
+.passphraseEncryptionLink:hover {
+  text-decoration: underline;
+}
+
+.CCLink {
+  font-size: .75rem;
+  padding-right: 3px;
+  margin: 9px 0 -24px;
+}
+
+.CCLink:hover {
+  text-decoration: underline;
+}
+
+.uid-chip>div {
+  max-width: 220px;
   overflow: hidden;
-  padding: 1px;
-  padding-left: 8px;
-}
-
-#pgpKeySelect > .uid-chips,
-#pgpKeySelect > .uid-chips div {
-  display: inline-block;
-}
-
-#pgpKeySelect > .uid-chips {
-  padding: 2px;
-}
-
-#pgpKeySelect > .uid-chips > div {
-  background-color: YCOLOR_GREEN_6A;
-  border: 1px solid YCOLOR_GREY_4;
-  border-radius: 3px;
-  color: #0c0c0c;
-  margin: 5px;
-  padding: 2px;
-  font-size: 12px;
-  line-height: 12px;
-}
-
-#pgpKeySelect > .uid-chips > .uid-bad-chip {
-  background-color: YCOLOR_NEUTRAL_RED;
-}
-
-#pgpSignerSelect {
-  background-color: YCOLOR_WHITE;
-  border: 0;
-  margin-left: 5px;
-  outline: none;
-  padding: 1px;
-}
-
-#pgpSignerSelect:disabled {
-  -webkit-appearance: initial;
-}
-
-#passphraseEncryptionLink,
-.select-all-link {
-  color: YCOLOR_GREY_6;
-  cursor: pointer;
-  margin-right: 10px;
-  padding-bottom: 8px;
-  text-align: right;
-}
-
-#passphraseEncryptionLink:hover,
-.select-all-link:hover {
-  color: YCOLOR_GREY_10;
-}
-
-.uid-chip > div,
-.uid-chip img {
+  text-overflow: ellipsis;
+  white-space: nowrap;
   margin-bottom: 2px;
-  vertical-align: bottom;
-}
-
-.uid-chip img {
-  cursor: pointer;
-  height: 16px;
-  margin: 0 0 2px 5px;
-  opacity: 0.3;
-  vertical-align: middle;
-  width: 16px;
-}
-
-.uid-chip img:hover {
-  opacity: 1;
+  font-weight: normal;
 }
 
 .ac-renderer {
-  background-color: white;
-  border: 1px solid YCOLOR_GREY_4;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  cursor: pointer;
-  padding: 5px;
-  position: absolute;
+  box-shadow: none;
+  border: solid 1px #ddd;
+  padding: 3px 3px 2px 3px;
+  width: 380px;
 }
 
 .ac-row {
-  padding: 5px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 8px 0 0 42px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 1px;
+  height: 28px;
 }
 
-
-
-#pgpSignerSelect, #pgpKeySelect input, #subjectHolder input, textarea {
-  font-size: .9em;
+.conversation #save-esc-button {
+  display: none;
+}
+.conversation .pgpActions {
+  padding: 0;
+}
+.conversation .pgpActions div.bottom-notification, .conversation .pgpActions div.buttons-container {
+  border-color: #EAEDF0;
+  padding: 0;
+  margin-left: 23px;
+  margin-right: 23px;
+}
+.conversation #fromHolder {
+  margin: 0 23px;
+  border-color: #EAEDF0;
+}
+.conversation #chipHolder, .conversation #ccChipHolder {
+  margin-left: 23px;
+  margin-right: 23px;
+  border-color: #EAEDF0;
+}
+.conversation #subjectHolder {
+  padding: 6px 0;
+  margin: 0 23px;
+  border-color: #EAEDF0;
+}
+.conversation textarea {
+  padding-left: 23px;
+  padding-right: 45px;
+}
+.conversation #encryptr-icon > div, .conversation #encryptr-icon label:before {
+  right: 20px;
 }

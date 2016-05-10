@@ -23,6 +23,7 @@ goog.provide('e2e.ext.ui.dialogs.ImportConfirmation');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.templates.dialogs.importconfirmation');
+goog.require('goog.array');
 
 goog.scope(function() {
 var ui = e2e.ext.ui;
@@ -41,10 +42,16 @@ var templates = e2e.ext.ui.templates.dialogs.importconfirmation;
  * @extends {dialogs.Generic}
  */
 dialogs.ImportConfirmation = function(keys, callback) {
+  // @yahoo shows a different message when private key exists
+  var hasPrivateKey = goog.array.some(keys, function(key) {
+    return key.key.secret;
+  });
   goog.base(
       this,
       templates.importKeyConfirm({
         promptImportKeyConfirmLabel: chrome.i18n.getMessage(
+            // @yahoo shows a different message when private key exists
+            hasPrivateKey ? 'promptImportPrivateKeyConfirmLabel' :
             'promptImportKeyConfirmLabel'),
         keys: keys,
         secretKeyDescription: chrome.i18n.getMessage('secretKeyDescription'),

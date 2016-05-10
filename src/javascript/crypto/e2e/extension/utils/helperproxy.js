@@ -73,7 +73,7 @@ e2e.ext.utils.HelperProxy.prototype.isLookingGlassEnabled = function() {
  */
 e2e.ext.utils.HelperProxy.prototype.getSelectedContent = function(callback,
     errorCallback) {
-  this.sendMessage_({
+  this.sendMessage({ // @yahoo use sendMessage() instead of sendMessage_()
     enableLookingGlass: this.isLookingGlassEnabled()
   }, callback, errorCallback);
 };
@@ -93,18 +93,22 @@ e2e.ext.utils.HelperProxy.prototype.getSelectedContent = function(callback,
  * @param {!function(Error)} errorCallback The callback to invoke if an error is
  *     encountered.
  * @param {string=} opt_subject The subject of the message if applicable.
+ * @param {string=} opt_from The sender of the message if applicable. //@yahoo
+ * @param {Array.<string>=} opt_ccRecipients The CC of the message. //@yahoo
  * @export
  */
 e2e.ext.utils.HelperProxy.prototype.updateSelectedContent =
     function(content, recipients, origin, shouldSend, callback,
-    errorCallback, opt_subject) {
-  this.sendMessage_({
+    errorCallback, opt_subject, opt_from, opt_ccRecipients) {
+  this.sendMessage({ // @yahoo use sendMessage() instead of sendMessage_()
     value: content,
     response: true,
     send: shouldSend,
     origin: origin,
     recipients: recipients,
-    subject: opt_subject
+    ccRecipients: opt_ccRecipients || [],
+    subject: opt_subject,
+    from: opt_from
   }, callback, errorCallback);
 };
 
@@ -115,9 +119,9 @@ e2e.ext.utils.HelperProxy.prototype.updateSelectedContent =
  * @param {!function(...)} callback The function to invoke with the response.
  * @param {!function(Error)} errorCallback Function to invoke on error
  *     conditions.
- * @private
+ * //yahoo made public
  */
-e2e.ext.utils.HelperProxy.prototype.sendMessage_ = function(payload, callback,
+e2e.ext.utils.HelperProxy.prototype.sendMessage = function(payload, callback,
     errorCallback)  {
   this.setupConnection(goog.bind(function() {
     this.sendMessageImpl(payload, goog.bind(function(response) {
@@ -191,23 +195,24 @@ goog.inherits(e2e.ext.utils.TabsHelperProxy, e2e.ext.utils.HelperProxy);
 /** @override */
 e2e.ext.utils.TabsHelperProxy.prototype.setupConnection = function(
     callback, errorCallback) {
-  if (goog.isDefAndNotNull(this.tabId_)) {
+  // @yahoo always talk to the active tab
+  // if (goog.isDefAndNotNull(this.tabId_)) {
+  //   this.connectToHelper_(callback, errorCallback);
+  // } else {
+  // Query active tab.
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, goog.bind(function(tabs) {
+    if (!tabs || tabs.length !== 1) {
+      errorCallback(new Error('Cannot determine the active tab.'));
+      return;
+    }
+    var tabId = tabs[0] ? tabs[0].id : undefined;
+    this.tabId_ = tabId;
     this.connectToHelper_(callback, errorCallback);
-  } else {
-    // Query active tab.
-    chrome.tabs.query({
-      active: true,
-      currentWindow: true
-    }, goog.bind(function(tabs) {
-      if (!tabs || tabs.length !== 1) {
-        errorCallback(new Error('Cannot determine the active tab.'));
-        return;
-      }
-      var tabId = tabs[0] ? tabs[0].id : undefined;
-      this.tabId_ = tabId;
-      this.connectToHelper_(callback, errorCallback);
-    }, this));
-  }
+  }, this));
+  // }
 };
 
 

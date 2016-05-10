@@ -19,30 +19,30 @@
 body {
   border: none;
   color: YCOLOR_GREY_10;
-  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial;
+  font-family: "Helvetica Neue","Segoe UI",Helvetica,Arial,"Lucida Grande",sans-serif;
   font-size: 0.9em;
   font-weight: 300;
   line-height: 1.38461538;
   margin: 0;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 button {
+  box-sizing: border-box;
+  height: 32px;
+  line-height: 30px;
+  padding: 0 25px;
   background-color: BTN_PRIMARY;
-  border: 0px solid;
-  -webkit-border-radius: 2px;
-  border-radius: 2px;
   color: BTN_PRIMARY_TEXT;
-  cursor: default;
-  display: inline-block;
-  font-size: 11px;
-  font-weight: bold;
-  height: 27px;
-  margin: 10px 12px 0 2px;
-  min-width: 100px;
-  padding: 6px 8px 8px 8px;
-  text-align: center;
-  vertical-align: top;
+  box-shadow: 0 2px #063A93;
+  border-radius: 3px;
+  font-weight: 400;
+  border: 2px solid transparent;
+  cursor: pointer;
+  margin: 15px 15px 15px 0;
+  font-size: 13px;
+  outline: none;
 }
 
 button:hover {
@@ -58,17 +58,17 @@ button.back,
 button.cancel,
 button.options,
 button.save {
-  background-color: YCOLOR_WHITE;
-  border: 1px solid BTN_PRIMARY;
-  color: BTN_PRIMARY;
+  box-shadow: 0 2px #ABAEB7;
+  background-color: BTN_CANCEL;
+  color: BTN_CANCEL_TEXT;
 }
 
 button.back:hover,
 button.cancel:hover,
 button.options:hover,
 button.save:hover {
-  border-color: BTN_PRIMARY_HOVER;
-  color: BTN_PRIMARY_HOVER;
+  background-color: BTN_CANCEL_HOVER;
+  color: BTN_CANCEL_HOVER_TEXT;
 }
 
 button.back {
@@ -78,7 +78,7 @@ button.back {
 }
 
 button.back > img {
-  margin-top: 2px;
+  margin-bottom: -4px;
   opacity: 0.6;
 }
 
@@ -119,11 +119,10 @@ button.back > img {
 }
 
 #callbackDialog > div {
-  left: 45px;
-  top: 60px;
   width: 550px;
   max-height: 75%;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #callbackDialog input[type="password"],
@@ -137,14 +136,12 @@ button.back > img {
   pointer-events: auto;
 }
 
-.overlayDialog .modal-dialog-title {
-  background: inherit;
-}
-
 input {
   border: 1px solid YCOLOR_GREY_6;
   margin: 0;
   padding: 3px;
+  line-height: 25px;
+  font-size: 100%;
 }
 
 input:hover,
@@ -265,13 +262,7 @@ input:focus {
   color: #0c0c0c;
 }
 
-
-
-.modal-dialog-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-}
+/* below are yahoo-specific */
 
 .pgpHead {
   /* fujigradient from Yahoo Messenger */
@@ -290,4 +281,60 @@ input:focus {
 .overlayDialog textarea {
   width: 98%;
   height: 80px;
+}
+
+#callbackDialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: rgba(50, 50, 50, 0.2);
+}
+
+#pgpBody.transparent + div#callbackDialog {
+  height: 100%;
+  overflow: auto;
+}
+
+#callbackDialog > div {
+  position: static;
+  margin: 8% auto;
+}
+
+#callbackDialog > div p:first-child {
+  font-size: 105%;
+  font-weight: 500;
+  margin: 0 0 15px 0;
+}
+
+
+.keyring-signup, #callbackDialog label[for], #pgpGenerateKey label[for] {
+  cursor: pointer;
+  color: -webkit-link;
+  text-decoration: underline;
+}
+
+.key-info {
+  padding-left: 15px;
+}
+
+.key-info-plus {
+  background: #eaffea;
+}
+
+.key-info-minus {
+  background: #ffecec;
+}
+
+.key-info-plus span:before, .key-info-minus span:before {
+  content: '+';
+  position: absolute;
+  margin-left: -10px;
+  font-weight: bolder;
+  font-size: 90%;
+}
+
+.key-info-minus span:before {
+  content: '-';
 }

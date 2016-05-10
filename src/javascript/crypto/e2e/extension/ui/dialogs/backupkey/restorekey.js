@@ -26,9 +26,12 @@ goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.dialogs.Overlay');
 goog.require('e2e.ext.ui.templates.dialogs.backupkey');
 goog.require('e2e.ext.utils.action');
+goog.require('e2e.ext.utils.text'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
-goog.require('goog.ui.Dialog');
+goog.require('goog.events.EventType');
+goog.require('goog.string'); //@yahoo
+goog.require('goog.style');
 goog.require('soy');
 
 goog.scope(function() {
@@ -69,21 +72,25 @@ dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
         chrome.i18n.getMessage('keyMgmtRestoreKeyringBackupCodeLabel')
   });
 
+  // @yahoo prefill the email address
   e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
-    var input =
-        this.getElementByClass(constants.CssClass.KEYRING_RESTORE_EMAIL);
+    var input = this.getElementByClass(
+        constants.CssClass.KEYRING_RESTORE_EMAIL);
     if (input) {
       input.value = email || '';
     }
   }, this));
+
+  goog.style.setElementShown(
+      goog.dom.getElementByClass('modal-dialog-title-close', elem), true);
 };
 
 
 /** @override */
 dialogs.RestoreKey.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
-  this.getHandler().listen(this, goog.ui.Dialog.EventType.SELECT,
-      this.executeRestore_);
+  this.getHandler().listen(this.getButtonElement().querySelector('[name=ok]'),
+      goog.events.EventType.CLICK, this.executeRestore_);
 };
 
 
@@ -112,11 +119,19 @@ dialogs.RestoreKey.prototype.getEmailInput_ = function() {
 /**
  * Executes the action for restoring keyring data
  * @private
+ * @param {goog.events.BrowserEvent} event The event object.
  * @return {boolean}
  */
-dialogs.RestoreKey.prototype.executeRestore_ = function() {
+dialogs.RestoreKey.prototype.executeRestore_ = function(event) {
   /* TODO(rcc): Remove email when we can use keyserver for lookups */
   var email = this.getEmailInput_();
+
+  // @yahoo quote email to become uid, aligning with that in key generation
+  email = goog.string.trim(email);
+  if (email === e2e.ext.utils.text.extractValidEmail(email)) {
+    email = '<' + email + '>';
+  }
+
   new e2e.ext.actions.Executor().execute(
       /** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.RESTORE_KEYRING_DATA,
@@ -135,6 +150,7 @@ dialogs.RestoreKey.prototype.executeRestore_ = function() {
         this.getContentElement().
             querySelector('span').textContent = err.message;
       }, this));
+  event.stopPropagation();
   return false;
 };
 

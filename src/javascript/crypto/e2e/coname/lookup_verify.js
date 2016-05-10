@@ -20,9 +20,9 @@
  */
 goog.provide('e2e.coname');
 goog.provide('e2e.coname.EpochHead');
-goog.provide('e2e.coname.LookupResponse');
 goog.provide('e2e.coname.MerkleLeaf');
 goog.provide('e2e.coname.MerkleNode');
+goog.provide('e2e.coname.ServerResponse');
 goog.provide('e2e.coname.SignedEpochHead');
 goog.provide('e2e.coname.Timestamp');
 goog.provide('e2e.coname.TreeProof');
@@ -152,10 +152,10 @@ e2e.coname.SignedEpochHead;
  *    ratifications: ?Array.<e2e.coname.SignedEpochHead>,
  *    tree_proof: !e2e.coname.TreeProof,
  *    entry: (undefined|ProtoBuf.Builder.Message),
- *    profile: (undefined|ProtoBuf.Builder.Message)
+ *    profile: (undefined|{keys: Object, nonce: Object, toBase64: function()})
  * }}
  */
-e2e.coname.LookupResponse;
+e2e.coname.ServerResponse;
 
 
 /**
@@ -412,7 +412,7 @@ e2e.coname.reconstructTree_ = function(trace, lookupIndexBits) {
  *
  * @param {e2e.coname.RealmConfig} realm The realm config
  * @param {string} user The userid (typically email address)
- * @param {e2e.coname.LookupResponse} pf The lookup proof from keyserver
+ * @param {e2e.coname.ServerResponse} pf The lookup proof from keyserver
  * @return {boolean} whether the proof is properly validated
  */
 e2e.coname.verifyLookup = function(realm, user, pf) {
@@ -457,7 +457,8 @@ e2e.coname.verifyLookup = function(realm, user, pf) {
   }
 
   // compare the entire index stored in the leaf node
-  if (!e2e.compareByteArray(pf.index, pf.tree_proof.existing_index)) {
+  if (!pf.tree_proof.existing_index ||
+      !e2e.compareByteArray(pf.index, pf.tree_proof.existing_index)) {
     // getting into this branch means no leaf with the requested index
     if (pf.entry) {
       throw new e2e.error.InvalidArgumentsError(
@@ -474,7 +475,8 @@ e2e.coname.verifyLookup = function(realm, user, pf) {
 
   entryHash = SHA3Shake256(32).update(pf.entry.encoding).digest();
 
-  if (!e2e.compareByteArray(entryHash, pf.tree_proof.existing_entry_hash)) {
+  if (!pf.tree_proof.existing_entry_hash ||
+      !e2e.compareByteArray(entryHash, pf.tree_proof.existing_entry_hash)) {
     throw new e2e.error.InvalidArgumentsError(
         'VerifyLookup: entry hash ' + entryHash +
         ' did not match verified lookup result ' +

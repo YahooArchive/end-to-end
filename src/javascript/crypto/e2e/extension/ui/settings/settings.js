@@ -174,12 +174,12 @@ ui.Settings.prototype.renderTemplate_ = function(pgpKeys) {
 
   this.renderPanels_();
 
-  this.getHandler().
-      listen(
-          this.getElement(),
+  //@yahoo put it in capture phrase, so it runs first to clear failure message
+  this.getHandler().listen(
+          elem,
           goog.events.EventType.CLICK,
-          this.clearFailure_);
-
+          this.clearFailure_,
+          true);
 };
 
 
@@ -319,6 +319,7 @@ ui.Settings.prototype.importKeyring_ = function(file) {
       content: contents,
       passphraseCallback: goog.bind(this.renderPassphraseCallback_, this)
     }), this, goog.bind(function(res) {
+      goog.array.removeDuplicates(res); //@yahoo
       if (res.length > 0) {
         utils.showNotification(
             chrome.i18n.getMessage(
