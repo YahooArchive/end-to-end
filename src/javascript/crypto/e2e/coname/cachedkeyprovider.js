@@ -43,7 +43,10 @@ goog.require('goog.structs.Map');
 e2e.coname.CachedKeyProvider = function(opt_timeToLive) {
   goog.base(this);
 
-  /** @type {!number} */
+  /**
+   * @type {!number}
+   * @private
+   */
   this.timeToLive_ = goog.isNumber(opt_timeToLive) ? opt_timeToLive : 180000;
 
   /**
@@ -117,9 +120,19 @@ e2e.coname.CachedKeyProvider.prototype.cloneResult_ = function(result) {
   return newResult;
 };
 
-/**
- * @override
- */
+
+/** @override */
+e2e.coname.CachedKeyProvider.prototype.importKeys = function(keys, opt_uid) {
+  return goog.base(this, 'importKeys', keys, opt_uid).
+      addCallback(function() {
+        // TODO: better to remove only those affected
+        this.emailKeysMap_.clear();
+        this.keyIdKeysMap_.clear();
+      });
+};
+
+
+/** @override */
 e2e.coname.CachedKeyProvider.prototype.getTrustedPublicKeysByEmail = function(
     email) {
   // normalize the email, and check if it's coname-supported
