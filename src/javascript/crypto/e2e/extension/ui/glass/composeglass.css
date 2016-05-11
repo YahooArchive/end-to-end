@@ -82,7 +82,7 @@ body {
   font-size: 13px;
   color: #777;
   line-height: 18px;
-  height: 34px;
+  min-height: 34px;
   margin-bottom: 0;
   padding: 0;
   margin: 2px 28px;
