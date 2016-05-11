@@ -360,7 +360,7 @@ ui.Glass.prototype.setEncryptrMessage_ = function(result) {
  */
 ui.Glass.prototype.resizeGlass_ = function() {
   var height = goog.style.getComputedStyle(document.documentElement, 'height');
-  this.api_.req('ctrl.resizeGlass', {height: height}).
+  this.api_.req('ctrl.resizeGlass', {height: parseInt(height, 10)}).
       addErrback(this.displayFailure_, this);
 };
 
