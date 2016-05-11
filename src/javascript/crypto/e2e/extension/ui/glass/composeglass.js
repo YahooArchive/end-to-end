@@ -512,13 +512,13 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
   if (!this.getElement()) {
     return;
   }
-  var textArea = this.editor_;
-  textArea.scrollTop = 0;
-  window.setTimeout(function() {textArea.setSelectionRange(0, 0);}, 0);
 
   // @yahoo trigger textarea and glass resize
   this.resizeEditor_(true);
 
+  var textArea = this.editor_;
+  textArea.scrollTop = 0;
+  textArea.setSelectionRange(0, 0);
   this.chipHolder_.focus();
 
   // @yahoo added ccChipHolder
