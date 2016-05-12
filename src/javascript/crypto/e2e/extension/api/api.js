@@ -165,7 +165,7 @@ api.Api.prototype.executeAction_ = function(callback, req) {
       if (this.tabId_) {
         chrome.browserAction.setTitle({
           tabId: this.tabId_,
-          title: chrome.i18n.getMessage('composeGlassTitle')
+          title: chrome.i18n.getMessage('editorGotFocused')
         });
         chrome.browserAction.setIcon({
           tabId: this.tabId_,

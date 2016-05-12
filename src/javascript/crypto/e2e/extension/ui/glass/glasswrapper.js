@@ -107,7 +107,7 @@ ui.BaseGlassWrapper.prototype.getGlassFrame = function() {
   // configure src
   glassFrame.src = chrome.runtime.getURL(this.glassType_ + '.html');
 
-  this.addAPIHandlers_();
+  this.addAPIHandlers();
 
   return glassFrame;
 };
@@ -118,7 +118,7 @@ ui.BaseGlassWrapper.prototype.getGlassFrame = function() {
  * @return {e2e.ext.MessageApi}
  * @protected
  */
-ui.BaseGlassWrapper.prototype.addAPIHandlers_ = function() {
+ui.BaseGlassWrapper.prototype.addAPIHandlers = function() {
   // configure the default request handler
   this.api.setRequestHandler('ctrl.shortcut', goog.bind(function(args) {
     this.glassFrame.focus();
@@ -367,9 +367,9 @@ ui.GlassWrapper.prototype.installGlass = function() {
  * Add handlers to serve API calls from/to the glass
  * @override
  */
-ui.GlassWrapper.prototype.addAPIHandlers_ = function() {
+ui.GlassWrapper.prototype.addAPIHandlers = function() {
   // proxy the stub-provided handlers to the glass
-  return goog.base(this, 'addAPIHandlers_').
+  return goog.base(this, 'addAPIHandlers').
       setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {
         this.setHeight(args.height);
         return true;
@@ -394,7 +394,7 @@ ui.ComposeGlassWrapper = function(targetElem, stubApi) {
    * @private
    */
   this.stubApi_ = stubApi;
-  this.addStubAPIHandlers_();
+  this.addStubAPIHandlers();
 };
 goog.inherits(ui.ComposeGlassWrapper, ui.BaseGlassWrapper);
 
@@ -402,24 +402,27 @@ goog.inherits(ui.ComposeGlassWrapper, ui.BaseGlassWrapper);
 /** @override */
 ui.ComposeGlassWrapper.prototype.installGlass = function() {
   this.styleTop_ = goog.style.getClientPosition(this.targetElem).y;
+  this.threadList_ = goog.dom.getAncestorByTagNameAndClass(
+      this.targetElem, 'div', 'thread-item-list');
 
   goog.base(this, 'installGlass');
 
-  this.setResizeAndScrollEventsHandlers_();
+  this.setResizeAndScrollEventHandlers_();
 
   var glassFrame = this.getGlassFrame();
   glassFrame.style.minHeight = '252px';
-  this.setHeight(330); // do this after initializing insideConv_
-
+  this.setHeight(330); // must do it after setResizeAndScrollEventHandlers_()
   // insert the glass into dom, and focus it
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
   glassFrame.focus();
 };
 
+
 /**
  * Add handlers to serve API calls from the stub
+ * @protected
  */
-ui.ComposeGlassWrapper.prototype.addStubAPIHandlers_ = function() {
+ui.ComposeGlassWrapper.prototype.addStubAPIHandlers = function() {
   var stubApi = this.stubApi_;
   // override evt.close
   stubApi.setRequestHandler('evt.close', goog.bind(function() {
@@ -441,56 +444,57 @@ ui.ComposeGlassWrapper.prototype.addStubAPIHandlers_ = function() {
  * Add handlers to serve API calls from the glass
  * @override
  */
-ui.ComposeGlassWrapper.prototype.addAPIHandlers_ = function() {
-  var stubApi = this.stubApi_;
+ui.ComposeGlassWrapper.prototype.addAPIHandlers = function() {
+  var stub = this.stubApi_;
   // proxy the stub-provided handlers to the composeglass
-  return goog.base(this, 'addAPIHandlers_').
-    setRequestHandler('draft.get', goog.bind(function(args) {
-      return stubApi.req('draft.get', args);
-    }, this)).
-    setRequestHandler('draft.set', function(args) {
-      return stubApi.req('draft.set', args);
-    }).
-    setRequestHandler('draft.save', function(args) {
-      return stubApi.req('draft.save', args);
-    }).
-    setRequestHandler('draft.send', function(args) {
-      return stubApi.req('draft.send', args);
-    }).
-    setRequestHandler('draft.discard', function(args) {
-      return stubApi.req('draft.discard', args);
-    }).
-    setRequestHandler('autosuggest.search', function(args) {
-      return stubApi.req('autosuggest.search', args);
-    }).
-    setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {
-      var threadList = this.threadList_,
-          diff = this.glassFrame.clientHeight - args.height;
-      if (diff !== 0) {
-        this.setHeight(args.height);
-        if (threadList) {
-          // scroll up by delta height when action bar is affixed to show caret
-          if (args.scrollByDeltaHeight) {
-            threadList.scrollTop -= diff;
+  return goog.base(this, 'addAPIHandlers').
+      setRequestHandler('draft.get', goog.bind(function(args) {
+        return stub.req('draft.get', args).addCallback(function(draft) {
+          // append whether compose is rendered inside conversation
+          draft.isInConv = Boolean(this.threadList_);
+          return draft;
+        }, this);
+      }, this)).
+      setRequestHandler('draft.set', goog.bind(stub.req, stub, 'draft.set')).
+      setRequestHandler('draft.save', goog.bind(stub.req, stub, 'draft.save')).
+      setRequestHandler('draft.send', goog.bind(stub.req, stub, 'draft.send')).
+      setRequestHandler('draft.discard', goog.bind(function() {
+        return stub.req('draft.discard').addCallback(this.dispose, this);
+      }, this)).
+      setRequestHandler('draft.getQuoted',
+          goog.bind(stub.req, stub, 'draft.getQuoted')).
+      setRequestHandler('autosuggest.search',
+          goog.bind(stub.req, stub, 'autosuggest.search')).
+      setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {
+        var threadList = this.threadList_,
+            diff = this.glassFrame.clientHeight - args.height;
+        if (diff !== 0) {
+          this.setHeight(args.height);
+          if (threadList) {
+            // in order not to hide caret, scroll up by delta height
+            // when action bar is pushed to bottom and get affixed
+            if (args.scrollByDeltaHeight) {
+              threadList.scrollTop -= diff;
+            }
+            this.sendScrollOffset_();
           }
-          this.sendScrollOffset_();
         }
-      }
-      return true;
-    }, this)).
-    setRequestHandler('ctrl.closeGlass', goog.bind(function() {
-      this.dispose();
-      stubApi.req('draft.set', {glassClosing: true});
-      // do not dispose this.stubApi_ here, as it might be switched back on
-      return true;
-    }, this));
+        return true;
+      }, this)).
+      setRequestHandler('ctrl.closeGlass', goog.bind(function() {
+        this.dispose();
+        stub.req('draft.set', {glassClosing: true});
+        // do not dispose this.stubApi_ here, as it might be switched back on
+        return true;
+      }, this));
 };
 
 
-ui.ComposeGlassWrapper.prototype.setResizeAndScrollEventsHandlers_ = function() {
-  this.threadList_ = goog.dom.getAncestorByTagNameAndClass(
-      this.targetElem, 'div', 'thread-item-list');
-
+/**
+ * Set resize and scroll related event handlers
+ * @private
+ */
+ui.ComposeGlassWrapper.prototype.setResizeAndScrollEventHandlers_ = function() {
   if (this.threadList_) {
     // Send scroll offset to compose glass for positioning action bar
     this.boundSendScrollOffset_ = goog.bind(this.sendScrollOffset_, this);
@@ -551,7 +555,7 @@ ui.ComposeGlassWrapper.prototype.sendScrollOffset_ = function() {
 /**
  * Calculate the scrolling offset of glassFrame relative to the thread list.
  * @return {{y: ?number}} The offset
- * @protected
+ * @private
  */
 ui.ComposeGlassWrapper.prototype.computeScrollOffset_ = function() {
   var threadList = this.threadList_;

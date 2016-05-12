@@ -152,7 +152,7 @@ function testSendExtensionRequest() {
   utils.sendExtensionRequest(args, function(resp) {
     assertObjectEquals(args, resp);
     testCase.continueTesting();
-  });
+  }, goog.nullFunction);
 }
 
 

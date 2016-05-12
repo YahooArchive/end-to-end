@@ -69,7 +69,7 @@ panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
       }
     case goog.events.KeyCodes.DOWN: //@yahoo
       !autoComplete.isOpen() && autoComplete.setToken('');
-    break;
+      break;
   }
   return goog.base(this, 'handleKeyEvent', evt);
 };

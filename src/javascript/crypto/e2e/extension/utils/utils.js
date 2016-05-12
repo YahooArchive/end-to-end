@@ -20,11 +20,9 @@
 
 goog.provide('e2e.ext.utils');
 goog.provide('e2e.ext.utils.Error');
-goog.provide('e2e.ext.utils.Warn');
 
-goog.require('e2e.async.Result');
-goog.require('e2e.ext.config');
 goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('goog.events');
 goog.require('goog.object');
@@ -163,46 +161,37 @@ utils.showNotification = function(msg, callback) {
 
 /**
  * Sends a request to the launcher to perform some action.
- * @param {messages.ApiRequest} args The message to send to the launcher
- * @param {function(messages.e2ebindResponse)=} opt_callback optional callback
- *   to call with the result.
- * @param {function(Error)=} opt_errback The callback to invoke if an
- *     error is encountered. If omitted, the default error callback will be
- *     invoked.
+ * @param {!messages.ApiRequest} args The message to send to the launcher
+ * @param {!function(*)} callback 
+ * @param {!function(Error)} errback
  */
-utils.sendExtensionRequest = function(args, opt_callback, opt_errback) {
-
-  opt_errback = opt_errback || function(error) {
-    opt_callback && opt_callback(/** @type {messages.e2ebindResponse} */ ({
-      completedAction: args.action,
-      error: error.message
-    }));
-  };
-
+utils.sendExtensionRequest = function(args, callback, errback) {
   var port = chrome.runtime.connect();
   if (!port) {
-    opt_errback(new Error(chrome.i18n.getMessage('glassCannotCommunicate')));
+    errback(new Error(chrome.i18n.getMessage('glassCannotCommunicate')));
     return;
   }
 
   port.onDisconnect.addListener(function() {
     port = null;
   });
-  port.onMessage.addListener(function(response) {
-    port.disconnect();
-    port = null;
+  port.onMessage.addListener(/** @param {messages.ApiResponse} response */
+      function(response) {
+        if (args.action !== response.completedAction) {
+          return;
+        }
+        port.disconnect();
 
-    if (response.error) {
-      opt_errback(new Error(response.error));
-      return;
-    }
-
-    try {
-      opt_callback && opt_callback(response);
-    } catch (err) {
-      opt_errback(err);
-    }
-  });
+        if (response.error) {
+          errback(new Error(response.error));
+          return;
+        }
+        try {
+          callback(response.content);
+        } catch (err) {
+          errback(err);
+        }
+      });
 
   port.postMessage(args);
 };
@@ -313,12 +302,10 @@ utils.listenThrottledEvent = function(target, type, handler, opt_newType) {
  * @param {!function(Error)} errback The errback to call with Error
  */
 utils.getConfig = function(property, callback, errback) {
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.GET_PREFERENCE,
     content: property
-  }), /** @param response {messages.e2ebindResponse} */ function(response) {
-    callback(response.content);
-  }, errback);
+  }), callback, errback);
 };
 
 });  // goog.scope

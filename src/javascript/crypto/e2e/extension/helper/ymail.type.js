@@ -23,10 +23,10 @@ goog.provide('e2e.ext.YmailData');
 
 /**
  * The contacts structure
- * @typedef {Array.<{
+ * @typedef {!Array.<{
+ *   email: !string,
  *   name: (string|undefined),
- *   firstname: (string|undefined),
- *   email: !string
+ *   imageUrl: !string
  * }>}
  */
 e2e.ext.YmailData.Contacts;
@@ -56,8 +56,9 @@ e2e.ext.YmailData.Attachment;
  *   subject: !string,
  *   body: !string,
  *   attachments: !Array.<e2e.ext.YmailData.Attachment>,
- *   glassClosing: boolean,
- *   isInConv: !boolean
+ *   hasQuoted: !boolean,
+ *   isInConv: !boolean,
+ *   glassClosing: boolean
  * }}
  */
 e2e.ext.YmailData.Draft;

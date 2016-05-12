@@ -28,6 +28,7 @@ goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
+goog.require('e2e.ext.messages.ApiResponse');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.templates.glass');
@@ -39,7 +40,6 @@ goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
-goog.require('goog.string');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('goog.ui.KeyboardShortcutHandler');
@@ -232,36 +232,37 @@ ui.Glass.prototype.handleKeyEvent_ = function(evt) {
  * @private
  */
 ui.Glass.prototype.renderSelectedContent_ = function(opt_decryptPassphrase) {
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     content: this.armor_.text,
     action: constants.Actions.DECRYPT_THEN_VERIFY,
     decryptPassphrase: opt_decryptPassphrase
   }),
-  goog.bind(function(response) {
+  goog.bind(function(/** @type {!e2e.openpgp.VerifiedDecrypt} */ result) {
 
     // If the response has no content, show an undecryptable error if
     // the error message is missing for some reason.
-    if (!goog.isDef(response.content)) {
+    if (!goog.isDef(result)) {
       this.displayFailure_(new utils.Error(
           'decryption failed', 'glassCannotDecrypt'));
       return;
     }
 
-    var result = response.content,
-        verifyResultId = result.verifyResultId;
-
     this.setContent_(result);
     this.setEncryptrMessage_(result);
 
     // make a second call for verification result
+    var verifyResultId = /** @type {{verifyResultId: (string|undefined)}} */ (
+        result.verifyResultId);
     if (verifyResultId) {
-      utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+      utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
         content: verifyResultId,
         action: constants.Actions.VERIFY,
         decryptPassphrase: opt_decryptPassphrase
-      }), goog.bind(function(response) {
-        this.setEncryptrMessage_(response.content);
-      }, this), goog.bind(this.renderPassphraseAndError_, this));
+      }),
+      goog.bind(function(/** @type {!e2e.openpgp.VerifiedDecrypt} */ result) {
+        this.setEncryptrMessage_(result);
+      }, this),
+      goog.bind(this.renderPassphraseAndError_, this));
       return;
     }
 
@@ -308,10 +309,11 @@ ui.Glass.prototype.setContent_ = function(result) {
 /**
  * Renders the UI elements needed for displaying the decryption and signature
  * information
- * @param {e2e.openpgp.VerifiedDecrypt} result
+ * @param {e2e.ext.messages.ApiResponse} apiResponse
  * @private
  */
-ui.Glass.prototype.setEncryptrMessage_ = function(result) {
+ui.Glass.prototype.setEncryptrMessage_ = function(apiResponse) {
+  var result = /** @type {e2e.openpgp.VerifiedDecrypt} */ (apiResponse);
   var encryptrIcon = goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON);
   var encryptrMsg = encryptrIcon.querySelector('div');
   goog.dom.removeChildren(encryptrMsg);

@@ -37,6 +37,9 @@ goog.require('goog.structs.Map');
 
 
 /**
+ * Extends ContextImpl to cover Yahoo use cases.
+ * @param {goog.storage.mechanism.Mechanism=} opt_keyRingStorageMechanism
+ *     mechanism for storing keyring data. Defaults to HTML5 local storage.
  * @constructor
  * @implements {e2e.openpgp.Context}
  * @extends {e2e.openpgp.ContextImpl}

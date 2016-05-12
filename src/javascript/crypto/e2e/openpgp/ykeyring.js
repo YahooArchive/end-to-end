@@ -25,7 +25,6 @@ goog.provide('e2e.openpgp.yKeyRing');
 
 goog.require('e2e');
 goog.require('e2e.async.Result');
-goog.require('e2e.coname.KeyProvider');
 goog.require('e2e.coname.CachedKeyProvider');
 goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.ext.utils.text');

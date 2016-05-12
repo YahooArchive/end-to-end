@@ -26,10 +26,10 @@ goog.provide('e2e.ext.Launcher');
 goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
 goog.require('e2e.ext.api.Api');
-goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.yPreferences'); //@yahoo
-goog.require('goog.Uri'); //@yahoo
 goog.require('goog.array'); //@yahoo
+goog.require('goog.async.Deferred');
+goog.require('goog.async.DeferredList');
 goog.require('goog.structs');
 
 goog.scope(function() {
@@ -363,7 +363,7 @@ ext.yExtensionLauncher.prototype.onInstall = function(detail) {
                 result.callback(!chrome.runtime.lastError && goog.isDef(ret));
               });
         }
-      } catch(e) {
+      } catch (e) {
         result.callback(false);
       }
       return result;

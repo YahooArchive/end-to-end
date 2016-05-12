@@ -150,6 +150,34 @@ textarea {
   white-space: normal;
 }
 
+textarea.has-quoted {
+  padding-bottom: 45px;
+}
+
+textarea.has-quoted + #quoted-text {
+  display: inline-block;
+}
+
+#quoted-text:before {
+  content: '\e057';
+  font-family: mail;
+  font-size: 20px;
+  vertical-align: top;
+}
+
+#quoted-text {
+  display: none;
+  padding: 3px;
+  color: #999;
+  cursor: pointer;
+  margin-top: -30px;
+  position: absolute;
+  line-height: 13px;
+  font-size: 13px;
+  font-weight: normal;
+  margin-left: 19px;
+}
+
 #pgpBody .pgpActions {
   padding: 0;
   position: fixed;
@@ -302,6 +330,9 @@ textarea {
 .conversation textarea {
   padding-left: 23px;
   padding-right: 45px;
+}
+.conversation #quoted-text {
+  margin-left: 14px
 }
 .conversation #encryptr-icon > div, .conversation #encryptr-icon label:before {
   right: 20px;

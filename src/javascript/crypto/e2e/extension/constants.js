@@ -157,7 +157,8 @@ e2e.ext.constants.ElementId = {
   // glass
   LOCK_ICON: 'lock-icon',
   CHECK_ICON: 'check-icon',
-  BACK_BUTTON: 'back-button', 
+  BACK_BUTTON: 'back-button',
+  QUOTED_TEXT: 'quoted-text', //@yahoo
   ENCRYPTR_ICON: 'encryptr-icon', //@yahoo
   SAVE_ESC_BUTTON: 'save-esc-button', //@yahoo
   DRAFT_DELETE_BUTTON: 'draft-delete-button', //@yahoo
@@ -235,6 +236,7 @@ e2e.ext.constants.CssClass = {
 
   /** Used in prompt. */
   CONVERSATION: 'conversation', //@yahoo
+  HAS_QUOTED: 'has-quoted', //@yahoo
   PROMPT_HEADER: 'pgpHead',
   PROMPT_TITLE: 'pgpTitle',
   PROMPT_ACTIONS: 'pgpActions',

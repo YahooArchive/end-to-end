@@ -101,9 +101,9 @@ ext.YmailHelper.prototype.installAutoComposeGlass = function(evt) {
   // always initialize the stub api regardless of auto-open config
   var stubApi = this.initComposeStubApi_(evt, goog.bind(function() {
     // install glass if the original message has a PGP blob
-    stubApi.req('draft.getQuoted').addCallbacks(function(quotedBody) {
-      if (quotedBody &&
-          goog.string.contains(quotedBody, '-----BEGIN PGP')) {
+    stubApi.req('draft.getQuoted').addCallbacks(function(quoted) {
+      if (quoted && quoted.body &&
+          goog.string.contains(quoted.body, '-----BEGIN PGP')) {
         this.installComposeGlass(evt);
       }
     }, utils.displayFailure, this);
@@ -268,13 +268,12 @@ ext.YmailHelper.prototype.queryPublicKey = function(evt) {
   var email = /** @type {!string} */ (evt.detail);
 
   // Check if a public can be found for the email
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
     recipients: [email],
     content: 'public_exist'
   }), function(response) {
-    var hasKey = response.content && response.content[0];
-    elem.classList.add(hasKey ? 'has-key' : 'no-key');
+    elem.classList.add(response[0] ? 'has-key' : 'no-key');
   }, utils.displayFailure); // no additional color in error
 };
 
@@ -291,16 +290,16 @@ ext.YmailHelper.prototype.loadUser = function(evt) {
       evt.detail);
   uid = utils.text.userObjectToUid(this.primaryUser_);
 
-  utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+  utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.SYNC_KEYS,
     content: uid
   }), function(response) {
-    if (response.content === false) {
+    if (response === false) {
       if (window.confirm(chrome.i18n.getMessage('confirmUserSyncKeys', uid))) {
-        utils.sendExtensionRequest(/** @type {messages.ApiRequest} */ ({
+        utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
           action: constants.Actions.CONFIGURE_EXTENSION,
           content: uid
-        }));
+        }), goog.nullFunction, utils.displayFailure);
       }
     }
   }, utils.displayFailure);

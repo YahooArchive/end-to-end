@@ -183,9 +183,10 @@ function setUp() {
     callback({launcher: launcher});
   });
 
-  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(args, cb) {
-    cb = cb || goog.nullFunction;
-    launcher.ctxApi_.executeAction_(cb, args);
+  stubs.replace(e2e.ext.utils, 'sendExtensionRequest', function(args, cb, eb) {
+    launcher.ctxApi_.executeAction_(function(param) {
+      return param instanceof Error ? eb(param) : cb(param);
+    }, args);
   });
 
   stubs.replace(e2e.ext.ExtensionLauncher.prototype, 'hasPassphrase',

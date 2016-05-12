@@ -22,13 +22,6 @@ goog.provide('e2e.ext.messages.ApiRequest');
 goog.provide('e2e.ext.messages.ApiResponse');
 goog.provide('e2e.ext.messages.BridgeMessageRequest');
 goog.provide('e2e.ext.messages.BridgeMessageResponse');
-goog.provide('e2e.ext.messages.GetSelectionRequest');
-goog.provide('e2e.ext.messages.KeyserverKeyInput');
-goog.provide('e2e.ext.messages.KeyserverKeyOutput');
-goog.provide('e2e.ext.messages.e2ebindDraft');
-goog.provide('e2e.ext.messages.e2ebindRequest');
-goog.provide('e2e.ext.messages.e2ebindResponse');
-goog.provide('e2e.ext.messages.proxyMessage');
 
 
 goog.scope(function() {
@@ -37,11 +30,10 @@ var messages = e2e.ext.messages;
 
 /**
  * The message type passed from a content script to the extension when a bridge
- * port is used. //@yahoo added ccRecipients
+ * port is used.
  * @typedef {{
  *   selection: string,
  *   recipients: Array.<string>,
- *   ccRecipients: Array.<string>,
  *   action: (e2e.ext.constants.Actions|undefined),
  *   request: boolean,
  *   origin: string,
@@ -68,18 +60,6 @@ messages.BridgeMessageRequest;
  * }}
  */
 messages.BridgeMessageResponse;
-
-
-/**
- * The message type passed to the helper when a request for the current
- * selection is made.
- * @typedef {{
- *   editableElem: boolean,
- *   enableLookingGlass: boolean,
- *   hasDraft: boolean
- * }}
- */
-messages.GetSelectionRequest;
 
 
 
@@ -132,85 +112,5 @@ messages.ApiRequest.prototype.action;
  * }}
  */
 messages.ApiResponse;
-
-
-/**
- * Defines the request message from the e2ebind API to a provider and from
- *   provider to e2ebind API.
- * @typedef {{
- *   api: string,
- *   source: string,
- *   action: string,
- *   args: (Object|undefined),
- *   hash: string
- * }}
- */
-messages.e2ebindRequest;
-
-
-/**
- * Defines the response message from the e2ebind API to a provider and from
- *   provider to e2ebind API.
- * @typedef {{
- *   api: string,
- *   source: string,
- *   success: boolean,
- *   action: string,
- *   hash: string,
- *   result: Object,
- *   error: ?Object
- * }}
- */
-messages.e2ebindResponse;
-
-
-/**
- * Defines e2ebind draft format that the provider receives.
- * @typedef {{
- *   body: string,
- *   to: !Array.<string>,
- *   cc: Array.<string>,
- *   bcc: Array.<string>,
- *   subject: (string|undefined),
- *   from: (string|undefined),
- *   contacts: Array.<{email:string,firstname:string}>,
- *   insideConv: boolean
- * }}
- */
-messages.e2ebindDraft;
-
-
-/**
- * Defines general message format between extension content scripts.
- * @typedef {{
- *   proxy: (boolean|undefined),
- *   action: e2e.ext.constants.Actions,
- *   content: (Object|string|undefined)
- * }}
- */
-messages.proxyMessage;
-
-
-/**
- * Defines the format for timestamped key data returned by the keyserver.
- * @typedef {{
- *   userid: string,
- *   keys: Object.<string, string>,
- *   t: number
- * }}
- */
-messages.KeyserverKeyOutput;
-
-
-/**
- * Format for key data that is serialized and then signed by the key authority.
- * @typedef {{
- *   t: number,
- *   deviceid: string,
- *   userid: string,
- *   key: string
- * }}
- */
-messages.KeyserverKeyInput;
 
 });  // goog.scope

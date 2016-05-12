@@ -22,7 +22,6 @@ goog.provide('e2e.ext.actions.SyncKeys');
 
 goog.require('e2e.async.Result');
 goog.require('e2e.ext.actions.Action');
-goog.require('e2e.ext.utils');
 
 goog.scope(function() {
 var actions = e2e.ext.actions;

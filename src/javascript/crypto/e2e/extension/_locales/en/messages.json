@@ -123,6 +123,10 @@
     "message": "You need to use a passphrase or choose message recipients to encrypt.",
     "description": "A sentence notifying that user needs to chose a passphrase or recipients in order to encrypt and sign a message."
   },
+  "promptReplyHeader": {
+    "message": "On $1 $2, $3 wrote:",
+    "description": "A sentence fragment indicating where the original message begins."
+  },
   "glassKeyringLockedError": {
     "message": "Please unlock the KeyRing before reading messages inline. To do this, please click the Yahoo Mail Encrypted icon in the upper-right area of the screen.",
     "description": "An error message indicating that the user must unlock their KeyRing before reading messages inline."
@@ -137,7 +141,7 @@
   },
   "actionLoading": {
     "message": "Loading...",
-    "description": "A phrase inditating a loading process."
+    "description": "A phrase indicating a loading process."
   },
   "actionUserSpecified": {
     "message": "Select an action...",
@@ -377,6 +381,10 @@
     "message": "Subject",
     "description": "The label to describe the subject of the message."
   },
+  "promptShowOriginalLabel": {
+    "message": "Show original message",
+    "description": "The label to let user click to quote the original message he is replying to."
+  },
   "promptNoPrivateKeysFound": {
     "message": "Generate or import private key(s) to sign or decrypt messages",
     "description": "The label to inform the user that he needs a private key to use signing/decryption functionality"
@@ -517,9 +525,9 @@
     "message": "Select all",
     "description": "A fragment indicating to the user to select all items in the dialog."
   },
-  "composeGlassTitle": {
+  "editorGotFocused": {
     "message": "Composing a Yahoo Mail Encrypted message",
-    "description": "Title of the pageAction when Secure Compose is active."
+    "description": "Title of the pageAction when the editor of encrypted compose receives focus."
   },
   "composeGlassConfirmBack": {
     "message": "Discard this encrypted message?",
@@ -542,72 +550,6 @@
   },
   "conameAuthError": {
     "message": "Error authenticating to keyserver (requires bouncer)."
-  },
-  "e2ebindShowEncrypted": {
-    "message": "> Show encrypted message"
-  },
-  "e2ebindHideEncrypted": {
-    "message": "< Hide encrypted message"
-  },
-  "e2ebindShowSigned": {
-    "message": "> Show signed message"
-  },
-  "e2ebindHideSigned": {
-    "message": "< Hide signed message"
-  },
-  "setupIntroText": {
-    "message": "Do you want to generate new encryption keys?"
-  },
-  "setupIntroHint": {
-    "message": "Select 'yes' unless you've used End to End before and want to restore your old keys."
-  },
-  "setupIntroYes": {
-    "message": "Yes"
-  },
-  "setupIntroNo": {
-    "message": "No"
-  },
-  "setupBackupText": {
-    "message": "Please copy down this backup code in a safe place. You can use it to restore your encryption keys if you ever delete them accidentally."
-  },
-  "setupBackupDone": {
-    "message": "I've copied my backup code"
-  },
-  "setupPassphraseText": {
-    "message": "You can set a passphrase on your encryption keys for extra security. Make sure you don't forget it!"
-  },
-  "setupRestoreText": {
-    "message": "How would you like to restore your keys?"
-  },
-  "setupSkip": {
-    "message": "Don't use a passphrase"
-  },
-  "setupBackupTitle": {
-    "message": "Save your backup code"
-  },
-  "setupKeygenTitle": {
-    "message": "Set up encryption keys"
-  },
-  "setupPassphraseTitle": {
-    "message": "Set a passphrase"
-  },
-  "setupPassphraseTutorialTitle": {
-    "message": "Locking your keyring"
-  },
-  "setupPassphraseTutorialText": {
-    "message": "Click 'Lock keyring' in the End to End menu to make your encryption keys inaccessible to others who can access your computer. You'll need your passphrase to unlock the keyring after locking it."
-  },
-  "setupPassphraseTutorialButtonText": {
-    "message": "Got it!"
-  },
-  "setupTutorialText": {
-    "message": "Here's a short demo of End-to-End in action."
-  },
-  "setupNoviceTitle": {
-    "message": "Generate new encryption keys"
-  },
-  "sendKeySuccess": {
-    "message": "Successfully registered key!"
   },
   "interactionSuppressed": {
     "message": "To start typing, tap left Ctrl-key. Everything you type will not be encrypted.",

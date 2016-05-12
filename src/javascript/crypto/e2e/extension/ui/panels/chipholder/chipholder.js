@@ -20,12 +20,13 @@
 
 goog.provide('e2e.ext.ui.panels.ChipHolder');
 
-goog.require('e2e.async.Result');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolderInputHandler');
 goog.require('e2e.ext.ui.templates.panels.chipholder');
+goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
+goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
@@ -196,10 +197,10 @@ panels.ChipHolder.prototype.handleNewChipValue_ = function(opt_chipValue) {
 
   // badChipCallback_ works asynchronusly, mark chipValue as bad
   chip && this.badChipCallback_(chip.getValue()).
-    addCallback(function(markChipBad) {
-      goog.dom.classlist.add(chip.getElement(), markChipBad ?
-          constants.CssClass.BAD_CHIP : constants.CssClass.GOOD_CHIP);
-    });
+      addCallback(function(markChipBad) {
+        goog.dom.classlist.add(chip.getElement(), markChipBad ?
+            constants.CssClass.BAD_CHIP : constants.CssClass.GOOD_CHIP);
+      });
 };
 
 

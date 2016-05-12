@@ -18,9 +18,9 @@
  * @fileoverview Bootstraps the helper in a content script.
  */
 
-// goog.require('e2e.ext.Helper'); // @yahoo disabled 
+// goog.require('e2e.ext.Helper'); // @yahoo disabled
 goog.require('e2e.ext.YmailHelper');
-// goog.require('e2e.ext.WebsiteApi'); // @yahoo disabled 
+// goog.require('e2e.ext.WebsiteApi'); // @yahoo disabled
 goog.require('e2e.ext.utils');
 
 goog.provide('e2e.ext.helper.bootstrap');
@@ -35,6 +35,7 @@ e2e.ext.helper.bootstrap = false;
 
 // Create the helper and start it.
 if (e2e.ext.utils.isContentScript() && !goog.isDef(window.helper)) {
+  /** @type {!e2e.ext.YmailHelper} */
   window.helper = new e2e.ext.YmailHelper();
 
   // @yahoo disabled the generic helper

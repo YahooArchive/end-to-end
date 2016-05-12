@@ -41,7 +41,6 @@ if (!goog.isDef(window.glass)) {
           window.glass.decorate(document.documentElement);
 
           e2e.ext.ui.glass.bootstrap = true;
-
-    	}, goog.bind(console.error, console));
+        }, goog.bind(console.error, console));
   });
 }

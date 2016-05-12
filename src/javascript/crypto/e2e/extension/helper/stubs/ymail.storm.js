@@ -18,78 +18,25 @@
  * @fileoverview A stub method that allows the invocation of API calls inside
  * the JavaScript context of Yahoo Mail (codenamed Storm)
  */
-
+goog.provide('YmailApi');
 goog.provide('YmailApi.StormUI');
 goog.provide('YmailApi.StormUI.AutoSuggest');
-goog.provide('YmailApi.StormUI.AutoSuggestFactory');
 goog.provide('YmailApi.StormUI.ComposeView');
 goog.provide('YmailApi.StormUI.Header');
 goog.provide('YmailApi.StormUI.NeoConfig');
 goog.provide('YmailApi.StormUI.Node');
 goog.provide('YmailApi.StormUI.YUI');
-goog.provide('YmailData.Attachments');
-goog.provide('YmailData.Contacts');
-goog.provide('YmailData.Draft');
-goog.provide('YmailData.EmailUser');
+goog.provide('YmailApi.utils');
 
 goog.require('e2e.ext.MessageApi');
-goog.require('e2e.ext.utils.text');
+/** @suppress {extraRequire} intentional import */
+goog.require('e2e.ext.YmailData');
 goog.require('goog.async.Deferred');
 goog.require('goog.string');
 
 
 goog.scope(function() {
-var ext = e2e.ext;
-var constants = ext.constants;
-var messages = ext.messages;
-var utils = ext.utils;
-
-
-/**
- * The contacts structure
- * @typedef {!Array.<{
- *   email: !string,
- *   name: (string|undefined),
- *   imageUrl: !string
- * }>}
- */
-YmailData.Contacts;
-
-
-/**
- * The email user structure
- * @typedef {{name: string, email: string}}
- */
-YmailData.EmailUser;
-
-
-/**
- * The attachment structure
- * @typedef {!Array.<{
- *   url: string,
- *   name: string,
- *   type: (string|undefined),
- *   isImage: boolean
- * }>}
- */
-YmailData.Attachments;
-
-
-/**
- * The draft structure
- * @typedef {{
- *   from: YmailData.EmailUser,
- *   to: !Array.<YmailData.EmailUser>,
- *   cc: !Array.<YmailData.EmailUser>,
- *   bcc: !Array.<YmailData.EmailUser>,
- *   subject: !string,
- *   body: !string,
- *   attachments: !YmailData.Attachments,
- *   glassClosing: boolean,
- *   isInConv: !boolean
- * }}
- */
-YmailData.Draft;
+var YmailData = e2e.ext.YmailData;
 
 
 /**
@@ -97,13 +44,6 @@ YmailData.Draft;
  * @const
  */
 YmailApi.APP_ID = 'YmailMailEncrypted';
-
-
-/**
- * @type {string}
- * @const
- */
-YmailApi.APP_VERSION = '';
 
 
 /**
@@ -119,7 +59,11 @@ YmailApi.APP_VERSION = '';
  *     }
  *   },
  *   autosuggest: {
- *     api_factory: YmailApi.StormUI.AutoSuggestFactory
+ *     api_factory: {
+ *       get: function(boolean) : {
+ *         create: function(Object) : YmailApi.StormUI.AutoSuggest
+ *       }
+ *     }
  *   },
  *   xobniContacts: {
  *     Utils: {
@@ -137,7 +81,7 @@ YmailApi.StormUI.YUI;
  *   getDOMNode: function(): Element,
  *   one: function(string): (YmailApi.StormUI.Node|undefined),
  *   set: function(string, *),
- *   simulate: function(string, *)
+ *   simulate: function(string, Object=)
  * }}
  */
 YmailApi.StormUI.Node;
@@ -192,7 +136,11 @@ YmailApi.StormUI.Header;
  *   },
  *   draft: {
  *     origin: {
- *       oMsg: {body: {display: string}}
+ *       oMsg: {
+ *         body: {display: string},
+ *         header: {from: YmailData.EmailUser, sentDate: number}
+ *       },
+ *       action: string
  *     },
  *     getUploadedOrSavedAtt: function(): !Array.<{
  *       getFilename: function() : string,
@@ -228,17 +176,6 @@ YmailApi.StormUI.ComposeView;
  * }}
  */
 YmailApi.StormUI.AutoSuggest;
-
-
-/**
- * The AutoSuggest Factory API structure
- * @typedef {{
- *   get: function(boolean) : {
- *     create: function(Object) : YmailApi.StormUI.AutoSuggest
- *   }
- * }}
- */
-YmailApi.StormUI.AutoSuggestFactory;
 
 
 
@@ -284,15 +221,13 @@ YmailApi.StormUI.prototype.monitorStormEvents_ = function() {
   var Y = this.Y;
 
   Y.on('MessagePane:rendered', goog.bind(function(evt, data, baseNode) {
-    var node = baseNode.getDOMNode();
-    this.dispatchQueryPublicKey(node);
-    this.dispatchOpenMessage(node, data);
+    this.dispatchOpenMessage(baseNode.getDOMNode(), data);
   }, this));
 
   Y.on('FullCompose:fullComposeReady', goog.bind(function(data) {
     var composeView = data.context,
         elem = composeView.baseNode.getDOMNode(),
-        msgBody = composeView.editor.getContentAsPlainText(),
+        msgBody = composeView.editor.getContent(),
         oMsg = composeView.draft.origin.oMsg;
     var apiId = goog.string.getRandomString();
 
@@ -346,10 +281,12 @@ YmailApi.StormUI.prototype.dispatchQueryPublicKey = function(node) {
  * @protected
  */
 YmailApi.StormUI.prototype.dispatchOpenMessage = function(node, data) {
+  // TODO: when rich text is supported. get HTML thru API.
   var bodyNode = node.querySelector('.thread-body,.base-card-body'),
       contentNode = bodyNode.querySelector('.body,.msg-body'),
       qt = contentNode.querySelector('.thread-quoted-text'),
-      qb = contentNode.querySelector('.thread-quoted-body');
+      qb = contentNode.querySelector('.thread-quoted-body'),
+      text, quotedText;
 
   // hide "show original message" tentatively, so it wont appear in innerText
   if (qt) {
@@ -357,12 +294,21 @@ YmailApi.StormUI.prototype.dispatchOpenMessage = function(node, data) {
     qt.style.display = 'none';
   }
 
-  bodyNode.dispatchEvent(new CustomEvent('openMessage', {
-    detail: {
-      meta: data, // not actually in use yet
-      body: contentNode.innerText,
-      quotedBody: qb ? qb.innerText : ''
-    }, bubbles: true}));
+  text = contentNode.innerText;
+  quotedText = qb ? qb.innerText : '';
+  
+  // only take care of those that appears to be a pgp message
+  if ((text + quotedText).indexOf('-----BEGIN PGP') !== -1) {
+    // disabled highlighting users in non-encrypted compose
+    this.dispatchQueryPublicKey(node);
+
+    bodyNode.dispatchEvent(new CustomEvent('openMessage', {
+      detail: {
+        meta: data, // not actually in use
+        body: text,
+        quotedBody: quotedText
+      }, bubbles: true}));
+  }
 
   // restore "show original message"
   qt && (qt.style.display = qtDisplayVal || '');
@@ -398,7 +344,7 @@ YmailApi.StormUI.prototype.addCSS = function() {
       '.plaintext-above{border-top:1px solid #CCC;padding-top:5px}' +
       '.plaintext-below{border-bottom:1px solid #CCC;padding-bottom:5px}' +
       '.has-key {color: #00B777}' +
-      '.no-key {color: #EF2E1A}' +
+      // '.no-key {color: #EF2E1A}' + // no need to color in red
       '.icon-encrypt {position:relative;float:right;padding:0;opacity:.6}' +
       '.icon-encrypt:hover {opacity:1}' +
       '.icon-encrypt + .cm-rtetext {padding-right:25px}'));
@@ -475,16 +421,13 @@ YmailApi.StormUI.ComposeApi = function(
  */
 YmailApi.StormUI.ComposeApi.prototype.initApi_ = function(apiId) {
   var api = new e2e.ext.MessageApi(apiId);
-  api.bootstrapClient(utils.text.isYmailOrigin, goog.bind(function(err) {
+  api.bootstrapClient(YmailApi.utils.isSameOrigin, goog.bind(function(err) {
     if (err instanceof Error) {
-      this.displayFailure_(err.message, 'error');
-      return;
+      return this.displayFailure_(err.message, 'error');
     }
 
-    var draftApi = this.draftApi_,
-        autosuggestApi = this.autosuggestApi_;
-
     // register the implementations in the Message API
+    var draftApi = this.draftApi_, autosuggestApi = this.autosuggestApi_;
     api.getRequestHandler().addAll({
       'draft.get': goog.bind(draftApi.get, draftApi),
       'draft.set': goog.bind(draftApi.set, draftApi),
@@ -504,20 +447,21 @@ YmailApi.StormUI.ComposeApi.prototype.initApi_ = function(apiId) {
  */
 YmailApi.StormUI.ComposeApi.prototype.monitorComposeEvents_ = function() {
   var composeView = this.composeView_,
-      api = this.messageApi_,
-      dispatchQueryPublicKey = this.dispatchQueryPublicKey_;
+      api = this.messageApi_;
+  // var dispatchQueryPublicKey = this.dispatchQueryPublicKey_;
 
   // notify the glass on close
   composeView.on('closeChange', function() {
     api.req('evt.close').addCallback(goog.bind(api.dispose, api));
   });
 
-  // wrap resizeRTE(), which is called when recipients are modified
-  var resizeRTE_ = composeView.resizeRTE;
-  composeView.resizeRTE = function() {
-    dispatchQueryPublicKey(this.baseNode.getDOMNode());
-    return resizeRTE_.apply(this, arguments);
-  };
+  // disabled highlighting users in non-encrypted compose
+  // // wrap resizeRTE(), which is called when recipients are modified
+  // var resizeRTE_ = composeView.resizeRTE;
+  // composeView.resizeRTE = function() {
+  //   dispatchQueryPublicKey(this.baseNode.getDOMNode());
+  //   return resizeRTE_.apply(this, arguments);
+  // };
 };
 
 
@@ -540,7 +484,6 @@ YmailApi.StormUI.DraftApi.prototype.get = function() {
   var composeView = this.composeView_;
   var draft = composeView.draft;
   var header = composeView.header.getHeader();
-  var oMsg = draft.origin.oMsg;
   return /** @type {YmailData.Draft} */ ({
     from: header.from,
     to: header.to,
@@ -560,7 +503,8 @@ YmailApi.StormUI.DraftApi.prototype.get = function() {
         url: att.getDownloadUrl()
       };
     }),
-    isInConv: Boolean(oMsg)
+    hasQuoted: Boolean(draft.origin.oMsg &&
+        ['reply', 'reply_all'].indexOf(draft.origin.action) !== -1)
   });
 };
 
@@ -631,19 +575,38 @@ YmailApi.StormUI.DraftApi.prototype.send = function(draft) {
 
 
 /**
- * @return {!goog.async.Deferred.<?string>}
+ * @param {boolean} isExpandQuoted
+ * @return {?goog.async.Deferred.<{
+ *   body: !string, from: !YmailData.EmailUser, sentDate: !number}>}
  */
-YmailApi.StormUI.DraftApi.prototype.getQuoted = function() {
-  var oMsg = this.composeView_.draft.origin.oMsg;
+YmailApi.StormUI.DraftApi.prototype.getQuoted = function(isExpandQuoted) {
+  var origin = this.composeView_.draft.origin,
+      oMsg = origin.oMsg;
   if (!oMsg) {
-    return goog.async.Deferred.succeed(null);
-  } else if (oMsg.body) {
-    return goog.async.Deferred.succeed(oMsg.body.display);
+    return null;
+  }
+  if (isExpandQuoted === true) { // must check against true
+    var evt = navigator.platform && navigator.platform.indexOf('Mac') !== -1 ?
+        {metaKey: true} : {ctrlKey: true};
+    evt.keyCode = 65; //a
+    evt.type = 'keydown';
+    this.triggerEvent(evt);
+  }
+  if (oMsg.body) {
+    return goog.async.Deferred.succeed({
+      body: oMsg.body.display,
+      from: oMsg.header.from,
+      sentDate: oMsg.header.sentDate
+    });
   }
   var result = new goog.async.Deferred;
   this.composeView_.once('draftLoaded', function() {
     var oMsg = this.draft.origin.oMsg;
-    oMsg && oMsg.body && result.callback(oMsg.body.display);
+    oMsg && oMsg.body && result.callback({
+      body: oMsg.body.display,
+      from: oMsg.header.from,
+      sentDate: oMsg.header.sentDate
+    });
   });
   return result;
 };
@@ -654,6 +617,18 @@ YmailApi.StormUI.DraftApi.prototype.getQuoted = function() {
  */
 YmailApi.StormUI.DraftApi.prototype.discard = function() {
   this.composeView_.handleComposeAction('delete');
+  return true;
+};
+
+
+/**
+ * @param {*} args
+ * @return {!boolean}
+ */
+YmailApi.StormUI.DraftApi.prototype.triggerEvent = function(args) {
+  var baseNode = this.composeView_.baseNode;
+  baseNode.simulate('focus');
+  baseNode.one('.cm-rtetext').simulate(args.type, args);
   return true;
 };
 
@@ -768,27 +743,42 @@ YmailApi.StormUI.AutoSuggestApi.prototype.initApi_ = function() {
 };
 
 
-YmailApi.StormUI.bootstrap = function() {
+/**
+ * The extension content script and this stub both run in the same ymail origin
+ * @param {!string} url
+ * @return {!boolean} Whether the given url belongs to the ymail origin
+ */
+YmailApi.utils.isSameOrigin = function(url) {
+  return (new URL(url)).origin === location.origin;
+};
+
+/**
+ * Bootstrap this script as soon as YUI is ready
+ * @param {!number} attempt
+ */
+YmailApi.bootstrap = function(attempt) {
+  var win = /** @type {{
+    yui: YmailApi.StormUI.YUI,
+    NeoConfig: YmailApi.StormUI.NeoConfig}} */ (window);
+
   // this should generally not happen. remove when everyone updated
   if (window.location.href.indexOf('encryptr') !== -1) {
-    window.location.href = 'https://mail.yahoo.com/';
+    return window.location.replace('https://mail.yahoo.com/');
+  }
+
+  if (win.NeoConfig) { // Storm
+    if (win.yui && typeof win.yui.on === 'function') {
+      new YmailApi.StormUI(win.yui, win.NeoConfig);
+    }
     return;
   }
 
-  var globalVar = /** @type {{
-    yui: YmailApi.StormUI.YUI,
-    NeoConfig: YmailApi.StormUI.NeoConfig}} */ (goog.global);
-
-  if (globalVar.yui) {
-    if (typeof globalVar.yui.on === 'function') {
-      new YmailApi.StormUI(globalVar.yui, globalVar.NeoConfig);
-      return;
-    }
-    window.setTimeout(YmailApi.StormUI.bootstrap, 300);
-  }
-}
+  // try it again
+  --attempt > 0 && window.setTimeout(
+      goog.bind(YmailApi.bootstrap, null, attempt), 300);
+};
 
 // bootstrap the stub
-YmailApi.StormUI.bootstrap();
+YmailApi.bootstrap(10);
 
 });  // goog.scope

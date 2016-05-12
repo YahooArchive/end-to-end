@@ -233,7 +233,7 @@ e2e_build_extension() {
   fi
   # compile javascript files
   echo "Compiling JS files..."
-  e2e_build_closure_lib_ "YmailApi.StormUI" "$BUILD_EXT_DIR/stubs/ymail.storm.js" "$BUILD_TPL_DIR" "$1"
+  e2e_build_closure_lib_ "YmailApi" "$BUILD_EXT_DIR/stubs/ymail.storm.js" "$BUILD_TPL_DIR" "$1"
   e2e_build_closure_lib_ "e2e.ext.bootstrap" "$BUILD_EXT_DIR/launcher_binary.js" "$BUILD_TPL_DIR" "$1"
   e2e_build_closure_lib_ "e2e.ext.helper.bootstrap" "$BUILD_EXT_DIR/helper_binary.js" "$BUILD_TPL_DIR" "$1"
   e2e_build_closure_lib_ "e2e.ext.ui.prompt.bootstrap" "$BUILD_EXT_DIR/prompt_binary.js" "$BUILD_TPL_DIR" "$1"

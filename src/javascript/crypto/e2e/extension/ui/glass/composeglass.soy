@@ -21,6 +21,7 @@
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field.
  * @param loadingLabel The label for loading message.
+ * @param showOriginalLabel The label for show original message.
  * @param signerCheckboxTitle The label for the checkbox to sign messages.
  * @param actionButtonTitle The title of the prompt button. 
  * @param actionDraftDeleteTitle The title of the Delete Draft button.
@@ -35,6 +36,7 @@
       {param subject: $subject /}
       {param subjectLabel: $subjectLabel /}
       {param loadingLabel: $loadingLabel /}
+      {param showOriginalLabel: $showOriginalLabel /}
       {param signerCheckboxTitle: $signerCheckboxTitle /}
       {param actionButtonTitle: $actionButtonTitle /}
       {param actionDraftDeleteTitle: $actionDraftDeleteTitle /}
@@ -52,6 +54,7 @@
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field.
  * @param loadingLabel The label for loading message.
+ * @param showOriginalLabel The label for show original message.
  * @param signerCheckboxTitle The label for the checkbox to sign messages.
  * @param actionButtonTitle The title of the prompt button. 
  * @param actionDraftDeleteTitle The title of the Delete Draft button.
@@ -71,8 +74,13 @@
     <input id="{e2e.ext.constants.ElementId.SUBJECT}" value="{$subject}" placeholder="{$subjectLabel}" />
   </div>
   {/if}
-  <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}"><div>{$encryptrMessage}</div><label></label></div>
+  <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}">
+    <div>{$encryptrMessage}</div>
+    <label></label>
+  </div>
   <textarea></textarea>
+  <div id="{e2e.ext.constants.ElementId.QUOTED_TEXT}">
+    {$showOriginalLabel}</div>
   <div class="{e2e.ext.constants.CssClass.PROMPT_ACTIONS}">
     <div class="{e2e.ext.constants.CssClass.BOTTOM_NOTIFICATION}" style="display:none">
       <span class="{e2e.ext.constants.CssClass.LOADER}"></span>
