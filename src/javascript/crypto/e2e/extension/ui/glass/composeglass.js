@@ -193,7 +193,11 @@ ui.ComposeGlass.prototype.populateUi_ = function() {
         this.focusRelevantElement_, undefined, this);
 
     // set subject
-    this.setSubject_(draft.subject);
+    var subj = goog.dom.getElement(constants.ElementId.SUBJECT);
+    if (subj) {
+      subj.value = draft.subject;
+      this.setSubject_(null);
+    }
 
   }, this.displayFailure_, this);
 };
@@ -874,12 +878,10 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
  * @private
  */
 ui.ComposeGlass.prototype.setSubject_ = function(evt) {
-  var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
-      goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
+  var subject = goog.dom.getElement(constants.ElementId.SUBJECT).value;
 
-  this.api_.req('draft.set', {
-    subject: subject
-  }).addErrback(this.errorCallback_);
+  this.api_.req('draft.set', {subject: subject}).
+      addErrback(this.errorCallback_);
 };
 
 
