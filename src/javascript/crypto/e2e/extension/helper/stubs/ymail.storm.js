@@ -178,7 +178,6 @@ YmailApi.StormUI.ComposeView;
 YmailApi.StormUI.AutoSuggest;
 
 
-
 /**
  * Constructor for the YMail Event Target Helper class.
  * @param {YmailApi.StormUI.YUI} Y
@@ -196,6 +195,19 @@ YmailApi.StormUI = function(Y, NeoConfig) {
   this.monitorStormEvents_();
   this.monitorExtensionEvents_();
   this.addCSS();
+};
+
+
+/**
+ * The unique selector for elements in composeView
+ * @enum {string}
+ */
+YmailApi.StormUI.Selector = {
+  TO: '.cm-to-field',
+  CC: '.cm-cc-field',
+  BCC: '.cm-bcc-field',
+  SUBJECT: '#subject-field',
+  EDITOR: '.cm-rtetext'
 };
 
 
@@ -358,7 +370,7 @@ YmailApi.StormUI.prototype.addCSS = function() {
  * @protected
  */
 YmailApi.StormUI.prototype.addEncryptrIcon = function(target) {
-  var textArea = target.querySelector('.cm-rtetext');
+  var textArea = target.querySelector(YmailApi.StormUI.Selector.EDITOR);
   var encryptrIcon = document.createElement('div');
   encryptrIcon.classList.add('icon', 'icon-encrypt');
   encryptrIcon.addEventListener('click', function() {
@@ -518,11 +530,11 @@ YmailApi.StormUI.DraftApi.prototype.set = function(draft) {
 
   // TODO: can we not use DOM calls to remove recipients?
   draft.to && draft.to.length &&
-      header.removeAllLozenges(node.one('.cm-to-field'));
+      header.removeAllLozenges(node.one(YmailApi.StormUI.Selector.TO));
   draft.cc && draft.cc.length &&
-      header.removeAllLozenges(node.one('.cm-cc-field'));
+      header.removeAllLozenges(node.one(YmailApi.StormUI.Selector.CC));
   draft.bcc && draft.bcc.length &&
-      header.removeAllLozenges(node.one('.cm-bcc-field'));
+      header.removeAllLozenges(node.one(YmailApi.StormUI.Selector.BCC));
   // fixed Storm to handle empty subject
   goog.isDef(draft.subject) &&
       node.one('#subject-field').set('value', draft.subject).simulate('keyup');
@@ -590,7 +602,7 @@ YmailApi.StormUI.DraftApi.prototype.getQuoted = function(isExpandQuoted) {
         {metaKey: true} : {ctrlKey: true};
     evt.keyCode = 65; //a
     evt.type = 'keydown';
-    this.triggerEvent(evt);
+    this.triggerEvent(YmailApi.StormUI.Selector.EDITOR, evt);
   }
   if (oMsg.body) {
     return goog.async.Deferred.succeed({
@@ -622,13 +634,14 @@ YmailApi.StormUI.DraftApi.prototype.discard = function() {
 
 
 /**
+ * @param {!string} selector The selector for the target element
  * @param {*} args
  * @return {!boolean}
  */
-YmailApi.StormUI.DraftApi.prototype.triggerEvent = function(args) {
+YmailApi.StormUI.DraftApi.prototype.triggerEvent = function(selector, args) {
   var baseNode = this.composeView_.baseNode;
   baseNode.simulate('focus');
-  baseNode.one('.cm-rtetext').simulate(args.type, args);
+  baseNode.one(selector).simulate(args.type, args);
   return true;
 };
 
