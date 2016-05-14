@@ -54,8 +54,8 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  * @param {function(string, number, function(string, Array<string>))}
  *     requestMatchingRowsCallback The implementation for autocompletion
  *     matcher. //@yahoo this replaced the need of static allUids
- * @param {function(string):!goog.async.Deferred.<!boolean>} badChipCallback
- *     Callback for checking if a chipValue has to be marked as bad.
+ * @param {!function(string):!goog.async.Deferred.<!boolean>} hasKeysCallback
+ *     Callback for checking if the given uid has a key
  *     //@yahoo no full list of bad uids are available, check online
  * @param {Function} renderEncryptionPassphraseCallback Callback for rendering
  *     an encryption passphrase dialog. //@yahoo accept null to disable.
@@ -63,7 +63,7 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  * @extends {goog.ui.Component}
  */
 panels.ChipHolder = function(selectedUids, requestMatchingRowsCallback,
-    badChipCallback, renderEncryptionPassphraseCallback) {
+    hasKeysCallback, renderEncryptionPassphraseCallback) {
   goog.base(this);
 
   /**
@@ -99,11 +99,11 @@ panels.ChipHolder = function(selectedUids, requestMatchingRowsCallback,
       renderEncryptionPassphraseCallback;
 
   /**
-   * Callback for checking if a chipValue has to be marked as bad.
-   * @type {Function}
+   * Callback for checking if the given uid has a key
+   * @type {!function(string):!goog.async.Deferred.<!boolean>}
    * @private
    */
-  this.badChipCallback_ = badChipCallback;
+  this.hasKeysCallback_ = hasKeysCallback;
 };
 goog.inherits(panels.ChipHolder, goog.ui.Component);
 
@@ -196,10 +196,10 @@ panels.ChipHolder.prototype.handleNewChipValue_ = function(opt_chipValue) {
   var chip = this.addChip(opt_chipValue);
 
   // badChipCallback_ works asynchronusly, mark chipValue as bad
-  chip && this.badChipCallback_(chip.getValue()).
-      addCallback(function(markChipBad) {
-        goog.dom.classlist.add(chip.getElement(), markChipBad ?
-            constants.CssClass.BAD_CHIP : constants.CssClass.GOOD_CHIP);
+  chip && this.hasKeysCallback_(chip.getValue()).
+      addCallback(function(hasKeys) {
+        goog.dom.classlist.add(chip.getElement(), hasKeys ?
+            constants.CssClass.GOOD_CHIP : constants.CssClass.BAD_CHIP);
       });
 };
 

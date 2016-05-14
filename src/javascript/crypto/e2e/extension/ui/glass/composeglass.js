@@ -423,7 +423,7 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
         // @yahoo allAvailableRecipients made async with requestMatchingRows_()
         goog.bind(this.requestMatchingRows_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
-        goog.bind(this.queryPublicKey_, this),
+        goog.bind(this.hasPublicKeys_, this),
         goog.bind(this.renderEncryptionPassphraseDialog_, this));
     this.addChild(this.chipHolder_, false);
     this.chipHolder_.decorate(
@@ -435,7 +435,7 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
         // @yahoo allAvailableRecipients made async with requestMatchingRows_()
         goog.bind(this.requestMatchingRows_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
-        goog.bind(this.queryPublicKey_, this),
+        goog.bind(this.hasPublicKeys_, this),
         null);
     this.addChild(this.ccChipHolder_, false);
     this.ccChipHolder_.decorate(
@@ -915,26 +915,73 @@ ui.ComposeGlass.prototype.switchToUnencrypted_ = function() {
 
 
 /**
- * Return who lacks a public key for the recipients
- * @param {!Array.<string>} recipients an recipient or a list of
- *     recipients
- * @return {!e2e.async.Result.<!Array.<string>>}
+ * Return whether each of the recipient has a public key
+ * @param {!Array.<!string>} recipients A list of recipients
+ * @param {boolean=} opt_omitErrback Whether to omit throwing error to the
+ *   errback but simply assume all recipients have no keys. When set to true,
+ *   display the error anyway.
+ * @return {!e2e.async.Result.<!Array.<!boolean>>}
  * @private
  */
-ui.ComposeGlass.prototype.lackPublicKeys_ = function(recipients) {
+ui.ComposeGlass.prototype.havePublicKeys_ = function(
+    recipients, opt_omitErrback) {
+  if (recipients.length === 0) {
+    return e2e.async.Result.toResult([false]);
+  }
+
   var result = new e2e.async.Result;
 
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.GET_ALL_KEYS_BY_EMAILS,
     recipients: recipients,
     content: 'public_exist'
-  }), function(hasKeysPerRecipient) {
-    result.callback(goog.array.filter(recipients, function(recipient, i) {
-      return !hasKeysPerRecipient[i];
-    }));
-  }, goog.bind(result.errback, result));
+  }), function(haveKeys) {
+    result.callback(haveKeys);
+  }, goog.bind(function(error) {
+    if (opt_omitErrback) {
+      this.displayFailure_(error);
+      // assume everyone has no keys
+      result.callback(goog.array.repeat(false, recipients.length));
+    } else {
+      result.errback(error);
+    }
+  }, this));
 
   return result;
+};
+
+
+/**
+ * Return whether an uid misses a public key
+ * @param {!string} recipient An uid
+ * @return {!goog.async.Deferred.<!boolean>}
+ * @private
+ */
+ui.ComposeGlass.prototype.hasPublicKeys_ = function(recipient) {
+  return this.havePublicKeys_([recipient]).addCallbacks(function(haveKeys) {
+    return haveKeys[0];
+  }, this.errorCallback_);
+};
+
+
+
+/**
+ * Sort out those recipients that have no keys
+ * @param {!Array.<!string>} recipients A list of recipients
+ * @param {boolean=} opt_omitErrback Whether to omit throwing error to the
+ *   errback but simply assume all recipients have no keys. When set to true,
+ *   display the error anyway.
+ * @return {!goog.async.Deferred.<!Array.<!string>>} The recipients having no keys
+ * @private
+ */
+ui.ComposeGlass.prototype.lackPublicKeys_ = function(
+    recipients, opt_omitErrback) {
+  return this.havePublicKeys_(recipients, opt_omitErrback).
+      addCallback(function(haveKeys) {
+        return goog.array.filter(recipients, function(recipient, i) {
+          return !haveKeys[i];
+        });
+      });
 };
 
 
@@ -1087,27 +1134,6 @@ ui.ComposeGlass.prototype.requestMatchingRows_ = function(
           this.displayFailure_(err);
         }
       }, this);
-};
-
-
-/**
- * Return if any of the recipients lacks a public key
- * @param {string|!Array.<string>} recipients an recipient or a list of
- *     recipients
- * @return {!goog.async.Deferred.<!boolean>}
- * @private
- */
-ui.ComposeGlass.prototype.queryPublicKey_ = function(recipients) {
-  if (goog.isString(recipients)) {
-    recipients = [recipients];
-  } else if (recipients.length === 0) {
-    return e2e.async.Result.toResult(false);
-  }
-
-  return this.lackPublicKeys_(recipients).
-      addCallbacks(function(invalidOnes) {
-        return invalidOnes.length > 0;
-      }, this.displayFailure_, this);
 };
 
 
@@ -1299,19 +1325,15 @@ ui.ComposeGlass.prototype.discard = function() {
  * @private
  */
 ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
-  // prevent opening the same dialog twice
-  if (this.keyMissingDialogTriggered_) {
+  if (this.sendButtonClicked_) {
     return;
   }
 
-  var loadingElem = this.getElementByClass(
-          constants.CssClass.BOTTOM_NOTIFICATION),
-      buttonsElem = this.getElementByClass(
-          constants.CssClass.BUTTONS_CONTAINER);
-
-  // display loading
-  goog.style.setElementShown(loadingElem, true);
-  goog.style.setElementShown(buttonsElem, false);
+  // display loading icon of encrypting and sending
+  goog.style.setElementShown(this.getElementByClass(
+      constants.CssClass.BOTTOM_NOTIFICATION), true);
+  goog.style.setElementShown(this.getElementByClass(
+      constants.CssClass.BUTTONS_CONTAINER), false);
 
   // given no chipholder or there exists a session passphrase
   if ((!this.chipHolder_ && !this.ccChipHolder_) ||
@@ -1331,69 +1353,87 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
   }
 
   // deliberately put after no recipients check
-  this.keyMissingDialogTriggered_ = true;
+  this.sendButtonClicked_ = true;
 
-  // @yahoo ask to remove invalid recipients or send unencrypted msg
-  this.lackPublicKeys_(selectedUids.concat(selectedCCUids)).
-      addCallbacks(function(invalidRecipients) {
+  // omitted errors from lackPublicKeys_, and thus no errback will be called
+  // as errors regarding lacking of public keys or keyserver connection error
+  // should not prohibit users from sending emails in plaintext
+  this.lackPublicKeys_(selectedUids.concat(selectedCCUids), true).
+      addCallback(function(invalidRecipients) {
         if (invalidRecipients.length === 0) {
           this.encryptSign_();
         } else {
-          var recipientString = goog.array.map(
-              utils.text.uidsToObjects(invalidRecipients),
-              function(p) {
-                return '<span title="' + p.email.replace(/"/g, '&quot;') +
-                        '">' + p.name.replace(/</g, '&lt;') + '</span>';
-              }).join(', ');
-
-          // disabled per message passphrase encryption for now
-          // var msg = chrome.i18n.getMessage(
-          //     'composeGlassAddPassphraseForRecipients', recipientString).
-          //     replace('\n', '<br>').
-          //     replace(/#add#([^#]*)#/,
-          //         '<label for="' +
-          //         constants.ElementId.ADD_PASSPHRASE_BUTTON +
-          //         '">$1</label>');
-
-          var msg = chrome.i18n.getMessage(
-              'composeGlassConfirmRecipients', recipientString);
-
-          var dialog = this.keyMissingDialog_ = new ui.dialogs.Generic(
-              soydata.VERY_UNSAFE.ordainSanitizedHtml(msg),
-              goog.bind(function(result) {
-                this.keyMissingDialogTriggered_ = false;
-                this.keyMissingDialog_ = null;
-                // close the warning
-                goog.dispose(dialog);
-                goog.dom.classlist.remove(this.getElement(),
-                                          constants.CssClass.UNCLICKABLE);
-                // hide loading
-                goog.style.setElementShown(loadingElem, false);
-                goog.style.setElementShown(buttonsElem, true);
-
-                // User clicked ok to 'send unencrypted message'
-                if (typeof result !== 'undefined') {
-
-                  // disable signing the message
-                  var signerCheck = goog.dom.getElement(
-                          constants.ElementId.SIGN_MESSAGE_CHECK);
-                  signerCheck && (signerCheck.checked = 'checked');
-
-                  this.insertMessageIntoPage_(this.getContent().origin);
-                }
-              }, this),
-              ui.dialogs.InputType.NONE,
-              undefined,
-              chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'),
-              chrome.i18n.getMessage('actionCancelPgpAction'));
-
-          this.renderDialog(dialog);
-
-          // Set the background element to be unclickable.
-          goog.dom.classlist.add(this.getElement(),
-              constants.CssClass.UNCLICKABLE);
+          var origin = this.getContent().origin;
+          // send unencrypted if the user endorsed it
+          this.renderKeyMissingWarningDialog_(invalidRecipients).addCallback(
+              goog.bind(this.insertMessageIntoPage_, this, origin));
         }
-      }, this.displayFailure_, this);
+      }, this);
+};
+
+
+/**
+ * Confirm with users what to if some recipients have no keys
+ * @param {!Array.<string>} invalidUids The uids that have no keys
+ * @return {!goog.async.Deferred.<undefined>} Callback when the user has
+ *     confirmed to send the message unencrypted
+ */
+ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
+    invalidUids) {
+  var result = new goog.async.Deferred;
+
+  var recipientString = goog.array.map(
+      utils.text.uidsToObjects(invalidUids),
+      function(p) {
+        return '<span title="' + p.email.replace(/"/g, '&quot;') +
+                '">' + p.name.replace(/</g, '&lt;') + '</span>';
+      }).join(', ');
+
+  // disabled per message passphrase encryption for now
+  // var msg = chrome.i18n.getMessage(
+  //     'composeGlassAddPassphraseForRecipients', recipientString).
+  //     replace('\n', '<br>').
+  //     replace(/#add#([^#]*)#/,
+  //         '<label for="' +
+  //         constants.ElementId.ADD_PASSPHRASE_BUTTON +
+  //         '">$1</label>');
+
+  var msg = chrome.i18n.getMessage(
+      'composeGlassConfirmRecipients', recipientString);
+
+  var dialog = new ui.dialogs.Generic(
+      soydata.VERY_UNSAFE.ordainSanitizedHtml(msg),
+      goog.bind(function(userAction) {
+        this.sendButtonClicked_ = false;
+        this.keyMissingDialog_.dispose();
+        this.keyMissingDialog_ = null;
+        
+        goog.dom.classlist.remove(this.getElement(),
+                                  constants.CssClass.UNCLICKABLE);
+        // hide loading
+        goog.style.setElementShown(this.getElementByClass(
+            constants.CssClass.BOTTOM_NOTIFICATION), false);
+        goog.style.setElementShown(this.getElementByClass(
+            constants.CssClass.BUTTONS_CONTAINER), true);
+
+        // User clicked ok to 'send unencrypted message'
+        if (goog.isDef(userAction)) {
+          result.callback();
+        }
+      }, this),
+      ui.dialogs.InputType.NONE,
+      undefined,
+      chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'),
+      chrome.i18n.getMessage('actionCancelPgpAction'));
+
+  this.keyMissingDialog_ = dialog;
+  this.renderDialog(dialog);
+
+  // Set the background element to be unclickable.
+  goog.dom.classlist.add(this.getElement(),
+      constants.CssClass.UNCLICKABLE);
+
+  return result;
 };
 
 });  // goog.scope
