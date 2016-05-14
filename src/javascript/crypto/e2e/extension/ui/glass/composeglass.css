@@ -313,6 +313,9 @@ textarea.has-quoted + #quoted-text {
   margin-left: 23px;
   margin-right: 23px;
 }
+.conversation .pgpActions div.bottom-notification {
+  padding: 15px 0;
+}
 .conversation #fromHolder {
   margin: 0 23px;
   border-color: #EAEDF0;
