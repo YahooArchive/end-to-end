@@ -15,8 +15,8 @@
  */
 
 /**
- * @fileoverview A stub method that allows the invocation of API calls inside
- * the JavaScript context of Yahoo Mail (codenamed Storm)
+ * @fileoverview A stub that allows the invocation of API calls inside the
+ * JavaScript context of Yahoo Mail (codenamed Storm)
  */
 goog.provide('YmailApi');
 goog.provide('YmailApi.StormUI');
@@ -179,7 +179,7 @@ YmailApi.StormUI.AutoSuggest;
 
 
 /**
- * Constructor for the YMail Event Target Helper class.
+ * Constructor for serving APIs to/from the extension.
  * @param {YmailApi.StormUI.YUI} Y
  * @param {YmailApi.StormUI.NeoConfig} NeoConfig
  * @constructor
@@ -246,8 +246,7 @@ YmailApi.StormUI.prototype.monitorStormEvents_ = function() {
     elem.dispatchEvent(new CustomEvent('openCompose', {
       detail: {
         apiId: apiId,
-        isEncryptedDraft: goog.isString(msgBody) &&
-            msgBody.indexOf('\nisDraft: true\n') !== -1
+        isEncryptedDraft: YmailApi.utils.isLikelyPGP(msgBody)
       },
       bubbles: true
     }));
@@ -310,7 +309,7 @@ YmailApi.StormUI.prototype.dispatchOpenMessage = function(node, data) {
   quotedText = qb ? qb.innerText : '';
   
   // only take care of those that appears to be a pgp message
-  if ((text + quotedText).indexOf('-----BEGIN PGP') !== -1) {
+  if (YmailApi.utils.isLikelyPGP(text + quotedText)) {
     // disabled highlighting users in non-encrypted compose
     this.dispatchQueryPublicKey(node);
 
@@ -763,6 +762,16 @@ YmailApi.StormUI.AutoSuggestApi.prototype.initApi_ = function() {
  */
 YmailApi.utils.isSameOrigin = function(url) {
   return (new URL(url)).origin === location.origin;
+};
+
+
+/**
+ * Check whether a message is likely having an PGP ASCII blob
+ * @param {!string} message
+ * @return {!boolean} Whether the message is likely having an PGP ASCII blob
+ */
+YmailApi.utils.isLikelyPGP = function(message) {
+  return goog.isString(message) && message.indexOf('-----BEGIN PGP') !== -1;
 };
 
 /**
