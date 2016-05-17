@@ -463,6 +463,11 @@ ui.ComposeGlassWrapper.prototype.addAPIHandlers = function() {
       }, this)).
       setRequestHandler('draft.getQuoted',
           goog.bind(stub.req, stub, 'draft.getQuoted')).
+      setRequestHandler('draft.triggerEvent', goog.bind(function(args) {
+        // must explicit focus on glassFrame once, so it knows to fire blur
+        this.glassFrame.focus();
+        return stub.req('draft.triggerEvent', args)
+      }, this)).
       setRequestHandler('autosuggest.search',
           goog.bind(stub.req, stub, 'autosuggest.search')).
       setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {

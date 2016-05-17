@@ -446,6 +446,7 @@ YmailApi.StormUI.ComposeApi.prototype.initApi_ = function(apiId) {
       'draft.send': goog.bind(draftApi.send, draftApi),
       'draft.getQuoted': goog.bind(draftApi.getQuoted, draftApi),
       'draft.discard': goog.bind(draftApi.discard, draftApi),
+      'draft.triggerEvent': goog.bind(draftApi.triggerEvent, draftApi),
       'autosuggest.search': goog.bind(autosuggestApi.search, autosuggestApi)
     });
   }, this));
@@ -601,7 +602,7 @@ YmailApi.StormUI.DraftApi.prototype.getQuoted = function(isExpandQuoted) {
         {metaKey: true} : {ctrlKey: true};
     evt.keyCode = 65; //a
     evt.type = 'keydown';
-    this.triggerEvent(YmailApi.StormUI.Selector.EDITOR, evt);
+    this.triggerEvent(evt, YmailApi.StormUI.Selector.EDITOR);
   }
   if (oMsg.body) {
     return goog.async.Deferred.succeed({
@@ -633,14 +634,20 @@ YmailApi.StormUI.DraftApi.prototype.discard = function() {
 
 
 /**
- * @param {!string} selector The selector for the target element
- * @param {*} args
+ * Simulate focus to baseNode before firing the specified event  
+ * @param {!{type: (string|undefined),
+ *     metaKey: (boolean|undefined), ctrlKey: (boolean|undefined),
+ *     shiftKey: (boolean|undefined), altKey: (boolean|undefined)}} evt
+ * @param {YmailApi.StormUI.Selector=} opt_selector
  * @return {!boolean}
  */
-YmailApi.StormUI.DraftApi.prototype.triggerEvent = function(selector, args) {
-  var baseNode = this.composeView_.baseNode;
-  baseNode.simulate('focus');
-  baseNode.one(selector).simulate(args.type, args);
+YmailApi.StormUI.DraftApi.prototype.triggerEvent = function(
+    evt, opt_selector) {
+  var node = this.composeView_.baseNode;
+  if (opt_selector) {
+    node = node.one(opt_selector) || node;
+  }
+  node.simulate(evt.type, evt);
   return true;
 };
 
@@ -773,6 +780,7 @@ YmailApi.utils.isSameOrigin = function(url) {
 YmailApi.utils.isLikelyPGP = function(message) {
   return goog.isString(message) && message.indexOf('-----BEGIN PGP') !== -1;
 };
+
 
 /**
  * Bootstrap this script as soon as YUI is ready
