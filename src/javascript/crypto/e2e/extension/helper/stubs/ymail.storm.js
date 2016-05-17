@@ -805,10 +805,10 @@ YmailApi.bootstrap = function(attempt) {
 
   // try it again
   --attempt > 0 && window.setTimeout(
-      goog.bind(YmailApi.bootstrap, null, attempt), 300);
+      goog.bind(YmailApi.bootstrap, null, attempt), 500);
 };
 
 // bootstrap the stub
-YmailApi.bootstrap(10);
+YmailApi.bootstrap(20);
 
 });  // goog.scope
