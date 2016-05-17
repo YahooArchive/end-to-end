@@ -388,8 +388,6 @@ ext.yExtensionLauncher.prototype.stop = function() {
   // Unset the passphrase on the keyring
   // TODO: add unsetKeyringPassphrase() into Context
   this.getContext().keyring_ = null;
-  // Remove the API
-  this.ctxApi_.removeApi();
   this.updatePassphraseWarning();
 };
 

@@ -183,7 +183,9 @@ utils.sendExtensionRequest = function(args, callback, errback) {
         port.disconnect();
 
         if (response.error) {
-          errback(new Error(response.error));
+          var error = new Error(response.error);
+          response.errorId && (error.messageId = response.errorId);
+          errback(error);
           return;
         }
         try {

@@ -214,9 +214,9 @@ api.Api.prototype.executeAction_ = function(callback, req) {
   }
 
   if (window.launcher && !window.launcher.hasPassphrase()) {
-    callback({
-      error: chrome.i18n.getMessage('glassKeyringLockedError')
-    });
+    outgoing.error = chrome.i18n.getMessage('glassKeyringLockedError');
+    outgoing.errorId = 'glassKeyringLockedError';
+    callback(outgoing);
     return;
   }
 
@@ -230,8 +230,12 @@ api.Api.prototype.executeAction_ = function(callback, req) {
     outgoing.content = resp;
     callback(outgoing);
   }, function(error) {
-    outgoing.error = goog.isDef(error.messageId) ?
-        chrome.i18n.getMessage(error.messageId) : error.message;
+    if (goog.isDef(error.messageId)) {
+      outgoing.errorId = error.messageId;
+      outgoing.error = chrome.i18n.getMessage(error.messageId);
+    } else {
+      outgoing.error = error.message;
+    }
     // @yahoo before it is sent to the other end, log the error and stack
     console.error(error);
     callback(outgoing);

@@ -769,6 +769,8 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
 
 
   }, this), goog.bind(function(error) {
+    saveDraftMsg.textContent = '';
+
     if (error.messageId == 'promptNoEncryptionTarget') {
       var dialog = new dialogs.Generic(
           chrome.i18n.getMessage('promptNoEncryptionKeysFound', signer),
@@ -787,11 +789,14 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
           }, this),
           dialogs.InputType.NONE);
       this.renderDialog(dialog);
+    } else if (error.messageId == 'glassKeyringLockedError') {
+      this.displayFailure_(error);
     }
 
     // NOTE(radi): Errors are silenced here on purpose.
     // NOTE(adon): log the error
     console.error(error);
+    
   }, this));
 };
 
