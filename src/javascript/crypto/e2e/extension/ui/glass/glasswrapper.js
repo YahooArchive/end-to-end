@@ -311,6 +311,8 @@ ui.BaseGlassWrapper.prototype.disposeInternal = function() {
   this.targetElem.glassDisposed = true;
   goog.style.setElementShown(this.targetElem, true);
 
+  this.api = null;
+
   goog.base(this, 'disposeInternal');
 };
 
@@ -415,6 +417,14 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   // insert the glass into dom, and focus it
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
   glassFrame.focus();
+
+  // capture the focus from glassFrame's parent to glassFrame
+  this.focusHandler_ = function() {
+    glassFrame && glassFrame.focus();
+  };
+  goog.events.listen(glassFrame.parentElement,
+      goog.events.EventType.FOCUS,
+      this.focusHandler_);
 };
 
 
@@ -570,6 +580,27 @@ ui.ComposeGlassWrapper.prototype.computeScrollOffset_ = function() {
             this.glassFrame, threadList).y :
         null
   };
+};
+
+
+/**
+ * Remove the glass and restore the original view
+ * @override
+ */
+ui.ComposeGlassWrapper.prototype.disposeInternal = function() {
+  goog.base(this, 'disposeInternal');
+
+  this.glassFrame && this.glassFrame.parentElement && goog.events.unlisten(
+      this.glassFrame.parentElement,
+      goog.events.EventType.FOCUS,
+      this.focusHandler_);
+
+  this.threadList_ && goog.events.unlisten(
+      this.threadList_,
+      goog.events.EventType.SCROLL,
+      this.boundSendScrollOffset_);
+
+  goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
 };
 
 });  // goog.scope
