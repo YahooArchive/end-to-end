@@ -203,63 +203,6 @@ ui.ComposeGlass.prototype.populateUi_ = function() {
 };
 
 
-/**
- * The shortcut keys to capture
- * @return {Array.<{id:string, keyCode: number, meta: boolean, shift: boolean,
- *     ctrl: boolean, save: boolean}>}
- */
-ui.ComposeGlass.prototype.getShortcuts = function() {
-  return [
-    {id: 'prevTab', keyCode: goog.events.KeyCodes.OPEN_SQUARE_BRACKET},
-    {id: 'nextTab', keyCode: goog.events.KeyCodes.CLOSE_SQUARE_BRACKET},
-
-    {id: 'prevCov', keyCode: goog.events.KeyCodes.COMMA,
-      ctrl: true, save: true},
-    {id: 'nextCov', keyCode: goog.events.KeyCodes.PERIOD,
-      ctrl: true, save: true},
-    {id: 'prevCov', keyCode: goog.events.KeyCodes.LEFT, save: true},
-    {id: 'nextCov', keyCode: goog.events.KeyCodes.RIGHT, save: true},
-    {id: 'archiveCov', keyCode: goog.events.KeyCodes.E, save: true},
-    {id: 'moveCov', keyCode: goog.events.KeyCodes.D},
-    {id: 'moveToCov', keyCode: goog.events.KeyCodes.D, shift: true},
-    {id: 'deleteCov', keyCode: goog.events.KeyCodes.DELETE},
-    // {id: 'replyCov', keyCode: goog.events.KeyCodes.R, shift: true},
-    // {id: 'replyallCov', keyCode: goog.events.KeyCodes.A, shift: true},
-    // {id: 'forwardCov', keyCode: goog.events.KeyCodes.F, shift: true},
-    {id: 'unreadCov', keyCode: goog.events.KeyCodes.K, shift: true},
-    {id: 'flagCov', keyCode: goog.events.KeyCodes.L, shift: true},
-    {id: 'closeCov', keyCode: goog.events.KeyCodes.ESC, save: true},
-
-    {id: 'prev', keyCode: goog.events.KeyCodes.COMMA},
-    {id: 'next', keyCode: goog.events.KeyCodes.PERIOD},
-
-    // {id: 'display', keyCode: goog.events.KeyCodes.ENTER},
-    // {id: 'display', keyCode: goog.events.KeyCodes.SPACE},
-    // {id: 'reply', keyCode: goog.events.KeyCodes.R},
-    // {id: 'replyall', keyCode: goog.events.KeyCodes.A},
-    // {id: 'forward', keyCode: goog.events.KeyCodes.F},
-    // {id: 'unread', keyCode: goog.events.KeyCodes.K},
-    {id: 'unreadCov', keyCode: goog.events.KeyCodes.K},
-    // {id: 'flag', keyCode: goog.events.KeyCodes.L},
-    {id: 'flagCov', keyCode: goog.events.KeyCodes.L},
-
-    {id: 'inbox', keyCode: goog.events.KeyCodes.M, save: true},
-    {id: 'inbox', keyCode: goog.events.KeyCodes.M, shift: true, save: true},
-    {id: 'compose', keyCode: goog.events.KeyCodes.N, save: true},
-    {id: 'settings', keyCode: goog.events.KeyCodes.SEMICOLON},
-    {id: 'newfolder', keyCode: goog.events.KeyCodes.E,
-      meta: true, shift: true},
-    // {id: 'voiceOn', keyCode: goog.events.KeyCodes.L,
-    //   meta: true, shift: true},
-    // {id: 'voiceOff', keyCode: goog.events.KeyCodes.X,
-    //   meta: true, shift: true}
-
-    {id: 'send', keyCode: goog.events.KeyCodes.ENTER, meta: true},
-    {id: 'save', keyCode: goog.events.KeyCodes.S, meta: true, save: true}
-  ];
-};
-
-
 /** @override */
 ui.ComposeGlass.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
@@ -279,21 +222,6 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       goog.events.EventType.CLICK,
       goog.bind(this.keyMissingWarningThenEncryptSign_, this));
 
-  // @yahoo added shortcut keys
-  var sHandler = goog.ui.KeyboardShortcutHandler,
-      userAgentModifier = goog.userAgent.MAC ?
-          sHandler.Modifiers.META :
-          sHandler.Modifiers.CTRL,
-      keyboardHandler = new goog.ui.KeyboardShortcutHandler(elem),
-      afterSaveKeyboardHandler = new goog.ui.KeyboardShortcutHandler(elem);
-
-  goog.array.forEach(this.getShortcuts(), function(key) {
-    (key.save ? afterSaveKeyboardHandler : keyboardHandler).registerShortcut(
-        key.id, key.keyCode,
-        (key.meta ? userAgentModifier : sHandler.Modifiers.NONE) +
-            (key.shift ? sHandler.Modifiers.SHIFT : sHandler.Modifiers.NONE) +
-            (key.ctrl ? sHandler.Modifiers.CTRL : sHandler.Modifiers.NONE));
-  });
 
   // @yahoo set the subject on KEYUP
   var subjectElem = goog.dom.getElement(constants.ElementId.SUBJECT);
@@ -303,16 +231,14 @@ ui.ComposeGlass.prototype.enterDocument = function() {
         goog.events.EventType.KEYUP,
         goog.bind(this.setSubject_, this));
   }
+  // @yahoo handle and forward keydown events
+  goog.events.listen(document.documentElement, goog.events.EventType.KEYDOWN,
+      goog.bind(this.handleKeyEvent_, this));
+  // @yahoo forward focus events
+  goog.events.listen(document.documentElement, goog.events.EventType.FOCUS,
+      goog.bind(this.forwardEvent_, this, {type: 'focus'}));
 
   this.getHandler().
-      listen(
-          keyboardHandler,
-          sHandler.EventType.SHORTCUT_TRIGGERED,
-          goog.bind(this.handleKeyEvent_, this)).
-      listen(
-          afterSaveKeyboardHandler,
-          sHandler.EventType.SHORTCUT_TRIGGERED,
-          goog.bind(this.handleKeyEventAfterSave_, this)).
       // @yahoo update extension icon as green when the editor is in focus
       listen(this.editor_, goog.events.EventType.FOCUS, goog.bind(
           utils.sendExtensionRequest, null, {
@@ -330,16 +256,17 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
       goog.bind(this.resizeEditor_, this, true));
 
-  // @yahoo handle generic click and focus events
-  goog.events.listen(document.documentElement, goog.events.EventType.FOCUS,
-      goog.bind(this.handleKeyEvent_, this));
-
   // @yahoo default a click on nowhere to focus on the editor
-  goog.events.listen(document.body, goog.events.EventType.CLICK, function(evt) {
-    evt.stopPropagation();
-  });
+  goog.events.listen(document.body, goog.events.EventType.CLICK,
+      goog.bind(function(evt) {
+        evt.stopPropagation();
+        this.forwardEvent_({type: 'focus'});
+      }, this));
   goog.events.listen(document.documentElement, goog.events.EventType.CLICK,
-      goog.bind(this.editor_.focus, this.editor_));
+      goog.bind(function() {
+        this.editor_.focus();
+        this.forwardEvent_({type: 'focus'});
+      }, this));
 
   //@yahoo canSaveDraft is false, as we lack the button
   // if (this.getContent().canSaveDraft) {
@@ -740,7 +667,6 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
-  var textArea = this.getElement().querySelector('textarea');
   // @yahoo recipients can be broken down as object of name and email
   // var recipients = this.chipHolder_.getSelectedUids();
   var recipients = utils.text.uidsToObjects(
@@ -761,7 +687,7 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
     to: recipients,
     cc: ccRecipients,
     subject: subject,
-    body: textArea.value || content.value
+    body: this.editor_.value || content.value
   }).addCallbacks(this.close, this.errorCallback_, this);
 };
 
@@ -890,10 +816,6 @@ ui.ComposeGlass.prototype.setSubject_ = function(evt) {
  * @private
  */
 ui.ComposeGlass.prototype.switchToUnencrypted_ = function() {
-  // TODO: add a warning with mute option
-
-  var formText = /** @type {HTMLTextAreaElement} */
-      (this.getElement().querySelector('textarea'));
   var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
       goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
   var signer = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
@@ -909,7 +831,7 @@ ui.ComposeGlass.prototype.switchToUnencrypted_ = function() {
     to: recipients,
     cc: ccRecipients,
     subject: subject,
-    body: formText.value
+    body: this.editor_.value
   }).addCallbacks(this.close, this.errorCallback_, this);
 };
 
@@ -1097,8 +1019,8 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
     this.getHandler().listen(
         goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON),
         goog.events.EventType.CLICK,
-        goog.bind(this.handleKeyEventAfterSave_, this,
-            {identifier: 'closeCov'}));
+        goog.bind(this.handleKeyEvent_, this,
+            {keyCode: goog.events.KeyCodes.ESC})); // similar to closeCov
   }
 };
 
@@ -1250,32 +1172,88 @@ ui.ComposeGlass.prototype.setActionBarPosition_ = function(offset) {
 
 
 /**
- * Handles keyboard events for shortcut keys //@yahoo
- * @param {goog.ui.KeyboardShortcutEvent} evt The keyboard event to handle.
+ * Forward the keyboard events back to the original application //@yahoo
+ * @param {goog.events.BrowserEvent} evt The keydown event to handle.
  * @private
  */
 ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
-  var args = evt.identifier ? {keyId: evt.identifier} : undefined;
-  if (evt.identifier === 'send') {
-    this.keyMissingDialog_ ?
-        this.keyMissingDialog_.invokeCallback(false) : // Send in plaintext
-        this.keyMissingWarningThenEncryptSign_();
+  var KeyCodes = goog.events.KeyCodes;
+  var isMeta = goog.userAgent.MAC ? evt.metaKey : evt.ctrlKey;
+
+  // Non-shortcut if no modifier key (except ESC) is pressed in input elements
+  if (evt.target && goog.isDef(evt.target.value) &&
+      !evt.metaKey && !evt.ctrlKey && !evt.shiftKey && !evt.altKey &&
+      evt.keyCode !== KeyCodes.ESC) {
+    // just send a focus event and abort
+    this.forwardEvent_({type: 'focus'});
     return;
   }
 
-  this.api_.req('ctrl.shortcut', args).addErrback(this.errorCallback_);
+  switch (evt.keyCode) {
+    case KeyCodes.ENTER: 
+      if (isMeta) {          // Send by Cmd + Enter
+        this.keyMissingDialog_ ?
+            // Another Cmd+S to trigger Send in plaintext
+            this.keyMissingDialog_.invokeCallback(false) :
+            this.keyMissingWarningThenEncryptSign_();
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+      break;
+    case KeyCodes.S:
+      if (isMeta) {          // Send by Cmd + S
+        this.saveDraft_(this.getContent().origin, goog.nullFunction, null);
+        evt.preventDefault();
+        evt.stopPropagation();
+        return;
+      }
+      break;
+
+    // save before forwarding key events
+    case KeyCodes.COMMA:     // Previous Conversation
+    case KeyCodes.PERIOD:    // Next Conversation
+      if (!evt.ctrlKey) { break; }
+    case KeyCodes.LEFT:      // Previous Conversation
+    case KeyCodes.RIGHT:     // Next Conversation
+    case KeyCodes.E:         // Archive Conversation
+    case KeyCodes.ESC:       // Close Conversation
+    case KeyCodes.M:         // Inbox
+    case KeyCodes.N:         // New Compose
+      this.saveDraft_(this.getContent().origin,
+          goog.bind(this.forwardKeyEvent_, this, evt), null);
+      return;
+  }
+
+  this.forwardKeyEvent_(evt);
 };
 
 
 /**
- * Handles keyboard events for shortcut keys after saving the draft //@yahoo
- * @param {goog.ui.KeyboardShortcutEvent} evt The keyboard event to handle.
+ * Send a key event to the original compose
+ * @param {*} evt The keyboard event to handle.
  * @private
  */
-ui.ComposeGlass.prototype.handleKeyEventAfterSave_ = function(evt) {
-  var content = this.getContent();
-  content.canSaveDraft && this.saveDraft_(
-      content.origin, goog.bind(this.handleKeyEvent_, this, evt), evt);
+ui.ComposeGlass.prototype.forwardKeyEvent_ = function(evt) {
+  this.forwardEvent_({
+    type: evt.type,
+    keyCode: evt.keyCode,
+    metaKey: evt.metaKey,
+    ctrlKey: evt.ctrlKey,
+    shiftKey: evt.shiftKey,
+    altKey: evt.altKey,
+    key: evt.key
+  });
+};
+
+
+/**
+ * Send an event to the original compose
+ * @param {*} evt The keyboard event to handle.
+ * @private
+ */
+ui.ComposeGlass.prototype.forwardEvent_ = function(evt) {
+  this.api_.req('draft.triggerEvent', evt).addErrback(this.errorCallback_);
 };
 
 
@@ -1380,6 +1358,7 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
  */
 ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
     invalidUids) {
+  // TODO: add a warning with mute option
   var result = new goog.async.Deferred;
 
   var recipientString = goog.array.map(
