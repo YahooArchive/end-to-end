@@ -445,10 +445,12 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
     return;
   }
 
+  var textArea = this.editor_;
+
+  textArea.style.minHeight = '70px';
   // @yahoo trigger textarea and glass resize
   this.resizeEditor_(true);
 
-  var textArea = this.editor_;
   textArea.scrollTop = 0;
   textArea.setSelectionRange(0, 0);
   this.chipHolder_.focus();
@@ -1015,12 +1017,12 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
   if (isInConv) {
     goog.dom.classlist.add(document.body, constants.CssClass.CONVERSATION);
 
-    //@yahoo adjust action buttons position to stick at the bottom
+    // adjust action buttons position to stick at the bottom
     this.api_.setRequestHandler('evt.scroll',
         goog.bind(this.setActionBarPosition_, this));
 
   } else {
-    //@yahoo allows saving and escaping the draft
+    // allow saving and escaping the draft
     this.getHandler().listen(
         goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON),
         goog.events.EventType.CLICK,
@@ -1114,10 +1116,10 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
 
 /**
  * Resize the textarea according to the content //@yahoo
- * @param {!boolean} skipScroll Whether to skip scrolling by delta height
+ * @param {!boolean} skipForcedScroll Whether to skip scrolling by delta height
  * @private
  */
-ui.ComposeGlass.prototype.resizeEditor_ = function(skipScroll) {
+ui.ComposeGlass.prototype.resizeEditor_ = function(skipForcedScroll) {
   var textArea = this.editor_,
       currentHeight = textArea.clientHeight,
       canScroll = textArea.scrollHeight > currentHeight,
@@ -1128,10 +1130,9 @@ ui.ComposeGlass.prototype.resizeEditor_ = function(skipScroll) {
     // determine the textarea height that just fit the content
     t = document.createElement('textarea');
     t.value = textArea.value;
+    t.className = textArea.className;
     t.style.width = textArea.clientWidth + 'px';
     t.style.height = '0px';
-    t.style.paddingBottom = goog.style.getComputedStyle(
-        textArea, 'paddingBottom');
     t.style.opacity = 0;
     document.body.appendChild(t);
     newHeight = t.scrollHeight;
@@ -1140,7 +1141,7 @@ ui.ComposeGlass.prototype.resizeEditor_ = function(skipScroll) {
 
   if (currentHeight !== newHeight) {
     textArea.style.height = newHeight + 'px';
-    this.resizeGlass_(skipScroll);
+    this.resizeGlass_(skipForcedScroll);
   }
   textArea.focus();
 };
@@ -1149,15 +1150,16 @@ ui.ComposeGlass.prototype.resizeEditor_ = function(skipScroll) {
 /**
  * Trigger the iframe to resize, and scroll up by delta height to prevent caret
  * from covered by the action bar.
- * @param {!boolean} skipScroll Whether to skip scrolling by delta height
+ * @param {!boolean} skipForcedScroll Whether to skip scrolling by delta height
  * @private
  */
-ui.ComposeGlass.prototype.resizeGlass_ = function(skipScroll) {
+ui.ComposeGlass.prototype.resizeGlass_ = function(skipForcedScroll) {
   var height = document.body.clientHeight + 65;
   if (height !== window.innerHeight) {
     this.api_.req('ctrl.resizeGlass', {
       height: height,
-      scrollByDeltaHeight: !skipScroll && this.actionBar_.style.top !== 'auto'
+      scrollByDeltaHeight: !skipForcedScroll &&
+          this.actionBar_.style.top !== 'auto' // i.e., floating over text
     }).addErrback(this.errorCallback_);
   }
 };
@@ -1170,14 +1172,14 @@ ui.ComposeGlass.prototype.resizeGlass_ = function(skipScroll) {
  * @private
  */
 ui.ComposeGlass.prototype.setActionBarPosition_ = function(offset) {
-  var yOffset = offset.y;
+  var yOffset = offset.y, actionBarStyle = this.actionBar_.style;
   if (goog.isDef(yOffset)) {
     yOffset = yOffset < window.innerHeight &&
         yOffset > (goog.style.getPosition(this.editor_).y + 100) ?
             (yOffset - 65) + 'px' :
             'auto';
-    if (this.actionBar_.style.top != yOffset) {
-      this.actionBar_.style.top = yOffset;
+    if (actionBarStyle.top != yOffset) {
+      actionBarStyle.top = yOffset;
     }
   }
   return true;

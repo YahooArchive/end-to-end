@@ -412,7 +412,6 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   this.setResizeAndScrollEventHandlers_();
 
   var glassFrame = this.getGlassFrame();
-  glassFrame.style.minHeight = '252px';
   this.setHeight(330); // must do it after setResizeAndScrollEventHandlers_()
   // insert the glass into dom, and focus it
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
@@ -540,10 +539,17 @@ ui.ComposeGlassWrapper.prototype.setHeight = function(height) {
  */
 ui.ComposeGlassWrapper.prototype.setMinMaxHeight_ = function() {
   if (this.glassFrame) {
-    var max = Math.max(window.innerHeight - this.styleTop_, 252);
+    var glassFrameStyle = this.glassFrame.style,
+        max = Math.max(window.innerHeight - this.styleTop_, 252),
+        min = max > 662 ? 662 : max;
 
-    this.glassFrame.style.maxHeight = max + 'px';
-    this.glassFrame.style.minHeight = max > 662 ? '662px' : max + 'px';
+    glassFrameStyle.minHeight = min + 'px';
+    glassFrameStyle.maxHeight = max + 'px';
+
+    this.api && this.api.req('evt.minMaxSize', {
+      minHeight: min,
+      maxHeight: max
+    });
   } else {
     goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
   }
