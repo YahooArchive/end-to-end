@@ -351,6 +351,8 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
         goog.bind(this.requestMatchingRows_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
         goog.bind(this.hasPublicKeys_, this),
+        // @yahoo determines whether there're any recipients
+        goog.bind(this.hasRecipients_, this),
         goog.bind(this.renderEncryptionPassphraseDialog_, this));
     this.addChild(this.chipHolder_, false);
     this.chipHolder_.decorate(
@@ -363,6 +365,8 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
         goog.bind(this.requestMatchingRows_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
         goog.bind(this.hasPublicKeys_, this),
+        // @yahoo determines whether there're any recipients
+        goog.bind(this.hasRecipients_, this),
         null);
     this.addChild(this.ccChipHolder_, false);
     this.ccChipHolder_.decorate(
@@ -453,13 +457,14 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
 
   textArea.scrollTop = 0;
   textArea.setSelectionRange(0, 0);
-  this.chipHolder_.focus();
 
   // @yahoo added ccChipHolder
   if (this.chipHolder_.hasChildren() || this.ccChipHolder_.hasChildren()) {
     // Double focus() workarounds a bug that prevents the caret from being
     // displayed in Chrome if setSelectionRange() is used.
     textArea.focus();
+  } else {
+    this.chipHolder_.focus();
   }
 };
 
@@ -1049,13 +1054,13 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
  */
 ui.ComposeGlass.prototype.requestMatchingRows_ = function(
     token, maxMatches, matchHandler) {
+  var currentRecipients = [].concat(
+      this.chipHolder_.getSelectedUids(true),
+      this.ccChipHolder_.getSelectedUids(true));
+
   this.api_.req('autosuggest.search', {
     from: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value,
-    to: goog.array.map(
-        [].concat(
-            this.chipHolder_.getSelectedUids(true),
-            this.ccChipHolder_.getSelectedUids(true)),
-        utils.text.extractValidEmail),
+    to: goog.array.map(currentRecipients, utils.text.extractValidEmail),
     query: token
   }).addCallbacks(
       function(contacts) {
@@ -1071,6 +1076,18 @@ ui.ComposeGlass.prototype.requestMatchingRows_ = function(
           this.displayFailure_(err);
         }
       }, this);
+};
+
+
+/**
+ * Determines whether there're any recipients
+ * @return {!boolean}
+ * @private
+ */
+ui.ComposeGlass.prototype.hasRecipients_ = function() {
+  return [].concat(
+      this.chipHolder_.getSelectedUids(true),
+      this.ccChipHolder_.getSelectedUids(true)).length > 0;
 };
 
 

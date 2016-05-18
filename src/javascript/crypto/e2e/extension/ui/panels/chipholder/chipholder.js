@@ -57,13 +57,16 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  * @param {!function(string):!goog.async.Deferred.<!boolean>} hasKeysCallback
  *     Callback for checking if the given uid has a key
  *     //@yahoo no full list of bad uids are available, check online
+ * @param {function():!boolean} hasRecipientsCallback Callback to return
+ *     whether there're any recipients
  * @param {Function} renderEncryptionPassphraseCallback Callback for rendering
  *     an encryption passphrase dialog. //@yahoo accept null to disable.
  * @constructor
  * @extends {goog.ui.Component}
  */
 panels.ChipHolder = function(selectedUids, requestMatchingRowsCallback,
-    hasKeysCallback, renderEncryptionPassphraseCallback) {
+    hasKeysCallback, hasRecipientsCallback,
+    renderEncryptionPassphraseCallback) {
   goog.base(this);
 
   /**
@@ -104,6 +107,13 @@ panels.ChipHolder = function(selectedUids, requestMatchingRowsCallback,
    * @private
    */
   this.hasKeysCallback_ = hasKeysCallback;
+
+  /**
+   * Callback to return whether there're any recipients
+   * @type {function():!boolean}
+   * @private
+   */
+  this.hasRecipients_ = hasRecipientsCallback;
 };
 goog.inherits(panels.ChipHolder, goog.ui.Component);
 
@@ -174,7 +184,7 @@ panels.ChipHolder.prototype.createAutoComplete_ = function() {
     }
   });
   var inputHandler = new panels.ChipHolderInputHandler(goog.bind(
-      this.handleNewChipValue_, this));
+      this.handleNewChipValue_, this), this.hasRecipients_);
   // var autoComplete = new goog.ui.ac.AutoComplete(
   //     matcher, renderer, inputHandler);
   var autoComplete = new goog.ui.ac.AutoComplete(

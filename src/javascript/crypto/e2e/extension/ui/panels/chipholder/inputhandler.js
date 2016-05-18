@@ -33,27 +33,41 @@ var panels = e2e.ext.ui.panels;
  * @constructor
  * @param {function(string):*} onSelectCallback Callback to call when a row
  *    has been selected.
+ * @param {function():!boolean} onFocusToShowRelatedCallback Callback to call
+ *    when the input element is focused, return boolean to determine whether
+ *    related contacts should be triggered. @yahoo
  * @extends {goog.ui.ac.InputHandler}
  */
 
-panels.ChipHolderInputHandler = function(onSelectCallback) {
+panels.ChipHolderInputHandler = function(
+    onSelectCallback, onFocusToShowRelatedCallback) {
   goog.base(this, null, null, true);
   /**
    * Callback to call when a row has been selected.
    * @type {function(string):*}
    * @private
    */
-  this.onSelectCallback_ = onSelectCallback;
+  this.onSelectCallback_ = goog.bind(function(value) {
+    onSelectCallback(value);
+    // @yahoo trigger related recipient search 
+    window.setTimeout(goog.bind(function() {
+      this.getAutoComplete().setToken('');
+    }, this), 300);
+  }, this);
+  /**
+   * Callback to call when the input element is focused, return boolean to
+   * determine whether related contacts should be triggered. @yahoo
+   * @type {function():!boolean}
+   * @private
+   */
+  this.onFocusToShowRelatedCallback_ = onFocusToShowRelatedCallback;
 };
 goog.inherits(panels.ChipHolderInputHandler, goog.ui.ac.InputHandler);
 
 
 /** @override */
 panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
-  var autoComplete = this.getAutoComplete();
   switch (evt.keyCode) {
-    case goog.events.KeyCodes.COMMA: //@yahoo
-    case goog.events.KeyCodes.SEMICOLON: //@yahoo
     case goog.events.KeyCodes.TAB:
     case goog.events.KeyCodes.ENTER:
       // Cover only the case when autocomplete suggestions are not open,
@@ -68,23 +82,33 @@ panels.ChipHolderInputHandler.prototype.handleKeyEvent = function(evt) {
         return false;
       }
     case goog.events.KeyCodes.DOWN: //@yahoo
-      !autoComplete.isOpen() && autoComplete.setToken('');
-      break;
+      this.relatedRecipients(evt);
   }
   return goog.base(this, 'handleKeyEvent', evt);
 };
 
 
-// // @yahoo trigger autocomplete when on focus
-// /** @override */
-// panels.ChipHolderInputHandler.prototype.handleFocus = function(opt_e) {
-//   goog.base(this, 'handleFocus', opt_e);
+// @yahoo trigger autocomplete when on focus
+/** @override */
+panels.ChipHolderInputHandler.prototype.handleFocus = function(e) {
+  goog.base(this, 'handleFocus', e);
+  this.onFocusToShowRelatedCallback_() && this.relatedRecipients(e);
+};
 
-//   if (opt_e && !this.getAutoComplete().isOpen() && opt_e.target) {
-//     // @yahoo make an empty auto complete search for related recipients
-//     this.getAutoComplete().setToken(opt_e.target.value);
-//   }
-// };
+
+/**
+ * Make a search for blank for related recipients @yahoo
+ * @param {goog.events.Event} e Browser event object.
+ * @protected
+ */
+panels.ChipHolderInputHandler.prototype.relatedRecipients = function(e) {
+  var ac = this.getAutoComplete(),
+      target = /** @type {Element} */ (e.target);
+  if (target && !ac.isOpen()) {
+    ac.setTarget(target);
+    ac.setToken('');
+  }
+};
 
 
 // @yahoo trigger onSelectCallback_ when on blur
