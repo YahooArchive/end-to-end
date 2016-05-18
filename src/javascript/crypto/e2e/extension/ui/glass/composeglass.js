@@ -1025,7 +1025,15 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
         goog.dom.getElement(constants.ElementId.SAVE_ESC_BUTTON),
         goog.events.EventType.CLICK,
         goog.bind(this.handleKeyEvent_, this,
-            {keyCode: goog.events.KeyCodes.ESC})); // similar to closeCov
+            {type: 'keydown', keyCode: goog.events.KeyCodes.ESC}));
+
+    // allow textarea scrolling when maxheight is reached
+    this.api_.setRequestHandler('evt.minMaxSize', goog.bind(function(args) {
+      var editorStyle = this.style,
+          offset = 65 + goog.style.getPosition(this).y;
+      editorStyle.minHeight = (args.minHeight - offset) + 'px';
+      editorStyle.maxHeight = (args.maxHeight - offset) + 'px';
+    }, this.editor_));
   }
 };
 
@@ -1182,55 +1190,54 @@ ui.ComposeGlass.prototype.setActionBarPosition_ = function(offset) {
  * @private
  */
 ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
-  var KeyCodes = goog.events.KeyCodes;
-  var isMeta = goog.userAgent.MAC ? evt.metaKey : evt.ctrlKey;
+  var keyCode = evt.keyCode,
+      keyCodeEnum = goog.events.KeyCodes,
+      agentSpecificMeta = goog.userAgent.MAC ? evt.metaKey : evt.ctrlKey;
 
-  // Non-shortcut if no modifier key (except ESC) is pressed in input elements
-  if (evt.target && goog.isDef(evt.target.value) &&
-      !evt.metaKey && !evt.ctrlKey && !evt.shiftKey && !evt.altKey &&
-      evt.keyCode !== KeyCodes.ESC) {
-    // just send a focus event and abort
-    this.forwardEvent_({type: 'focus'});
-    return;
-  }
-
-  switch (evt.keyCode) {
-    case KeyCodes.ENTER: 
-      if (isMeta) {          // Send by Cmd + Enter
-        this.keyMissingDialog_ ?
-            // Another Cmd+S to trigger Send in plaintext
-            this.keyMissingDialog_.invokeCallback(false) :
-            this.keyMissingWarningThenEncryptSign_();
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-      break;
-    case KeyCodes.S:
-      if (isMeta) {          // Send by Cmd + S
-        this.saveDraft_(this.getContent().origin, goog.nullFunction, null);
-        evt.preventDefault();
-        evt.stopPropagation();
-        return;
-      }
-      break;
-
-    // save before forwarding key events
-    case KeyCodes.COMMA:     // Previous Conversation
-    case KeyCodes.PERIOD:    // Next Conversation
-      if (!evt.ctrlKey) { break; }
-    case KeyCodes.LEFT:      // Previous Conversation
-    case KeyCodes.RIGHT:     // Next Conversation
-    case KeyCodes.E:         // Archive Conversation
-    case KeyCodes.ESC:       // Close Conversation
-    case KeyCodes.M:         // Inbox
-    case KeyCodes.N:         // New Compose
+  // handle shortcuts no matter where it is placed
+  switch (keyCode) {
+    case keyCodeEnum.ENTER:     // Send by Cmd + Enter
+      if (!agentSpecificMeta) { break; }
+      this.keyMissingDialog_ ?
+          // Another Cmd+S to trigger Send in plaintext
+          this.keyMissingDialog_.invokeCallback(false) :
+          this.keyMissingWarningThenEncryptSign_();
+      evt.preventDefault();
+      evt.stopPropagation();
+      return;
+    case keyCodeEnum.S:         // Send by Cmd + S
+      if (!agentSpecificMeta) { break; }
+      this.saveDraft_(this.getContent().origin, goog.nullFunction, null);
+      evt.preventDefault();
+      evt.stopPropagation();
+      return;
+    case keyCodeEnum.ESC:       // Close Conversation
       this.saveDraft_(this.getContent().origin,
           goog.bind(this.forwardKeyEvent_, this, evt), null);
       return;
   }
 
-  this.forwardKeyEvent_(evt);
+  // if it is an input element
+  if (evt.target && goog.isDef(evt.target.value)) {
+    // just send a focus event
+    this.forwardEvent_({type: 'focus'});
+  } else {
+    switch (keyCode) {
+      // save before forwarding key events
+      case keyCodeEnum.COMMA:     // Previous Conversation
+      case keyCodeEnum.PERIOD:    // Next Conversation
+        if (!evt.ctrlKey) { break; }
+      case keyCodeEnum.LEFT:      // Previous Conversation
+      case keyCodeEnum.RIGHT:     // Next Conversation
+      case keyCodeEnum.E:         // Archive Conversation
+      case keyCodeEnum.M:         // Inbox
+      case keyCodeEnum.N:         // New Compose
+        this.saveDraft_(this.getContent().origin,
+            goog.bind(this.forwardKeyEvent_, this, evt), null);
+        return;
+    }
+    this.forwardKeyEvent_(evt);
+  }
 };
 
 
@@ -1246,8 +1253,7 @@ ui.ComposeGlass.prototype.forwardKeyEvent_ = function(evt) {
     metaKey: evt.metaKey,
     ctrlKey: evt.ctrlKey,
     shiftKey: evt.shiftKey,
-    altKey: evt.altKey,
-    key: evt.key
+    altKey: evt.altKey
   });
 };
 
