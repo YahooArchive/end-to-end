@@ -647,7 +647,7 @@ YmailApi.StormUI.DraftApi.prototype.triggerEvent = function(
   if (opt_selector) {
     node = node.one(opt_selector) || node;
   }
-  node.simulate(evt.type, evt);
+  node.getDOMNode() && node.simulate(evt.type, evt);
   return true;
 };
 
