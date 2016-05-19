@@ -41,7 +41,8 @@ var panels = e2e.ext.ui.panels;
 
 panels.ChipHolderInputHandler = function(
     onSelectCallback, onFocusToShowRelatedCallback) {
-  goog.base(this, null, null, true);
+  // @yahoo increased the throttle time. default is 150ms
+  goog.base(this, null, null, true, 500);
   /**
    * Callback to call when a row has been selected.
    * @type {function(string):*}
