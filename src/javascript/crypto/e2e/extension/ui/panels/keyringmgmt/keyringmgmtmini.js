@@ -343,6 +343,7 @@ panels.KeyringMgmtMini.prototype.importKeyring_ = function() {
 
   if (fileInput.files.length > 0) {
     this.importCallback_(fileInput.files[0]);
+    fileInput.value = ''; // @yahoo prevented duplicate dialogs
   }
 };
 
