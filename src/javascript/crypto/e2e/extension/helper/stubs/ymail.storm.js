@@ -178,6 +178,7 @@ YmailApi.StormUI.ComposeView;
 YmailApi.StormUI.AutoSuggest;
 
 
+
 /**
  * Constructor for serving APIs to/from the extension.
  * @param {YmailApi.StormUI.YUI} Y
@@ -192,9 +193,14 @@ YmailApi.StormUI = function(Y, NeoConfig) {
   this.Y = Y;
   this.NeoConfig = NeoConfig;
 
-  this.monitorStormEvents_();
-  this.monitorExtensionEvents_();
+  // add CSS
   this.addCSS();
+  // dispatch the loadUser event as soon as this stub is loaded
+  this.dispatchLoadUser();
+
+  this.monitorExtensionEvents_();
+
+  Y.use('event', goog.bind(this.monitorStormEvents_, this));
 };
 
 
@@ -216,53 +222,54 @@ YmailApi.StormUI.Selector = {
  * @private
  */
 YmailApi.StormUI.prototype.monitorExtensionEvents_ = function() {
-  document.body.addEventListener('displayWarning', goog.bind(function(evt) {
+  this.displayWarning_ = goog.bind(function(evt) {
     this.displayFailure(/** @type {!string} */ (evt.detail), 'attention');
-  }, this));
-  document.body.addEventListener('displayError', goog.bind(function(evt) {
+  }, this);
+  this.displayError_ = goog.bind(function(evt) {
     this.displayFailure(/** @type {!string} */ (evt.detail));
-  }, this));
+  }, this);
+
+  var body = document.body;
+  body.addEventListener('displayWarning', this.displayWarning_, false);
+  body.addEventListener('displayError', this.displayError_, false);
 };
 
 
 /**
- * Capture events that are dispatched from Y.fire()
+ * Capture events that using Y.on()
+ * @param {YmailApi.StormUI.YUI} Y
  * @private
  */
-YmailApi.StormUI.prototype.monitorStormEvents_ = function() {
-  var Y = this.Y;
+YmailApi.StormUI.prototype.monitorStormEvents_ = function(Y) {
+  this.yuiEventListeners_ = [
+    Y.on('MessagePane:rendered', goog.bind(function(evt, data, baseNode) {
+      this.dispatchOpenMessage(baseNode.getDOMNode(), data);
+    }, this)),
+    Y.on('FullCompose:fullComposeReady', goog.bind(function(data) {
+      var composeView = data.context,
+          elem = composeView.baseNode.getDOMNode(),
+          msgBody = composeView.editor.getContent(),
+          oMsg = composeView.draft.origin.oMsg;
+      var apiId = goog.string.getRandomString();
 
-  Y.on('MessagePane:rendered', goog.bind(function(evt, data, baseNode) {
-    this.dispatchOpenMessage(baseNode.getDOMNode(), data);
-  }, this));
+      elem.dispatchEvent(new CustomEvent('openCompose', {
+        detail: {
+          apiId: apiId,
+          isEncryptedDraft: YmailApi.utils.isLikelyPGP(msgBody)
+        },
+        bubbles: true
+      }));
 
-  Y.on('FullCompose:fullComposeReady', goog.bind(function(data) {
-    var composeView = data.context,
-        elem = composeView.baseNode.getDOMNode(),
-        msgBody = composeView.editor.getContent(),
-        oMsg = composeView.draft.origin.oMsg;
-    var apiId = goog.string.getRandomString();
+      // add a lock icon to fire openEncryptedCompose when clicked
+      this.addEncryptrIcon(elem);
 
-    elem.dispatchEvent(new CustomEvent('openCompose', {
-      detail: {
-        apiId: apiId,
-        isEncryptedDraft: YmailApi.utils.isLikelyPGP(msgBody)
-      },
-      bubbles: true
-    }));
-
-    // install a lock icon, that would fire openEncryptedCompose when clicked
-    this.addEncryptrIcon(elem);
-
-    // build an API that wraps the native features provided by Storm
-    new YmailApi.StormUI.ComposeApi(
-        Y, this.NeoConfig, composeView, apiId,
-        goog.bind(this.dispatchQueryPublicKey, this),
-        goog.bind(this.displayFailure, this));
-  }, this));
-
-  // dispatch the loadUser event as soon as this stub is loaded
-  this.dispatchLoadUser();
+      // build an API that wraps the native features provided by Storm
+      new YmailApi.StormUI.ComposeApi(
+          Y, this.NeoConfig, composeView, apiId,
+          goog.bind(this.dispatchQueryPublicKey, this),
+          goog.bind(this.displayFailure, this));
+    }, this))
+  ];
 };
 
 
@@ -307,7 +314,7 @@ YmailApi.StormUI.prototype.dispatchOpenMessage = function(node, data) {
 
   text = contentNode.innerText;
   quotedText = qb ? qb.innerText : '';
-  
+
   // only take care of those that appears to be a pgp message
   if (YmailApi.utils.isLikelyPGP(text + quotedText)) {
     // disabled highlighting users in non-encrypted compose
@@ -394,6 +401,21 @@ YmailApi.StormUI.prototype.displayFailure = function(message, opt_type) {
       duration: 5000
     });
   });
+};
+
+
+/**
+ * Dispose this instance
+ */
+YmailApi.StormUI.prototype.dispose = function() {
+  this.yuiEventListeners_.forEach(function(listener) {
+    listener.detach();
+  });
+  this.yuiEventListeners_ = null;
+
+  var body = document.body;
+  body.removeEventListener('displayWarning', this.displayWarning_, false);
+  body.removeEventListener('displayError', this.displayError_, false);
 };
 
 
@@ -634,7 +656,7 @@ YmailApi.StormUI.DraftApi.prototype.discard = function() {
 
 
 /**
- * Simulate focus to baseNode before firing the specified event  
+ * Simulate focus to baseNode before firing the specified event
  * @param {!{type: (string|undefined),
  *     metaKey: (boolean|undefined), ctrlKey: (boolean|undefined),
  *     shiftKey: (boolean|undefined), altKey: (boolean|undefined)}} evt
@@ -784,31 +806,39 @@ YmailApi.utils.isLikelyPGP = function(message) {
 
 /**
  * Bootstrap this script as soon as YUI is ready
- * @param {!number} attempt
  */
-YmailApi.bootstrap = function(attempt) {
+YmailApi.bootstrap = function() {
   var win = /** @type {{
     yui: YmailApi.StormUI.YUI,
     NeoConfig: YmailApi.StormUI.NeoConfig}} */ (window);
 
   // this should generally not happen. remove when everyone updated
   if (window.location.href.indexOf('encryptr') !== -1) {
-    return window.location.replace('https://mail.yahoo.com/');
-  }
-
-  if (win.NeoConfig) { // Storm
-    if (win.yui && typeof win.yui.on === 'function') {
-      new YmailApi.StormUI(win.yui, win.NeoConfig);
-    }
+    window.location.replace('https://mail.yahoo.com/');
     return;
   }
 
-  // try it again
-  --attempt > 0 && window.setTimeout(
-      goog.bind(YmailApi.bootstrap, null, attempt), 500);
+  if (win.NeoConfig) { // Storm
+    if (win.yui) {
+      YmailApi.bootstraped_ = true;
+      win.YME = new YmailApi.StormUI(win.yui, win.NeoConfig);
+      return;
+    }
+
+    if (!YmailApi.asyncScriptMonitorInstalled_) {
+      YmailApi.asyncScriptMonitorInstalled_ = true;
+      // every async script load event will trigger yui detection
+      [].forEach.call(document.querySelectorAll('script[async]'),
+          function(script) {
+            script.addEventListener('load', function() {
+              win.yui && !YmailApi.bootstraped_ && YmailApi.bootstrap();
+            }, false);
+          });
+    }
+  }
 };
 
 // bootstrap the stub
-YmailApi.bootstrap(20);
+YmailApi.bootstrap();
 
 });  // goog.scope

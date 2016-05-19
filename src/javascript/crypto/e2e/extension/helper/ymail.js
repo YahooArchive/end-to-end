@@ -81,7 +81,8 @@ ext.YmailHelper.prototype.injectStub = function(stubFilename) {
   var script = document.createElement('script');
   script.src = chrome.runtime.getURL('stubs/' + stubFilename);
   script.setAttribute('data-version', chrome.runtime.getManifest().version);
-  document.documentElement.appendChild(script);
+  // assumed "run_at" "document_end". refer to manifest.json for details
+  document.head.appendChild(script);
 
   this.stubInjected_ = true;
 };
