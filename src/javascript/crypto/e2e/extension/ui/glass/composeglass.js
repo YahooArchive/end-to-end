@@ -39,6 +39,7 @@ goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Promise');
 goog.require('goog.Timer'); //@yahoo
 goog.require('goog.array');
+goog.require('goog.async.Deferred');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events');
@@ -49,7 +50,6 @@ goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
 goog.require('goog.style');
-goog.require('goog.ui.KeyboardShortcutHandler'); //@yahoo
 goog.require('goog.userAgent'); //@yahoo
 goog.require('soy');
 
@@ -803,7 +803,6 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
     // NOTE(radi): Errors are silenced here on purpose.
     // NOTE(adon): log the error
     console.error(error);
-    
   }, this));
 };
 
@@ -852,8 +851,8 @@ ui.ComposeGlass.prototype.switchToUnencrypted_ = function() {
  * Return whether each of the recipient has a public key
  * @param {!Array.<!string>} recipients A list of recipients
  * @param {boolean=} opt_omitErrback Whether to omit throwing error to the
- *   errback but simply assume all recipients have no keys. When set to true,
- *   display the error anyway.
+ *    errback but simply assume all recipients have no keys. When set to true,
+ *    display the error anyway.
  * @return {!e2e.async.Result.<!Array.<!boolean>>}
  * @private
  */
@@ -898,14 +897,14 @@ ui.ComposeGlass.prototype.hasPublicKeys_ = function(recipient) {
 };
 
 
-
 /**
  * Sort out those recipients that have no keys
  * @param {!Array.<!string>} recipients A list of recipients
  * @param {boolean=} opt_omitErrback Whether to omit throwing error to the
- *   errback but simply assume all recipients have no keys. When set to true,
- *   display the error anyway.
- * @return {!goog.async.Deferred.<!Array.<!string>>} The recipients having no keys
+ *    errback but simply assume all recipients have no keys. When set to true,
+ *    display the error anyway.
+ * @return {!goog.async.Deferred.<!Array.<!string>>} Those recipients that have
+ *    no keys
  * @private
  */
 ui.ComposeGlass.prototype.lackPublicKeys_ = function(
@@ -1236,11 +1235,8 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
       return;
   }
 
-  // if it is an input element
-  if (evt.target && goog.isDef(evt.target.value)) {
-    // just send a focus event
-    this.forwardEvent_({type: 'focus'});
-  } else {
+  // proceed if it is an non-input element
+  if (!evt.target || !goog.isDef(evt.target.value)) {
     switch (keyCode) {
       // save before forwarding key events
       case keyCodeEnum.COMMA:     // Previous Conversation
@@ -1385,6 +1381,7 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
  * @param {!Array.<string>} invalidUids The uids that have no keys
  * @return {!goog.async.Deferred.<undefined>} Callback when the user has
  *     confirmed to send the message unencrypted
+ * @private
  */
 ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
     invalidUids) {
@@ -1416,7 +1413,7 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
         this.sendButtonClicked_ = false;
         this.keyMissingDialog_.dispose();
         this.keyMissingDialog_ = null;
-        
+
         goog.dom.classlist.remove(this.getElement(),
                                   constants.CssClass.UNCLICKABLE);
         // hide loading
