@@ -218,19 +218,14 @@ panels.KeyringMgmtFull.prototype.removeKey = function(
     return row.textContent.indexOf(userId) > -1;
   });
 
-  var uidElems = goog.array.filter(
-      this.getElementsByClass(constants.CssClass.KEY_UID),
-      function(elem) {
-        return elem.textContent == userId;
-      });
-
-  goog.array.forEach(uidElems, function(elem) {
-    var parentRow = this.getParentTableRow_(/** @type {!HTMLElement} */ (elem));
-
-    // @yahoo delete only the specified ones
-    opt_fingerprintHex && goog.array.some(
-        goog.dom.getElementsByClass(constants.CssClass.KEY_META, parentRow),
+  if (opt_fingerprintHex) {
+    // @yahoo delete by key fingerprint
+    goog.array.forEach(
+        goog.dom.getElementsByClass(
+            constants.CssClass.KEY_META, this.getElement()),
         function(keyRow) {
+          var parentRow = this.getParentTableRow_(
+              /** @type {!HTMLElement} */ (keyRow));
           var fpElem = goog.dom.getElementByClass(
               constants.CssClass.KEY_FINGERPRINT, keyRow);
           var typeElem = goog.dom.getNextElementSibling(fpElem);
@@ -245,22 +240,31 @@ panels.KeyringMgmtFull.prototype.removeKey = function(
                     e2e.openpgp.KeyRing.Type.PRIVATE :
                     null;
 
+            // remove the whole row if it's the only remaining item
             if (opt_fingerprintHex === fpElem.textContent &&
                 opt_keyType === keyType) {
-              // remove the whole row if it's the only remaining item
+              // remove just the matched key fingerprint
               if (goog.dom.getElementsByClass(
                   constants.CssClass.KEY_META, parentRow).length > 1) {
                 parentRow = fpElem.parentElement;
               }
-              return true;
+              goog.dom.removeNode(parentRow);
             }
           }
-          return false;
+        }, this);
+  } else {
+    var uidElems = goog.array.filter(
+        this.getElementsByClass(constants.CssClass.KEY_UID),
+        function(elem) {
+          return elem.textContent == userId;
         });
 
-    // parentRow.parentElement.removeChild(parentRow);
-    goog.dom.removeNode(parentRow);
-  }, this);
+    goog.array.forEach(uidElems, function(elem) {
+      // parentRow.parentElement.removeChild(parentRow);
+      goog.dom.removeNode(this.getParentTableRow_(
+          /** @type {!HTMLElement} */ (elem)));
+    }, this);
+  }
 
   if (this.getElement().querySelectorAll('tr').length == 0) {
     soy.renderElement(this.getElement().querySelector('table'),
