@@ -176,22 +176,28 @@ e2e.openpgp.yContextImpl.prototype.deleteKeyByFingerprint = function(
  * @suppress {accessControls} for armorHeaders_
  */
 e2e.openpgp.yContextImpl.prototype.exportUidKeyring = function(armored, uid) {
-  //@yahoo only diff from exportKeyring is the first searchLocalKey call
+  //@yahoo ASCII armor header depends on whether a private key exists
+  var secretKey = e2e.openpgp.block.TransferableSecretKey, armorHeader;
+  //@yahoo major diff from exportKeyring is the use of searchLocalKey call
   return this.searchLocalKey(uid, e2e.openpgp.KeyRing.Type.ALL).
       addCallback(function(keys) {
         keys = new goog.structs.Map(keys);
         return goog.async.DeferredList.gatherResults(goog.array.map(
             goog.array.flatten(keys.getValues()), function(keyInfo) {
-              return this.keyRing_.getKeyBlock(keyInfo)
-                  .addCallback(function(block) {
+              return this.keyRing_.getKeyBlock(keyInfo).
+                  addCallback(function(block) {
+                    if (!armorHeader || block instanceof secretKey) {
+                      armorHeader = block.header;
+                    }
                     return block.serialize();
                   });
             }, this));
-      }, this).addCallback(function(serialized) {
+      }, this).
+      addCallback(function(serialized) {
         serialized = goog.array.flatten(serialized);
         if (armored) {
           return e2e.openpgp.asciiArmor.encode(
-              'PRIVATE KEY BLOCK', serialized, this.armorHeaders_);
+              armorHeader, serialized, this.armorHeaders_);
         }
         return serialized;
       }, this);
