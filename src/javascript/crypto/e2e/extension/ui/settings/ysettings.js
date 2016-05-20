@@ -431,14 +431,14 @@ ui.ySettings.prototype.renderDeleteKeysCallback_ = function(
         }
 
         var keysToDelete = opt_fingerprintHex ?
-        goog.array.filter(
-            opt_keyType === e2e.openpgp.KeyRing.Type.PRIVATE ?
-                privKeys :
-                pubKeys,
-            function(k) {
-              return k.key.fingerprintHex === opt_fingerprintHex;
-            }) :
-        privKeys.concat(pubKeys);
+            goog.array.filter(
+                opt_keyType === e2e.openpgp.KeyRing.Type.PRIVATE ?
+                    privKeys :
+                    pubKeys,
+                function(k) {
+                  return k.key.fingerprintHex === opt_fingerprintHex;
+                }) :
+            privKeys.concat(pubKeys);
 
         // skip the dialog if we have nothing to delete
         if (keysToDelete.length === 0) {
@@ -448,22 +448,24 @@ ui.ySettings.prototype.renderDeleteKeysCallback_ = function(
 
         var popupElem = goog.dom.getElement(
             constants.ElementId.CALLBACK_DIALOG);
-        var dialog = new dialogs.Generic(
-        importTemplates.importKeyConfirm({
-          promptImportKeyConfirmLabel: msg,
+        var sanitizedHtml = importTemplates.actionConfirm({
+          promptActionConfirmLabel: msg,
           keys: keysToDelete,
+          keyUid: opt_fingerprintHex ? undefined : uid,
           secretKeyDescription: chrome.i18n.getMessage('secretKeyDescription'),
           publicKeyDescription: chrome.i18n.getMessage('publicKeyDescription'),
           keyFingerprintLabel: chrome.i18n.getMessage('keyFingerprintLabel')
-        }),
-        function(decision) {
-          goog.dispose(dialog);
-          result.callback(goog.isDef(decision));
-        },
-        ui.dialogs.InputType.NONE,
-        '',
-        chrome.i18n.getMessage('promptOkActionLabel'),
-        chrome.i18n.getMessage('actionCancelPgpAction'));
+        });
+        var dialog = new dialogs.Generic(
+            sanitizedHtml,
+            function(decision) {
+              goog.dispose(dialog);
+              result.callback(goog.isDef(decision));
+            },
+            ui.dialogs.InputType.NONE,
+            '',
+            chrome.i18n.getMessage('promptOkActionLabel'),
+            chrome.i18n.getMessage('actionCancelPgpAction'));
 
         this.addChild(dialog, false);
         dialog.render(popupElem);

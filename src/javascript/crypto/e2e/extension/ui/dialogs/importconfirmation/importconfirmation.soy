@@ -47,6 +47,40 @@
 
 
 /**
+ * Renders the key and text for action confirmation dialog.
+ * @param promptActionConfirmLabel A sentence asking the user to confirm.
+ * @param keys Array of keys (e2e.openpgp.Keys).
+ * @param keyUid The keyUid to display instead of the one inside keys.
+ * @param secretKeyDescription Text describing a secret key.
+ * @param publicKeyDescription Text describing a public key.
+ * @param keyFingerprintLabel Text to display as a fingerprint label.
+ */
+{template .actionConfirm}
+  <p>{$promptActionConfirmLabel}
+  </p>
+  {foreach $key in $keys}
+    <div class="{e2e.ext.constants.CssClass.KEY_INFO}">
+      {if $keyUid}
+        <div class="{e2e.ext.constants.CssClass.KEY_UID}">{$keyUid}</div>
+      {else}
+        {foreach $uid in $key.uids}
+        <div class="{e2e.ext.constants.CssClass.KEY_UID}">{$uid}</div>
+        {/foreach}
+      {/if}
+      <div>
+        {call .keyPacketInfo}
+          {param keyPacketInfo: $key.key /}
+          {param secretKeyDescription: $secretKeyDescription /}
+          {param publicKeyDescription: $publicKeyDescription /}
+          {param keyFingerprintLabel: $keyFingerprintLabel /}
+        {/call}
+      </div>
+    </div>
+  {/foreach}
+{/template}
+
+
+/**
  * Renders information about a single key packet.
  * @param keyPacketInfo Single packet key info (e2e.openpgp.KeyPacketInfo).
  * @param secretKeyDescription Text to display if the key is secret.
