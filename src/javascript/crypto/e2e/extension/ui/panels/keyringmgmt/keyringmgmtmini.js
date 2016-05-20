@@ -53,7 +53,7 @@ var templates = e2e.ext.ui.templates.panels.keyringmgmt;
  * @param {!function()} exportCallback The callback to invoke when the keyring
  *     is to be exported.
  * @param {!function((!File|string))} importCallback The callback to invoke
- *     when an existing keyring is to be imported.
+ *     when an existing keyring is to be imported. //@yahoo allows string
  * @param {!function(string)} updatePassphraseCallback The callback to invoke
  *     when the passphrase to the keyring is to be updated.
  * @param {!function(string)=} opt_restoreKeyringCallback The callback to invoke

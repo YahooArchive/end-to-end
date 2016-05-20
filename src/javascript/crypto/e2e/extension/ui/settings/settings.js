@@ -308,8 +308,7 @@ ui.Settings.prototype.renderNewKey_ = function(keyUid) {
 
 /**
  * Imports a keyring from a file and appends it to the current keyring.
- * //@yahoo let it accept string, required by FB key import
- * @param {(!File|string)} file The file to import.
+ * @param {!(File|string)} file The file to import. //@yahoo allows string
  * @private
  */
 ui.Settings.prototype.importKeyring_ = function(file) {
@@ -319,7 +318,6 @@ ui.Settings.prototype.importKeyring_ = function(file) {
       content: contents,
       passphraseCallback: goog.bind(this.renderPassphraseCallback_, this)
     }), this, goog.bind(function(res) {
-      goog.array.removeDuplicates(res); //@yahoo
       if (res.length > 0) {
         utils.showNotification(
             chrome.i18n.getMessage(

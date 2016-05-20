@@ -212,7 +212,7 @@
     "description": "A sentence prompting the user sign up with a new key."
   },
   "keyMgmtImportKeyringLabel": {
-    "message": "Import a keyring",
+    "message": "Import keys",
     "description": "A sentence prompting the user to import an existing PGP keyring."
   },
   "keyMgmtExportKeyringLabel": {

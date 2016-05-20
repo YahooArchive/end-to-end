@@ -330,6 +330,48 @@ ui.ySettings.prototype.generateKey_ = function(
 
 
 /**
+ * Imports a keyring from a file and appends it to the current keyring.
+ * //@yahoo let it accept string, required by FB key import
+ * @param {!(File|string)} file The file to import.
+ * @suppress {accessControls}
+ * @override
+ * @private
+ */
+ui.ySettings.prototype.importKeyring_ = function(file) {
+  utils.readFile(file, goog.bind(function(contents) {
+    // @yahoo switch to advanced mode
+    var isPubKeyBlock = goog.string.contains(contents, 'PUBLIC KEY BLOCK');
+
+    this.actionExecutor_.execute(/** @type {!messages.ApiRequest} */ ({
+      action: constants.Actions.IMPORT_KEY,
+      content: contents,
+      passphraseCallback: goog.bind(this.renderPassphraseCallback_, this)
+    }), this, goog.bind(function(res) {
+      goog.array.removeDuplicates(res); //@yahoo
+      if (res.length > 0) {
+        utils.showNotification(
+            chrome.i18n.getMessage(
+                'promptImportKeyNotificationLabel', res.toString()),
+            goog.bind(function() {
+              goog.array.forEach(res, function(keyUid) {
+                this.renderNewKey_(keyUid);
+              }, this);
+              this.keyringMgmtPanel_.resetControls();
+            }, this));
+      
+        // @yahoo switch to advanced mode when only public key is imported
+        isPubKeyBlock && goog.dom.classlist.remove(
+            document.documentElement, constants.CssClass.LITE_MODE);
+      } else {
+        this.displayFailure_(new utils.Error(
+            'Import key error', 'promptImportKeyError'));
+      }
+    }, this));
+  }, this));
+};
+
+
+/**
  * Renders the UI elements needed for confirming if the user can import keys
  * to match with those published on keyserver.
  * @param {string} uid The user id being handled
