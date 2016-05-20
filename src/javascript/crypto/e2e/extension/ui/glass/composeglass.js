@@ -196,7 +196,7 @@ ui.ComposeGlass.prototype.populateUi_ = function() {
     var subj = goog.dom.getElement(constants.ElementId.SUBJECT);
     if (subj) {
       subj.value = draft.subject;
-      this.setSubject_(null);
+      this.forwardSubject_(/** @type {Event} */ ({target: subj}));
     }
 
   }, this.displayFailure_, this);
@@ -210,7 +210,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
   var origin = content.origin;
   var elem = this.getElement();
 
-  this.editor_ = /** @type {HTMLTextAreaElement} */ (
+  this.editor_ = /** @type {!HTMLTextAreaElement} */ (
           elem.querySelector('textarea'));
   this.actionBar_ = this.getElementByClass(constants.CssClass.PROMPT_ACTIONS);
 
@@ -223,14 +223,6 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       goog.bind(this.keyMissingWarningThenEncryptSign_, this));
 
 
-  // @yahoo set the subject on KEYUP
-  var subjectElem = goog.dom.getElement(constants.ElementId.SUBJECT);
-  if (subjectElem) {
-    this.getHandler().listen(
-        subjectElem,
-        goog.events.EventType.KEYUP,
-        goog.bind(this.setSubject_, this));
-  }
   // @yahoo handle and forward keydown events
   goog.events.listen(document.documentElement, goog.events.EventType.KEYDOWN,
       goog.bind(this.handleKeyEvent_, this));
@@ -248,9 +240,12 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       listen(this.editor_, goog.events.EventType.BLUR, goog.bind(
           utils.sendExtensionRequest, null, {
             action: constants.Actions.RESET_PAGEACTION
-          }, goog.nullFunction, this.errorCallback_)).
-      listen(this.editor_, goog.events.EventType.INPUT,
-          goog.bind(this.resizeEditor_, this, false));
+          }, goog.nullFunction, this.errorCallback_));
+
+  //@yahoo resize the textarea when an input is received
+  utils.listenThrottledEvent(/** @type {!EventTarget} */ (this.editor_),
+      goog.events.EventType.INPUT,
+      goog.bind(this.resizeEditor_, this, false));
 
   //@yahoo resize the textarea when window is resized
   utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
@@ -811,13 +806,11 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
 
 /**
  * Put the subject back to original compose
- * @param {goog.events.KeyEvent} evt The key event
+ * @param {Event} evt The key event
  * @private
  */
-ui.ComposeGlass.prototype.setSubject_ = function(evt) {
-  var subject = goog.dom.getElement(constants.ElementId.SUBJECT).value;
-
-  this.api_.req('draft.set', {subject: subject}).
+ui.ComposeGlass.prototype.forwardSubject_ = function(evt) {
+  this.api_.req('draft.set', {subject: evt.target.value}).
       addErrback(this.errorCallback_);
 };
 
@@ -1040,6 +1033,14 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
       editorStyle.minHeight = (args.minHeight - offset) + 'px';
       editorStyle.maxHeight = (args.maxHeight - offset) + 'px';
     }, this.editor_));
+
+    // @yahoo set the subject on KEYUP
+    var subjectElem = goog.dom.getElement(constants.ElementId.SUBJECT);
+    if (subjectElem) {
+      utils.listenThrottledEvent(/** @type {!EventTarget} */ (subjectElem),
+          goog.events.EventType.KEYUP,
+          goog.bind(this.forwardSubject_, this));
+    }
   }
 };
 
