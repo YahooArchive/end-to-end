@@ -1141,7 +1141,7 @@ ui.ComposeGlass.prototype.resizeEditor_ = function(skipForcedScroll) {
       editor = this.editor_,
       currentHeight = editor.clientHeight,
       canScroll = editor.scrollHeight > currentHeight,
-      newHeight;
+      newHeight, deltaHeight, maxHeight;
   if (canScroll) {
     newHeight = editor.scrollHeight;
   } else {
@@ -1160,8 +1160,16 @@ ui.ComposeGlass.prototype.resizeEditor_ = function(skipForcedScroll) {
     newHeight = shadowEditor.scrollHeight;
   }
 
-  if (currentHeight !== newHeight) {
+  if (currentHeight !== newHeight &&
+      newHeight > parseInt(editor.style.minHeight, 10)) {
     editor.style.height = newHeight + 'px';
+
+    // apply scroll by delta height also in compose that spans the whole tab
+    maxHeight = parseInt(editor.style.maxHeight, 10);
+    deltaHeight = maxHeight && (newHeight - currentHeight);
+    if (deltaHeight) {
+      !skipForcedScroll && (editor.style.scrollTop += deltaHeight);
+    }
     this.resizeGlass_(skipForcedScroll);
   }
   editor.focus();
