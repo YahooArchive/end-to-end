@@ -1137,30 +1137,34 @@ ui.ComposeGlass.prototype.clearFailure_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.resizeEditor_ = function(skipForcedScroll) {
-  var textArea = this.editor_,
-      currentHeight = textArea.clientHeight,
-      canScroll = textArea.scrollHeight > currentHeight,
-      newHeight, t;
+  var shadowEditor = this.shadowEditor_,
+      editor = this.editor_,
+      currentHeight = editor.clientHeight,
+      canScroll = editor.scrollHeight > currentHeight,
+      newHeight;
   if (canScroll) {
-    newHeight = textArea.scrollHeight;
+    newHeight = editor.scrollHeight;
   } else {
     // determine the textarea height that just fit the content
-    t = document.createElement('textarea');
-    t.value = textArea.value;
-    t.className = textArea.className;
-    t.style.width = textArea.clientWidth + 'px';
-    t.style.height = '0px';
-    t.style.opacity = 0;
-    document.body.appendChild(t);
-    newHeight = t.scrollHeight;
-    document.body.removeChild(t);
+    if (!shadowEditor) {
+      shadowEditor = this.shadowEditor_ = document.createElement('textarea');
+      shadowEditor.tabIndex = -1;
+      shadowEditor.className = editor.className;
+      shadowEditor.style.position = 'absolute';
+      shadowEditor.style.zIndex = -1;
+      shadowEditor.style.height = '0px';
+      shadowEditor.style.opacity = 0;
+      document.body.appendChild(shadowEditor);
+    }
+    shadowEditor.value = editor.value;
+    newHeight = shadowEditor.scrollHeight;
   }
 
   if (currentHeight !== newHeight) {
-    textArea.style.height = newHeight + 'px';
+    editor.style.height = newHeight + 'px';
     this.resizeGlass_(skipForcedScroll);
   }
-  textArea.focus();
+  editor.focus();
 };
 
 
