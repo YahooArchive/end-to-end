@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Yahoo Mail Encrypted (alpha)",
   "description": "__MSG_extDescription__",
-  "version": "0.8.10",
+  "version": "0.8.11",
   "permissions": [
     "activeTab",
     "cookies",
