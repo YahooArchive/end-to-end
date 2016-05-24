@@ -271,7 +271,8 @@ ext.MessageApi.prototype.processResponse_ = function(response) {
   try {
     callbacks = this.pendingCallbacks_.getAndRemove(response.requestId);
     if (response.hasOwnProperty('timeout')) {
-      callbacks.errback(new ext.MessageApi.TimeoutError(response.error));
+      !this.isDisposed() &&
+          callbacks.errback(new ext.MessageApi.TimeoutError(response.error));
     } else if (response.hasOwnProperty('error')) {
       callbacks.errback(new Error(response.error));
     } else {
