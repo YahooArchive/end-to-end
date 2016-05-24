@@ -104,12 +104,14 @@ e2e.ext.constants.ElementId = {
   KEYRING_PASSPHRASE_CONFIRM_DIV: 'keyringPassphraseConfirmDiv',
   ERROR_DIV: 'errorDiv',
   CALLBACK_DIALOG: 'callbackDialog',
+  COMPOSE_HEADER: 'composeHeader', //@yahoo
   CHIP_HOLDER: 'chipHolder',
   CC_CHIP_HOLDER: 'ccChipHolder', //@yahoo
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
   FROM_HOLDER: 'fromHolder',
   FROM_LABEL: 'fromLabel',
   TO_LABEL: 'toLabel',
+  CC_LABEL: 'ccLabel', //@yahoo
   SUBJECT_HOLDER: 'subjectHolder',
   SUBJECT: 'subject',
 
@@ -258,6 +260,8 @@ e2e.ext.constants.CssClass = {
   COMPOSE_CONTAINER_IRIS_EXCEPTION: 'iris-window',
   COMPOSE_BODY: 'compose-message',
   SAVE_DRAFT_MSG: 'save-draft-msg',
+  TO: 'to',
+  CC: 'cc',
 
   /* setup page */
   SETUP_PAGE: 'setup-page'

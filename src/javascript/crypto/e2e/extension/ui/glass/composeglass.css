@@ -55,15 +55,12 @@ body {
   cursor: pointer;
 }
 
-#pgpKeySelect {
-  cursor: text;
-}
 
 #pgpSignerSelect {
   font-size: 13px;  
 }
 
-#pgpKeySelect input, #subjectHolder input {
+.uid-chips input, #subjectHolder input {
   font-size: 13px;
   color: #454545;
 }
@@ -78,44 +75,72 @@ body {
   min-height: inherit;
 }
 
-#chipHolder, #ccChipHolder {
-  font-size: 13px;
-  color: #777;
-  line-height: 18px;
-  min-height: 34px;
-  margin-bottom: 0;
-  padding: 0;
+#toLabel, #ccLabel {
   margin: 2px 28px;
+  color: #777;
+  font-size: 13px;
+  min-height: 32px;
   border-bottom: 1px solid #D7D5D5;
 }
+
+#toLabel > div, #ccLabel > div {
+  cursor: text;
+}
+
+#toLabel > span, #ccLabel > span {
+  margin-right: 2px;
+  font-size: 13px;
+  float: left;
+  line-height: 33px;
+}
+.uid-chips {
+  color: #0c0c0c;
+  display: table-cell;
+}
+.uid-chips > div {
+  display: inline-block;
+}
+.uid-chips>.uid-bad-chip {
+  color: #EF2E1A;
+}
+.uid-chips>.uid-good-chip {
+  color: #00B777;
+}
+.uid-chips input,
+.uid-chips input:hover,
+.uid-chips input:focus {
+  border: 0;
+  display: inline-block;
+  overflow: hidden;
+  padding: 0;
+  min-width: 15px;
+  margin: 5px 0 2px 4px;
+  height: inherit;
+}
+.uid-chip {
+  margin-right: 2px;
+}
+.uid-chip > div {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 3px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
+  font-weight: normal;
+}
+.uid-chip > img {
+  margin: 0 0 2px;
+  padding: 2px 0;
+}
+
 
 #subjectHolder {
   padding: 6px 28px;
   border-bottom: 1px solid #D7D5D5;
-}
-
-
-#pgpKeySelect > .uid-chips {
-  padding: 0 160px 0 16px;
-}
-
-#pgpKeySelect > .uid-chips > div {
-  border: 0;
-  background: inherit;
-  padding: 0 4px;
-  margin: 0;
-  margin-right: 4px;
-}
-#pgpKeySelect>.uid-chips>.uid-bad-chip {
-  color: #EF2E1A;
-  background: inherit;
-}
-#pgpKeySelect>.uid-chips>.uid-good-chip {
-  color: #00B777;
-}
-#pgpKeySelect>.uid-chips>input {
-  margin: 4px 0 5px 4px;
-  height: inherit;
 }
 
 #subjectHolder input#subject {
@@ -129,11 +154,6 @@ body {
   float: none;
 }
 
-
-
-#pgpKeySelect > .uid-chips > span {
-  margin: 0 2px 0 -16px;
-}
 
 #encryptr-icon label:before {
   cursor: pointer;
@@ -274,14 +294,6 @@ textarea.has-quoted + #quoted-text {
   text-decoration: underline;
 }
 
-.uid-chip>div {
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-bottom: 2px;
-  font-weight: normal;
-}
 
 .ac-renderer {
   box-shadow: none;
@@ -320,7 +332,7 @@ textarea.has-quoted + #quoted-text {
   margin: 0 23px;
   border-color: #EAEDF0;
 }
-.conversation #chipHolder, .conversation #ccChipHolder {
+.conversation #toLabel, .conversation #ccLabel {
   margin-left: 23px;
   margin-right: 23px;
   border-color: #EAEDF0;

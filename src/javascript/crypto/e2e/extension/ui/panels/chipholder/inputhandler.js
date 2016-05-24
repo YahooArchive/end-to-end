@@ -26,6 +26,8 @@ goog.require('goog.ui.ac.InputHandler');
 goog.scope(function() {
 var panels = e2e.ext.ui.panels;
 
+
+
 /**
  * Constructor for the chip holder input handler.
  * Allows to attach a callback when an autocomplete row has been selected and/or
@@ -35,10 +37,9 @@ var panels = e2e.ext.ui.panels;
  *    has been selected.
  * @param {function():!boolean} onFocusToShowRelatedCallback Callback to call
  *    when the input element is focused, return boolean to determine whether
- *    related contacts should be triggered. @yahoo
+ *    related contacts should be triggered. //@yahoo
  * @extends {goog.ui.ac.InputHandler}
  */
-
 panels.ChipHolderInputHandler = function(
     onSelectCallback, onFocusToShowRelatedCallback) {
   // @yahoo increased the throttle time. default is 150ms
@@ -48,16 +49,10 @@ panels.ChipHolderInputHandler = function(
    * @type {function(string):*}
    * @private
    */
-  this.onSelectCallback_ = goog.bind(function(value) {
-    onSelectCallback(value);
-    // @yahoo trigger related recipient search 
-    window.setTimeout(goog.bind(function() {
-      this.getAutoComplete().setToken('');
-    }, this), 300);
-  }, this);
+  this.onSelectCallback_ = onSelectCallback;
   /**
    * Callback to call when the input element is focused, return boolean to
-   * determine whether related contacts should be triggered. @yahoo
+   * determine whether related contacts should be triggered. //@yahoo
    * @type {function():!boolean}
    * @private
    */
@@ -98,7 +93,7 @@ panels.ChipHolderInputHandler.prototype.handleFocus = function(e) {
 
 
 /**
- * Make a search for blank for related recipients @yahoo
+ * Make a search for blank for related recipients //@yahoo
  * @param {goog.events.Event} e Browser event object.
  * @protected
  */
@@ -112,10 +107,12 @@ panels.ChipHolderInputHandler.prototype.relatedRecipients = function(e) {
 };
 
 
-// @yahoo trigger onSelectCallback_ when on blur
+// @yahoo call onSelectCallback_ and getAutoComplete().dismiss() when on blur
 /** @override */
 panels.ChipHolderInputHandler.prototype.handleBlur = function(opt_e) {
   goog.base(this, 'handleBlur', opt_e);
+
+  this.getAutoComplete().dismiss();
 
   if (opt_e && !this.getAutoComplete().isOpen() &&
       opt_e.target && opt_e.target.value && opt_e.target.value.length > 0) {

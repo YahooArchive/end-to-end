@@ -18,6 +18,8 @@
 /**
  * The base layout for the compose glass page.
  * @param fromLabel The label to describe the "From:" select box.
+ * @param toLabel The label to describe the "To:"
+ * @param ccLabel The label to describe the "Cc:"
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field.
  * @param loadingLabel The label for loading message.
@@ -35,6 +37,8 @@
       {param fromLabel: $fromLabel /}
       {param subject: $subject /}
       {param subjectLabel: $subjectLabel /}
+      {param toLabel: $toLabel /}
+      {param ccLabel: $ccLabel /}
       {param loadingLabel: $loadingLabel /}
       {param showOriginalLabel: $showOriginalLabel /}
       {param signerCheckboxTitle: $signerCheckboxTitle /}
@@ -51,6 +55,8 @@
 /**
  * Renders the required UI elements for PGP encryption.
  * @param fromLabel The label to describe the "From:" select box.
+ * @param toLabel The label to describe the "To:"
+ * @param ccLabel The label to describe the "Cc:"
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field.
  * @param loadingLabel The label for loading message.
@@ -63,17 +69,25 @@
  */
 {template .renderEncrypt}
   <div id="{e2e.ext.constants.ElementId.SAVE_ESC_BUTTON}"></div>
-  <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}" style="display: none">
-    <div>{$fromLabel}</div>
-    <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"></select>
+  <div id="{e2e.ext.constants.ElementId.COMPOSE_HEADER}">
+    <div id="{e2e.ext.constants.ElementId.FROM_HOLDER}" style="display: none">
+      <div>{$fromLabel}</div>
+      <select id="{e2e.ext.constants.ElementId.SIGNER_SELECT}"></select>
+    </div>
+    <div id="{e2e.ext.constants.ElementId.TO_LABEL}">
+      <span>{$toLabel}</span>
+      <div id="{e2e.ext.constants.ElementId.CHIP_HOLDER}"></div>
+    </div>
+    <div id="{e2e.ext.constants.ElementId.CC_LABEL}">
+      <span>{$ccLabel}</span>
+      <div id="{e2e.ext.constants.ElementId.CC_CHIP_HOLDER}"></div>
+    </div>
+    {if isNonnull($subject)}
+    <div id="{e2e.ext.constants.ElementId.SUBJECT_HOLDER}">
+      <input id="{e2e.ext.constants.ElementId.SUBJECT}" value="{$subject}" placeholder="{$subjectLabel}" />
+    </div>
+    {/if}
   </div>
-  <div id="{e2e.ext.constants.ElementId.CHIP_HOLDER}"></div>
-  <div id="{e2e.ext.constants.ElementId.CC_CHIP_HOLDER}"></div>
-  {if isNonnull($subject)}
-  <div id="{e2e.ext.constants.ElementId.SUBJECT_HOLDER}">
-    <input id="{e2e.ext.constants.ElementId.SUBJECT}" value="{$subject}" placeholder="{$subjectLabel}" />
-  </div>
-  {/if}
   <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}">
     <div>{$encryptrMessage}</div>
     <label></label>

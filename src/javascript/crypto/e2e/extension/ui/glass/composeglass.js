@@ -30,6 +30,7 @@ goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolder');
+goog.require('e2e.ext.ui.panels.ChipHolderInputHandler'); //@yahoo
 goog.require('e2e.ext.ui.panels.prompt.PanelBase');
 goog.require('e2e.ext.ui.templates.composeglass');
 goog.require('e2e.ext.utils');
@@ -44,12 +45,15 @@ goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('goog.events.KeyCodes');  //@yahoo
+goog.require('goog.events.KeyCodes'); //@yahoo
+goog.require('goog.html.SafeUrl'); //@yahoo
 goog.require('goog.i18n.DateTimeFormat'); //@yahoo
 goog.require('goog.object');
 goog.require('goog.string');
 goog.require('goog.string.format');
 goog.require('goog.style');
+goog.require('goog.ui.ac.AutoComplete'); //@yahoo
+goog.require('goog.ui.ac.Renderer'); //@yahoo
 goog.require('goog.userAgent'); //@yahoo
 goog.require('soy');
 
@@ -129,6 +133,8 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
   soy.renderElement(elem, templates.main, {
     signerCheckboxTitle: chrome.i18n.getMessage('promptSignMessageAs'),
     fromLabel: chrome.i18n.getMessage('promptFromLabel'),
+    toLabel: chrome.i18n.getMessage('promptRecipientsPlaceholder'),
+    ccLabel: chrome.i18n.getMessage('promptCCRecipientsPlaceholder'),
     actionButtonTitle: chrome.i18n.getMessage(
         'promptEncryptSignActionLabel'),
     actionDraftDeleteTitle: chrome.i18n.getMessage(
@@ -342,12 +348,9 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
     // });
     this.chipHolder_ = new panels.ChipHolder(
         this.getContent().recipients,
-        // @yahoo allAvailableRecipients made async with requestMatchingRows_()
-        goog.bind(this.requestMatchingRows_, this),
+        goog.bind(this.getAutoComplete_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
         goog.bind(this.hasPublicKeys_, this),
-        // @yahoo determines whether there're any recipients
-        goog.bind(this.hasRecipients_, this),
         goog.bind(this.renderEncryptionPassphraseDialog_, this));
     this.addChild(this.chipHolder_, false);
     this.chipHolder_.decorate(
@@ -356,16 +359,16 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
     // @yahoo added cc recipients
     this.ccChipHolder_ = new panels.ChipHolder(
         this.getContent().ccRecipients,
-        // @yahoo allAvailableRecipients made async with requestMatchingRows_()
-        goog.bind(this.requestMatchingRows_, this),
+        goog.bind(this.getAutoComplete_, this),
         // @yahoo enhanced ChipHolder with dynamic validation
         goog.bind(this.hasPublicKeys_, this),
-        // @yahoo determines whether there're any recipients
-        goog.bind(this.hasRecipients_, this),
         null);
     this.addChild(this.ccChipHolder_, false);
     this.ccChipHolder_.decorate(
         goog.dom.getElement(constants.ElementId.CC_CHIP_HOLDER));
+
+    this.createAutoComplete_();
+
     resolve();
   }, this);
 };
@@ -1046,13 +1049,67 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
 
 
 /**
+ * Factory function for building an autocomplete widget for the Chips.
+ * @return {!goog.ui.ac.AutoComplete} A new autocomplete object.
+ * @private
+ */
+ui.ComposeGlass.prototype.createAutoComplete_ = function() {
+  // must be called after chipHolder_ and ccChipHolder_ are rendered
+  var chipHolder = this.chipHolder_,
+      ccChipHolder = this.ccChipHolder_,
+      chipHolderElem = chipHolder.getElement(),
+      ccChipHolderElem = ccChipHolder.getElement();
+
+  // @yahoo used autosuggest api instead of a static allUids
+  var renderer = new goog.ui.ac.Renderer(undefined, {
+    renderRow: function(row, token, elem) {
+      var text = e2e.ext.utils.text.userObjectToUid(row.data);
+      var imageUrl = goog.html.SafeUrl.sanitize(row.data.imageUrl);
+      // imageUrl is encodeURI()-ed, and it's thus safe to put inside url("")
+      elem.style.backgroundImage = 'url("' + row.data.imageUrl + '")';
+      goog.dom.setTextContent(elem, text);
+    }
+  });
+  renderer.setAnchorElement(chipHolderElem);
+  renderer.setAnchorElement(ccChipHolderElem);
+
+  var inputHandler = new ui.panels.ChipHolderInputHandler(function(value) {
+    var target = this.getAutoComplete().getTarget();
+    return (target.classList.contains('to') ? chipHolder : ccChipHolder).
+        handleNewChipValue(value);
+  }, goog.bind(this.hasRecipients_, this));
+
+  var autoComplete = new goog.ui.ac.AutoComplete(this, renderer, inputHandler);
+  // autoComplete.setTriggerSuggestionsOnUpdate(true);
+  autoComplete.listen(goog.ui.ac.AutoComplete.EventType.UPDATE, function(evt) {
+    this.dismiss();
+    this.getSelectionHandler().update(true);
+  });
+  inputHandler.attachAutoComplete(autoComplete);
+  inputHandler.attachInputs(
+      chipHolderElem.querySelector('input'),
+      ccChipHolderElem.querySelector('input'));
+  return (this.autoComplete_ = autoComplete);
+};
+
+
+/**
+ * Retrieve the autocomplete widget for the Chips.
+ * @return {!goog.ui.ac.AutoComplete} The autocomplete object.
+ * @private
+ */
+ui.ComposeGlass.prototype.getAutoComplete_ = function() {
+  return this.autoComplete_;
+};
+
+
+/**
  * Implements the requestMatchingRows() api for recipient autocompletion
  * @param {string} token
  * @param {number} maxMatches
  * @param {function(string, !Array<string>)} matchHandler
- * @private
  */
-ui.ComposeGlass.prototype.requestMatchingRows_ = function(
+ui.ComposeGlass.prototype.requestMatchingRows = function(
     token, maxMatches, matchHandler) {
   var currentRecipients = [].concat(
       this.chipHolder_.getSelectedUids(true),
@@ -1085,9 +1142,7 @@ ui.ComposeGlass.prototype.requestMatchingRows_ = function(
  * @private
  */
 ui.ComposeGlass.prototype.hasRecipients_ = function() {
-  return [].concat(
-      this.chipHolder_.getSelectedUids(true),
-      this.ccChipHolder_.getSelectedUids(true)).length > 0;
+  return this.chipHolder_.hasChildren() || this.ccChipHolder_.hasChildren();
 };
 
 

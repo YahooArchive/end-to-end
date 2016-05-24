@@ -92,7 +92,7 @@ textarea:focus {
   min-height: 33px;
 }
 
-#chipHolder, #fromHolder, #subjectHolder {
+#fromHolder, #subjectHolder {
   border-bottom: 1px solid #cfcfcf;
   color: #777;
   line-height: 18px;

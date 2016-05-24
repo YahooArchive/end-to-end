@@ -22,22 +22,16 @@ goog.provide('e2e.ext.ui.panels.ChipHolder');
 
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.ui.panels.Chip');
-goog.require('e2e.ext.ui.panels.ChipHolderInputHandler');
 goog.require('e2e.ext.ui.templates.panels.chipholder');
-goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
-goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes');
 goog.require('goog.events.KeyHandler');
-goog.require('goog.html.SafeUrl');
 goog.require('goog.string');
 goog.require('goog.structs.Map');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
-goog.require('goog.ui.ac.AutoComplete');
-goog.require('goog.ui.ac.Renderer');
 goog.require('soy');
 
 goog.scope(function() {
@@ -51,21 +45,17 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  * Constructor for the chip holder.
  * @param {!Array.<string>} selectedUids The UIDs that have already been
  *     selected.
- * @param {function(string, number, function(string, Array<string>))}
- *     requestMatchingRowsCallback The implementation for autocompletion
- *     matcher. //@yahoo this replaced the need of static allUids
+ * @param {!function():!goog.ui.ac.AutoComplete} getAutoComplete An
+ *     autocomplete object //@yahoo
  * @param {!function(string):!goog.async.Deferred.<!boolean>} hasKeysCallback
  *     Callback for checking if the given uid has a key
  *     //@yahoo no full list of bad uids are available, check online
- * @param {function():!boolean} hasRecipientsCallback Callback to return
- *     whether there're any recipients
  * @param {Function} renderEncryptionPassphraseCallback Callback for rendering
  *     an encryption passphrase dialog. //@yahoo accept null to disable.
  * @constructor
  * @extends {goog.ui.Component}
  */
-panels.ChipHolder = function(selectedUids, requestMatchingRowsCallback,
-    hasKeysCallback, hasRecipientsCallback,
+panels.ChipHolder = function(selectedUids, getAutoComplete, hasKeysCallback,
     renderEncryptionPassphraseCallback) {
   goog.base(this);
 
@@ -77,14 +67,11 @@ panels.ChipHolder = function(selectedUids, requestMatchingRowsCallback,
   this.selectedUids_ = selectedUids;
 
   /**
-   * The autocompletion matcher
-   * @type {{requestMatchingRows:
-   *     function(string,number,function(string, Array<string>))}}
+   * Factory function for building an autocomplete widget for the Chips.
+   * @type {!function():!goog.ui.ac.AutoComplete} An autocomplete object.
    * @private
    */
-  this.autoCompletionMatcher_ = {
-    requestMatchingRows: requestMatchingRowsCallback
-  };
+  this.getAutoComplete_ = getAutoComplete;
 
   /**
    * If true, ChipHolder is locked and cannot be modified.
@@ -107,13 +94,6 @@ panels.ChipHolder = function(selectedUids, requestMatchingRowsCallback,
    * @private
    */
   this.hasKeysCallback_ = hasKeysCallback;
-
-  /**
-   * Callback to return whether there're any recipients
-   * @type {function():!boolean}
-   * @private
-   */
-  this.hasRecipients_ = hasRecipientsCallback;
 };
 goog.inherits(panels.ChipHolder, goog.ui.Component);
 
@@ -150,16 +130,13 @@ panels.ChipHolder.prototype.decorateInternal = function(elem) {
   // @yahoo ccRecipients do not have renderEncryptionPassphraseCallback_
   if (this.renderEncryptionPassphraseCallback_) {
     soy.renderElement(elem, templates.renderChipHolder, {
-      recipientsTitle: chrome.i18n.getMessage('promptRecipientsPlaceholder'),
       passphraseEncryptionLinkTitle: chrome.i18n.getMessage(
           'promptEncryptionPassphraseLink'),
       passphraseEncryptionLinkTooltip: chrome.i18n.getMessage(
           'promptEncryptionPassphraseLinkTooltip')
     });
   } else {
-    soy.renderElement(elem, templates.renderChipHolder, {
-      recipientsTitle: chrome.i18n.getMessage('promptCCRecipientsPlaceholder')
-    });
+    soy.renderElement(elem, templates.renderChipHolder, {});
   }
 
   this.shadowInputElem_ = elem.querySelector('input');
@@ -167,41 +144,11 @@ panels.ChipHolder.prototype.decorateInternal = function(elem) {
 
 
 /**
- * Factory function for building an autocomplete widget for the Chips.
- * @return {!goog.ui.ac.AutoComplete} A new autocomplete object.
- * @private
- */
-panels.ChipHolder.prototype.createAutoComplete_ = function() {
-  // @yahoo used autosuggest api instead of a static allUids
-  // var matcher = new goog.ui.ac.ArrayMatcher(this.allUids_, false);
-  var renderer = new goog.ui.ac.Renderer(undefined, {
-    renderRow: function(row, token, elem) {
-      var text = e2e.ext.utils.text.userObjectToUid(row.data);
-      var imageUrl = goog.html.SafeUrl.sanitize(row.data.imageUrl);
-      // imageUrl is encodeURI()-ed, and it's thus safe to put inside url("")
-      elem.style.backgroundImage = 'url("' + row.data.imageUrl + '")';
-      goog.dom.setTextContent(elem, text);
-    }
-  });
-  var inputHandler = new panels.ChipHolderInputHandler(goog.bind(
-      this.handleNewChipValue_, this), this.hasRecipients_);
-  // var autoComplete = new goog.ui.ac.AutoComplete(
-  //     matcher, renderer, inputHandler);
-  var autoComplete = new goog.ui.ac.AutoComplete(
-      this.autoCompletionMatcher_, renderer, inputHandler);
-  inputHandler.attachAutoComplete(autoComplete);
-  inputHandler.attachInputs(this.shadowInputElem_);
-  return autoComplete;
-};
-
-
-/**
  * Handles the new chip value entered by the user, detecting whether the chip
  * is valid or not. //@yahoo
- * @param  {string=} opt_chipValue The value of the chip.
- * @private
+ * @param {string=} opt_chipValue The value of the chip.
  */
-panels.ChipHolder.prototype.handleNewChipValue_ = function(opt_chipValue) {
+panels.ChipHolder.prototype.handleNewChipValue = function(opt_chipValue) {
   // add the chip first, determine validity later
   var chip = this.addChip(opt_chipValue);
 
@@ -218,12 +165,11 @@ panels.ChipHolder.prototype.handleNewChipValue_ = function(opt_chipValue) {
 panels.ChipHolder.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  goog.array.forEach(this.selectedUids_, this.handleNewChipValue_, this);
+  goog.array.forEach(this.selectedUids_, this.handleNewChipValue, this);
 
-  this.autoComplete_ = this.createAutoComplete_();
-  var renderer = this.autoComplete_.getRenderer();
-  renderer.setAnchorElement(this.getElement());
-
+  // this.autoComplete_ = this.createAutoComplete_();
+  // var renderer = this.autoComplete_.getRenderer();
+  // renderer.setAnchorElement(this.getElement());
 
   this.getHandler().listen(
       this.getElement(),
@@ -296,7 +242,7 @@ panels.ChipHolder.prototype.getSelectedUids = function(opt_ignoreInput) {
   //   this.addAndMarkChip_(true);
   // }
   if (!opt_ignoreInput && this.shadowInputElem_.value.length > 0) {
-    this.handleNewChipValue_();
+    this.handleNewChipValue();
   }
   var uids = new goog.structs.Map();
   this.forEachChild(function(chip) {
@@ -387,7 +333,7 @@ panels.ChipHolder.prototype.removeChild = function(child, opt_unrender) {
   var result = goog.base(this, 'removeChild', child, opt_unrender);
 
   // @yahoo remove auto complete list whenever a child is being removed
-  this.autoComplete_.dismiss();
+  this.getAutoComplete_().dismiss();
 
   if (this.getChildCount() == 0) {
     goog.style.setWidth(this.shadowInputElem_, 100);
