@@ -269,12 +269,13 @@ input:focus {
   border-bottom: 0 solid;
   background: linear-gradient(45deg,#3cb1bd 0,#4e72d0 50%,#5f2ae1 100%);
   padding-left: 0;
+  margin-bottom: 12px
 }
 
 .pgpHead h1 {
-  background: url(images/yahoo/icon-128.png) no-repeat;
-  background-size: 32px;
-  padding-left: 48px;
+  background: url(images/yahoo/icon-32.png) no-repeat;
+  padding: 0 10px 0 45px;
+  margin: 15px 0;
   color: YCOLOR_WHITE;
 }
 
