@@ -613,7 +613,7 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
     // }
 
     // @yahoo proceed injecting the content
-    this.insertMessageIntoPage_(origin);
+    this.insertMessageIntoPage_(origin, true);
 
   }, this), this.errorCallback_);
 };
@@ -670,9 +670,11 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
 /**
  * Inserts the encrypted content into the page and sends it.
  * @param {string} origin The web origin for which the PGP action is performed.
+ * @param {boolean} wasEncrypted Whether the message was encrypted.
  * @private
  */
-ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
+ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(
+    origin, wasEncrypted) {
   // @yahoo recipients can be broken down as object of name and email
   // var recipients = this.chipHolder_.getSelectedUids();
   var recipients = utils.text.uidsToObjects(
@@ -693,7 +695,10 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(origin) {
     to: recipients,
     cc: ccRecipients,
     subject: subject,
-    body: this.editor_.value || content.value
+    body: this.editor_.value || content.value,
+    stats: {
+      encrypted: wasEncrypted
+    }
   }).addCallbacks(this.close, this.errorCallback_, this);
 };
 
@@ -1439,7 +1444,7 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
           var origin = this.getContent().origin;
           // send unencrypted if the user endorsed it
           this.renderKeyMissingWarningDialog_(invalidRecipients).addCallback(
-              goog.bind(this.insertMessageIntoPage_, this, origin));
+              goog.bind(this.insertMessageIntoPage_, this, origin, false));
         }
       }, this);
 };
