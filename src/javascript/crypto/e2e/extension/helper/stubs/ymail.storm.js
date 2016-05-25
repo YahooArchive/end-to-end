@@ -51,6 +51,7 @@ YmailApi.APP_ID = 'YmailMailEncrypted';
  * @typedef {{
  *   use: function(...),
  *   on: function(string, Function) : {detach: function()},
+ *   fire: function(string, *),
  *   common: {
  *     ui: {
  *       NotificationV2: {
@@ -152,6 +153,7 @@ YmailApi.StormUI.Header;
  *   },
  *   before: function(string, function(Event)) : {detach: function()},
  *   on: function(string, function(Event)) : {detach: function()},
+ *   fire: function(string, ...*),
  *   once: function(string, function(Event)) : {detach: function()},
  *   setFocus: function(string),
  *   handleComposeAction: function(string),
@@ -264,10 +266,7 @@ YmailApi.StormUI.prototype.monitorStormEvents_ = function(Y) {
       this.addEncryptrIcon(elem);
 
       // build an API that wraps the native features provided by Storm
-      new YmailApi.StormUI.ComposeApi(
-          Y, this.NeoConfig, composeView, apiId,
-          goog.bind(this.dispatchQueryPublicKey, this),
-          goog.bind(this.displayFailure, this));
+      new YmailApi.StormUI.ComposeApi(this, composeView, apiId);
     }, this))
   ];
 };
@@ -317,7 +316,7 @@ YmailApi.StormUI.prototype.dispatchOpenMessage = function(node, data) {
 
   // only take care of those that appears to be a pgp message
   if (YmailApi.utils.isLikelyPGP(text + quotedText)) {
-    // disabled highlighting users on non-encrypted read
+    // highlight users only on encrypted read
     this.dispatchQueryPublicKey(node);
 
     bodyNode.dispatchEvent(new CustomEvent('openMessage', {
@@ -326,6 +325,8 @@ YmailApi.StormUI.prototype.dispatchOpenMessage = function(node, data) {
         body: text,
         quotedBody: quotedText
       }, bubbles: true}));
+
+    this.log('yme_read');
   }
 
   // restore "show original message"
@@ -419,28 +420,42 @@ YmailApi.StormUI.prototype.dispose = function() {
 };
 
 
+/**
+ * Log an interesting event
+ * @param {string} name
+ * @param {*=} opt_tags
+ */
+YmailApi.StormUI.prototype.log = function(name, opt_tags) {
+  var data = {name: name};
+  opt_tags && (data.tags = opt_tags);
+  this.Y.fire('util:ymstats', data);
+};
+
+
 
 /**
  * Constructor for the Compose API
- * @param {YmailApi.StormUI.YUI} Y
- * @param {YmailApi.StormUI.NeoConfig} NeoConfig
+ * @param {YmailApi.StormUI} main
  * @param {YmailApi.StormUI.ComposeView} composeView
  * @param {!string} apiId The Message API id
- * @param {function(Element)} dispatchQueryPublicKey
- * @param {function(!string, string=)} displayFailure
  * @constructor
  */
-YmailApi.StormUI.ComposeApi = function(
-    Y, NeoConfig, composeView, apiId,
-    dispatchQueryPublicKey, displayFailure) {
-  this.Y = Y;
-  this.NeoConfig = NeoConfig;
+YmailApi.StormUI.ComposeApi = function(main, composeView, apiId) {
+  this.main_ = main;
   this.composeView_ = composeView;
-  this.dispatchQueryPublicKey_ = dispatchQueryPublicKey;
-  this.displayFailure_ = displayFailure;
 
-  this.draftApi_ = new YmailApi.StormUI.DraftApi(composeView);
-  this.autosuggestApi_ = new YmailApi.StormUI.AutoSuggestApi(Y, NeoConfig);
+  /** @type {e2e.ext.YmailData.SendStats} */
+  this.stats = {
+    secureCompose: false
+  };
+
+  this.Y = main.Y;
+  this.NeoConfig = main.NeoConfig;
+  this.dispatchQueryPublicKey_ = goog.bind(main.dispatchQueryPublicKey, main);
+  this.displayFailure_ = goog.bind(main.displayFailure, main);
+
+  this.draftApi_ = new YmailApi.StormUI.DraftApi(main, composeView, this.stats);
+  this.autosuggestApi_ = new YmailApi.StormUI.AutoSuggestApi(main);
 
   this.messageApi_ = this.initApi_(apiId);
   this.monitorComposeEvents_();
@@ -481,33 +496,85 @@ YmailApi.StormUI.ComposeApi.prototype.initApi_ = function(apiId) {
  */
 YmailApi.StormUI.ComposeApi.prototype.monitorComposeEvents_ = function() {
   var composeView = this.composeView_,
-      api = this.messageApi_;
-  // var dispatchQueryPublicKey = this.dispatchQueryPublicKey_;
+      api = this.messageApi_,
+      stats = this.stats;
 
-  // notify the glass on close
+  var recipientObservers = [
+    this.monitorRecipients_(YmailApi.StormUI.Selector.TO),
+    this.monitorRecipients_(YmailApi.StormUI.Selector.CC),
+    this.monitorRecipients_(YmailApi.StormUI.Selector.BCC)
+  ];
+
+  var sendEvt = composeView.draft.on('stateChanged', goog.bind(function(evt) {
+    var e = /** @type {{prev: string, next: string, err: string}} */ (evt);
+    if (e.prev === 'savingAndSending' ||
+        e.prev === 'sending' ||
+        e.prev === 'sent' ||
+        (e.prev === 'captchaing' && e.next === 'unsaved')) {
+      if (e.next === 'final') {
+        composeView.fire('compose:sendSuccess');
+
+        // check if msg can be secured if not initiated by encrypted-compose
+        if (!stats.secureCompose) {
+          stats.canSecure = !this.composeView_.baseNode.one('.no-key');
+        }
+        // log the send event
+        this.main_.log('yme_send', this.stats);
+
+        sendEvt.detach();
+      } else if (e.err) { // unsaved
+        composeView.fire('compose:sendFailure', e.err);
+      }
+    }
+  }, this));
+
+  // on close
   composeView.on('closeChange', function() {
-    api.req('evt.close').addCallback(goog.bind(api.dispose, api));
+    api.req('evt.close').addCallback(function() {
+      recipientObservers.forEach(function(observer) {
+        observer.disconnect();
+      });
+      api.dispose();
+    });
   });
+};
 
-  // disabled highlighting users in non-encrypted compose
-  // // wrap resizeRTE(), which is called when recipients are modified
-  // var resizeRTE_ = composeView.resizeRTE;
-  // composeView.resizeRTE = function() {
-  //   dispatchQueryPublicKey(this.baseNode.getDOMNode());
-  //   return resizeRTE_.apply(this, arguments);
-  // };
+
+
+/**
+ * @param {!YmailApi.StormUI.Selector} selector
+ * @private
+ */
+YmailApi.StormUI.ComposeApi.prototype.monitorRecipients_ = function(selector) {
+  var onNewRecipientCallback = this.dispatchQueryPublicKey_,
+      observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          [].forEach.call(mutation.addedNodes, onNewRecipientCallback);
+        });
+      });
+   
+  // pass in the target node, as well as the observer options
+  observer.observe(
+      document.querySelector(selector).parentElement.parentElement,
+      {childList: true});
+
+  return observer;
 };
 
 
 
 /**
  * Construct an instance that implements the required draft api calls
+ * @param {YmailApi.StormUI} main The main instance
  * @param {YmailApi.StormUI.ComposeView} composeView The ComposeView instance
  *     exposed by Yahoo Mail, codenamed Storm
+ * @param {e2e.ext.YmailData.SendStats} stats
  * @constructor
  */
-YmailApi.StormUI.DraftApi = function(composeView) {
+YmailApi.StormUI.DraftApi = function(main, composeView, stats) {
+  this.main_ = main;
   this.composeView_ = composeView;
+  this.stats = stats;
 };
 
 
@@ -589,7 +656,7 @@ YmailApi.StormUI.DraftApi.prototype.save = function(draft) {
   // in case the draft is being saved by autoSave, before calling our save()
   // be prepared for next set of save events
   do {
-    result = this.saveResult_();
+    result = this.nextDraftResult_('save');
   } while (result.hasFired());
   this.composeView_.save(); // avoid less reliable handleComposeAction('save')
   return result;
@@ -601,8 +668,10 @@ YmailApi.StormUI.DraftApi.prototype.save = function(draft) {
  * @return {!goog.async.Deferred.<boolean>}
  */
 YmailApi.StormUI.DraftApi.prototype.send = function(draft) {
-  var result = this.sendResult_(); // rely on the next send event. no auto send
+  var result = this.nextDraftResult_('send'); // rely on the next send event
   this.set(draft);
+  this.stats.secureCompose = true;
+  this.stats.encrypted = draft.stats.encrypted;
   this.composeView_.handleComposeAction('send');
   return result;
 };
@@ -675,15 +744,17 @@ YmailApi.StormUI.DraftApi.prototype.triggerEvent = function(
 
 
 /**
+ * @param {string} action It is either 'save' or 'send'.
  * @return {!goog.async.Deferred.<boolean>}
  * @private
  */
-YmailApi.StormUI.DraftApi.prototype.saveResult_ = function() {
+YmailApi.StormUI.DraftApi.prototype.nextDraftResult_ = function(action) {
+  action = action === 'send' ? action : 'save';
   var result = new goog.async.Deferred,
-      successHandler = this.composeView_.once('compose:saveSuccess',
+      successHandler = this.composeView_.once('compose:' + action + 'Success',
           goog.bind(result.callback, result, true)),
-      failureHandler = this.composeView_.once('compose:saveFailure',
-          goog.bind(result.errback, result, new Error('saveFailed')));
+      failureHandler = this.composeView_.once('compose:' + action + 'Failure',
+          goog.bind(result.errback, result, new Error(action + 'Failed')));
   return result.addBoth(function() {
     successHandler.detach();
     failureHandler.detach();
@@ -692,51 +763,25 @@ YmailApi.StormUI.DraftApi.prototype.saveResult_ = function() {
 
 
 /**
- * @return {!goog.async.Deferred.<boolean>}
- * @private
- */
-YmailApi.StormUI.DraftApi.prototype.sendResult_ = function() {
-  var result = new goog.async.Deferred;
-  var listener = this.composeView_.draft.on('stateChanged', function(evt) {
-    var e = /** @type {{prev: string, next: string, err: string}} */ (evt);
-    if (e.prev === 'savingAndSending' ||
-        e.prev === 'sending' ||
-        e.prev === 'sent' ||
-        (e.prev === 'captchaing' && e.next === 'unsaved')) {
-      if (e.next === 'final') {
-        listener.detach();
-        result.callback(true);
-      } else if (e.err) { // unsaved
-        listener.detach();
-        result.errback(new Error('sendFailure'));
-      }
-    }
-  });
-  return result;
-};
-
-
-
-/**
  * Construct an instance that implements the required autosuggest api calls
- * @param {YmailApi.StormUI.YUI} Y
- * @param {YmailApi.StormUI.NeoConfig} NeoConfig
+ * @param {YmailApi.StormUI} main The main instance
  * @constructor
  */
-YmailApi.StormUI.AutoSuggestApi = function(Y, NeoConfig) {
-  this.Y = Y;
+YmailApi.StormUI.AutoSuggestApi = function(main) {
+  this.main_ = main;
+  this.Y = main.Y;
   this.apiConfig_ = {
     debounce: 60,
     getWssid: function() {
-      return NeoConfig.wssid;
+      return main.NeoConfig.wssid;
     },
     setWssid: function(newId) {
-      NeoConfig.wssid = newId;
+      main.NeoConfig.wssid = newId;
     },
     getAppid: function() {
       return YmailApi.APP_ID;
     },
-    xobniBaseURL: Y.xobniContacts.Utils.getXobniBaseURL().url
+    xobniBaseURL: main.Y.xobniContacts.Utils.getXobniBaseURL().url
   };
 
   this.initApi_();
@@ -821,7 +866,7 @@ YmailApi.bootstrap = function() {
   if (win.NeoConfig) { // Storm
     if (win.yui) {
       YmailApi.bootstraped_ = true;
-      win.YME = new YmailApi.StormUI(win.yui, win.NeoConfig);
+      win.YmeMain = new YmailApi.StormUI(win.yui, win.NeoConfig);
       return;
     }
 

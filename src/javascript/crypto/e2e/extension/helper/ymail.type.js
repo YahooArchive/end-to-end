@@ -58,7 +58,8 @@ e2e.ext.YmailData.Attachment;
  *   attachments: !Array.<e2e.ext.YmailData.Attachment>,
  *   hasQuoted: !boolean,
  *   isInConv: !boolean,
- *   glassClosing: boolean
+ *   glassClosing: boolean,
+ *   stats: e2e.ext.YmailData.SendStats
  * }}
  */
 e2e.ext.YmailData.Draft;
@@ -83,3 +84,14 @@ e2e.ext.YmailData.OpenComposeDetail;
  * }}
  */
 e2e.ext.YmailData.OpenMessageDetail;
+
+
+/**
+ * The stats structure for sending an email
+ * @typedef {{
+ *   secureCompose: boolean,
+ *   encrypted: (undefined|boolean),
+ *   canSecure: (undefined|boolean)
+ * }}
+ */
+e2e.ext.YmailData.SendStats;
