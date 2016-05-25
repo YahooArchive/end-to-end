@@ -184,8 +184,9 @@ ui.ComposeGlass.prototype.populateUi_ = function() {
 
     // set event handlers based on whether the glass is in conversation
     this.setConversationDependentEventHandlers_(draft.isInConv);
+    // tentatively disabled
     // display show original message, and install the click handler
-    draft.hasQuoted && this.setQuotedTextHandlers_();
+    // draft.hasQuoted && this.setQuotedTextHandlers_();
 
     goog.Promise.all([
       // Populate the UI with the available encryption keys.
