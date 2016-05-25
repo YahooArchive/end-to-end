@@ -118,7 +118,7 @@ ui.Glass.prototype.displayFailure_ = function(error) {
 ui.Glass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
 
-  soy.renderElement(elem, templates.contentFrame, {
+  soy.renderElement(document.body, templates.contentFrame, {
     content: this.armor_.text || 'invalid pgp format'
   });
 };
