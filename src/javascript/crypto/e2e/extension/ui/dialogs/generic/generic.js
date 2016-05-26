@@ -154,6 +154,18 @@ dialogs.Generic.prototype.createDom = function() {
 dialogs.Generic.prototype.decorateInternal = function(elem) {
   this.setElementInternal(elem);
 
+  // @yahoo surrond anything before the first line break with <p></p>
+  var message = this.message_;
+  if (goog.isString(message)) {
+    var pos = message.indexOf('\n');
+    this.message_ = templates.dialogContent(pos === -1 ?
+        {header: message} :
+        {
+          header: message.substring(0, pos),
+          body: message.substring(pos + 1)
+        });
+  }
+
   soy.renderElement(elem, templates.dialog, {
     message: this.message_,
     inputFieldType: this.inputType_,

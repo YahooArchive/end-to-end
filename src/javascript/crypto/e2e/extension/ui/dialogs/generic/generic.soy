@@ -48,3 +48,14 @@
     <button class="{e2e.ext.constants.CssClass.CANCEL}">{$cancelButtonTitle}</button>
   {/if}
 {/template}
+
+
+/**
+ * Renders the content where the first line of message is broken as header, and the rest as content
+ * @param header The message header
+ * @param body The message body
+ */
+{template .dialogContent}
+  <p>{$header}</p>
+  {if $body}<p>{$body|changeNewlineToBr}</p>{/if}
+{/template}
