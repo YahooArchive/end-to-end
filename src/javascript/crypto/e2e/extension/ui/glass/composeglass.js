@@ -1121,7 +1121,8 @@ ui.ComposeGlass.prototype.requestMatchingRows = function(
       this.ccChipHolder_.getSelectedUids(true));
 
   this.api_.req('autosuggest.search', {
-    from: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value,
+    from: utils.text.extractValidEmail(
+        goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value),
     to: goog.array.map(currentRecipients, utils.text.extractValidEmail),
     query: token
   }).addCallbacks(
