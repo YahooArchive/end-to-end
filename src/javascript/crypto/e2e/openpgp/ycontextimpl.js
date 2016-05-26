@@ -170,16 +170,21 @@ e2e.openpgp.yContextImpl.prototype.deleteKeyByFingerprint = function(
 /**
  * //@yahoo
  * Exports the keyring for a particular uid.
- * @param {boolean} armored Whether to export the keyring in radix64 armor.
  * @param {string} uid The Uid to export
+ * @param {boolean=} opt_armored Whether to export in the radix64 armor format.
+ * @param {boolean=} opt_includeSecretKeys Whether to include any secret keys.
  * @return {!e2e.async.Result.<!e2e.ByteArray|string>}
  * @suppress {accessControls} for armorHeaders_
  */
-e2e.openpgp.yContextImpl.prototype.exportUidKeyring = function(armored, uid) {
+e2e.openpgp.yContextImpl.prototype.exportUidKeyring = function(
+    uid, opt_armored, opt_includeSecretKeys) {
   //@yahoo ASCII armor header depends on whether a private key exists
   var secretKey = e2e.openpgp.block.TransferableSecretKey, armorHeader;
+  var keyType = opt_includeSecretKeys ?
+      e2e.openpgp.KeyRing.Type.ALL :
+      e2e.openpgp.KeyRing.Type.PUBLIC;
   //@yahoo major diff from exportKeyring is the use of searchLocalKey call
-  return this.searchLocalKey(uid, e2e.openpgp.KeyRing.Type.ALL).
+  return this.searchLocalKey(uid, keyType).
       addCallback(function(keys) {
         keys = new goog.structs.Map(keys);
         return goog.async.DeferredList.gatherResults(goog.array.map(
@@ -195,7 +200,7 @@ e2e.openpgp.yContextImpl.prototype.exportUidKeyring = function(armored, uid) {
       }, this).
       addCallback(function(serialized) {
         serialized = goog.array.flatten(serialized);
-        if (armored) {
+        if (opt_armored) {
           return e2e.openpgp.asciiArmor.encode(
               armorHeader, serialized, this.armorHeaders_);
         }

@@ -137,7 +137,7 @@ ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isOverride) {
 
 /**
  * Exports the entire keyring of a particular UID to a file.
- * @param {string} keyUid The UID of the keys to remove.
+ * @param {string} keyUid The UID of the keys to export.
  * @suppress {accessControls}
  * @override
  * @private
@@ -145,24 +145,45 @@ ui.ySettings.prototype.renderNewKey_ = function(keyUid, opt_isOverride) {
 ui.ySettings.prototype.exportKey_ = function(keyUid) {
   var ctx = this.pgpContext_;
 
-  ctx.isKeyRingEncrypted().addCallback(function(isEncrypted) {
-    return ctx.exportUidKeyring(true, keyUid).
+  ctx.isKeyRingEncrypted().addCallbacks(function(isEncrypted) {
+    return ctx.exportUidKeyring(keyUid, true, true).
         addCallback(function(armoredKey) {
-          var filename = keyUid.replace(/[\/\\]/g, '.');
+          var filename = keyUid.replace(/[\/\\]/g, '.'),
+              privFilename = (isEncrypted ? '' : 'UNENCRYPTED-') +
+                  filename + '-keyring-private.asc',
+              pubFilename = filename + '-public.asc';
 
-          if (goog.string.contains(armoredKey, 'PRIVATE KEY BLOCK')) {
-            filename = (isEncrypted ? '' : 'UNENCRYPTED-') +
-                filename + '-keyring-private.asc';
-          } else {
-            filename = filename + '-public.asc';
+          if (!goog.string.contains(armoredKey, 'PRIVATE KEY BLOCK')) {
+            return utils.writeToFile(armoredKey, function(fileUrl) {
+              var anchor = document.createElement('a');
+              anchor.download = pubFilename;
+              anchor.href = fileUrl;
+              anchor.click();
+            });
           }
 
-          utils.writeToFile(armoredKey, function(fileUrl) {
-            var anchor = document.createElement('a');
-            anchor.download = filename;
-            anchor.href = fileUrl;
-            anchor.click();
-          });
+          return this.renderConfirmExportingPrivKeys_(keyUid).
+              addCallback(function(includePrivKeys) {
+                switch (includePrivKeys) {
+                  case 'true':
+                    return {key: armoredKey, filename: privFilename};
+                  case 'false':
+                    return ctx.exportUidKeyring(keyUid, true, false).
+                        addCallback(function(armoredKey) {
+                          return {key: armoredKey, filename: pubFilename};
+                        });
+                }
+                return null;
+              }).
+              addCallback(function(exportData) {
+                return exportData &&
+                    utils.writeToFile(exportData.key, function(fileUrl) {
+                      var anchor = document.createElement('a');
+                      anchor.download = exportData.filename;
+                      anchor.href = fileUrl;
+                      anchor.click();
+                    });
+              });
         }, this);
   }, this.displayFailure_, this);
 };
@@ -610,5 +631,30 @@ ui.ySettings.prototype.renderConfirmSyncKeysCallback_ = function(
   return result;
 };
 
+
+/**
+ * Renders the UI elements needed for confirming export of private keys
+ * @param {string} uid The user id being handled
+ * @return {!e2e.async.Result<string>} Whether user endorsed that.
+ * @private
+ */
+ui.ySettings.prototype.renderConfirmExportingPrivKeys_ = function(uid) {
+  var result = new e2e.async.Result();
+  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
+  var dialog = new dialogs.Generic(
+      chrome.i18n.getMessage('promptConfirmExportingPrivKeysLabel', uid),
+      function(decision) {
+        goog.dispose(dialog);
+        result.callback(decision);
+      },
+      dialogs.InputType.CHECKBOX,
+      chrome.i18n.getMessage('exportPrivKeyCheckboxLabel'),
+      chrome.i18n.getMessage('promptOkActionLabel'),
+      chrome.i18n.getMessage('actionCancelPgpAction'));
+
+  this.addChild(dialog, false);
+  dialog.render(popupElem);
+  return result;
+};
 
 });  // goog.scope

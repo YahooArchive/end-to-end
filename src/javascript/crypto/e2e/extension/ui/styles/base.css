@@ -309,6 +309,9 @@ input:focus {
   margin: 0 0 15px 0;
 }
 
+#callbackDialog input[type=checkbox] {
+  margin-right: 5px;
+}
 
 .keyring-signup, #callbackDialog label[for], #pgpGenerateKey label[for] {
   cursor: pointer;

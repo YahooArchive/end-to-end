@@ -417,6 +417,14 @@
     "message": "Only the message body will be encrypted.",
     "description": "The default encryptr status message in the encrypted compose window."
   },
+  "promptConfirmExportingPrivKeysLabel": {
+    "message": "Exporting keys of $1 as an .ASC file...",
+    "description": "A sentence notifying user whether the key export should include private keys."
+  },
+  "exportPrivKeyCheckboxLabel": {
+    "message": "Include also the private keys in the same file, and I won't share it with others.",
+    "description": "An answer confirming that the user wants to include private keys in the file to export."
+  },
   "publicKeyDescription": {
     "message": "Public",
     "description": "Modifier before a key algorithm type for a public key."
@@ -608,11 +616,11 @@
     "description": "A sentence informing the user the key synchronization conflicts, particularly the keys that exists only remotely."
   },
   "giveUpRemoteKeyCheckboxLabel": {
-    "message": " Take down the remote ones from the public listing (e.g., key lost).",
+    "message": "Take down the remote ones from the public listing (e.g., key lost).",
     "description": "A sentence informing the user that remote keys will be deleted before proceeding."
   },
   "replaceKeyCheckboxLabel": {
-    "message": " Replace the existing ones with a new one.",
+    "message": "Replace the existing ones with a new one.",
     "description": "A sentence informing the user that existing keys will be deleted before getting a new one."
   },
   "actionOverwriteRemoteKeys": {
