@@ -301,7 +301,7 @@ ext.MessageApi.prototype.getRequestHandler = function() {
  * A shorthand to set a handler for a particular call. Note that each call can
  * take only one handler
  * @param {string} call Name of the Message API function to listen on.
- * @param {function(*):*} callback
+ * @param {function(?):*} callback
  * @return {ext.MessageApi} this
  */
 ext.MessageApi.prototype.setRequestHandler = function(call, callback) {

@@ -366,7 +366,7 @@
     "description": "A sentence requesting the passphrase for a PGP key."
   },
   "promptNoEncryptionKeysFound": {
-    "message": "Please setup keys for $1 to proceed. Do it now?",
+    "message": "Your draft cannot be auto-saved. Please register $1 to proceed.",
     "description": "A sentence warning the user that the action cannot be completed due to missing encryption keys."
   },
   "promptSignMessageAs": {

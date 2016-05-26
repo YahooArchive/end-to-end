@@ -293,7 +293,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
       listen(
           this.saveDraftTimer_,
           goog.Timer.TICK,
-          goog.partial(this.saveDraft_, origin, goog.nullFunction)).
+          goog.partial(this.saveDraft_)).
       //@yahoo has a restore button
       listenOnce(
           goog.dom.getElement(
@@ -319,8 +319,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
 
 
   //@yahoo save encrypted draft when it is closed externally
-  this.api_.setRequestHandler('evt.close',
-      goog.bind(this.saveDraft_, this, origin, goog.nullFunction, null));
+  this.api_.setRequestHandler('evt.close', goog.bind(this.saveDraft_, this));
 
   // clear prior failure when any item is on clicked
   this.getHandler().listen(
@@ -706,18 +705,11 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(
 /**
  * Encrypts the current draft and persists it into the web application that the
  * user is interacting with.
- * @param {string} origin The web origin where the message was created.
- * @param {function()} postSaveCallback The callback to call after saving the
- *     draft.
- * @param {goog.events.Event} e The event that triggers the saving of the
- *     draft.
+ * @param {Function=} opt_postSaveCallback The callback to call after saving
+ *     the draft.
  * @private
  */
-ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
-  if (!this.getContent().canSaveDraft || document && !document.hasFocus()) {
-    return;
-  }
-
+ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
   // restart the timer
   if (this.saveDraftTimer_) {
     this.saveDraftTimer_.stop();
@@ -729,10 +721,6 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
   var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
       goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
   var signer = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
-  // @yahoo signal to user we're encrypting
-  var saveDraftMsg = this.getElementByClass(constants.CssClass.SAVE_DRAFT_MSG);
-  saveDraftMsg.textContent = chrome.i18n.getMessage(
-      'promptEncryptSignEncryptingDraftLabel');
 
   // @yahoo save the recipients too
   var recipients = utils.text.uidsToObjects(
@@ -745,8 +733,14 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
       goog.string.isEmptySafe(subject) &&
       recipients.length === 0 &&
       ccRecipients.length === 0) {
+    goog.isFunction(opt_postSaveCallback) && opt_postSaveCallback();
     return;
   }
+
+  // @yahoo signal to user we're encrypting
+  var saveDraftMsg = this.getElementByClass(constants.CssClass.SAVE_DRAFT_MSG);
+  saveDraftMsg.textContent = chrome.i18n.getMessage(
+      'promptEncryptSignEncryptingDraftLabel');
 
   // @yahoo sendExtensionRequest is used instead of actionExecutor
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
@@ -775,7 +769,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
       saveDraftMsg.textContent = chrome.i18n.getMessage(
           'promptEncryptSignSaveEncryptedDraftLabel',
           new Date().toLocaleTimeString().replace(/:\d\d? /, ' '));
-      postSaveCallback && postSaveCallback();
+      goog.isFunction(opt_postSaveCallback) && opt_postSaveCallback();
     }, this.errorCallback_, this);
 
 
@@ -794,8 +788,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(origin, postSaveCallback, e) {
                 content: signer
               }), goog.nullFunction, this.errorCallback_);
             } else {
-              // prompt only once per glass
-              this.getContent().canSaveDraft = false;
+              this.saveDraftTimer_.stop();
             }
           }, this),
           dialogs.InputType.NONE);
@@ -1299,13 +1292,12 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
       return;
     case keyCodeEnum.S:         // Send by Cmd + S
       if (!agentSpecificMeta) { break; }
-      this.saveDraft_(this.getContent().origin, goog.nullFunction, null);
+      this.saveDraft_();
       evt.preventDefault();
       evt.stopPropagation();
       return;
     case keyCodeEnum.ESC:       // Close Conversation
-      this.saveDraft_(this.getContent().origin,
-          goog.bind(this.forwardKeyEvent_, this, evt), null);
+      this.saveDraft_(goog.bind(this.forwardKeyEvent_, this, evt));
       return;
   }
 
@@ -1321,8 +1313,7 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
       case keyCodeEnum.E:         // Archive Conversation
       case keyCodeEnum.M:         // Inbox
       case keyCodeEnum.N:         // New Compose
-        this.saveDraft_(this.getContent().origin,
-            goog.bind(this.forwardKeyEvent_, this, evt), null);
+        this.saveDraft_(goog.bind(this.forwardKeyEvent_, this, evt));
         return;
     }
     this.forwardKeyEvent_(evt);
