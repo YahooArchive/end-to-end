@@ -152,11 +152,13 @@ utils.uidsToObjects = function(uids) {
 
 /**
  * Convert an user object to uid, of which the format is "name &lt;email&gt;"
- * @param {{name:(string|undefined), email:!string}} userObj
+ * @param {?{name:(string|undefined), email:!string}} userObj
  * @return {!string}
  */
 utils.userObjectToUid = function(userObj) {
-  return (userObj.name || userObj.email) + ' <' + userObj.email + '>';
+  return userObj ?
+      (userObj.name || userObj.email) + ' <' + userObj.email + '>' :
+      '';
 };
 
 

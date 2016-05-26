@@ -102,14 +102,16 @@ dialogs.Generic = function(message, callback, inputType, opt_placeholder,
    * @type {string}
    * @private
    */
-  this.actionButtonTitle_ = opt_actionButtonTitle || 'OK';
+  this.actionButtonTitle_ = opt_actionButtonTitle ||
+      chrome.i18n.getMessage('promptOkActionLabel');
 
   /**
    * The title for the dialog's cancel button.
    * @type {string}
    * @private
    */
-  this.cancelButtonTitle_ = opt_cancelButtonTitle || '';
+  this.cancelButtonTitle_ = opt_cancelButtonTitle || 
+      chrome.i18n.getMessage('actionCancelPgpAction');
 
   /**
    * Optional ID for a content element.

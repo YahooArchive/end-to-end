@@ -389,40 +389,32 @@ ui.ComposeGlass.prototype.renderSigningKeys_ = function() {
       var signCheck = goog.dom.getElement(
           constants.ElementId.SIGN_MESSAGE_CHECK);
 
-      if (availableSigningKeys.length == 0) {
-        signCheck.disabled = true;
-        signerSelect.disabled = true;
-        var noKeysLabel = document.createTextNode(
-            chrome.i18n.getMessage('promptNoPrivateKeysFound'));
-        var fromHolder = goog.dom.getElement(constants.ElementId.FROM_HOLDER);
-        fromHolder.appendChild(noKeysLabel);
+      // TODO: add a dummy row, so advanced user can choose not to sign message
+
+      // @yahoo prompt users to sign up with the mail default user
+      if (availableSigningKeys.length === 0) {
+        this.renderConfigureUserDialog_();
       } else {
-        signCheck.checked = true;
-      }
+        // @yahoo populate the sender field
+        var emailList = [];
+        goog.array.forEach(availableSigningKeys, function(uid) {
+          var option = document.createElement('option');
+          option.textContent = uid;
+          emailList.push(utils.text.extractValidEmail(uid));
+          signerSelect.appendChild(option);
+        }, this);
 
-      // @yahoo Set the Signer/Sender field with the correct uid
-      var selectedIndex = 0, senderMatched = false;
-      goog.array.forEach(availableSigningKeys, function(key, i) {
-        var keyElem = document.createElement('option');
-        keyElem.textContent = key;
-        signerSelect.appendChild(keyElem);
+        // @yahoo locate the first keyholder that matches the email
+        var selectedIndex = emailList.indexOf(this.defaultSender_.email);
+        // @yahoo select the matched one, or the first one
+        signerSelect.selectedIndex = Math.min(selectedIndex, 0);
 
-        // @yahoo choose the first UID associated with the 'from' address
-        if (this.defaultSender_ && selectedIndex == 0 &&
-            goog.string.caseInsensitiveContains(
-                key, '<' + this.defaultSender_.email + '>')) {
-          selectedIndex = i;
-          keyElem.selected = 'selected';
-          senderMatched = true;
+        // @yahoo display sender selection if there's a choice,
+        //        or it's different from the mail default
+        if (availableSigningKeys.length > 1 || selectedIndex === -1) {
+          goog.style.setElementShown(
+              goog.dom.getElement(constants.ElementId.FROM_HOLDER), true);
         }
-      }, this);
-
-      // @yahoo display sender selection if there's a choice,
-      //        or it's different from the mail default
-      if (availableSigningKeys.length > 1 || !senderMatched) {
-        goog.style.setElementShown(
-            goog.dom.getElement(constants.ElementId.FROM_HOLDER),
-            true);
       }
 
       resolve();
@@ -774,22 +766,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
     saveDraftMsg.textContent = '';
 
     if (error.messageId == 'promptNoEncryptionTarget') {
-      var dialog = new dialogs.Generic(
-          chrome.i18n.getMessage('promptNoEncryptionKeysFound', signer),
-          goog.bind(function(decision) { //@yahoo opens config if clicked ok
-            goog.dispose(dialog);
-            //@yahoo opens config to set up keys if clicked ok
-            if (goog.isDef(decision)) {
-              utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-                action: constants.Actions.CONFIGURE_EXTENSION,
-                content: signer
-              }), goog.nullFunction, this.errorCallback_);
-            } else {
-              this.saveDraftTimer_.stop();
-            }
-          }, this),
-          dialogs.InputType.NONE);
-      this.renderDialog(dialog);
+      this.renderConfigureUserDialog_(signer);
     } else if (error.messageId == 'glassKeyringLockedError') {
       this.displayFailure_(error);
     }
@@ -801,6 +778,38 @@ ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
 };
 
 // @yahoo the following are all yahoo-specific
+
+
+/**
+ * Renders a dialog that prompts users to take action on configuring the uid.
+ * @param {string=} opt_uid The user id. Defaulted to use this.defaultSender_.
+ */
+ui.ComposeGlass.prototype.renderConfigureUserDialog_ = function(opt_uid) {
+  if (this.configureUserDialogRendered_) {
+    return;
+  }
+  this.configureUserDialogRendered_ = true;
+
+  !opt_uid && (opt_uid = utils.text.userObjectToUid(this.defaultSender_));
+
+  var dialog = new dialogs.Generic(
+      chrome.i18n.getMessage('promptNoEncryptionKeysFound', opt_uid),
+      goog.bind(function(decision) { //@yahoo opens config if clicked ok
+        goog.dispose(dialog);
+        this.configureUserDialogRendered_ = false;
+        //@yahoo opens config to set up keys if clicked ok
+        if (goog.isDef(decision)) {
+          utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
+            action: constants.Actions.CONFIGURE_EXTENSION,
+            content: opt_uid
+          }), goog.nullFunction, this.errorCallback_);
+        } else {
+          this.saveDraftTimer_.stop();
+        }
+      }, this),
+      ui.dialogs.InputType.NONE);
+  this.renderDialog(dialog);
+}
 
 
 /**

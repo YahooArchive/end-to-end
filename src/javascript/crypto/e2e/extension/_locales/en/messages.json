@@ -366,7 +366,7 @@
     "description": "A sentence requesting the passphrase for a PGP key."
   },
   "promptNoEncryptionKeysFound": {
-    "message": "Your draft cannot be auto-saved. Please register $1 to proceed.",
+    "message": "Your draft cannot be auto-saved with this user.\nPlease setup $1 with the Yahoo Mail Encrypted service to proceed.",
     "description": "A sentence warning the user that the action cannot be completed due to missing encryption keys."
   },
   "promptSignMessageAs": {
