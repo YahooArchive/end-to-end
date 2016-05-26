@@ -120,7 +120,7 @@
     "description": "A sentence notifying that there was an error during key import."
   },
   "promptNoEncryptionTarget": {
-    "message": "You need to use a passphrase or choose message recipients to encrypt.",
+    "message": "Please specify at least one recipient in the TO: field.",
     "description": "A sentence notifying that user needs to chose a passphrase or recipients in order to encrypt and sign a message."
   },
   "promptReplyHeader": {
