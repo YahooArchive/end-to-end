@@ -1152,10 +1152,7 @@ ui.ComposeGlass.prototype.hasRecipients_ = function() {
  */
 ui.ComposeGlass.prototype.displayFailure_ = function(error) {
   // @yahoo hide loading
-  goog.style.setElementShown(
-      this.getElementByClass(constants.CssClass.BOTTOM_NOTIFICATION), false);
-  goog.style.setElementShown(
-      this.getElementByClass(constants.CssClass.BUTTONS_CONTAINER), true);
+  this.displayActionButtons_();
 
   var errorDiv = goog.dom.getElement(constants.ElementId.ERROR_DIV);
   var encryptrIcon = goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON).
@@ -1432,10 +1429,12 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
         if (invalidRecipients.length === 0) {
           this.encryptSign_();
         } else {
-          var origin = this.getContent().origin;
+          // hide loading
+          this.displayActionButtons_();
           // send unencrypted if the user endorsed it
           this.renderKeyMissingWarningDialog_(invalidRecipients).addCallback(
-              goog.bind(this.insertMessageIntoPage_, this, origin, false));
+              goog.bind(this.insertMessageIntoPage_, this,
+                  this.getContent().origin, false));
         }
       }, this);
 };
@@ -1482,10 +1481,7 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
         goog.dom.classlist.remove(this.getElement(),
                                   constants.CssClass.UNCLICKABLE);
         // hide loading
-        goog.style.setElementShown(this.getElementByClass(
-            constants.CssClass.BOTTOM_NOTIFICATION), false);
-        goog.style.setElementShown(this.getElementByClass(
-            constants.CssClass.BUTTONS_CONTAINER), true);
+        this.displayActionButtons_();
 
         // User clicked ok to 'send unencrypted message'
         if (goog.isDef(userAction)) {
@@ -1506,5 +1502,16 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
 
   return result;
 };
+
+
+/**
+ * Restore the action bar and hide the loading one
+ */
+ui.ComposeGlass.prototype.displayActionButtons_ = function() {
+  goog.style.setElementShown(this.getElementByClass(
+      constants.CssClass.BOTTOM_NOTIFICATION), false);
+  goog.style.setElementShown(this.getElementByClass(
+      constants.CssClass.BUTTONS_CONTAINER), true);
+}
 
 });  // goog.scope
