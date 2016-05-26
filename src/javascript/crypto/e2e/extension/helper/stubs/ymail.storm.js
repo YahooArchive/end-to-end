@@ -618,19 +618,19 @@ YmailApi.StormUI.DraftApi.prototype.set = function(draft) {
   var header = this.composeView_.header, node = header.hdr;
 
   // TODO: can we not use DOM calls to remove recipients?
-  draft.to && draft.to.length &&
+  goog.isArray(draft.to) &&
       header.removeAllLozenges(node.one(YmailApi.StormUI.Selector.TO));
-  draft.cc && draft.cc.length &&
+  goog.isArray(draft.cc) &&
       header.removeAllLozenges(node.one(YmailApi.StormUI.Selector.CC));
-  draft.bcc && draft.bcc.length &&
+  goog.isArray(draft.bcc) &&
       header.removeAllLozenges(node.one(YmailApi.StormUI.Selector.BCC));
-  // fixed Storm to handle empty subject
-  goog.isDef(draft.subject) &&
+  // TODO: fixed Storm to handle empty subject
+  goog.isString(draft.subject) &&
       node.one('#subject-field').set('value', draft.subject).simulate('keyup');
 
   header.setHeader(draft);
 
-  if (goog.isDef(draft.body)) {
+  if (goog.isString(draft.body)) {
     // TODO: support rich text
     draft.body = goog.string.newLineToBr(goog.string.htmlEscape(draft.body));
     this.composeView_.editor.setContent(draft.body, 0);

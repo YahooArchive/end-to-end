@@ -201,10 +201,7 @@ ui.ComposeGlass.prototype.populateUi_ = function() {
 
     // set subject
     var subj = goog.dom.getElement(constants.ElementId.SUBJECT);
-    if (subj) {
-      subj.value = draft.subject;
-      this.forwardSubject_(/** @type {Event} */ ({target: subj}));
-    }
+    subj && (subj.value = draft.subject);
 
   }, this.displayFailure_, this);
 };
