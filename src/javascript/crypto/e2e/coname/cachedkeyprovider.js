@@ -128,7 +128,7 @@ e2e.coname.CachedKeyProvider.prototype.importKeys = function(keys, opt_uid) {
         // TODO: better to remove only those affected
         this.emailKeysMap_.clear();
         this.keyIdKeysMap_.clear();
-      });
+      }, this);
 };
 
 
