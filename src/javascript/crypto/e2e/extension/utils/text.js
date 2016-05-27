@@ -100,7 +100,34 @@ utils.getPgpAction = function(content) {
  * @return {?string} Valid email address or null
  */
 utils.extractValidEmail = function(recipient) {
-  var emailAddress = goog.format.EmailAddress.parse(recipient);
+  var uid = utils.parseUid(recipient);
+  return uid && uid.email;
+};
+
+
+/**
+ * Return a normalized User ID if an valid e-mail address from 'user id &lt;
+ * email&gt;' string is found. If no valid e-mail address can be extracted,
+ * returns null. Uses * {@link goog.format.EmailAddress}, but also enforces
+ * stricter rules on email address.
+ * @param {string} uidOrEmail User Id or Email
+ * @return {?string} the normalized uid or null
+ */
+utils.normalizeUid = function(uidOrEmail) {
+  var uid = utils.parseUid(uidOrEmail);
+  return uid && ((uid.name && uid.name + ' ') + '<' + uid.email + '>');
+};
+
+
+/**
+ * Parse 'user id &lt;email&gt;' string and return the User ID object. If no
+ * valid email address can be extracted, returns null. Uses stricter rules on
+ * email address and {@link goog.format.EmailAddress}.
+ * @param {string} uidOrEmail User Id or Email
+ * @return {?{name: !string, email: !string}}
+ */
+utils.parseUid = function(uidOrEmail) {
+  var emailAddress = goog.format.EmailAddress.parse(uidOrEmail);
   if (!emailAddress.isValid()) {
     return null;
   }
@@ -108,7 +135,10 @@ utils.extractValidEmail = function(recipient) {
   if (!constants.EMAIL_ADDRESS_REGEXP.exec(emailAddress.getAddress())) {
     return null;
   }
-  return email;
+  return {
+    name: emailAddress.getName(),
+    email: email
+  };
 };
 
 

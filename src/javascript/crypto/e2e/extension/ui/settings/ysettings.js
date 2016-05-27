@@ -102,16 +102,13 @@ ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
           });
 
 
-  //@yahoo when a email is supplied thru location.hash
+  //@yahoo when an User ID is supplied thru location.hash
   // trigger the key resolution dialogs
   var uid;
   if (location.hash) {
     uid = decodeURIComponent(location.hash.substring(1));
-    if (utils.text.extractValidEmail(uid)) {
-      this.syncWithRemote(uid, 'load');
-    } else {
-      uid = null;
-    }
+    uid = utils.text.normalizeUid(uid);
+    uid && this.syncWithRemote(uid, 'load');
   }
 
   //@yahoo Prefill the input with uid supplied thru location.hash,
@@ -254,9 +251,9 @@ ui.ySettings.prototype.removeKey_ = function(
  */
 ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
   // sync with remote only if such a keyUid has a private key
-  var email = utils.text.extractValidEmail(keyUid);
+  var uidObj = utils.text.parseUid(keyUid);
   var constFunction = goog.functions.constant;
-  if (email !== null && e2e.coname.getRealmByEmail(email) !== null) {
+  if (uidObj && e2e.coname.getRealmByEmail(uidObj.email) !== null) {
     this.pgpContext_.searchPrivateKey(keyUid).addCallbacks(function(privKeys) {
 
       if (opt_intention === 'load' || opt_intention === 'remove' ||
@@ -355,13 +352,15 @@ ui.ySettings.prototype.generateKeyAndOverwriteRemote_ = function(
 ui.ySettings.prototype.generateKey_ = function(
     panel, name, email, comments, expDate) {
 
-  email = goog.string.trim(email);
-  if (email === '') {
+  var uid, normalizedUid = utils.text.normalizeUid(name ?
+      name + ' <' + email + '>' :
+      email);
+  if (goog.isNull(normalizedUid)) {
+    this.displayFailure_(new utils.Error(
+        'invalid user id', 'promptInvalidUserIdError'));
     return e2e.async.Result.toResult(undefined);
   }
-
-  // TODO: enhance this email to uid mapping
-  var uid = '<' + email + '>';
+  uid = normalizedUid;
 
   return this.pgpContext_.syncWithRemote(uid,
       goog.bind(this.renderKeepExistingKeysCallback_, this),
@@ -396,8 +395,9 @@ ui.ySettings.prototype.generateKey_ = function(
       }, this)).
       addCallbacks(function(reqActionResult) {
         // generate a new key and update the panel
+        var parsedUid = utils.text.parseUid(uid);
         return reqActionResult !== null && this.generateKeyAndOverwriteRemote_(
-            panel, name, email, comments, expDate);
+            panel, parsedUid.name, parsedUid.email, comments, expDate);
       }, this.displayFailure_, this);
 };
 

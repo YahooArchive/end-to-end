@@ -333,6 +333,10 @@
     "message": "Create a new key pair",
     "description": "A verb prompting the user to register to receive secret messages."
   },
+  "promptInvalidUserIdError": {
+    "message": "Please enter a valid 'username <name@example.com>'",
+    "description": "Ask the user to enter a valid username."
+  },
   "settingsTitle": {
     "message": "Yahoo Mail Encrypted",
     "description": "A page title indicating to the user that the current page will allow her to modify the extension's settings."
