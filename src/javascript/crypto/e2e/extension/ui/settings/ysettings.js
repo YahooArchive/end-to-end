@@ -425,13 +425,21 @@ ui.ySettings.prototype.renderMatchRemoteKeysCallback_ = function(
             result.callback('overwriteRemote');
             break;
           case 'false': // import remote keys
-            decision = goog.async.DeferredList.gatherResults(
-                goog.array.map(remoteOnlyKeys, function(k) {
-                  return this.importKey(goog.nullFunction, k['serialized']);
-                }, this.pgpContext_)).
+            goog.async.DeferredList.gatherResults(
+                goog.array.map(remoteOnlyKeys, 
+                    function(/** @type {!e2e.openpgp.Key} */ k) {
+                      return this.importKey(goog.nullFunction, k.serialized);
+                    }, this.pgpContext_)).
             addCallback(function() {
               // update the panels
-              this.keyringMgmtPanel_.addNewKey(uid, remoteOnlyKeys);
+              var uids = goog.array.flatten(goog.array.map(remoteOnlyKeys,
+                  function(k) {
+                    return k.uids;
+                  }));
+              goog.array.removeDuplicates(uids);
+              goog.array.forEach(uids, function(uid) {
+                this.keyringMgmtPanel_.addNewKey(uid, remoteOnlyKeys);
+              }, this);
               this.renderPanels_();
               result.callback('importedRemote');
             }, this);
