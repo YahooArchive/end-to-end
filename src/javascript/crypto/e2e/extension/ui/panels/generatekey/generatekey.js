@@ -119,20 +119,6 @@ panels.GenerateKey.prototype.decorateInternal = function(elem) {
 panels.GenerateKey.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  //@yahoo Prefill the input with the user's email if possible
-  e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
-    var input = this.getElementByClass(constants.CssClass.EMAIL);
-    if (input && email) {
-      input.value = email;
-    }
-
-    var elem = goog.dom.getElement(constants.ElementId.EMAIL_ADDRESS);
-    if (elem && email) {
-      elem.innerText = email;
-    }
-
-  }, this));
-
   var keyboardHandler = new goog.ui.KeyboardShortcutHandler(
       this.getElementByClass(constants.CssClass.EMAIL));
   keyboardHandler.registerShortcut('enter', goog.events.KeyCodes.ENTER);

@@ -104,10 +104,21 @@ ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
 
   //@yahoo when a email is supplied thru location.hash
   // trigger the key resolution dialogs
+  var uid;
   if (location.hash) {
-    var uid = decodeURIComponent(location.hash.substring(1));
-    this.syncWithRemote(uid, 'load');
+    uid = decodeURIComponent(location.hash.substring(1));
+    if (utils.text.extractValidEmail(uid)) {
+      this.syncWithRemote(uid, 'load');
+    } else {
+      uid = null;
+    }
   }
+
+  //@yahoo Prefill the input with uid supplied thru location.hash,
+  //       or default user's email retrieved from cookies
+  utils.action.getUserYmailAddress(goog.bind(function(defaultEmail) {
+    this.populateSignupUid_(uid || '<' + defaultEmail + '>');
+  }, this));
 };
 
 
@@ -251,8 +262,15 @@ ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
       if (opt_intention === 'load' || opt_intention === 'remove' ||
           privKeys.length !== 0) {
         this.pgpContext_.syncWithRemote(keyUid,
-            // no reqAction when it's in-sync
-            constFunction(e2e.async.Result.toResult('noop')),
+            goog.bind(function() {
+              // No keys at both server and client. This is a new account
+              if (opt_intention === 'load' && privKeys.length === 0) {
+                this.displaySignupPanels_();
+                return e2e.async.Result.toResult(null);
+              }
+              // no reqAction when it's in-sync
+              return e2e.async.Result.toResult('noop');
+            }, this),
             // make an update if the inconsistency is acknowledged
             opt_intention === 'keygen' || opt_intention === 'remove' ?
                 constFunction(e2e.async.Result.toResult('overwriteRemote')) :
@@ -264,6 +282,40 @@ ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
             }, this.displayFailure_, this);
       }
     }, this.displayFailure_, this);
+  }
+};
+
+
+/**
+ * Display the Sign up panel
+ * @private
+ */
+ui.Settings.prototype.displaySignupPanels_ = function() {
+  var hiddenClass = constants.CssClass.HIDDEN;
+  var signupForm = goog.dom.getElement(
+      constants.ElementId.GENERATE_KEY_FORM);
+  var signupPrompt = goog.dom.getElement(
+      constants.ElementId.SIGNUP_PROMPT);
+    goog.dom.classlist.add(signupPrompt, hiddenClass);
+    goog.dom.classlist.remove(signupForm, hiddenClass);
+};
+
+
+/**
+ * Populates the uid of sign up panel
+ * @param {!string} uid
+ * @private
+ */
+ui.Settings.prototype.populateSignupUid_ = function(uid) {
+  var input = goog.dom.getElement(constants.ElementId.GENERATE_KEY_FORM).
+      getElementsByClassName(constants.CssClass.EMAIL),
+      elem = goog.dom.getElement(constants.ElementId.EMAIL_ADDRESS);
+
+  if (input) {
+    input[0].value = uid;
+  }
+  if (elem) {
+    elem.innerText = uid;
   }
 };
 
