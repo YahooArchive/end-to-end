@@ -76,8 +76,8 @@ dialogs.RestoreKey.prototype.decorateInternal = function(elem) {
   e2e.ext.utils.action.getUserYmailAddress(goog.bind(function(email) {
     var input = this.getElementByClass(
         constants.CssClass.KEYRING_RESTORE_EMAIL);
-    if (input) {
-      input.value = email || '';
+    if (input && email) {
+      input.value = e2e.ext.utils.text.normalizeUid(email);
     }
   }, this));
 
@@ -124,20 +124,17 @@ dialogs.RestoreKey.prototype.getEmailInput_ = function() {
  */
 dialogs.RestoreKey.prototype.executeRestore_ = function(event) {
   /* TODO(rcc): Remove email when we can use keyserver for lookups */
-  var email = this.getEmailInput_();
+  var uid = this.getEmailInput_();
 
   // @yahoo quote email to become uid, aligning with that in key generation
-  email = goog.string.trim(email);
-  if (email === e2e.ext.utils.text.extractValidEmail(email)) {
-    email = '<' + email + '>';
-  }
+  uid = e2e.ext.utils.text.normalizeUid(uid);
 
   new e2e.ext.actions.Executor().execute(
       /** @type {!messages.ApiRequest} */ ({
         action: constants.Actions.RESTORE_KEYRING_DATA,
         content: {
           data: this.getInputValue_(),
-          email: email
+          email: uid
         }
       }),
       this,
