@@ -512,17 +512,18 @@ ui.ComposeGlassWrapper.prototype.setResizeAndScrollEventHandlers_ = function() {
   if (this.threadList_) {
     // Send scroll offset to compose glass for positioning action bar
     this.boundSendScrollOffset_ = goog.bind(this.sendScrollOffset_, this);
-    goog.events.listen(this.threadList_,
-        goog.events.EventType.SCROLL,
-        this.boundSendScrollOffset_);
+    this.registerDisposable(
+        e2e.ext.utils.addAnimationDelayedListener(this.threadList_,
+            goog.events.EventType.SCROLL, this.boundSendScrollOffset_));
 
     this.boundResizeHandler_ = this.boundSendScrollOffset_;
   } else {
     this.boundResizeHandler_ = goog.bind(this.setMinMaxHeight_, this);
   }
   // resize the glassFrame when window is resized
-  e2e.ext.utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
-      this.boundResizeHandler_);
+  this.registerDisposable(
+      e2e.ext.utils.addAnimationDelayedListener(window,
+          goog.events.EventType.RESIZE, this.boundResizeHandler_));
 };
 
 
@@ -551,7 +552,7 @@ ui.ComposeGlassWrapper.prototype.setMinMaxHeight_ = function() {
       maxHeight: max
     });
   } else {
-    goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
+    this.dispose();
   }
 };
 
@@ -564,11 +565,7 @@ ui.ComposeGlassWrapper.prototype.sendScrollOffset_ = function() {
   if (this.api) {
     this.api.req('evt.scroll', this.computeScrollOffset_());
   } else {
-    this.threadList_ && goog.events.unlisten(
-        this.threadList_,
-        goog.events.EventType.SCROLL,
-        this.boundSendScrollOffset_);
-    goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
+    this.dispose();
   }
 };
 
@@ -600,13 +597,6 @@ ui.ComposeGlassWrapper.prototype.disposeInternal = function() {
       this.glassFrame.parentElement,
       goog.events.EventType.FOCUS,
       this.focusHandler_);
-
-  this.threadList_ && goog.events.unlisten(
-      this.threadList_,
-      goog.events.EventType.SCROLL,
-      this.boundSendScrollOffset_);
-
-  goog.events.unlisten(window, 'throttled-resize', this.boundResizeHandler_);
 };
 
 });  // goog.scope

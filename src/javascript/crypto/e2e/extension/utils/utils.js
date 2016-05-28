@@ -265,35 +265,40 @@ utils.isContentScript = function() {
 
 
 /**
- * Listen to an event, that is throttled until the next animation frame
- * @param {!EventTarget} target The target element to throttle events
- * @param {!string} type The event type
- * @param {function(Event)} handler The event handler
- * @param {!string=} opt_newType The new event type name
- * @return {goog.events.Key} Unique key for the listener.
+ * Register listener to an event, and its exection is throttled until the next
+ * animation frame.
+ * @param {!(EventTarget|Element)} target Target element.
+ * @param {!string} type Event type.
+ * @param {function(this:T, Event)} listener The event listener.
+ * @param {boolean=} opt_capt Whether to fire in capture phase (defaults to
+ *     false).
+ * @param {T=} opt_handler Element in whose scope to call the listener.
+ * @return {?goog.Disposable} Disposable instance to remove the listener.
+ * @template T
  */
-utils.listenThrottledEvent = function(target, type, handler, opt_newType) {
-  var newType = opt_newType || ('throttled-' + type);
-
-  // init the event requested only once
-  if (!target['hasInit' + newType]) {
-    target['hasInit' + newType] = true;
-
-    var running = false;
-
-    target.addEventListener(type, function() {
-      if (running) {
-        return;
-      }
-      running = true;
-      requestAnimationFrame(function() {
-        target.dispatchEvent(new CustomEvent(newType));
-        running = false;
-      });
-    }, false);
+utils.addAnimationDelayedListener = function(
+    target, type, listener, opt_capt, opt_handler) {
+  opt_handler = opt_handler || target;
+  if (!opt_handler) {
+    return null;
   }
-
-  return goog.events.listen(target, newType, handler);
+  var ticking = false,
+      latestEvt,
+      listener_ = function(evt) {
+        latestEvt = evt; // work on the latest event object
+        !ticking && requestAnimationFrame(function() {
+          listener.call(opt_handler, latestEvt);
+          ticking = false;
+        });
+        ticking = true;
+      },
+      disposable = new goog.Disposable;
+  target.addEventListener(type, listener_, !!opt_capt);
+  /** @override */
+  disposable.disposeInternal = function() {
+    target.removeEventListener(type, listener_, !!opt_capt);
+  };
+  return disposable;
 };
 
 

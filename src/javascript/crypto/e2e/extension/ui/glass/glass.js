@@ -156,8 +156,9 @@ ui.Glass.prototype.enterDocument = function() {
 
   if (window) {
     //@yahoo resize the glass when window is resized
-    utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
-        goog.bind(this.resizeGlass_, this));
+    this.registerDisposable(
+        utils.addAnimationDelayedListener(window,
+            goog.events.EventType.RESIZE, this.resizeGlass_, false, this));
 
     goog.events.listen(window,
         goog.events.EventType.FOCUS,

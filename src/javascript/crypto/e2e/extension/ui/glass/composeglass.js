@@ -41,6 +41,7 @@ goog.require('goog.Promise');
 goog.require('goog.Timer'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.async.Deferred');
+goog.require('goog.async.Throttle'); //@yahoo
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.events');
@@ -247,13 +248,16 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           }, goog.nullFunction, this.errorCallback_));
 
   //@yahoo resize the textarea when an input is received
-  utils.listenThrottledEvent(/** @type {!EventTarget} */ (this.editor_),
-      goog.events.EventType.INPUT,
-      goog.bind(this.resizeEditor_, this, false));
+  this.throttledResizeEditor_ = new goog.async.Throttle(
+      goog.bind(this.resizeEditor_, this, false), 400);
+  goog.events.listen(this.editor_, goog.events.EventType.INPUT,
+      this.throttledResizeEditor_.fire, false, this.throttledResizeEditor_);
 
   //@yahoo resize the textarea when window is resized
-  utils.listenThrottledEvent(window, goog.events.EventType.RESIZE,
-      goog.bind(this.resizeEditor_, this, true));
+  this.registerDisposable(
+        utils.addAnimationDelayedListener(window,
+            goog.events.EventType.RESIZE,
+            goog.bind(this.resizeEditor_, this, true)));
 
   // @yahoo default a click on nowhere to focus on the editor
   goog.events.listen(document.body, goog.events.EventType.CLICK,
@@ -1045,9 +1049,10 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
     // @yahoo set the subject on KEYUP
     var subjectElem = goog.dom.getElement(constants.ElementId.SUBJECT);
     if (subjectElem) {
-      utils.listenThrottledEvent(/** @type {!EventTarget} */ (subjectElem),
-          goog.events.EventType.KEYUP,
-          goog.bind(this.forwardSubject_, this));
+      this.registerDisposable(
+          utils.addAnimationDelayedListener(subjectElem,
+              goog.events.EventType.KEYUP,
+              goog.bind(this.forwardSubject_, this)));
     }
   }
 };
