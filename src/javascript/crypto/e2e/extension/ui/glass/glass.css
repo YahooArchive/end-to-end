@@ -30,6 +30,7 @@ body {
   font-family: monospace!important;
   font-size: 14px!important;
   white-space: pre-line;
+  word-wrap: break-word;
 }
 
 #pgpBody.transparent+div#callbackDialog {
