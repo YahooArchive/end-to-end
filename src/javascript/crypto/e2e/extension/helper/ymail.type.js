@@ -89,9 +89,8 @@ e2e.ext.YmailData.OpenMessageDetail;
 /**
  * The stats structure for sending an email
  * @typedef {{
- *   secureCompose: boolean,
- *   encrypted: (undefined|boolean),
- *   canSecure: (undefined|boolean)
+ *   encrypted: (undefined|number),
+ *   canEncrypt: (undefined|number)
  * }}
  */
 e2e.ext.YmailData.SendStats;

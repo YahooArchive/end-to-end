@@ -689,7 +689,7 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(
     subject: subject,
     body: this.editor_.value || content.value,
     stats: {
-      encrypted: wasEncrypted
+      encrypted: wasEncrypted ? 1 : 0
     }
   }).addCallbacks(this.close, this.errorCallback_, this);
 };

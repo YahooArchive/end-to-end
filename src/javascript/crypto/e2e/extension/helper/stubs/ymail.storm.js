@@ -445,9 +445,7 @@ YmailApi.StormUI.ComposeApi = function(main, composeView, apiId) {
   this.composeView_ = composeView;
 
   /** @type {e2e.ext.YmailData.SendStats} */
-  this.stats = {
-    secureCompose: false
-  };
+  this.stats = {};
 
   this.Y = main.Y;
   this.NeoConfig = main.NeoConfig;
@@ -515,11 +513,14 @@ YmailApi.StormUI.ComposeApi.prototype.monitorComposeEvents_ = function() {
         composeView.fire('compose:sendSuccess');
 
         // check if msg can be secured if not initiated by encrypted-compose
-        if (!stats.secureCompose) {
-          stats.canSecure = !this.composeView_.baseNode.one('.no-key');
+        if (goog.isDef(stats.encrypted)) {
+          this.main_.log('yme_send_encrypted_' + stats.encrypted);
+        } else {
+          stats.canEncrypt = this.composeView_.baseNode.one('.no-key') ? 0 : 1;
+          this.main_.log('yme_send_can_encrypt_' + stats.canEncrypt);
         }
         // log the send event
-        this.main_.log('yme_send', this.stats);
+        this.main_.log('yme_send', stats);
 
         sendEvt.detach();
       } else if (e.err) { // unsaved
@@ -670,7 +671,6 @@ YmailApi.StormUI.DraftApi.prototype.save = function(draft) {
 YmailApi.StormUI.DraftApi.prototype.send = function(draft) {
   var result = this.nextDraftResult_('send'); // rely on the next send event
   this.set(draft);
-  this.stats.secureCompose = true;
   this.stats.encrypted = draft.stats.encrypted;
   this.composeView_.handleComposeAction('send');
   return result;
