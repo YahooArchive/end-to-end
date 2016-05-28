@@ -114,6 +114,7 @@ body {
   overflow: hidden;
   padding: 0;
   min-width: 15px;
+  width: 15px;
   margin: 5px 0 2px 4px;
   height: inherit;
 }
@@ -210,6 +211,7 @@ textarea.has-quoted + #quoted-text {
   float: none;
   border-top: 1px solid #D7D5D5;
   padding: 0 28px;
+  white-space: nowrap;
 }
 
 .pgpActions div.buttons-container > button {
@@ -220,10 +222,9 @@ textarea.has-quoted + #quoted-text {
   display: inline-block;
   font-size: 13px;
   opacity: .7;
-  vertical-align: top;
-  padding: 15px 15px 0 0;
+  vertical-align: middle;
+  padding-right: 15px;
   cursor: default;
-  line-height: 35px;
 }
 
 .pgpActions div.buttons-container > div > button {
@@ -236,7 +237,6 @@ textarea.has-quoted + #quoted-text {
   border: none;
   padding: 0 6px 0 1px;
   box-shadow: none;
-  line-height: 31px;
 }
 
 .pgpActions div.buttons-container button#draft-delete-button:before {
