@@ -102,7 +102,7 @@ ext.MessageApi.Response;
  * @type {number}
  * @const
  */
-ext.MessageApi.REQUEST_TIMEOUT = 5000;
+ext.MessageApi.REQUEST_TIMEOUT = 30000;
 
 
 /**
@@ -110,7 +110,7 @@ ext.MessageApi.REQUEST_TIMEOUT = 5000;
  * @type {number}
  * @const
  */
-ext.MessageApi.BOOTSTRAP_TIMEOUT = 3000;
+ext.MessageApi.BOOTSTRAP_TIMEOUT = 10000;
 
 
 /**
