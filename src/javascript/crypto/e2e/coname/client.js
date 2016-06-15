@@ -214,8 +214,9 @@ e2e.coname.encodeUpdateRequest_ = function(
       new Uint8Array(profile.toBuffer())).digest());
 
   // if a current entry exists
-  if (oldProof.entry) {
-    entry = proto.Entry.decode(oldProof.entry.encoding); // clone
+  if (oldProof.entry &&
+      (entry = proto.Entry.decode(oldProof.entry.encoding)) &&
+      goog.isDefAndNotNull(entry.version)) {
     entry.version = entry.version.add(1);
     entry.profile_commitment = hProfile;
   } else {
