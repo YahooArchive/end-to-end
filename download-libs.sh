@@ -114,6 +114,10 @@ if [ ! -d protobufjs ]; then
   curl https://raw.githubusercontent.com/dcodeIO/bytebuffer.js/5.0.0/externs/bytebuffer.js -O
   curl https://raw.githubusercontent.com/dcodeIO/protobuf.js/5.0.0/externs/protobuf.js -O
 
+  # patch externs
+  curl https://gist.githubusercontent.com/adon-at-work/945a54176fe8a0bc473fa6befb070a90/raw/c0cc11a2bc8a01d4a07b3da3082b56438bde6925/end-to-end-externs-protobuf.js.patch -O
+  patch protobuf.js end-to-end-externs-protobuf.js.patch
+
   cd ../..
 fi
 
