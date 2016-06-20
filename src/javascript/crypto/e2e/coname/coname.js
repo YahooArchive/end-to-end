@@ -20,10 +20,13 @@
 
 goog.provide('e2e.coname.KeyData');
 goog.provide('e2e.coname.QuorumRequirement');
+goog.provide('e2e.coname.RealmAuth');
+goog.provide('e2e.coname.RealmAuthType');
 goog.provide('e2e.coname.RealmConfig');
 goog.provide('e2e.coname.VerificationPolicy');
 goog.provide('e2e.coname.getRealmByDomain');
 goog.provide('e2e.coname.getRealmByEmail');
+goog.provide('e2e.coname.getRealmByUid');
 goog.provide('e2e.coname.getSupportedEmailByUid');
 
 
@@ -64,12 +67,24 @@ e2e.coname.VerificationPolicy;
 
 
 /**
+ * The structure of Authentication per Realm
+ * @typedef {{
+ *    type: !e2e.ext.config.CONAME.RealmAuthType,
+ *    startRelUrl: string,
+ *    endRelUrl: string,
+ *    token: (undefined|string)
+ * }}
+ */
+e2e.coname.RealmAuth;
+
+
+/**
  * The structure of Realm Config
  * @typedef {{
  *    realm_name: !string,
  *    domains: !Array.<string>,
- *    authURLs: !Array.<string>,
  *    addr: !string,
+ *    auth: e2e.coname.RealmAuth,
  *    URL: !string,
  *    VRFPublic: !e2e.ByteArray,
  *    verification_policy: e2e.coname.VerificationPolicy,
@@ -174,6 +189,17 @@ e2e.coname.getRealmByDomain = function(domain) {
 e2e.coname.getRealmByEmail = function(email) {
   var i = email.indexOf('@');
   return i === -1 ? null : e2e.coname.getRealmByDomain(email.slice(i + 1));
+};
+
+
+/**
+ * Get the realm constants based on the user id
+ * @param {!string} uid The user id
+ * @return {?e2e.coname.RealmConfig} The RealmConfig
+ */
+e2e.coname.getRealmByUid = function(uid) {
+  var email = e2e.ext.utils.text.extractValidEmail(uid);
+  return email === null ? email : e2e.coname.getRealmByEmail(email);
 };
 
 

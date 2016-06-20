@@ -2,14 +2,14 @@
   "manifest_version": 2,
   "name": "Yahoo Mail Encrypted (alpha)",
   "description": "__MSG_extDescription__",
-  "version": "0.8.15",
+  "version": "0.8.16",
   "permissions": [
     "activeTab",
     "cookies",
     "notifications",
     "webRequest",
     "webRequestBlocking",
-    "https://localhost:4443/*",
+    "https://*.keyserver.yahoo.com:*/*",
     "https://*.mail.yahoo.com/*"
   ],
   "optional_permissions": [
@@ -27,10 +27,6 @@
       "matches": ["https://*.mail.yahoo.com/*"],
       "js": ["helper_binary.js"],
       "run_at": "document_end"
-    },
-    {
-      "matches": ["https://localhost:4443/auth/cookies"],
-      "js": ["auth/yby.cookies.js"]
     }
   ],
   "icons": {

@@ -28,46 +28,84 @@ goog.require('goog.crypt.base64');
  * Keyserver config
  * @const {!Object<string, *>}
  */
-e2e.ext.config = {
-  /* The name of the cookie used to authenticate users to the keyserver. */
-  AUTH_COOKIE: 'YBY',
-  /* Some location that has access to the auth cookie. */
-  AUTH_DEFAULT_ORIGIN: 'https://mail.yahoo.com',
+e2e.ext.config = {};
 
-  /* The CONAME CONFIG */
-  CONAME: {
-    'realms': [{
-      'realm_name': 'yahoo',
-      'domains': ['yahoo-inc.com'],
-      'addr': 'https://localhost:4443',
-      'URL': 'https://mail.yahoo.com',
-      'VRFPublic': goog.crypt.base64.decodeStringToByteArray(
-          'Dvt4a09K1ZTZQl/JGJ4gQa94XU+RdK4hWmd5hJBp9ww='),
-      'verification_policy': {
-        'public_keys': {
-          '1003492262947017977': {
-            'ed25519': goog.crypt.base64.decodeStringToByteArray(
-                'jU87Wearzbx1duuxKxlIkZFfGqxXQwOV3VEHccqSrcE=')
-          },
-          '6235162068590490013': {
-            'ed25519': goog.crypt.base64.decodeStringToByteArray(
-                '56OAlXk3/+GMxUadaQH9CbYDMp/igmrQ1MlG7l1aKXQ=')
-          },
-          '9687269752368895265': {
-            'ed25519': goog.crypt.base64.decodeStringToByteArray(
-                'xvmwGzeT/OtOt8yBn4QqKjubRnkkeFFYitkF4um+la4=')
-          }
-        },
-        'quorum': {
-          'threshold': 2,
-          'candidates': [
-            '1003492262947017977',
-            '6235162068590490013',
-            '9687269752368895265'
-          ]
-        }
-      },
-      'epoch_time_to_live': 180
-    }]
-  }
+
+/* The name of the cookie used to authenticate users to the keyserver. */
+e2e.ext.config.AUTH_COOKIE = 'YBY';
+
+
+/* Some location that has access to the auth cookie. */
+e2e.ext.config.AUTH_DEFAULT_ORIGIN = 'https://mail.yahoo.com';
+
+
+e2e.ext.config.CONAME = {};
+
+
+/** @enum {number} */
+e2e.ext.config.CONAME.RealmAuthType = {
+  'COOKIES': 1,
+  'SAML': 2,
+  'OPENID': 3
 };
+
+
+/** @type {!Array<e2e.coname.RealmConfig>} */
+e2e.ext.config.CONAME.realms = [{
+  'realm_name': 'yahoo',
+  'domains': ['yahoo-inc.com'],
+  'addr': 'https://alpha.keyserver.yahoo.com:4443',
+  'auth': {
+    'type': e2e.ext.config.CONAME.RealmAuthType.SAML,
+    'startRelUrl': '/saml',
+    'endRelUrl': '/samlsso'
+  },
+  'URL': 'https://mail.yahoo.com',
+  'VRFPublic': goog.crypt.base64.decodeStringToByteArray(
+      'iTCFkCyphd85gGLsH7WBWDJb9Tjj461Z6Bm/8hYLPbA='),
+  'verification_policy': {
+    'public_keys': {
+      '13003662298214047307': {
+        'ed25519': goog.crypt.base64.decodeStringToByteArray(
+            'JdSPh9URZOA0rHD3QY3V+/bBpzC8QfS7Ww7skfVnSlY=')
+      },
+      '13652783584848560137': {
+        'ed25519': goog.crypt.base64.decodeStringToByteArray(
+            'A7FQWRuct+8yj2SrDI1gLTPvOb7/229Aos9rj6EGw04=')
+      },
+      '13962823393513964601': {
+        'ed25519': goog.crypt.base64.decodeStringToByteArray(
+            'yGsVg12ehJWPan9A4OEW19qf900xQqCVjcX/ytVX4Q8=')
+      },
+      '16119809317788517140': {
+        'ed25519': goog.crypt.base64.decodeStringToByteArray(
+            'KV/XWTHzobdWsJmXhacvG7+5geAteK4h/tT/Gw8ZX4w=')
+      },
+      '16188257911045619698': {
+        'ed25519': goog.crypt.base64.decodeStringToByteArray(
+            '3xiM95uid/bd4T9O+JWFq4UZ60T3XhL/H2TY2suiLHY=')
+      },
+      '16294118277475929171': {
+        'ed25519': goog.crypt.base64.decodeStringToByteArray(
+            'KsVdZ80eqgnWbT2x+D/HWODkADQ+VfZUHIhRmJs7hqI=')
+      },
+      '9222307167264895650': {
+        'ed25519': goog.crypt.base64.decodeStringToByteArray(
+            'H+34Q/IyT/YzW4Ttg7BqRBSs92FYo06pejfZlyYI5s8=')
+      }
+    },
+    'quorum': {
+      'threshold': 2,
+      'candidates': [
+        '13003662298214047307',
+        '13652783584848560137',
+        '13962823393513964601',
+        '16119809317788517140',
+        '16188257911045619698',
+        '16294118277475929171',
+        '9222307167264895650'
+      ]
+    }
+  },
+  'epoch_time_to_live': 180
+}];

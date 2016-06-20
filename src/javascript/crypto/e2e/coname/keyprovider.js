@@ -46,50 +46,10 @@ goog.scope(function() {
  * @constructor
  */
 e2e.coname.KeyProvider = function() {
-  this.client_ = new e2e.coname.Client(this.authenticate);
+  this.client_ = new e2e.coname.Client();
 };
 
 var ConameKeyProvider = e2e.coname.KeyProvider;
-
-
-/**
- * Upon HTTP error 401, prompt the user for authentication to the keyserver.
- * Invokes the callback when the user has successfully authenticated.
- * @return {!e2e.async.Result<boolean>} Whether it is authenticated.
- */
-ConameKeyProvider.prototype.authenticate = function() {
-  if (this.authResult_) {
-    return this.authResult_;
-  }
-
-  this.authResult_ = new e2e.async.Result;
-
-  // TODO: url now hardcoded. support openid type
-  var authUrl = 'https://by.bouncer.login.yahoo.com/login?url=' +
-      encodeURIComponent(
-          e2e.ext.config.CONAME.realms[0].addr + '/auth/cookies');
-
-  chrome.windows.create({
-    url: authUrl,
-    width: 500,
-    height: 640,
-    type: 'popup'
-  }, goog.bind(function(win) {
-
-    var onClose_ = goog.bind(function(closedWinId) {
-      if (win.id === closedWinId) {
-        chrome.windows.onRemoved.removeListener(onClose_);
-        this.authResult_.callback(true);
-        this.authResult_ = null;
-      }
-    }, this);
-    chrome.windows.onRemoved.addListener(onClose_);
-
-  }, this));
-
-  return this.authResult_;
-};
-
 
 /**
  * Imports public key to the key server.
@@ -100,7 +60,7 @@ ConameKeyProvider.prototype.authenticate = function() {
  *     of the keys are successfully updated according to the specified uids.
  */
 ConameKeyProvider.prototype.importKeys = function(keys, opt_uid) {
-  return this.client_.initialize().
+  return e2e.coname.Client.initialize().
       addCallback(function() {
         var emailKeyMap = {};
         return goog.async.DeferredList.gatherResults(
@@ -164,7 +124,7 @@ ConameKeyProvider.prototype.getTrustedPublicKeysByEmail = function(email) {
     return e2e.async.Result.toResult([]);
   }
 
-  return this.client_.initialize().
+  return e2e.coname.Client.initialize().
       addCallback(function() {
         return this.client_.lookup(email);
       }, this).

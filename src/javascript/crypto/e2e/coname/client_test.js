@@ -132,7 +132,7 @@ function setUp() {
   });
 
   protobuf = new e2e.coname.ProtoBuf();
-  client = new e2e.coname.Client(e2e.async.Result.toResult(true));
+  client = new e2e.coname.Client();
 }
 
 
@@ -156,11 +156,11 @@ function testProtoBufInitialize() {
 
 function testClientInitialize() {
   asyncTestCase.waitForAsync('Waiting for client initialize');
-  client.initialize().addCallback(function() {
+  e2e.coname.Client.initialize().addCallback(function() {
     assertEquals('function', typeof window.dcodeIO.Long);
     assertEquals('function', typeof window.dcodeIO.ByteBuffer);
     assertEquals('object', typeof window.dcodeIO.ProtoBuf);
-    assertEquals('object', typeof client.proto);
+    assertEquals('object', typeof e2e.coname.Client.protoBuf_);
     asyncTestCase.continueTesting();
   });
 }
@@ -216,10 +216,10 @@ function testDecodeLookupMessage() {
         typeof lookupProof.tree_proof.existing_entry_hash === 'undefined');
   }
 
-  client.initialize().addCallback(function(proto) {
-
-    var lookupProof = e2e.coname.decodeLookupMessage_(
-        proto, JSON.stringify(lookupProofSample));
+  e2e.coname.Client.initialize().addCallback(function() {
+    var proto = e2e.coname.Client.protoBuf_,
+        lookupProof = e2e.coname.Client.decodeLookupMessage_(
+            JSON.stringify(lookupProofSample));
 
     testDecodedMessage(lookupProof);
 
@@ -231,8 +231,8 @@ function testDecodeLookupMessage() {
     assertTrue(lookupProof.profile.encoding.length > 0);
 
 
-    var lookupProofNoBody = e2e.coname.decodeLookupMessage_(
-        proto, JSON.stringify(lookupProofNoBodySample));
+    var lookupProofNoBody = e2e.coname.Client.decodeLookupMessage_(
+        JSON.stringify(lookupProofNoBodySample));
     testDecodedMessage(lookupProofNoBody);
 
     asyncTestCase.continueTesting();
@@ -244,12 +244,11 @@ function testEncodeUpdateRequest() {
   asyncTestCase.waitForAsync('Encode Update Request');
 
   function encodeUpdateRequest_(proto, email, lookupProof) {
-
     var realm = e2e.coname.getRealmByEmail(email);
     var key = [1, 2, 3];
 
-    var message = e2e.coname.encodeUpdateRequest_(
-        proto, email, key, realm, lookupProof, '25519');
+    var message = e2e.coname.Client.encodeUpdateRequest_(
+        email, key, realm, lookupProof, '25519');
 
     assertEquals('string', typeof message.profile);
     assertEquals('string', typeof message.update.new_entry);
@@ -263,12 +262,13 @@ function testEncodeUpdateRequest() {
     return message;
   }
 
-  client.initialize().addCallback(function(proto) {
+  e2e.coname.Client.initialize().addCallback(function() {
+    var proto = e2e.coname.Client.protoBuf_;
     var message, oldEntry, newEntry, lookupProof;
 
     // update an existing profile and entry
-    lookupProof = e2e.coname.decodeLookupMessage_(
-        proto, JSON.stringify(lookupProofSample));
+    lookupProof = e2e.coname.Client.decodeLookupMessage_(
+        JSON.stringify(lookupProofSample));
     oldEntry = lookupProof.entry;
 
     message = encodeUpdateRequest_(
@@ -285,8 +285,8 @@ function testEncodeUpdateRequest() {
 
 
     // initial registration
-    lookupProof = e2e.coname.decodeLookupMessage_(
-        proto, JSON.stringify(lookupProofNoBodySample));
+    lookupProof = e2e.coname.Client.decodeLookupMessage_(
+        JSON.stringify(lookupProofNoBodySample));
 
     message = encodeUpdateRequest_(proto, 'nobody@yahoo-inc.com', lookupProof);
     newEntry = proto.Entry.decode64(message.update.new_entry);

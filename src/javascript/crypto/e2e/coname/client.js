@@ -26,6 +26,7 @@ goog.require('e2e.coname');
 goog.require('e2e.coname.ProtoBuf');
 goog.require('e2e.coname.sha3');
 goog.require('e2e.coname.verifyLookup');
+goog.require('e2e.ext.config');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.random');
 goog.require('goog.array');
@@ -37,30 +38,22 @@ goog.require('goog.net.XhrIo');
 
 /**
  * Constructor for the coname client.
- * @param {!function(): !e2e.async.Result} authCallback Callback to
- *     authenticate the AJAX calls
  * @param {string=} opt_keyName The key name of the keyData Map
  * @constructor
  */
-e2e.coname.Client = function(authCallback, opt_keyName) {
-  /**
-   * @type {?Object<string,*>}
-   */
-  this.proto = null;
-
+e2e.coname.Client = function(opt_keyName) {
   /**
    * The key name being referenced in the key data blob
    * @type {string}
    * @private
    */
-  this.keyName_ = opt_keyName || '25519';
+  this.keyName_ = opt_keyName || 'pgp';
 
   /**
-   * The Callback for authentication
-   * @type {!function(): !e2e.async.Result}
+   * @type {Object<string, e2e.async.Result>}
    * @private
    */
-  this.authCallback_ = authCallback;
+  this.authResults_ = {};
 };
 
 
@@ -83,14 +76,21 @@ e2e.coname.Client.UPDATE_REQUEST_TIMEOUT = 60000;
 
 
 /**
- * Initializes the external protobuf dependency.
- * @return {!e2e.async.Result.<?Object<string,*>>} The deferred Coname protocol
+ * The initialized protobuf object
+ * @type {Object<string,*>}
+ * @private
  */
-e2e.coname.Client.prototype.initialize = function() {
+e2e.coname.Client.protoBuf_;
 
-  if (this.proto) {
-    return e2e.async.Result.toResult(/** @type {?Object<string,*>} */
-        (this.proto));
+
+/**
+ * Initializes the external protobuf dependency.
+ * @return {!e2e.async.Result.<undefined>} The deferred Coname protocol
+ */
+e2e.coname.Client.initialize = function() {
+
+  if (goog.isDef(e2e.coname.Client.protoBuf_)) {
+    return e2e.async.Result.toResult(undefined);
   }
 
   var result = new e2e.async.Result;
@@ -99,28 +99,28 @@ e2e.coname.Client.prototype.initialize = function() {
 
     ProtoBuf.loadJsonFile(
         chrome.runtime.getURL(e2e.coname.Client.PROTO_FILE_PATH),
-        goog.bind(function(err, builder) {
+        function(err, builder) {
           if (err) {
             result.errback(err);
             return;
           }
-          this.proto = builder.build('proto');
-          result.callback(this.proto);
-        }, this));
-  }, goog.bind(result.errback, result), this);
+          e2e.coname.Client.protoBuf_ = builder.build('proto');
+          result.callback(undefined);
+        });
+  }, result.errback, result);
 
   return result;
 };
 
 
 /**
- * @private
  * Parse, decode, and transform a lookup response
- * @param {Object<string,*>} proto The initialized protobuf object
  * @param {string} jsonString The lookup message to decode
  * @return {e2e.coname.ServerResponse} The lookup response
+ * @private
  */
-e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
+e2e.coname.Client.decodeLookupMessage_ = function(jsonString) {
+  var proto = e2e.coname.Client.protoBuf_;
   var lookupProof = JSON.parse(jsonString);
   var b64decode = goog.crypt.base64.decodeStringToByteArray;
   var profile, entry, tree = lookupProof.tree_proof;
@@ -178,7 +178,6 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
 
 /**
  * Encode the update request message
- * @param {Object<string,*>} proto The initialized protobuf object
  * @param {string} email The email address
  * @param {?e2e.ByteArray} key OpenPGP key to send
  * @param {e2e.coname.RealmConfig} realm The RealmConfig
@@ -187,9 +186,9 @@ e2e.coname.decodeLookupMessage_ = function(proto, jsonString) {
  * @return {Object<string,*>} The update message
  * @private
  */
-e2e.coname.encodeUpdateRequest_ = function(
-    proto, email, key, realm, oldProof, keyName) {
-
+e2e.coname.Client.encodeUpdateRequest_ = function(
+    email, key, realm, oldProof, keyName) {
+  var proto = e2e.coname.Client.protoBuf_;
   var keys = {}, hProfile, profile, entry;
 
   // if a current profile exists
@@ -239,51 +238,68 @@ e2e.coname.encodeUpdateRequest_ = function(
       user_id: email,
       quorum_requirement: realm.verification_policy.quorum
     }
-    // TODO: disable DKIM for now
-    // dkim_proof: null
+    // email_proof to be completed by req_ based on realm.auth.type
   };
 
 };
 
 
 /**
- * Send the data over AJAX
+ * Send a request over AJAX
+ * @param {!e2e.coname.RealmConfig} realm The RealmConfig
  * @param {string} method The HTTP method to use, such as "GET", "POST", "PUT",
- *                        "DELETE", etc. Ignored for non-HTTP(S) URLs
- * @param {string} url The URL to send the request to
+ *     "DELETE", etc. Ignored for non-HTTP(S) URLs
+ * @param {string} relUrl The URL relative to realm.addr
  * @param {number} timeout The number of milliseconds a request can take before
- *                         automatically being terminated. A value of 0 (which
- *                         is the default) means there is no timeout.
- * @param {Object} data The data to be JSON stringified and sent as the HTTP
- *                      request body
+ *     automatically being terminated. A value of 0 (which is the default)
+ *     means there is no timeout.
+ * @param {Object=} opt_data The data to be JSON stringified and sent as the
+ *     HTTP request body
  * @return {e2e.async.Result.<string>} The raw response text iff the server
  *                                          responds 200 OK
  * @private
  */
-e2e.coname.Client.prototype.getAJAX_ = function(
-    method, url, timeout, data) {
-  var dataString = '';
-  try {
-    dataString = JSON.stringify(data);
-  } catch (e) {
-    return e2e.async.Result.toError(e);
+e2e.coname.Client.prototype.req_ = function(
+    realm, method, relUrl, timeout, opt_data) {
+  var dataString;
+  if (opt_data) {
+    try {
+      dataString = JSON.stringify(opt_data);
+    } catch (e) {
+      return e2e.async.Result.toError(e);
+    }
+  } else {
+    opt_data = {};
+  }
+
+  if (relUrl === '/update') {
+    if (realm.auth.type === e2e.ext.config.CONAME.RealmAuthType.SAML &&
+        !goog.isDef(opt_data.email_proof)) {
+      var tokenResult = goog.isDef(realm.auth.token) ?
+          e2e.async.Result.toResult(realm.auth.token) :
+          this.auth_(realm);
+
+      return tokenResult.addCallback(function(token) {
+        opt_data.email_proof = {saml_response: token};
+        return this.req_(realm, method, relUrl, timeout, opt_data);
+      }, this);
+    }
   }
 
   var result = new e2e.async.Result;
-  goog.net.XhrIo.send(url, goog.bind(function(e) {
+  goog.net.XhrIo.send(realm.addr + relUrl, goog.bind(function(e) {
     var xhr = e.target, statusCode = xhr.getStatus();
     if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
       result.callback(xhr.getResponseText());
     } else if (statusCode === 401) {
-      // invoke the authCallback, and make the AJAX call again
-      this.authCallback_().
-          addCallbacks(function() {
-            this.getAJAX_(method, url, timeout, data).addCallbacks(
-                result.callback, result.errback, result);
-          }, function(err) {
-            result.errback(new e2e.ext.utils.Error(err.message,
-                'conameAuthError'));
-          }, this);
+      // re-authenticate whenever 401 is encountered
+      this.auth_(realm).
+          addCallback(goog.bind(
+              this.req_, this, realm, method, relUrl, timeout, opt_data)).
+          addCallbacks(result.callback, result.errback, result).
+          addErrback(function(err) {
+            return new e2e.ext.utils.Error(err.message, 'conameAuthError');
+          });
     } else {
       result.errback(new e2e.ext.utils.Error(
           'Error connecting to keyserver. ' + xhr.getLastError(),
@@ -291,6 +307,83 @@ e2e.coname.Client.prototype.getAJAX_ = function(
     }
   }, this), method, dataString, {}, timeout);
   return result;
+};
+
+
+/**
+ * Upon HTTP error 401, prompt the user for authentication to the keyserver.
+ * Invokes the callback when the user has successfully authenticated.
+ * @param {!e2e.coname.RealmConfig} realm The RealmConfig
+ * @return {!e2e.async.Result<?Object<string, Array<string>>>|
+ *     !e2e.async.Result<string>} The authentication token for SAML auth type,
+ *     or otherwise the parsed form data, as specified in
+ *     https://developer.chrome.com/extensions/webRequest#event-onBeforeRequest
+ * @private
+ */
+e2e.coname.Client.prototype.auth_ = function(realm) {
+  var result = this.createAuthWindow_(
+      realm.addr + realm.auth.startRelUrl,
+      realm.addr + realm.auth.endRelUrl);
+
+  // TODO: also support openid type
+  if (realm.auth.type === e2e.ext.config.CONAME.RealmAuthType.SAML) {
+    // cache the SAMLResponse as the authentication token
+    return result.addCallback(function(formData) {
+      return (realm.auth.token = formData['SAMLResponse'][0].toString());
+    });
+  }
+  return result;
+};
+
+
+/**
+ * Upon HTTP error 401, prompt the user for authentication to the keyserver.
+ * Invokes the callback when the user has successfully authenticated.
+ * @param {!string} authUrl The URL for authentication.
+ * @param {!string} destUrl The URL when the user is authenticated.
+ * @return {!e2e.async.Result<?Object<string, Array<string>>>} The parsed form
+ *     data, as specified in https://developer.chrome.com/extensions/
+ *     webRequest#event-onBeforeRequest
+ * @private
+ */
+e2e.coname.Client.prototype.createAuthWindow_ = function(authUrl, destUrl) {
+  var authResults = this.authResults_,
+      authResult = authResults[authUrl] ||
+          (authResults[authUrl] = new e2e.async.Result);
+
+  // create a window to negotiate a new session or let user enters credentials
+  chrome.windows.create({
+    url: authUrl,
+    width: 500,
+    height: 640,
+    type: 'popup'
+  }, function(win) {
+    var winId = win.id;
+
+    // close the window, remove the listener, and callback with parsed reqBody
+    var onDestination = function(details) {
+      chrome.webRequest.onBeforeRequest.removeListener(onDestination);
+      // close the window
+      chrome.windows.remove(winId);
+
+      details.error ?
+          authResult.errback(new Error(details.error)) :
+          authResult.callback(
+              details.requestBody && details.requestBody.formData || null);
+
+      delete authResults[authUrl];
+      // cancel the request
+      return {cancel: true};
+    };
+
+    chrome.webRequest.onBeforeRequest.addListener(
+        onDestination,
+        /** @type {!RequestFilter} */ ({urls: [destUrl], windowId: winId}),
+        ['blocking', 'requestBody']);
+
+  });
+
+  return authResult;
 };
 
 
@@ -313,15 +406,13 @@ e2e.coname.Client.prototype.lookup = function(email, opt_skipVerify) {
   }
 
   // TODO: make this possible for polling/retries
-  return this.getAJAX_(
-      'POST',
-      realm.addr + '/lookup',
-      e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT, {
+  return this.req_(/** @type {!e2e.coname.RealmConfig} */ (realm),
+      'POST', '/lookup', e2e.coname.Client.LOOKUP_REQUEST_TIMEOUT, {
         user_id: email,
         quorum_requirement: realm.verification_policy.quorum
       }).
       addCallback(function(responseText) {
-        var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
+        var pf = e2e.coname.Client.decodeLookupMessage_(responseText),
             profile = pf['profile'],
             keyByteArray;
 
@@ -368,8 +459,7 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
       addCallback(function(lookupResult) {
         // lookupResult must not be null, as the case of which has handled
 
-        var data = e2e.coname.encodeUpdateRequest_(
-            this.proto, email, keyData,
+        var data = e2e.coname.Client.encodeUpdateRequest_(email, keyData,
             /** @type {!e2e.coname.RealmConfig} */ (realm),
             /** @type {{proof: !e2e.coname.ServerResponse}} */ (
                 lookupResult).proof,
@@ -378,11 +468,11 @@ e2e.coname.Client.prototype.update = function(email, keyData) {
         newProfileBase64 = data.profile;
 
         // set 1m timeout
-        return this.getAJAX_('POST', realm.addr + '/update',
-            e2e.coname.Client.UPDATE_REQUEST_TIMEOUT, data);
+        return this.req_(/** @type {!e2e.coname.RealmConfig} */ (realm),
+            'POST', '/update', e2e.coname.Client.UPDATE_REQUEST_TIMEOUT, data);
       }, this).
       addCallback(function(responseText) {
-        var pf = e2e.coname.decodeLookupMessage_(this.proto, responseText),
+        var pf = e2e.coname.Client.decodeLookupMessage_(responseText),
             profile = pf.profile,
             keyByteArray;
 
