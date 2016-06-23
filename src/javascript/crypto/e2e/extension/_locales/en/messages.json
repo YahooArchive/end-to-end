@@ -546,11 +546,11 @@
     "description": "Message asking user to confirm closing the compose glass"
   },
   "composeGlassConfirmRecipients": {
-    "message": "Unsupported Recipients\n\n$1 do not have keys for now.",
+    "message": "Recipients without encryption support\n\n$1 cannot open encrypted mail right now.",
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassAddPassphraseForRecipients": {
-    "message": "Unsupported Recipients\n\n$1 do not have keys for now.\n\n#add#Add a per-message passphrase# for encryption first (TODO: plus a tooltip to guide them through the installation of the Yahoo Mail Encrypted Extension), you'll contact them separately for the chosen passphrase (e.g., by a phone call).",
+    "message": "Recipients without encryption support\n\n$1 cannot open encrypted mail right now.\n\n#add#Add a per-message passphrase# for encryption first (TODO: plus a tooltip to guide them through the installation of the Yahoo Mail Encrypted Extension), you'll contact them separately for the chosen passphrase (e.g., by a phone call).",
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassSendUnencryptedMessage": {
