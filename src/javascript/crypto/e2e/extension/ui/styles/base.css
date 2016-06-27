@@ -20,15 +20,15 @@ body {
   border: none;
   color: YCOLOR_GREY_10;
   font-family: "Helvetica Neue","Segoe UI",Helvetica,Arial,"Lucida Grande",sans-serif;
-  font-size: 0.9em;
+  font-size: 14px;
   font-weight: 300;
-  line-height: 1.38461538;
+  line-height: 1.4;
   margin: 0;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-button {
+.pgpActions button, #callbackDialog button {
   box-sizing: border-box;
   height: 32px;
   line-height: 30px;
@@ -40,47 +40,45 @@ button {
   font-weight: 400;
   border: 2px solid transparent;
   cursor: pointer;
-  margin: 15px 15px 15px 0;
+  margin: 15px 5px 15px 0;
   font-size: 13px;
   outline: none;
 }
 
-button:hover {
+.pgpActions button:hover,
+#callbackDialog button:hover {
   background-color: BTN_PRIMARY_HOVER;
 }
 
-button:disabled {
+.pgpActions button:disabled,
+#callbackDialog button:disabled {
   background-color: BTN_PRIMARY_INACTIVE;
   color: BTN_PRIMARY_INACTIVE_TEXT;
 }
 
-button.back,
-button.cancel,
+.pgpActions button.cancel,
+#callbackDialog button.cancel/*,
 button.options,
-button.save {
+button.save*/ {
   box-shadow: 0 2px #ABAEB7;
   background-color: BTN_CANCEL;
   color: BTN_CANCEL_TEXT;
 }
 
-button.back:hover,
-button.cancel:hover,
+.pgpActions button.cancel:hover,
+#callbackDialog button.cancel:hover/*,
 button.options:hover,
-button.save:hover {
+button.save:hover*/ {
   background-color: BTN_CANCEL_HOVER;
   color: BTN_CANCEL_HOVER_TEXT;
 }
 
-button.back {
-  min-width: inherit;
-  padding: 0;
-  width: 40px;
+input:hover,
+input:focus {
+  outline: none;
 }
 
-button.back > img {
-  margin-bottom: -4px;
-  opacity: 0.6;
-}
+
 
 #pgpBody {
   padding: 0;
@@ -134,21 +132,6 @@ button.back > img {
 
 #callbackDialog {
   pointer-events: auto;
-}
-
-input {
-  border: 1px solid YCOLOR_GREY_6;
-  margin: 0;
-  padding: 3px;
-  line-height: 25px;
-  font-size: 100%;
-}
-
-input:hover,
-input:focus {
-  border: 1px solid YCOLOR_GREY_10;
-  outline: none;
-  padding: 3px;
 }
 
 .hidden {
@@ -341,4 +324,18 @@ input:focus {
 
 .key-info-minus span:before {
   content: '-';
+}
+
+
+
+
+.user-content:not(.loader) {
+  padding-bottom: 5px;
+  margin: 2px 21px 0 0;
+  font-family: Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif;
+  white-space: initial;
+}
+
+.richtext p {
+  margin: 0;
 }

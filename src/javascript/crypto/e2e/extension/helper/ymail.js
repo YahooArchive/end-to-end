@@ -21,19 +21,17 @@ goog.provide('e2e.ext.YmailHelper');
 
 goog.require('e2e.ext.MessageApi');
 /** @suppress {extraRequire} */
-goog.require('e2e.ext.YmailData');
+goog.require('e2e.ext.YmailType');
 goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.ext.constants.PGPHtmlMessage');
 goog.require('e2e.ext.constants.StorageKey');
 goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
-goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Disposable');
 goog.require('goog.array');
-goog.require('goog.dom');
 goog.require('goog.string');
-goog.require('goog.style');
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -96,11 +94,11 @@ ext.YmailHelper.prototype.injectStub = function(stubFilename) {
 ext.YmailHelper.prototype.installAutoComposeGlass = function(evt) {
   evt.stopPropagation();
 
-  var detail = /** @type {e2e.ext.YmailData.OpenComposeDetail} */ (
+  var detail = /** @type {e2e.ext.YmailType.OpenComposeDetail} */ (
       evt.detail);
 
   // always initialize the stub api regardless of auto-open config
-  var stubApi = this.initComposeStubApi_(evt, goog.bind(function() {
+  var stubApi = this.initStubApi_(evt, goog.bind(function() {
     // install glass if the original message has a PGP blob
     stubApi.req('draft.getQuoted').addCallbacks(function(quoted) {
       if (quoted && quoted.body &&
@@ -134,7 +132,7 @@ ext.YmailHelper.prototype.installComposeGlass = function(evt) {
   evt.stopPropagation();
 
   var elem = /** @type {Element} */ (evt.target);
-  var detail = /** @type {e2e.ext.YmailData.OpenComposeDetail} */ (
+  var detail = /** @type {e2e.ext.YmailType.OpenComposeDetail} */ (
       evt.detail);
 
   if (!elem.composeGlass || elem.glassDisposed) {
@@ -142,7 +140,7 @@ ext.YmailHelper.prototype.installComposeGlass = function(evt) {
     elem.focus();
 
     var glassWrapper = new ui.ComposeGlassWrapper(
-        elem, this.initComposeStubApi_(evt));
+        elem, this.initStubApi_(evt));
     glassWrapper.installGlass();
 
     this.registerDisposable(glassWrapper);
@@ -161,7 +159,7 @@ ext.YmailHelper.prototype.installReadGlasses = function(evt, opt_limit) {
   evt.stopPropagation();
 
   var elem = /** @type {Element} */ (evt.target);
-  var detail = /** @type {ext.YmailData.OpenMessageDetail} */ (
+  var detail = /** @type {ext.YmailType.OpenMessageDetail} */ (
       evt.detail);
 
   if (elem.lookingGlass) {
@@ -169,91 +167,37 @@ ext.YmailHelper.prototype.installReadGlasses = function(evt, opt_limit) {
   }
   elem.lookingGlass = true;
 
+  var stubApi = this.initStubApi_(evt);
+
+  // decrypt those HTML encrypted messages
+  var blobs = elem.querySelectorAll(constants.PGPHtmlMessage.SELECTOR);
+  if (blobs.length > 0) {
+    goog.array.forEach(blobs, function(elem) {
+      utils.text.isolateAsciiArmors(elem, function(armor) {
+        var glassWrapper = new ui.GlassWrapper(elem, stubApi, armor, true);
+        window.helper && window.helper.registerDisposable(glassWrapper);
+        glassWrapper.installGlass();
+      }, undefined, 1);
+    });
+
+    return;
+  }
+
   try {
     // TODO: support rich text and let PGP message quotable
     var message = detail.body + detail.quotedBody;
-    var armors = e2e.openpgp.asciiArmor.parseAll(message, opt_limit || 20);
 
-    // no armor needs glass, or ignore binary OpenPGP message
-    if (armors.length === 0 || armors[0].type === 'BINARY') {
-      return;
-    }
+    utils.text.isolateAsciiArmors(elem, function(armor) {
+      var glassWrapper = new ui.GlassWrapper(elem, stubApi, armor);
+      window.helper && window.helper.registerDisposable(glassWrapper);
+      glassWrapper.installGlass();
+    }, message, opt_limit);
 
-    this.installReadGlassPerArmor(elem, message, armors);
+    elem.focus();
 
   } catch (err) {
     utils.displayFailure(err);
   }
-};
-
-
-/**
- * Install read glass for every valid armor found, and preserve surronding text
- * @param {!Element} elem The elem where the glasses and texts will be inserted
- * @param {!string} message The message body
- * @param {!Array.<!e2e.openpgp.ArmoredMessage>} armors The valid armors
- * @protected
- */
-ext.YmailHelper.prototype.installReadGlassPerArmor = function(
-    elem, message, armors) {
-  var div, plaintext, glassWrapper, lastEndOffset = 0;
-
-  goog.array.forEach(armors, function(armor) {
-    var isValidDecryptVerifyArmor = false, textStartOffset = 0;
-
-    if (armor.type === 'SIGNATURE') {
-      // adjust startOffset to also capture whole message body
-      textStartOffset = lastEndOffset + message.slice(lastEndOffset).
-          indexOf('-----BEGIN PGP SIGNED MESSAGE-----');
-
-      isValidDecryptVerifyArmor = true;
-    } else if (armor.type === 'MESSAGE') {
-      textStartOffset = armor.startOffset;
-      isValidDecryptVerifyArmor = true;
-    }
-
-    // capture the text upto the next valid armor (or include it if invalid)
-    plaintext = message.slice(lastEndOffset,
-        isValidDecryptVerifyArmor ? textStartOffset : armor.endOffset);
-
-    // insert the text before the next armor
-    if (plaintext && goog.string.trim(plaintext)) {
-      div = document.createElement('div');
-      div.className = elem.className +
-          (glassWrapper ? ' plaintext-above' : '') + ' plaintext-below';
-      div.textContent = plaintext;
-
-      goog.dom.insertSiblingBefore(div, elem);
-    }
-
-    // insert a glass to decrypt the next armor
-    if (isValidDecryptVerifyArmor) {
-      // add the original text to the armor object
-      armor.text = message.slice(textStartOffset, armor.endOffset);
-
-      glassWrapper = new ui.GlassWrapper(elem, armor);
-      window.helper && window.helper.registerDisposable(glassWrapper);
-      glassWrapper.installGlass();
-    }
-
-    lastEndOffset = armor.endOffset;
-  });
-
-  // hide the original target element if it's not hidden by a glass.
-  if (!glassWrapper) {
-    goog.style.setElementShown(elem, false);
-  }
-
-  // insert the remaining text
-  plaintext = message.slice(lastEndOffset);
-  if (plaintext && goog.string.trim(plaintext)) {
-    div = document.createElement('div');
-    div.className = elem.className + ' plaintext-above';
-    div.textContent = plaintext;
-    goog.dom.insertSiblingBefore(div, elem);
-  }
-
-  elem.focus();
 };
 
 
@@ -287,7 +231,7 @@ ext.YmailHelper.prototype.queryPublicKey = function(evt) {
 ext.YmailHelper.prototype.loadUser = function(evt) {
   var uid, elem = /** @type {Element} */ (evt.target);
 
-  this.primaryUser_ = /** @type {!ext.YmailData.EmailUser} */ (
+  this.primaryUser_ = /** @type {!ext.YmailType.EmailUser} */ (
       evt.detail);
   uid = utils.text.userObjectToUid(this.primaryUser_);
 
@@ -309,16 +253,16 @@ ext.YmailHelper.prototype.loadUser = function(evt) {
 
 
 /**
- * Initialize a stub api for compose-related calls
- * @param {Event} evt The OpenCompose or OpenEncryptedCompose event
+ * Initialize an MessageChannel with the stub
+ * @param {Event} evt A custom event that its detail has an unique apiId.
  * @param {Function=} opt_callback Callback when the Message API is initiated
  * @return {!e2e.ext.MessageApi} the stub api
  * @private
  */
-ext.YmailHelper.prototype.initComposeStubApi_ = function(evt, opt_callback) {
+ext.YmailHelper.prototype.initStubApi_ = function(evt, opt_callback) {
   var elem = /** @type {Element} */ (evt.target);
-  var detail = /** @type {e2e.ext.YmailData.OpenComposeDetail} */ (
-      evt.detail);
+  var detail = /** @type {ext.YmailType.OpenMessageDetail|
+      ext.YmailType.OpenComposeDetail} */ (evt.detail);
 
   if (!elem.stubApi_) {
     elem.stubApi_ = new e2e.ext.MessageApi(detail.apiId);
@@ -341,7 +285,7 @@ ext.YmailHelper.prototype.initComposeStubApi_ = function(evt, opt_callback) {
 
 /**
  * Return the primary account user
- * @return {ext.YmailData.EmailUser} The user
+ * @return {ext.YmailType.EmailUser} The user
  */
 ext.YmailHelper.prototype.getUser = function() {
   return this.primaryUser_;

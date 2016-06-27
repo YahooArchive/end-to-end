@@ -204,7 +204,7 @@ e2e_test_compat_e2e() {
 e2e_build_css() {
   BUILD_EXT_DIR="$BUILD_DIR/extension"
   SRC_EXT_DIR="src/javascript/crypto/e2e/extension"
-  csscompile_e2e="java -jar lib/closure-stylesheets/build/closure-stylesheets.jar src/javascript/crypto/e2e/extension/ui/styles/ycolors.css src/javascript/crypto/e2e/extension/ui/styles/base.css"
+  csscompile_e2e="java -jar lib/closure-stylesheets/build/closure-stylesheets.jar $SRC_EXT_DIR/ui/styles/ycolors.css $SRC_EXT_DIR/ui/styles/base.css"
   set -e
   echo "Compiling CSS files..."
   $csscompile_e2e "$SRC_EXT_DIR/ui/prompt/prompt.css" "$SRC_EXT_DIR/ui/glass/glass.css" > "$BUILD_EXT_DIR/glass_styles.css"

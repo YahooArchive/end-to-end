@@ -19,41 +19,20 @@
 /* @yahoo */
 @font-face{
   font-family:'mail';
-  src:url("images/yahoo/fonts/mail-ltr47.woff2") format("woff2"),url("images/yahoo/fonts/mail-ltr47.woff") format("woff");
+  src:url("images/yahoo/fonts/mail-ltr50.woff2") format("woff2");
   font-weight:400;
   font-style:normal
 }
 
-button {
-  margin-bottom: 10px;
-}
-
-form {
-  margin-top: 10px;
-}
-
-input[type="text"],
-input[type="password"] {
+#pgpBody:not(.richtext) input[type="text"],
+#pgpBody:not(.richtext) input[type="password"] {
   width: 548px;
 }
 
-textarea {
-  border: none;
-  border-bottom: 1px solid YCOLOR_GREY_6;
-  box-sizing: border-box;
-  display: block;
-  height: 240px;
-  min-width: 650px;
-  resize: vertical;
-  width: 100%;
-}
-
-textarea:focus {
-  outline: none;
-}
-
-#pgpBody input[type="checkbox"],
-#pgpBody input[type="password"] {
+#pgpBody:not(.richtext) input[type="checkbox"],
+#pgpBody:not(.richtext) input[type="password"],
+#callbackDialog input[type="checkbox"],
+#callbackDialog input[type="password"] {
   margin: 8px 8px 0 0;
 }
 
@@ -88,28 +67,13 @@ textarea:focus {
   text-align: center;
 }
 
-#chipHolder {
-  min-height: 33px;
-}
-
 #fromHolder, #subjectHolder {
-  border-bottom: 1px solid #cfcfcf;
   color: #777;
-  line-height: 18px;
-  margin-bottom: 0;
 }
 
 #fromHolder > * {
   display: inline-block;
   margin: 2px;
-}
-
-#fromHolder > div:first-child,
-#subjectHolder > div:first-child,
-#subjectHolder > input,
-#pgpKeySelect > .uid-chips > input,
-#pgpKeySelect > .uid-chips > span {
-  margin-left: 7px;
 }
 
 #pgpKeySelect > .uid-chips > input {
@@ -138,10 +102,6 @@ textarea:focus {
   overflow: hidden;
   padding: 0;
   width: 100px;
-}
-
-#subjectHolder #subject {
-  width: 590px;
 }
 
 #pgpKeySelect input:hover,
@@ -312,18 +272,15 @@ textarea:focus {
 /* State: selected/checked. */
 .goog-menuitem-checkbox,
 .goog-menuitem-icon {
-  background-repeat: no-repeat;
-  height: 16px;
-  left: 6px;
-  position: absolute;
-  right: auto;
+  font-family: mail;
+  font-size: 20px;
+  display: inline-block;
   vertical-align: middle;
-  width: 16px;
 }
-.goog-option-selected .goog-menuitem-checkbox,
-.goog-option-selected .goog-menuitem-icon {
-  /* Client apps may override the URL at which they serve the sprite. */
-  background: url(https://ssl.gstatic.com/editor/editortoolbar.png) no-repeat -512px 0;
+.goog-option-selected .goog-menuitem-checkbox:before,
+.goog-option-selected .goog-menuitem-icon:before {
+  content: '\e018';
+  margin-left: -22px;
 }
 
 /* Keyboard shortcut ("accelerator") style. */
@@ -356,7 +313,7 @@ textarea:focus {
   border-radius: 8px;
   border: 1px solid #CCC;
   padding: 15px 20px;
-  right: 25px;
+  right: 0;
   margin-top: 4px;
   color: #333;
   cursor: default;
@@ -381,7 +338,7 @@ textarea:focus {
   cursor: auto;
   font-size: 20px;
   position: absolute;
-  right: 25px;
+  right: 0;
   padding: 3px;
   color: #00b777;
 }

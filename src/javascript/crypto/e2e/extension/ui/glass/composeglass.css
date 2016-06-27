@@ -19,12 +19,13 @@
 
 html {
   overflow: hidden;
-  cursor: text;
 }
 
 body {
+  color: #000;
   background: #FFF;
-  cursor: default;
+  font-weight: normal;
+  line-height: normal;
 }
 
 .transparent {
@@ -32,6 +33,7 @@ body {
 }
 #callbackDialog {
   background: rgba(50,50,50,0.35);
+  z-index: 2147483647;
 }
 
 .pgpHead {
@@ -40,7 +42,8 @@ body {
 
 #errorDiv {
   height: inherit;
-  line-height: 16px;
+  line-height: 20px;
+  margin-bottom: 0;
 }
 
 #save-esc-button:before {
@@ -61,7 +64,9 @@ body {
 }
 
 .uid-chips input, #subjectHolder input {
+  border: 0;
   font-size: 13px;
+  font-family: "Helvetica Neue","Segoe UI",Helvetica,Arial,"Lucida Grande",sans-serif;
   color: #454545;
 }
 
@@ -71,16 +76,25 @@ body {
   color: #777;
   padding: 5px 0px;
   margin: 0 28px;
-  border-bottom: 1px solid #D7D5D5;
   min-height: inherit;
+  font-weight: 300;
 }
 
 #toLabel, #ccLabel {
-  margin: 2px 28px;
+  margin: 0 28px;
   color: #777;
   font-size: 13px;
-  min-height: 32px;
+  font-weight: 300;
+  padding-top: 12px;
+}
+
+#fromHolder,
+#composeHeader {
   border-bottom: 1px solid #D7D5D5;
+}
+#ccLabel, 
+#subjectHolder {
+  border-top: 1px solid #D7D5D5;
 }
 
 #toLabel > div, #ccLabel > div {
@@ -91,7 +105,10 @@ body {
   margin-right: 2px;
   font-size: 13px;
   float: left;
-  line-height: 33px;
+  line-height: 23px;
+}
+#chipHolder, #ccChipHolder {
+  min-height: 29px
 }
 .uid-chips {
   color: #0c0c0c;
@@ -101,22 +118,17 @@ body {
   display: inline-block;
 }
 .uid-chips>.uid-bad-chip {
-  color: #EF2E1A;
+  /*color: #EF2E1A;*/
 }
 .uid-chips>.uid-good-chip {
   color: #00B777;
 }
-.uid-chips input,
-.uid-chips input:hover,
-.uid-chips input:focus {
-  border: 0;
+.uid-chips input {
   display: inline-block;
   overflow: hidden;
-  padding: 0;
   min-width: 15px;
-  width: 15px;
-  margin: 5px 0 2px 4px;
-  height: inherit;
+  padding: 4px;
+  height: 16px;
 }
 .uid-chip {
   margin-right: 2px;
@@ -131,7 +143,6 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-bottom: 2px;
-  font-weight: normal;
 }
 .uid-chip > img {
   margin: 0 0 2px;
@@ -140,44 +151,468 @@ body {
 
 
 #subjectHolder {
-  padding: 6px 28px;
-  border-bottom: 1px solid #D7D5D5;
+  padding: 6px 0;
+  margin: 0 28px;
 }
 
 #subjectHolder input#subject {
   width: 100%;
+  height: 15px;
+  padding: 5px 0 4px 0;
 }
 
-#fromHolder > div:first-child,
-#subjectHolder > div:first-child,
-#subjectHolder > input {
-  margin-left: 0;
-  float: none;
+#encryptr-icon > div {
+  right: 25px;
 }
-
-
 #encryptr-icon label:before {
   cursor: pointer;
+  right: 25px;
 }
 
 
-textarea {
-  width: 100%;
-  padding: 10px 50px 10px 28px;
-  font-family: monospace !important;
-  font-size: 14px !important;
-  border: 0;
-  resize: none;
+#editor {
+  float: none;
+  cursor: text;
   white-space: normal;
+  min-height: 100px;
+  outline: none;
+  padding: 9px 50px 9px 28px;
 }
 
-textarea.has-quoted {
+#editor.has-quoted {
   padding-bottom: 45px;
 }
 
-textarea.has-quoted + #quoted-text {
+#editor.has-quoted + #quoted-text {
   display: inline-block;
 }
+
+#editor a {
+  color: blue;
+  cursor: text !important;
+}
+
+/* .modal-dialog are editor generated: */
+.modal-dialog {
+  background: #fbfaff;
+  color: #000;
+  position: absolute;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.36);
+  outline: none;
+  z-index: 2147483647;
+  word-wrap: break-word;
+  border-radius: 2px;
+  font-size: 13px;
+}
+
+.modal-dialog a,
+.modal-dialog a:link,
+.modal-dialog a:visited  {
+  color: -webkit-link;
+  cursor: pointer;
+}
+
+.modal-dialog-bg {
+  background: #666;
+  left: 0;
+  position: absolute;
+  top: 0;
+  z-index: 2147483647;
+}
+
+.modal-dialog-title {
+  color: #000;
+  font-size: 1.5em;
+  font-weight: 400;
+  padding: 20px 50px 15px 20px;
+  position: relative;
+  _zoom: 1; /* Ensures proper width in IE6 RTL. */
+}
+
+.modal-dialog-title-close {
+  font-family: mail;
+  cursor: pointer;
+  height: 16px;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 16px;
+  vertical-align: middle;
+}
+
+.modal-dialog-title-close:before {
+  content: '\e016'
+}
+
+.modal-dialog-buttons,
+.modal-dialog-content {
+  padding: 0 20px;
+}
+.modal-dialog-buttons {
+  padding-bottom: 10px;
+}
+
+.tr-dialog {
+  width: 400px;
+}
+/* @yahoo hide unnecessary content in the link dialog */
+.tr-dialog .goog-tab,
+.tr-dialog .tr-link-dialog-explanation-text,
+.tr-dialog #linkdialog-onweb-tab > div:first-child  {
+  display: none;
+}
+/* @yahoo style the Cancel button */
+.tr-dialog button[name=cancel] {
+  box-shadow: 0 2px #ABAEB7;
+  background-color: BTN_CANCEL;
+  color: BTN_CANCEL_TEXT;
+}
+.tr-dialog button[name=cancel]:hover {
+  background-color: BTN_CANCEL_HOVER;
+  color: BTN_CANCEL_HOVER_TEXT;
+}
+.tr-dialog input {
+  width: 98% !important;
+  height: 15px;
+  font-family: "Helvetica Neue","Segoe UI",Helvetica,Arial,"Lucida Grande",sans-serif;
+  font-size: 13px;
+  color: #454545;
+  margin: 7px 0;
+}
+/* @yahoo style the follow link button */
+.tr-dialog .goog-link-button {
+  color: #196ad4;
+  outline: none;
+  cursor: pointer;
+  display: inline;
+  margin: 0;
+}
+.tr-dialog .goog-link-button:hover {
+  color: #338fe9;
+}
+.tr-dialog .modal-dialog-content table {
+  width: 100%;
+  margin-bottom: 15px;
+}
+/* @yahoo break every table cell as a separate row */
+.tr-dialog .modal-dialog-content tr, .tr-dialog .modal-dialog-content td {
+  display: block;
+  font-size: 13px;
+}
+
+
+#pgpBody .pgpActions {
+  padding: 0;
+  position: fixed;
+  z-index: 2147483647;
+  bottom: 0;
+  width: 100%;
+  background: #FFF;
+}
+
+.pgpActions .buttons-container {
+  float: none;
+  border-top: 1px solid #E0E4E9;
+}
+
+
+.pgpActions div.bottom-notification {
+  width: 100%;
+  background: #FFF;
+  border-top: 1px solid #D7D5D5;
+  padding: 8px 28px;
+}
+.pgpActions div.bottom-notification > span.loader {
+  float: left;
+}
+.pgpActions div.bottom-notification > div {
+  display: inline-block;
+  vertical-align: top;
+  line-height: 35px;
+  padding: 0 8px;
+  opacity: .7;
+}
+
+/* editor toolbar */
+#editorToolbar {
+  background-color: #F1F1F5;
+  width: 100%;
+  padding: 10px 20px;
+  display: block;
+  height: 28px;
+}
+
+.goog-menuheader {
+  margin: 5px 0 10px 0;
+}
+
+.goog-menu, .goog-multi-menus {
+  z-index: 2147483647;
+  background-color: rgba(251,250,255,0.95);
+}
+
+.goog-multi-menus:not(.hidden) {
+  position: relative;
+  bottom: 270px;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.36);
+  outline: none;
+  padding: 8px 0;
+  display: table-cell;
+  -webkit-transition: opacity 0.1s ease;
+  -moz-transition: opacity 0.1s ease;
+  transition: opacity 0.1s ease
+}
+
+.goog-multi-menus > div {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.goog-multi-menus .goog-menu {
+  border: none;
+  box-shadow: none;
+  position: static;
+}
+.goog-multi-menus .goog-menuitem {
+  cursor: pointer;
+  padding: 2px 50px 2px 35px;
+}
+.goog-menuitem-highlight, .goog-menuitem-hover {
+  background-color: #e0daf2;
+  border: none;
+}
+
+/* needed to make font size setting functioning */
+.font-menus > div {
+  min-width: 180px;
+  min-height: 220px
+}
+.goog-multi-menus>div:first-child .goog-menuitem {
+  padding: 1px 40px 1px 35px;
+}
+.font-menus > div:first-child .goog-menuitem-content {
+  line-height: 25px
+}
+.font-menus > div:last-child {
+  border-left: 1px solid rgba(0,0,0,0.1);
+}
+/* needed to make font size setting functioning */
+.color-menus > div {
+  min-width: 70px;
+  padding: 10px;
+}
+
+.goog-multi-menus.font-menus .goog-menu {
+  padding-top: 10px;
+}
+.goog-multi-menus.color-menus {
+  padding: 0 10px;
+  left: 95px;
+}
+.goog-palette {
+  font-family: mail;
+  font-size: 20px;
+  text-align: center;
+  vertical-align: middle;
+}
+.goog-palette-colorswatch {
+  width: 18px;
+  height: 18px;
+  border: 1px solid transparent;
+  margin: 1px 2px 2px 1px;
+  text-indent: -2px
+}
+.goog-palette-colorswatch:hover:not(#goog-palette-cell-26),
+#goog-palette-cell-2 .goog-palette-colorswatch {
+  border-color: #a9a9a9;
+}
+
+#goog-palette-cell-26 .goog-palette-colorswatch {
+  border: none;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+}
+#goog-palette-cell-26:before {
+  content: "\e618";
+  color: #a9a9a9;
+  float: left;
+  margin: 1px 0 -20px 1px;
+}
+
+/* State: selected/checked. */
+.goog-palette-cell-selected {
+  cursor: pointer;
+}
+#goog-palette-cell-0,
+#goog-palette-cell-3,
+#goog-palette-cell-6,
+#goog-palette-cell-9,
+#goog-palette-cell-12,
+#goog-palette-cell-15,
+#goog-palette-cell-18,
+#goog-palette-cell-21,
+#goog-palette-cell-24,
+#goog-palette-cell-21,
+#goog-palette-cell-21,
+#goog-palette-cell-24,
+#goog-palette-cell-27,
+#goog-palette-cell-30,
+#goog-palette-cell-33,
+#goog-palette-cell-36,
+#goog-palette-cell-39,
+#goog-palette-cell-42,
+#goog-palette-cell-45 {
+  color: #FFF;
+}
+.goog-palette-cell-selected > .goog-palette-colorswatch:before {
+  content: '\e018';
+}
+
+.goog-inline-block, .goog-toolbar:not(.hidden) {
+  display: inline-block;
+}
+.goog-toolbar-menu-button, .goog-toolbar-button {
+  width: 26px;
+  height: 26px;
+  color: #787D82;
+  line-height: 26px;
+  text-align: center;
+  padding: 0;
+  margin-right: 1.5px;
+  font-family: mail;
+  font-size: 20px;
+  speak: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  vertical-align: middle;
+  border-radius: 2px;
+  /* following is for override button's styles */
+  background: none;
+  box-shadow: none;
+  box-sizing: initial;
+}
+.goog-toolbar-menu-button:hover, .goog-toolbar-button:hover {
+  color: #464E56;
+  background-color: #E6E7F0;
+}
+.goog-toolbar-menu-button:active, .goog-toolbar-button:active, .goog-toolbar-button-active {
+  color: #188FFF;
+}
+
+.goog-toolbar-menu-button-caption, .goog-toolbar-menu-button-dropdown {
+  display: none;
+}
+
+.tr-fontName .goog-toolbar-menu-button-inner-box:before {
+  content: '\e025';
+}
+
+.tr-bold:before {
+  content: '\e027'
+}
+.tr-italic:before {
+  content: '\e028'
+}
+
+.goog-toolbar-color-menu-button .goog-toolbar-menu-button-inner-box:before {
+  content: '\e02b'
+}
+
+.tr-insertUnorderedList:before {
+  content: '\e02c'
+}
+.tr-insertOrderedList:before {
+  content: '\e02d'
+}
+
+.tr-indent:before {
+  content: '\e031'
+}
+.tr-outdent:before {
+  content: '\e032'
+}
+.tr-link:before {
+  content: '\e033'
+}
+
+.tr-justifyLeft:before {
+  content: '\e02e'
+}
+.tr-justifyCenter:before {
+  content: '\e02f'
+}
+.tr-justifyRight:before {
+  content: '\e030'
+}
+
+
+.toolbar {
+  padding: 13px 28px;
+  cursor: default;
+  white-space: nowrap;
+}
+.toolbar .goog-toolbar-button:hover {
+  background-color: #F7F8FF;
+}
+.toolbar .toolbar-triangle {
+  display: none;
+  position: relative;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 15px solid #F1F1F5;
+  margin: -44px 0 0 -30px;
+}
+/* switch on the triangle when button is active */
+.toolbar .goog-toolbar-button-active + .toolbar-triangle {
+  display: inline-block;
+}
+.toolbar-separator {
+  border-left: 1px solid #E0E4E9;
+  padding-left: 6px;
+  margin-left: 6px;
+}
+.toolbar-separator .goog-toolbar-button {
+  margin: 0 1px;
+}
+.toolbar .toolbar-separator {
+  height: 20px;
+}
+
+.toolbar button.action {
+  line-height: 26px;
+  height: 28px;
+  margin: -8px 6px 0 0;
+  font-weight: normal;
+  border: 2px solid transparent;
+}
+
+.toolbar button {
+  border: none;
+  margin-top: -1px;
+  margin-bottom: 1px;
+}
+
+.toolbar div {
+  display: inline-block;
+  vertical-align: middle;
+}
+.toolbar span {
+  color: #777;
+  font-size: 13px;
+  margin-left: 10px;
+}
+
+/* buttons inside the .toolbar */
+#draft-delete-button:before {
+  content: "\e008"
+}
+#text-enhancement:before {
+  content: "\e024"
+}
+
+
 
 #quoted-text:before {
   content: '\e057';
@@ -195,76 +630,9 @@ textarea.has-quoted + #quoted-text {
   position: absolute;
   line-height: 13px;
   font-size: 13px;
-  font-weight: normal;
   margin-left: 19px;
 }
 
-#pgpBody .pgpActions {
-  padding: 0;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: #FFF;
-}
-
-.pgpActions div.buttons-container {
-  float: none;
-  border-top: 1px solid #D7D5D5;
-  padding: 0 28px;
-  white-space: nowrap;
-}
-
-.pgpActions div.buttons-container > button {
-  margin: 15px 15px 17px 0;
-}
-
-.pgpActions div.buttons-container > div {
-  display: inline-block;
-  font-size: 13px;
-  opacity: .7;
-  vertical-align: middle;
-  padding-right: 15px;
-  cursor: default;
-}
-
-.pgpActions div.buttons-container > div > button {
-  display: inline-block;
-  font-family: mail;
-  margin: 3px;
-  font-size: 20px;
-  background: none;
-  color: #777;
-  border: none;
-  padding: 0 6px 0 1px;
-  box-shadow: none;
-}
-
-.pgpActions div.buttons-container button#draft-delete-button:before {
-  content: "\e008"
-}
-
-.pgpActions div.buttons-container .save-draft-msg {
-  line-height: 40px
-}
-
-.pgpActions div.bottom-notification {
-  width: 100%;
-  background: #FFF;
-  border-top: 1px solid #D7D5D5;
-  padding: 15px 28px;
-}
-
-.pgpActions div.bottom-notification > span.loader {
-  float: left;
-}
-
-.pgpActions div.bottom-notification > div {
-  display: inline-block;
-  vertical-align: top;
-  line-height: 35px;
-  padding: 0 8px;
-  opacity: .7;
-}
 
 .pgpActions label[for], #pgpGenerateKey label[for] {
   cursor: pointer;
@@ -315,40 +683,4 @@ textarea.has-quoted + #quoted-text {
 
 .conversation #save-esc-button {
   display: none;
-}
-.conversation .pgpActions {
-  padding: 0;
-}
-.conversation .pgpActions div.bottom-notification, .conversation .pgpActions div.buttons-container {
-  border-color: #EAEDF0;
-  padding: 0;
-  margin-left: 23px;
-  margin-right: 23px;
-}
-.conversation .pgpActions div.bottom-notification {
-  padding: 15px 0;
-}
-.conversation #fromHolder {
-  margin: 0 23px;
-  border-color: #EAEDF0;
-}
-.conversation #toLabel, .conversation #ccLabel {
-  margin-left: 23px;
-  margin-right: 23px;
-  border-color: #EAEDF0;
-}
-.conversation #subjectHolder {
-  padding: 6px 0;
-  margin: 0 23px;
-  border-color: #EAEDF0;
-}
-.conversation textarea {
-  padding-left: 23px;
-  padding-right: 45px;
-}
-.conversation #quoted-text {
-  margin-left: 14px
-}
-.conversation #encryptr-icon > div, .conversation #encryptr-icon label:before {
-  right: 20px;
 }

@@ -16,11 +16,10 @@
 
 /**
  * Renders the frame where decrypted PGP content will be displayed.
- * @param content The content to display to the user.
  */
 {template .contentFrame}
   <div id="{e2e.ext.constants.ElementId.ENCRYPTR_ICON}"><div></div><label></label></div>
   <div id="{e2e.ext.constants.ElementId.ERROR_DIV}"></div>
-  <div id="{e2e.ext.constants.ElementId.BODY}">{$content}</div>
+  <div class="{e2e.ext.constants.CssClass.USER_CONTENT}{sp}{e2e.ext.constants.CssClass.LOADER}"></div>
   <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
 {/template}

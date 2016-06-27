@@ -127,6 +127,14 @@
     "message": "On $1 $2, $3 wrote:",
     "description": "A sentence fragment indicating where the original message begins."
   },
+  "promptExternalFormWarning": {
+    "message": "Warning! You are about to send information to someone other than Yahoo. If you do not want anyone outside of Yahoo to have this information, click \"Cancel\" now.  Remember: Yahoo will NEVER ask you for your password in an unsolicited phone call or an unsolicited email.",
+    "description": "A sentence warning users when they are submitting form to an external party."
+  },
+  "promptFocusPasswordWarning": {
+    "message": "Warning! You are about to enter a password in a form that will not be sent to Yahoo!.  Remember: Yahoo will NEVER ask you for your password in an unsolicited phone call or an unsolicited email.",
+    "description": "A sentence warning users when they are focusing on a password field."
+  },
   "glassKeyringLockedError": {
     "message": "Please unlock the KeyRing by clicking the Yahoo Mail Encrypted icon in the upper-right area of the screen.",
     "description": "An error message indicating that the user must unlock their KeyRing before reading messages inline."
@@ -188,8 +196,12 @@
     "description": "A short phrase describing opening a new window."
   },
   "actionDraftDeleteTitle": {
-    "message": "Delete Draft",
+    "message": "Delete this draft",
     "description": "A short phrase describing deleting the draft."
+  },
+  "actionFormatTextTitle": {
+    "message": "Format your text",
+    "description": "A short phrase describing formatting the text."
   },
   "keyMgmtTitle": {
     "message": "Keyring management",
@@ -639,12 +651,36 @@
     "message": "Yahoo Mail Encrypted requires your configuration regarding $1. Do it now?",
     "description": "A sentence prompting the user to synchronize local keyring with remote keyserver."
   },
-  "promptUnsupportedFormattingLabel": {
-    "message": "Encrypted formatting and attachments not yet supported.",
+  "promptunsupportedAttachmentLabel": {
+    "message": "Encrypted attachments not yet supported.",
     "description": "A sentence informing the user formatting is not yet supported."
   },
   "keyRingDescriptionLabel": {
     "message": " is ready for use with the following keys:",
     "description": "A sentence greeting the user and introducing the keys that s/he has."
+  },
+  "editorColorText": {
+    "message": "Text",
+    "description": "Menu header that describes the fore color palette"
+  },
+  "editorColorHighlight": {
+    "message": "Highlight",
+    "description": "Menu header that describes the background color palette"
+  },
+  "editorEditLink": {
+    "message": "Link Options",
+    "description": "Title for the dialog that edits a link."
+  },
+  "editorTextToDisplay": {
+    "message": "Display text",
+    "description": "Prompt the user for the text of the link they've written."
+  },
+  "editorLinkTo": {
+    "message": "Edit link",
+    "description": "Prompt the user for the URL of the link they've created."
+  },
+  "editorTestThisLink": {
+    "message": "Follow link",
+    "description": "Text for a button that allows the user to test the link that they created."
   }
 }

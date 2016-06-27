@@ -110,7 +110,7 @@ dialogs.Generic = function(message, callback, inputType, opt_placeholder,
    * @type {string}
    * @private
    */
-  this.cancelButtonTitle_ = opt_cancelButtonTitle || 
+  this.cancelButtonTitle_ = opt_cancelButtonTitle ||
       chrome.i18n.getMessage('actionCancelPgpAction');
 
   /**
@@ -186,7 +186,8 @@ dialogs.Generic.prototype.decorateInternal = function(elem) {
 dialogs.Generic.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
-  var body = goog.dom.getElement(constants.ElementId.BODY);
+  var body = goog.dom.getElement(constants.ElementId.BODY) ||
+      goog.dom.getElementByClass(constants.CssClass.USER_CONTENT);
   if (body) {
     goog.dom.classlist.add(body, constants.CssClass.TRANSPARENT);
   }
@@ -252,7 +253,8 @@ dialogs.Generic.prototype.enterDocument = function() {
 
 /** @override */
 dialogs.Generic.prototype.exitDocument = function() {
-  var body = goog.dom.getElement(constants.ElementId.BODY);
+  var body = goog.dom.getElement(constants.ElementId.BODY) ||
+      goog.dom.getElementByClass(constants.CssClass.USER_CONTENT);
 
   //@yahoo remove the transparent class if it's the only callback dialog left
   if (body && this.getElement().parentNode.childNodes.length === 1) {

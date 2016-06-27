@@ -23,27 +23,25 @@ goog.provide('e2e.ext.ui.Glass');
 
 goog.require('e2e');
 goog.require('e2e.async.Result');
+goog.require('e2e.ext.MessageApi');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 /** @suppress {extraRequire} manually import typedefs due to b/15739810 */
 goog.require('e2e.ext.messages.ApiRequest');
-goog.require('e2e.ext.messages.ApiResponse');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.templates.glass');
 goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.DomPurifier');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.action');
-goog.require('goog.array');
+goog.require('e2e.ext.utils.text');
 goog.require('goog.dom');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
-goog.require('goog.events.KeyCodes');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
-goog.require('goog.ui.KeyboardShortcutHandler');
-goog.require('goog.userAgent');
 goog.require('soy');
 
 
@@ -59,29 +57,11 @@ var dialogs = e2e.ext.ui.dialogs;
 
 /**
  * Constructor for the looking glass.
- * @param {!e2e.openpgp.ArmoredMessage} armor The encrypted PGP message that
- *     needs to be decrypted and displayed to the user.
- * @param {!e2e.ext.MessageApi} api The Message API
  * @constructor
  * @extends {goog.ui.Component}
  */
-ui.Glass = function(armor, api) {
+ui.Glass = function() {
   goog.base(this);
-
-  /**
-   * The encrypted PGP message that needs to be decrypted and displayed to
-   * the user.
-   * @type {!e2e.openpgp.ArmoredMessage}
-   * @private
-   */
-  this.armor_ = armor;
-
-  /**
-   * The message API instance
-   * @type {!e2e.ext.MessageApi}
-   * @private
-   */
-  this.api_ = api;
 };
 goog.inherits(ui.Glass, goog.ui.Component);
 
@@ -93,8 +73,12 @@ goog.inherits(ui.Glass, goog.ui.Component);
  */
 ui.Glass.prototype.displayFailure_ = function(error) {
   //@yahoo hide the loading icon
-  var bodyElem = goog.dom.getElement(constants.ElementId.BODY);
-  bodyElem.classList.remove(constants.CssClass.LOADER);
+  var bodyElem = this.getElementByClass(constants.CssClass.USER_CONTENT);
+
+  if (bodyElem.classList.contains(constants.CssClass.LOADER)) {
+    this.armor_ && (bodyElem.textContent = this.armor_.text);
+    bodyElem.classList.remove(constants.CssClass.LOADER);
+  }
 
   var errorDiv = goog.dom.getElement(constants.ElementId.ERROR_DIV);
   if (error) {
@@ -104,8 +88,8 @@ ui.Glass.prototype.displayFailure_ = function(error) {
     errorDiv.textContent = errorMsg;
 
     //@yahoo
-    goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON).
-        querySelector('label').classList.add(constants.CssClass.ERROR);
+    this.encryptrIcon_.querySelector('label').
+        classList.add(constants.CssClass.ERROR);
   } else {
     errorDiv.textContent = '';
   }
@@ -117,10 +101,7 @@ ui.Glass.prototype.displayFailure_ = function(error) {
 /** @override */
 ui.Glass.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
-
-  soy.renderElement(document.body, templates.contentFrame, {
-    content: this.armor_.text || 'invalid pgp format'
-  });
+  soy.renderElement(document.body, templates.contentFrame, null);
 };
 
 
@@ -129,101 +110,70 @@ ui.Glass.prototype.enterDocument = function() {
   goog.base(this, 'enterDocument');
 
   // @yahoo display the loading icon
-  var bodyElem = goog.dom.getElement(constants.ElementId.BODY);
-  bodyElem.classList.add(constants.CssClass.LOADER);
+  var bodyElem = this.getElementByClass(constants.CssClass.USER_CONTENT);
 
-  this.renderSelectedContent_();
+  this.encryptrIcon_ = goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON);
 
-  // @yahoo added shortcut keys
-  var elem = this.getElement(),
-      sHandler = goog.ui.KeyboardShortcutHandler,
-      userAgentModifier = goog.userAgent.MAC ?
-          sHandler.Modifiers.META :
-          sHandler.Modifiers.CTRL,
-      keyboardHandler = new goog.ui.KeyboardShortcutHandler(elem);
+  /**
+   * The Message API instance
+   * @type {!e2e.ext.MessageApi}
+   * @private
+   */
+  var api = this.api_ = new e2e.ext.MessageApi('ymail-glass');
 
-  goog.array.forEach(this.getShortcuts(), function(key) {
-    keyboardHandler.registerShortcut(key.id, key.keyCode,
-        (key.meta ? userAgentModifier : sHandler.Modifiers.NONE) +
-            (key.shift ? sHandler.Modifiers.SHIFT : sHandler.Modifiers.NONE) +
-            (key.ctrl ? sHandler.Modifiers.CTRL : sHandler.Modifiers.NONE));
-  });
+  api.bootstrapClient(
+      e2e.ext.utils.text.isYmailOrigin, goog.bind(function(error) {
+        error instanceof Error ?
+            this.displayFailure_(error) :
+            api.req('read.get').addCallbacks(/** @param {{
+                armor:e2e.openpgp.ArmoredMessage,
+                isRichText:boolean}} content */ function(content) {
+              this.armor_ = content.armor;
+              this.isRichText_ = content.isRichText;
+              this.renderSelectedContent_();
+            }, this.displayFailure_, this);
+      }, this));
 
-  this.getHandler().listen(
-      keyboardHandler,
-      sHandler.EventType.SHORTCUT_TRIGGERED,
-      goog.bind(this.handleKeyEvent_, this));
 
-  if (window) {
-    //@yahoo resize the glass when window is resized
-    this.registerDisposable(
-        utils.addAnimationDelayedListener(window,
-            goog.events.EventType.RESIZE, this.resizeGlass_, false, this));
+  // @yahoo handle and forward keydown events
+  goog.events.listen(document.documentElement, goog.events.EventType.KEYDOWN,
+      goog.bind(this.forwardKeyEvent_, this));
+  // @yahoo forward focus events
+  goog.events.listen(document.documentElement, goog.events.EventType.CLICK,
+      goog.bind(this.forwardEvent_, this, {type: 'focus'}));
 
-    goog.events.listen(window,
-        goog.events.EventType.FOCUS,
-        goog.bind(this.handleKeyEvent_, this));
-  }
+  //@yahoo resize the glass when window is resized
+  window && this.registerDisposable(
+      utils.addAnimationDelayedListener(window,
+          goog.events.EventType.RESIZE, this.resizeGlass_, false, this));
 };
 
 
 /**
- * The shortcut keys to capture
- * @return {Array.<{id:string, keyCode: number, meta: boolean, shift: boolean,
- *     ctrl: boolean, save: boolean}>}
- */
-ui.Glass.prototype.getShortcuts = function() {
-  return [
-    {id: 'prevTab', keyCode: goog.events.KeyCodes.OPEN_SQUARE_BRACKET},
-    {id: 'nextTab', keyCode: goog.events.KeyCodes.CLOSE_SQUARE_BRACKET},
-
-    {id: 'prevCov', keyCode: goog.events.KeyCodes.COMMA, ctrl: true},
-    {id: 'nextCov', keyCode: goog.events.KeyCodes.PERIOD, ctrl: true},
-    {id: 'prevCov', keyCode: goog.events.KeyCodes.LEFT},
-    {id: 'nextCov', keyCode: goog.events.KeyCodes.RIGHT},
-    {id: 'archiveCov', keyCode: goog.events.KeyCodes.E},
-    {id: 'moveCov', keyCode: goog.events.KeyCodes.D},
-    {id: 'moveToCov', keyCode: goog.events.KeyCodes.D, shift: true},
-    {id: 'deleteCov', keyCode: goog.events.KeyCodes.DELETE},
-    {id: 'replyCov', keyCode: goog.events.KeyCodes.R, shift: true},
-    {id: 'replyallCov', keyCode: goog.events.KeyCodes.A, shift: true},
-    {id: 'forwardCov', keyCode: goog.events.KeyCodes.F, shift: true},
-    {id: 'unreadCov', keyCode: goog.events.KeyCodes.K, shift: true},
-    {id: 'flagCov', keyCode: goog.events.KeyCodes.L, shift: true},
-    {id: 'closeCov', keyCode: goog.events.KeyCodes.ESC},
-
-    {id: 'prev', keyCode: goog.events.KeyCodes.COMMA},
-    {id: 'next', keyCode: goog.events.KeyCodes.PERIOD},
-
-    {id: 'display', keyCode: goog.events.KeyCodes.ENTER},
-    {id: 'display', keyCode: goog.events.KeyCodes.SPACE},
-    {id: 'reply', keyCode: goog.events.KeyCodes.R},
-    {id: 'replyall', keyCode: goog.events.KeyCodes.A},
-    {id: 'forward', keyCode: goog.events.KeyCodes.F},
-    {id: 'unread', keyCode: goog.events.KeyCodes.K},
-    {id: 'flag', keyCode: goog.events.KeyCodes.L},
-
-    {id: 'inbox', keyCode: goog.events.KeyCodes.M},
-    {id: 'inbox', keyCode: goog.events.KeyCodes.M, shift: true},
-    {id: 'compose', keyCode: goog.events.KeyCodes.N},
-    {id: 'settings', keyCode: goog.events.KeyCodes.SEMICOLON},
-    {id: 'newfolder', keyCode: goog.events.KeyCodes.E, meta: true, shift: true}
-    // {id: 'voiceOn', keyCode: goog.events.KeyCodes.L,
-    //   meta: true, shift: true},
-    // {id: 'voiceOff', keyCode: goog.events.KeyCodes.X,
-    //   meta: true, shift: true}
-  ];
-};
-
-
-/**
- * Handles keyboard events for shortcut keys //@yahoo
- * @param {goog.ui.KeyboardShortcutEvent} evt The keyboard event to handle.
+ * Send a key event to the original compose
+ * @param {*} evt The keyboard event to handle.
  * @private
  */
-ui.Glass.prototype.handleKeyEvent_ = function(evt) {
-  var args = evt.identifier ? {keyId: evt.identifier} : undefined;
-  this.api_.req('ctrl.shortcut', args).addErrback(this.displayFailure_, this);
+ui.Glass.prototype.forwardKeyEvent_ = function(evt) {
+  this.forwardEvent_({
+    type: evt.type,
+    keyCode: evt.keyCode,
+    metaKey: evt.metaKey,
+    ctrlKey: evt.ctrlKey,
+    shiftKey: evt.shiftKey,
+    altKey: evt.altKey
+  });
+};
+
+
+/**
+ * Send an event to the original compose
+ * @param {*} evt The keyboard event to handle.
+ * @private
+ */
+ui.Glass.prototype.forwardEvent_ = function(evt) {
+  this.api_ && this.api_.req('evt.trigger', evt).
+      addErrback(this.displayFailure_, this);
 };
 
 
@@ -299,9 +249,37 @@ ui.Glass.prototype.renderPassphraseAndError_ = function(error) {
  * @private
  */
 ui.Glass.prototype.setContent_ = function(result) {
-  var bodyElem = goog.dom.getElement(constants.ElementId.BODY);
+  var bodyElem = this.getElementByClass(constants.CssClass.USER_CONTENT);
   bodyElem.classList.remove(constants.CssClass.LOADER);
-  bodyElem.textContent = result.decrypt.text;
+
+  if (this.isRichText_) {
+    bodyElem.classList.add(constants.CssClass.RICHTEXT);
+    bodyElem.innerHTML = new utils.DomPurifier().
+        cleanContentsHtml(result.decrypt.text);
+
+    // warn about form submissions
+    bodyElem.addEventListener('submit', function(evt) {
+      if (!window.confirm(
+          chrome.i18n.getMessage('promptExternalFormWarning'))) {
+        evt.preventDefault();
+        evt.stopPropagation();
+        return false;
+      }
+    }, true);
+
+    // warn users once when focused on a password field
+    bodyElem.addEventListener('focus', function(evt) {
+      if (!evt.target.warningShown &&
+          evt.target.tagName === 'INPUT' &&
+          evt.target.type === 'password') {
+        evt.target.warningShown = true;
+        alert(chrome.i18n.getMessage('promptFocusPasswordWarning'));
+      }
+    }, true);
+
+  } else {
+    bodyElem.textContent = result.decrypt.text;
+  }
 
   this.resizeGlass_();
 };
@@ -310,13 +288,11 @@ ui.Glass.prototype.setContent_ = function(result) {
 /**
  * Renders the UI elements needed for displaying the decryption and signature
  * information
- * @param {e2e.ext.messages.ApiResponse} apiResponse
+ * @param {!e2e.openpgp.VerifiedDecrypt} result
  * @private
  */
-ui.Glass.prototype.setEncryptrMessage_ = function(apiResponse) {
-  var result = /** @type {e2e.openpgp.VerifiedDecrypt} */ (apiResponse);
-  var encryptrIcon = goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON);
-  var encryptrMsg = encryptrIcon.querySelector('div');
+ui.Glass.prototype.setEncryptrMessage_ = function(result) {
+  var encryptrMsg = this.encryptrIcon_.querySelector('div');
   goog.dom.removeChildren(encryptrMsg);
 
   if (result) {
@@ -347,7 +323,7 @@ ui.Glass.prototype.setEncryptrMessage_ = function(apiResponse) {
             utils.action.extractUserIds(result.verify.success));
       } else if (!result.decrypt.wasEncrypted) {
         // hide the encryptr icon if it was NOT encrypted nor signed
-        encryptrIcon.classList.add(constants.CssClass.HIDDEN);
+        this.encryptrIcon_.classList.add(constants.CssClass.HIDDEN);
       }
     }
 
@@ -363,7 +339,8 @@ ui.Glass.prototype.setEncryptrMessage_ = function(apiResponse) {
  */
 ui.Glass.prototype.resizeGlass_ = function() {
   var height = goog.style.getComputedStyle(document.documentElement, 'height');
-  this.api_.req('ctrl.resizeGlass', {height: parseInt(height, 10)}).
+  this.api_ && this.api_.req(
+      'ctrl.resizeGlass', {height: parseInt(height, 10)}).
       addErrback(this.displayFailure_, this);
 };
 

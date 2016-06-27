@@ -19,9 +19,7 @@
  */
 goog.provide('e2e.ext.ui.glass.bootstrap');
 
-goog.require('e2e.ext.MessageApi');
 goog.require('e2e.ext.ui.Glass');
-goog.require('e2e.ext.utils.text');
 
 
 /**
@@ -31,16 +29,7 @@ goog.require('e2e.ext.utils.text');
 e2e.ext.ui.glass.bootstrap = false;
 
 if (!goog.isDef(window.glass)) {
-  var api = new e2e.ext.MessageApi('ymail-glass');
-  api.bootstrapClient(e2e.ext.utils.text.isYmailOrigin, function(error) {
-    error instanceof Error ?
-        console.error(error) :
-        api.sendRequest('getPgpContent', function(armor) {
-
-          window.glass = new e2e.ext.ui.Glass(armor, api);
-          window.glass.decorate(document.documentElement);
-
-          e2e.ext.ui.glass.bootstrap = true;
-        }, goog.bind(console.error, console));
-  });
+  window.glass = new e2e.ext.ui.Glass();
+  window.glass.decorate(document.documentElement);
+  e2e.ext.ui.glass.bootstrap = true;
 }

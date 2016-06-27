@@ -24,6 +24,7 @@ goog.provide('e2e.ext.constants.BackupCode');
 goog.provide('e2e.ext.constants.CssClass');
 goog.provide('e2e.ext.constants.ElementId');
 goog.provide('e2e.ext.constants.Keyserver');
+goog.provide('e2e.ext.constants.PGPHtmlMessage'); //@yahoo
 goog.provide('e2e.ext.constants.StorageKey');
 
 goog.require('e2e.ext.config');
@@ -114,6 +115,8 @@ e2e.ext.constants.ElementId = {
   CC_LABEL: 'ccLabel', //@yahoo
   SUBJECT_HOLDER: 'subjectHolder',
   SUBJECT: 'subject',
+  EDITOR: 'editor', //@yahoo
+  EDITOR_TOOLBAR: 'editorToolbar', //@yahoo
 
   /* Used in settings page //@yahoo */
   GENERATE_KEY: 'generate-key',
@@ -164,6 +167,7 @@ e2e.ext.constants.ElementId = {
   ENCRYPTR_ICON: 'encryptr-icon', //@yahoo
   SAVE_ESC_BUTTON: 'save-esc-button', //@yahoo
   DRAFT_DELETE_BUTTON: 'draft-delete-button', //@yahoo
+  TEXT_ENHANCEMENT: 'text-enhancement', //@yahoo
   ADD_PASSPHRASE_BUTTON: 'add-passphrase-button', //@yahoo
 
   // Website container
@@ -185,7 +189,7 @@ e2e.ext.constants.CssClass = {
   HIDDEN: 'hidden',
   INVISIBLE: 'invisible',
   TRANSPARENT: 'transparent',
-  BACK: 'back',
+  // BACK: 'back',
   UNCLICKABLE: 'unclickable',
 
   /* Used to display UIDs in the prompt. */
@@ -239,6 +243,7 @@ e2e.ext.constants.CssClass = {
   /** Used in prompt. */
   CONVERSATION: 'conversation', //@yahoo
   HAS_QUOTED: 'has-quoted', //@yahoo
+  USER_CONTENT: 'user-content', //@yahoo
   PROMPT_HEADER: 'pgpHead',
   PROMPT_TITLE: 'pgpTitle',
   PROMPT_ACTIONS: 'pgpActions',
@@ -246,9 +251,15 @@ e2e.ext.constants.CssClass = {
   MENU_BUTTON: 'menu-button',
   POPOUT_BUTTON: 'popout-button',
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
+  RICHTEXT: 'richtext', //@yahoo
   CC_LINK: 'ccLink', //@yahoo
   LOADER: 'loader', //@yahoo
   BOTTOM_NOTIFICATION: 'bottom-notification', //@yahoo
+  TOOLBAR: 'toolbar', //@yahoo
+  TOOLBAR_BUTTON: 'goog-toolbar-button', //@yahoo
+  TOOLBAR_BUTTON_ACTIVE: 'goog-toolbar-button-active', //@yahoo
+  TOOLBAR_SEPARATOR: 'toolbar-separator', //@yahoo
+  TOOLBAR_TRIANGLE: 'toolbar-triangle', //@yahoo
 
   /** Error messages **/
   ERROR: 'error',
@@ -342,10 +353,22 @@ e2e.ext.constants.BACKUP_CODE_LENGTH = 24;
 
 
 /**
- * Keyserver data constants
+ * Keyserver data constants //@yahoo
  * @const
  */
 e2e.ext.constants.Keyserver = {
   DEFAULT_LOCATION: e2e.ext.config.AUTH_DEFAULT_ORIGIN,
   AUTH_COOKIE: e2e.ext.config.AUTH_COOKIE,
+};
+
+
+/**
+ * PGP Html Message //@yahoo
+ * @const
+ */
+e2e.ext.constants.PGPHtmlMessage = {
+  WRAPPER_OPEN: '<pre title="EncryptedHTMLMessage" style="font-size:12px">',
+  WRAPPER_CLOSE: '</pre>',
+  TITLE: 'EncryptedHTMLMessage',
+  SELECTOR: 'pre[title="EncryptedHTMLMessage"]'
 };

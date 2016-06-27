@@ -29,7 +29,6 @@ goog.require('goog.dom');
 goog.require('goog.dom.TagName');
 goog.require('goog.events');
 goog.require('goog.events.EventType'); //@yahoo
-goog.require('goog.string');
 goog.require('goog.style');
 
 goog.scope(function() {
@@ -40,12 +39,14 @@ var messages = e2e.ext.messages;
 
 /**
  * Constructor for the glass wrapper.
- * @param {Element} targetElem The element that will host the looking glass.
- * @param {string=} opt_type The type could either be compose or read
+ * @param {Element} targetElem The element that will host the glass.
+ * @param {!e2e.ext.MessageApi} stubApi The API that the stub can provide to
+ *     the glass.
+ * @param {string=} opt_type The type could either be compose or read.
  * @constructor
  * @extends {goog.Disposable}
  */
-ui.BaseGlassWrapper = function(targetElem, opt_type) {
+ui.BaseGlassWrapper = function(targetElem, stubApi, opt_type) {
   goog.base(this);
 
   /**
@@ -63,7 +64,7 @@ ui.BaseGlassWrapper = function(targetElem, opt_type) {
   this.glassType_ = opt_type === 'compose' ? 'composeglass' : 'glass';
 
   /**
-   * The Message API
+   * The Message API to communicate with the glass
    * @type {e2e.ext.MessageApi}
    * @protected
    */
@@ -71,20 +72,23 @@ ui.BaseGlassWrapper = function(targetElem, opt_type) {
   this.registerDisposable(this.api);
 
   /**
-   * The CSS class name for the elements we created
-   * @type {string}
-   * @private
+   * The Message API to communicate with the website
+   * @type {!e2e.ext.MessageApi}
+   * @protected
    */
-  this.cssClass_ = goog.string.getRandomString();
+  this.stubApi = stubApi;
+  // don't dispose stubApi for compose glass, as user might switch it back on
+  this.glassType_ === 'glass' && this.registerDisposable(stubApi);
 };
 goog.inherits(ui.BaseGlassWrapper, goog.Disposable);
 
 
 /**
  * Prepare the glass frame
+ * @param {function()=} opt_onBootstrapReady
  * @return {!Element} The glass frame
  */
-ui.BaseGlassWrapper.prototype.getGlassFrame = function() {
+ui.BaseGlassWrapper.prototype.getGlassFrame = function(opt_onBootstrapReady) {
   // create the iframe
   var glassFrame = goog.dom.createElement(goog.dom.TagName.IFRAME);
   this.glassFrame = glassFrame;
@@ -93,12 +97,17 @@ ui.BaseGlassWrapper.prototype.getGlassFrame = function() {
   glassFrame.addEventListener('load', goog.bind(function() {
     this.api.bootstrapServer(glassFrame.contentWindow,
         chrome.runtime.getURL(''),
-        goog.bind(this.displayFailure, this));
+        goog.bind(function(err) {
+          if (err instanceof Error) {
+            this.displayFailure(err);
+          } else if (opt_onBootstrapReady) {
+            opt_onBootstrapReady();
+          }
+        }, this));
   }, this), false);
 
   // configure CssClass
   glassFrame.classList.add('e2e' + this.glassType_);
-  glassFrame.classList.add(this.cssClass_);
 
   // configure default style
   goog.style.setSize(glassFrame, '100%', '200px');
@@ -114,19 +123,18 @@ ui.BaseGlassWrapper.prototype.getGlassFrame = function() {
 
 
 /**
- * Add handlers to serve API calls from the glass
+ * Register APIs to serve the glass
  * @return {e2e.ext.MessageApi}
  * @protected
  */
 ui.BaseGlassWrapper.prototype.addAPIHandlers = function() {
   // configure the default request handler
-  this.api.setRequestHandler('ctrl.shortcut', goog.bind(function(args) {
-    this.glassFrame.focus();
-    // possibly have encryptr natively support these ymail specific actions
-    this.handleShortcut_(args.keyId);
-    return true;
-  }, this));
-  return this.api;
+  return this.api.
+      setRequestHandler('evt.trigger', goog.bind(function(args) {
+        // must explicit focus on glassFrame once, so it knows to fire blur
+        this.glassFrame.focus();
+        return this.stubApi.req('evt.trigger', args);
+      }, this));
 };
 
 
@@ -137,158 +145,6 @@ ui.BaseGlassWrapper.prototype.addAPIHandlers = function() {
  */
 ui.BaseGlassWrapper.prototype.setHeight = function(height) {
   this.glassFrame.style.height = height + 'px';
-};
-
-
-/**
- * Suppress checkVars to create a FocusEvent
- * @param {string} type The event type
- * @return {!Event}
- * @suppress {checkVars}
- * @protected
- */
-ui.BaseGlassWrapper.prototype.getFocusEvent = function(type) {
-  return new FocusEvent(type);
-};
-
-
-/**
- * Handle the shortcut action that is specific to the website being interacted.
- * This assumes the thread triggering the shortcut key is already in focus
- * @param {string} shortcutId The shortcut identifier
- * @private
- */
-ui.BaseGlassWrapper.prototype.handleShortcut_ = function(shortcutId) {
-  var disabled = undefined,
-      elem, focusedElem = document.querySelector(
-          '.tab-content:not(.offscreen) .thread-focus');
-
-  if (!focusedElem) { // NOT in conversation mode
-    shortcutId = ({
-      reply: '#btn-reply-sender',
-      replyall: '#btn-reply-all',
-      forward: '#btn-forward',
-      unread: '[data-action=unread]',
-      flag: '[data-action=msg-flag]',
-
-      // disable the following shortcuts
-      replyCov: disabled,
-      replyallCov: disabled,
-      forwardCov: disabled,
-      unreadCov: disabled,
-      flagCov: disabled,
-
-      prev: disabled,
-      next: disabled,
-      display: disabled
-    })[shortcutId] || shortcutId;
-  }
-
-  // map the keyId to a ymail selector string
-  shortcutId = ({
-    compose: '.btn-compose',
-    inbox: '.btn-inbox',
-    settings: '[data-mad=options]',
-    newfolder: '#btn-newfolder',
-
-    // printCov: '', TODO: support print
-    prevCov: '#btn-prev-msg',
-    nextCov: '#btn-next-msg',
-    moveCov: '#btn-move',
-    archiveCov: '#btn-archive',
-    deleteCov: '#btn-delete',
-
-    replyCov: '#btn-reply-sender',
-    replyallCov: '#btn-reply-all',
-    forwardCov: '#btn-forward',
-    unreadCov: '[data-action=thread-unread]',
-    flagCov: '[data-action=thread-flag]',
-
-    reply: '[data-action=reply_sender]',
-    replyall: '[data-action=reply_all]',
-    forward: '[data-action=forward]',
-    unread: '[data-action=thread-item-unread]',
-    flag: '[data-action=thread-item-flag]',
-    display: '.thread-item-header'
-
-  })[shortcutId] || shortcutId;
-
-  switch (shortcutId) {
-    case '.btn-inbox':
-    case '.btn-compose':
-    case '[data-mad=options]':
-    case '#btn-newfolder':
-    case '#btn-prev-msg':
-    case '#btn-next-msg':
-    case '#btn-move':
-    case '#btn-archive':
-    case '#btn-delete':
-    case '#btn-reply-sender':
-    case '#btn-reply-all':
-    case '#btn-forward':
-    case '[data-action=unread]':
-    case '[data-action=msg-flag]':
-      elem = document.querySelector(shortcutId);
-      if (elem) {
-        elem.dispatchEvent(new MouseEvent('mousedown'));
-        elem.click();
-      }
-      break;
-    case 'moveToCov':
-      elem = document.querySelector('#btn-move');
-      if (elem) {
-        elem.dispatchEvent(new MouseEvent('mousedown'));
-        elem.click();
-      }
-      elem = document.querySelector('#menu-move input'); //first input
-      elem && elem.focus();
-      break;
-    case 'closeCov':
-      elem = document.querySelector([
-        '.nav-tab-li.removable.active [data-action=close-tab]',
-        '#btn-closemsg',
-        '[data-action=qr-cancel]'].join(','));
-      elem && elem.click();
-      break;
-    case 'prevTab':
-    case 'nextTab':
-      elem = document.querySelector('.nav-tab-li.removable.active');
-      elem = elem && (shortcutId == 'prevTab' ?
-          elem.previousElementSibling : elem.nextElementSibling);
-      elem &&
-          elem.classList.contains('removable') &&
-          elem.classList.contains('nav-tab-li') &&
-          elem.click();
-      break;
-    case '[data-action=thread-unread]':
-    case '[data-action=thread-flag]':
-      elem = document.querySelector(
-          '.tab-content:not(.offscreen) ' + shortcutId);
-      elem && elem.click();
-      break;
-    case '[data-action=reply_sender]':
-    case '[data-action=reply_all]':
-    case '[data-action=forward]':
-    case '[data-action=thread-item-unread]':
-    case '[data-action=thread-item-flag]':
-    case '.thread-item-header':
-      elem = focusedElem.querySelector(shortcutId);
-      elem && elem.click();
-      break;
-    case 'prev':
-    case 'next':
-      elem = focusedElem && (shortcutId == 'prev' ?
-          focusedElem.previousElementSibling :
-          focusedElem.nextElementSibling);
-      if (elem && !elem.hasAttribute('hidden')) {
-        focusedElem.dispatchEvent(this.getFocusEvent('blur'));
-        elem.focus();
-        elem.dispatchEvent(this.getFocusEvent('focus'));
-        elem = elem.querySelector('iframe');
-        elem && elem.focus();
-      }
-      break;
-  }
 };
 
 
@@ -341,18 +197,17 @@ ui.BaseGlassWrapper.prototype.displayFailure = function(opt_error) {
 /**
  * Constructor for the looking glass wrapper. //@yahoo adds opt_text
  * @param {Element} targetElem The element that will host the looking glass.
+ * @param {!e2e.ext.MessageApi} stubApi The API that the stub can provide to
+ *     the glass.
  * @param {!e2e.openpgp.ArmoredMessage} armor The armored message to decrypt.
+ * @param {boolean=} opt_isRichText Whether the armor text is HTML
  * @constructor
  * @extends {ui.BaseGlassWrapper}
  */
-ui.GlassWrapper = function(targetElem, armor) {
-  goog.base(this, targetElem);
-
-  this.originalContent_ = this.targetElem.innerText;
-
-  this.api.setRequestHandler('getPgpContent', function() {
-    return armor;
-  });
+ui.GlassWrapper = function(targetElem, stubApi, armor, opt_isRichText) {
+  goog.base(this, targetElem, stubApi);
+  this.armor_ = armor;
+  this.isRichText_ = !!opt_isRichText;
 };
 goog.inherits(ui.GlassWrapper, ui.BaseGlassWrapper);
 
@@ -366,12 +221,15 @@ ui.GlassWrapper.prototype.installGlass = function() {
 
 
 /**
- * Add handlers to serve API calls from/to the glass
+ * Register APIs to serve the glass
  * @override
  */
 ui.GlassWrapper.prototype.addAPIHandlers = function() {
   // proxy the stub-provided handlers to the glass
   return goog.base(this, 'addAPIHandlers').
+      setRequestHandler('read.get', goog.bind(function() {
+        return {armor: this.armor_, isRichText: this.isRichText_};
+      }, this)).
       setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {
         this.setHeight(args.height);
         return true;
@@ -383,19 +241,14 @@ ui.GlassWrapper.prototype.addAPIHandlers = function() {
 /**
  * Constructor for the compose glass wrapper.
  * @param {!Element} targetElem Element that hosts the compose glass.
- * @param {!e2e.ext.MessageApi} stubApi API that can serve the compose glass.
+ * @param {!e2e.ext.MessageApi} stubApi The API that the stub can provide to
+ *     the glass.
  * @constructor
  * @extends {ui.BaseGlassWrapper}
  */
 ui.ComposeGlassWrapper = function(targetElem, stubApi) {
-  goog.base(this, targetElem, 'compose');
+  goog.base(this, targetElem, stubApi, 'compose');
 
-  /**
-   * The Message API to communicate with the website
-   * @type {!e2e.ext.MessageApi}
-   * @private
-   */
-  this.stubApi_ = stubApi;
   this.addStubAPIHandlers();
 };
 goog.inherits(ui.ComposeGlassWrapper, ui.BaseGlassWrapper);
@@ -412,18 +265,24 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
   this.setResizeAndScrollEventHandlers_();
 
   var glassFrame = this.getGlassFrame();
-  this.setHeight(330); // must do it after setResizeAndScrollEventHandlers_()
+  // must be after setResizeAndScrollEventHandlers_().
+  // 292 assumes that the editor is sized with its min-height (i.e., 100)
+  this.setHeight(292);
   // insert the glass into dom, and focus it
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
   glassFrame.focus();
 
-  // capture the focus from glassFrame's parent to glassFrame
-  this.focusHandler_ = function() {
-    glassFrame && glassFrame.focus();
-  };
-  goog.events.listen(glassFrame.parentElement,
-      goog.events.EventType.FOCUS,
-      this.focusHandler_);
+  goog.events.listen(glassFrame.parentElement, goog.events.EventType.FOCUS,
+      this.focusHandler_, false, this);
+};
+
+
+/**
+ * shift the focus from glassFrame's parent to glassFrame
+ * @private
+ */
+ui.ComposeGlassWrapper.prototype.focusHandler_ = function() {
+  this.glassFrame && this.glassFrame.focus();
 };
 
 
@@ -432,7 +291,7 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
  * @protected
  */
 ui.ComposeGlassWrapper.prototype.addStubAPIHandlers = function() {
-  var stubApi = this.stubApi_;
+  var stubApi = this.stubApi;
   // override evt.close
   stubApi.setRequestHandler('evt.close', goog.bind(function() {
     this.dispose();
@@ -450,11 +309,11 @@ ui.ComposeGlassWrapper.prototype.addStubAPIHandlers = function() {
 
 
 /**
- * Add handlers to serve API calls from the glass
+ * Register APIs to serve the glass
  * @override
  */
 ui.ComposeGlassWrapper.prototype.addAPIHandlers = function() {
-  var stub = this.stubApi_;
+  var stub = this.stubApi;
   // proxy the stub-provided handlers to the composeglass
   return goog.base(this, 'addAPIHandlers').
       setRequestHandler('draft.get', goog.bind(function(args) {
@@ -472,11 +331,6 @@ ui.ComposeGlassWrapper.prototype.addAPIHandlers = function() {
       }, this)).
       setRequestHandler('draft.getQuoted',
           goog.bind(stub.req, stub, 'draft.getQuoted')).
-      setRequestHandler('draft.triggerEvent', goog.bind(function(args) {
-        // must explicit focus on glassFrame once, so it knows to fire blur
-        this.glassFrame.focus();
-        return stub.req('draft.triggerEvent', args)
-      }, this)).
       setRequestHandler('autosuggest.search',
           goog.bind(stub.req, stub, 'autosuggest.search')).
       setRequestHandler('ctrl.resizeGlass', goog.bind(function(args) {
@@ -498,7 +352,7 @@ ui.ComposeGlassWrapper.prototype.addAPIHandlers = function() {
       setRequestHandler('ctrl.closeGlass', goog.bind(function() {
         this.dispose();
         stub.req('draft.set', {glassClosing: true});
-        // do not dispose this.stubApi_ here, as it might be switched back on
+        // do not dispose this.stubApi here, as it might be switched back on
         return true;
       }, this));
 };
@@ -541,15 +395,13 @@ ui.ComposeGlassWrapper.prototype.setHeight = function(height) {
 ui.ComposeGlassWrapper.prototype.setMinMaxHeight_ = function() {
   if (this.glassFrame) {
     var glassFrameStyle = this.glassFrame.style,
-        max = Math.max(window.innerHeight - this.styleTop_, 252),
-        min = max > 662 ? 662 : max;
+        min = Math.max(window.innerHeight - this.styleTop_, 252);
 
-    glassFrameStyle.minHeight = min + 'px';
-    glassFrameStyle.maxHeight = max + 'px';
+    glassFrameStyle.maxHeight = glassFrameStyle.minHeight = min + 'px';
 
     this.api && this.api.req('evt.minMaxSize', {
       minHeight: min,
-      maxHeight: max
+      maxHeight: min
     });
   } else {
     this.dispose();
@@ -596,7 +448,7 @@ ui.ComposeGlassWrapper.prototype.disposeInternal = function() {
   this.glassFrame && this.glassFrame.parentElement && goog.events.unlisten(
       this.glassFrame.parentElement,
       goog.events.EventType.FOCUS,
-      this.focusHandler_);
+      this.focusHandler_, false, this);
 };
 
 });  // goog.scope

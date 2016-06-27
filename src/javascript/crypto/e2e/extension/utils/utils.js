@@ -24,7 +24,7 @@ goog.provide('e2e.ext.utils.Error');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
-goog.require('goog.events');
+goog.require('goog.Disposable');
 goog.require('goog.object');
 
 goog.scope(function() {
@@ -162,7 +162,7 @@ utils.showNotification = function(msg, callback) {
 /**
  * Sends a request to the launcher to perform some action.
  * @param {!messages.ApiRequest} args The message to send to the launcher
- * @param {!function(*)} callback 
+ * @param {!function(*)} callback
  * @param {!function(Error)} errback
  */
 utils.sendExtensionRequest = function(args, callback, errback) {
@@ -282,7 +282,8 @@ utils.addAnimationDelayedListener = function(
   if (!opt_handler) {
     return null;
   }
-  var ticking = false,
+  var disposable = new goog.Disposable,
+      ticking = false,
       latestEvt,
       listener_ = function(evt) {
         latestEvt = evt; // work on the latest event object
@@ -291,8 +292,7 @@ utils.addAnimationDelayedListener = function(
           ticking = false;
         });
         ticking = true;
-      },
-      disposable = new goog.Disposable;
+      };
   target.addEventListener(type, listener_, !!opt_capt);
   /** @override */
   disposable.disposeInternal = function() {

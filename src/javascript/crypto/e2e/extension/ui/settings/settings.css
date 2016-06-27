@@ -26,6 +26,10 @@
   margin-top: 25px;
 }
 
+#pgpBody input {
+  width: 500px;
+}
+
 #pgpBody input[type="checkbox"] {
   margin-right: 5px;
 }

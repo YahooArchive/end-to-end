@@ -25,9 +25,10 @@
  * @param loadingLabel The label for loading message.
  * @param showOriginalLabel The label for show original message.
  * @param signerCheckboxTitle The label for the checkbox to sign messages.
- * @param actionButtonTitle The title of the prompt button. 
+ * @param actionButtonTitle The title of the prompt button.
+ * @param actionFormatTextTitle The title of the Format Text button.
  * @param actionDraftDeleteTitle The title of the Delete Draft button.
- * @param unsupportedFormattingLabel The label for informing the formatting is unsupported.
+ * @param unsupportedAttachmentLabel The label for informing the attachment is unsupported.
  * @param encryptrMessage The default message to display when the encryptr icon is hovered.
  */
 {template .main}
@@ -43,8 +44,9 @@
       {param showOriginalLabel: $showOriginalLabel /}
       {param signerCheckboxTitle: $signerCheckboxTitle /}
       {param actionButtonTitle: $actionButtonTitle /}
+      {param actionFormatTextTitle: $actionFormatTextTitle /}
       {param actionDraftDeleteTitle: $actionDraftDeleteTitle /}
-      {param unsupportedFormattingLabel: $unsupportedFormattingLabel /}
+      {param unsupportedAttachmentLabel: $unsupportedAttachmentLabel /}
       {param encryptrMessage: $encryptrMessage /}
     {/call}
   </div>
@@ -62,9 +64,10 @@
  * @param loadingLabel The label for loading message.
  * @param showOriginalLabel The label for show original message.
  * @param signerCheckboxTitle The label for the checkbox to sign messages.
- * @param actionButtonTitle The title of the prompt button. 
+ * @param actionButtonTitle The title of the prompt button.
+ * @param actionFormatTextTitle The title of the Format Text button.
  * @param actionDraftDeleteTitle The title of the Delete Draft button.
- * @param unsupportedFormattingLabel The label for informing the formatting is unsupported.
+ * @param unsupportedAttachmentLabel The label for informing the attachment is unsupported.
  * @param encryptrMessage The default message to display when the encryptr icon is hovered.
  */
 {template .renderEncrypt}
@@ -92,24 +95,33 @@
     <div>{$encryptrMessage}</div>
     <label></label>
   </div>
-  <textarea></textarea>
+  <div id="{e2e.ext.constants.ElementId.EDITOR}" class="{e2e.ext.constants.CssClass.USER_CONTENT}"></div>
   <div id="{e2e.ext.constants.ElementId.QUOTED_TEXT}">
     {$showOriginalLabel}</div>
   <div class="{e2e.ext.constants.CssClass.PROMPT_ACTIONS}">
-    <div class="{e2e.ext.constants.CssClass.BOTTOM_NOTIFICATION}" style="display:none">
+    <div class="{e2e.ext.constants.CssClass.BOTTOM_NOTIFICATION}{sp}{e2e.ext.constants.CssClass.HIDDEN}">
       <span class="{e2e.ext.constants.CssClass.LOADER}"></span>
       <div>{$loadingLabel}</div>
     </div>
     <div class="{e2e.ext.constants.CssClass.BUTTONS_CONTAINER}">
-      <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
-      <div>{$unsupportedFormattingLabel}</div>
-      <div>
-        <button id="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}" title="{$actionDraftDeleteTitle}"></button>
+      <div id="{e2e.ext.constants.ElementId.EDITOR_TOOLBAR}"></div>
+      <div class="{e2e.ext.constants.CssClass.TOOLBAR}">
+        <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
+        <span>{$unsupportedAttachmentLabel}</span>
+        <div class="{e2e.ext.constants.CssClass.TOOLBAR_SEPARATOR}"></div>
+        <div id="{e2e.ext.constants.ElementId.TEXT_ENHANCEMENT}" 
+          class="{e2e.ext.constants.CssClass.TOOLBAR_BUTTON}{sp}{e2e.ext.constants.CssClass.TOOLBAR_BUTTON_ACTIVE}" 
+          title="{$actionFormatTextTitle}"></div>
+        <div class="{e2e.ext.constants.CssClass.TOOLBAR_TRIANGLE}"></div>
+        <div class="{e2e.ext.constants.CssClass.TOOLBAR_SEPARATOR}"></div>
+        <div id="{e2e.ext.constants.ElementId.DRAFT_DELETE_BUTTON}" 
+          class="{e2e.ext.constants.CssClass.TOOLBAR_BUTTON}" 
+          title="{$actionDraftDeleteTitle}"></div>
+        <span class="{e2e.ext.constants.CssClass.SAVE_DRAFT_MSG}"></span>
       </div>
-      <div class="{e2e.ext.constants.CssClass.SAVE_DRAFT_MSG}"></div>
     </div>
     <!-- @yahoo hide extra options -->
-    <div style="display:none">
+    <div class="{e2e.ext.constants.CssClass.HIDDEN}">
       <input type="checkbox" id="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
       <label for="{e2e.ext.constants.ElementId.SIGN_MESSAGE_CHECK}">
         {$signerCheckboxTitle}

@@ -18,7 +18,7 @@
  * @fileoverview Data Types usable in Yahoo Mail
  */
 
-goog.provide('e2e.ext.YmailData');
+goog.provide('e2e.ext.YmailType');
 
 
 /**
@@ -29,40 +29,62 @@ goog.provide('e2e.ext.YmailData');
  *   imageUrl: !string
  * }>}
  */
-e2e.ext.YmailData.Contacts;
+e2e.ext.YmailType.Contacts;
 
 
 /**
  * The email user structure
  * @typedef {{name: (string|undefined), email: string}}
  */
-e2e.ext.YmailData.EmailUser;
+e2e.ext.YmailType.EmailUser;
 
 
 /**
  * The attachment structure
  * @typedef {{downloadUrl: string, type: string, subtype: string}}
  */
-e2e.ext.YmailData.Attachment;
+e2e.ext.YmailType.Attachment;
+
+
+/**
+ * The attachment structure
+ * @typedef {{
+ *   fontFamily: string,
+ *   fontSize: string
+ * }}
+ */
+e2e.ext.YmailType.Preferences;
 
 
 /**
  * The draft structure
  * @typedef {{
- *   from: e2e.ext.YmailData.EmailUser,
- *   to: !Array.<e2e.ext.YmailData.EmailUser>,
- *   cc: !Array.<e2e.ext.YmailData.EmailUser>,
- *   bcc: !Array.<e2e.ext.YmailData.EmailUser>,
+ *   from: e2e.ext.YmailType.EmailUser,
+ *   to: !Array.<e2e.ext.YmailType.EmailUser>,
+ *   cc: !Array.<e2e.ext.YmailType.EmailUser>,
+ *   bcc: !Array.<e2e.ext.YmailType.EmailUser>,
  *   subject: !string,
  *   body: !string,
- *   attachments: !Array.<e2e.ext.YmailData.Attachment>,
+ *   attachments: !Array.<e2e.ext.YmailType.Attachment>,
+ *   pref: e2e.ext.YmailType.Preferences,
  *   hasQuoted: !boolean,
  *   isInConv: !boolean,
  *   glassClosing: boolean,
- *   stats: e2e.ext.YmailData.SendStats
+ *   stats: e2e.ext.YmailType.SendStats
  * }}
  */
-e2e.ext.YmailData.Draft;
+e2e.ext.YmailType.Draft;
+
+
+/**
+ * The quoted message structure
+ * @typedef {{
+ *   body: string,
+ *   from: e2e.ext.YmailType.EmailUser,
+ *   sentDate: number
+ * }}
+ */
+e2e.ext.YmailType.Quoted;
 
 
 /**
@@ -72,18 +94,19 @@ e2e.ext.YmailData.Draft;
  *   isEncryptedDraft: !boolean
  * }}
  */
-e2e.ext.YmailData.OpenComposeDetail;
+e2e.ext.YmailType.OpenComposeDetail;
 
 
 /**
  * The detail object defined in the openMessage Event
  * @typedef {{
+ *   apiId: !string,
  *   body: !string,
  *   quotedBody: !string,
  *   meta: *
  * }}
  */
-e2e.ext.YmailData.OpenMessageDetail;
+e2e.ext.YmailType.OpenMessageDetail;
 
 
 /**
@@ -93,4 +116,4 @@ e2e.ext.YmailData.OpenMessageDetail;
  *   canEncrypt: (undefined|number)
  * }}
  */
-e2e.ext.YmailData.SendStats;
+e2e.ext.YmailType.SendStats;

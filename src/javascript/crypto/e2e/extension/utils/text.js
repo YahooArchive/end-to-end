@@ -22,8 +22,10 @@ goog.provide('e2e.ext.utils.text');
 
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
+goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Uri');
 goog.require('goog.array');
+goog.require('goog.dom');
 goog.require('goog.format.EmailAddress');
 goog.require('goog.string');
 goog.require('goog.string.format');
@@ -89,6 +91,77 @@ utils.getPgpAction = function(content) {
   }
 
   return constants.Actions.ENCRYPT_SIGN;
+};
+
+
+/**
+ * Invoke callback to handle clearsign and decryptVerify ASCII armors, amid
+ * preserving surronding plaintext.
+ * @param {!Element} elem The elem containing the message
+ * @param {!function(!e2e.openpgp.ArmoredMessage)} armorHandler Callback to
+ *     consume an ASCII armor.
+ * @param {string=} opt_message Message body, defaulted to use elem.innerText
+ * @param {number=} opt_limit Stop parsing once opt_limit armors have been
+ *     parsed. Defaulted to 20.
+ */
+utils.isolateAsciiArmors = function(
+    elem, armorHandler, opt_message, opt_limit) {
+  var div, plaintext, lastEndOffset = 0;
+  var message = opt_message || elem.innerText;
+  var armors = e2e.openpgp.asciiArmor.parseAll(message, opt_limit || 20);
+
+  // do nothing if we cannot parse any ASCII armors
+  if (!armors || armors.length === 0 || armors[0].type === 'BINARY') {
+    return;
+  }
+
+  goog.array.forEach(armors, function(armor) {
+    var isValidDecryptVerifyArmor = false, textStartOffset = 0;
+
+    if (armor.type === 'SIGNATURE') {
+      // adjust startOffset to capture the whole message body
+      textStartOffset = lastEndOffset + message.slice(lastEndOffset).
+          indexOf('-----BEGIN PGP SIGNED MESSAGE-----');
+
+      isValidDecryptVerifyArmor = true;
+    } else if (armor.type === 'MESSAGE') {
+      textStartOffset = armor.startOffset;
+      isValidDecryptVerifyArmor = true;
+    }
+
+    // capture the text upto the next valid armor (or include it if invalid)
+    plaintext = message.slice(lastEndOffset,
+        isValidDecryptVerifyArmor ? textStartOffset : armor.endOffset);
+
+    // insert the text before the next armor
+    if (plaintext && goog.string.trim(plaintext)) {
+      div = document.createElement('div');
+      div.className = elem.className +
+          (isValidDecryptVerifyArmor ? ' plaintext-above' : '') +
+          ' plaintext-below';
+      div.textContent = plaintext;
+
+      goog.dom.insertSiblingBefore(div, elem);
+    }
+
+    // invoke callback to decrypt the next armor
+    if (isValidDecryptVerifyArmor) {
+      // add the original text to the armor object
+      armor.text = message.slice(textStartOffset, armor.endOffset);
+      armorHandler(armor);
+    }
+
+    lastEndOffset = armor.endOffset;
+  });
+
+  // insert the remaining text
+  plaintext = message.slice(lastEndOffset);
+  if (plaintext && goog.string.trim(plaintext)) {
+    div = document.createElement('div');
+    div.className = elem.className + ' plaintext-above';
+    div.textContent = plaintext;
+    goog.dom.insertSiblingBefore(div, elem);
+  }
 };
 
 
