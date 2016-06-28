@@ -226,6 +226,9 @@ panels.ChipHolder.prototype.addChip = function(opt_chip) {
   this.shadowInputElem_.placeholder = '';
   goog.style.setWidth(this.shadowInputElem_, 10);
 
+  //@yahoo dispatch change event
+  this.dispatchEvent(goog.events.EventType.CHANGE);
+
   return chip; //@yahoo
 };
 
@@ -338,6 +341,9 @@ panels.ChipHolder.prototype.removeChild = function(child, opt_unrender) {
   if (this.getChildCount() == 0) {
     goog.style.setWidth(this.shadowInputElem_, 100);
   }
+
+  //@yahoo dispatch change event
+  this.dispatchEvent(goog.events.EventType.CHANGE);
 
   return result;
 };

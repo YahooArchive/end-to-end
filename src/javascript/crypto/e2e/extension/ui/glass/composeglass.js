@@ -39,11 +39,12 @@ goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('goog.Promise');
-goog.require('goog.Timer'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.async.Deferred');
+goog.require('goog.async.Throttle');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
+goog.require('goog.editor.Field');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes'); //@yahoo
@@ -203,30 +204,19 @@ ui.ComposeGlass.prototype.enterDocument = function() {
 
   this.populateUi_();
 
-  //@yahoo checks for key missing before calling EncryptSign
-  this.getHandler().listen(
-      this.getElementByClass(constants.CssClass.ACTION),
-      goog.events.EventType.CLICK,
-      goog.bind(this.keyMissingWarningThenEncryptSign_, this));
-
-
-  // @yahoo handle and forward keydown events
-  goog.events.listen(document.documentElement, goog.events.EventType.KEYDOWN,
-      goog.bind(this.handleKeyEvent_, this));
-  // @yahoo forward focus events
-  goog.events.listen(document.documentElement, goog.events.EventType.FOCUS,
-      goog.bind(this.forwardEvent_, this, {type: 'focus'}));
-
-
-  this.saveDraftTimer_ = new goog.Timer(30000); //30s
-  this.saveDraftTimer_.start();
+  // trigger auto save at most once every 5 seconds
+  var throttledSave_ = new goog.async.Throttle(this.saveDraft_, 5000, this);
 
   this.getHandler().
-      //@yahoo periodically save the encrypted draft
+      //@yahoo handle auto save of message body
+      listen(this.editor_,
+          goog.editor.Field.EventType.DELAYEDCHANGE,
+          goog.bind(throttledSave_.fire, throttledSave_)).
+      //@yahoo checks for key missing before calling EncryptSign
       listen(
-          this.saveDraftTimer_,
-          goog.Timer.TICK,
-          goog.partial(this.saveDraft_)).
+          this.getElementByClass(constants.CssClass.ACTION),
+          goog.events.EventType.CLICK,
+          goog.bind(this.keyMissingWarningThenEncryptSign_, this)).
       //@yahoo has a restore button
       listenOnce(
           goog.dom.getElement(
@@ -250,9 +240,19 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           goog.events.EventType.CLICK,
           goog.bind(this.discard, this));
 
+  // @yahoo handle and forward keydown events
+  goog.events.listen(document.documentElement, goog.events.EventType.KEYDOWN,
+      goog.bind(this.handleKeyEvent_, this));
+  // @yahoo forward focus events
+  goog.events.listen(document.documentElement, goog.events.EventType.FOCUS,
+      goog.bind(this.forwardEvent_, this, {type: 'focus'}));
+
 
   //@yahoo save encrypted draft when it is closed externally
-  this.api_.setRequestHandler('evt.close', goog.bind(this.saveDraft_, this));
+  this.api_.setRequestHandler('evt.close', goog.bind(function() {
+    this.editor_.dispatchEvent(goog.editor.Field.EventType.BLUR);
+    this.saveDraft_();
+  }, this));
 
   // clear prior failure when any item is on clicked or focused
   this.getHandler().listen(
@@ -302,6 +302,26 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
         goog.dom.getElement(constants.ElementId.CC_CHIP_HOLDER));
 
     this.createAutoComplete_();
+
+    //@yahoo handle auto save of recipients
+    this.getHandler().listen(this.chipHolder_,
+        goog.events.EventType.CHANGE,
+        function() {
+          // @yahoo save the recipients
+          this.setHeader_({
+            to: utils.text.uidsToObjects(
+                this.chipHolder_.getSelectedUids(true))
+          });
+        });
+    this.getHandler().listen(this.ccChipHolder_,
+        goog.events.EventType.CHANGE,
+        function() {
+          // @yahoo save the recipients
+          this.setHeader_({
+            cc: utils.text.uidsToObjects(
+                this.ccChipHolder_.getSelectedUids(true))
+          });
+        });
 
     resolve();
   }, this);
@@ -537,18 +557,16 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(
 
 
 /**
- * Encrypts the current draft and persists it into the web application that the
- * user is interacting with.
- * @param {Function=} opt_postSaveCallback The callback to call after saving
+ * Encrypts the current draft and puts it back into the web application, which
+ * will save it at a time it desires. When opt_persist is set, the application
+ * is forced to save.
+ * @param {boolean=} opt_persist Whether to persist the changes immediately.
+ * @param {Function=} opt_completionCallback The callback to call after setting
  *     the draft.
  * @private
  */
-ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
-  // restart the timer
-  if (this.saveDraftTimer_) {
-    this.saveDraftTimer_.stop();
-    this.saveDraftTimer_.start();
-  }
+ui.ComposeGlass.prototype.saveDraft_ = function(
+    opt_persist, opt_completionCallback) {
   var body = this.editor_.getCleanContents();
 
   var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
@@ -560,15 +578,6 @@ ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
                        this.chipHolder_.getSelectedUids(true));
   var ccRecipients = utils.text.uidsToObjects(
                          this.ccChipHolder_.getSelectedUids(true));
-
-  // @yahoo do not trigger saving a draft if nothing has really changed
-  if (goog.string.isEmpty(body) &&
-      goog.string.isEmptySafe(subject) &&
-      recipients.length === 0 &&
-      ccRecipients.length === 0) {
-    goog.isFunction(opt_postSaveCallback) && opt_postSaveCallback();
-    return;
-  }
 
   // @yahoo signal to user we're encrypting
   var saveDraftMsg = this.getElementByClass(constants.CssClass.SAVE_DRAFT_MSG);
@@ -591,7 +600,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
     // Inject the draft into website.
 
     // @yahoo used the ymail API to saveDraft
-    this.api_.req('draft.save', {
+    this.api_.req(opt_persist === true ? 'draft.save' : 'draft.set', {
       from: signer,
       to: recipients,
       cc: ccRecipients,
@@ -603,7 +612,8 @@ ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
       saveDraftMsg.textContent = chrome.i18n.getMessage(
           'promptEncryptSignSaveEncryptedDraftLabel',
           new Date().toLocaleTimeString().replace(/:\d\d? /, ' '));
-      goog.isFunction(opt_postSaveCallback) && opt_postSaveCallback();
+      // @yahoo trigger the completion callback
+      opt_completionCallback && opt_completionCallback();
     }, this.errorCallback_, this);
 
 
@@ -617,7 +627,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(opt_postSaveCallback) {
     }
 
     // NOTE(radi): Errors are silenced here on purpose.
-    // NOTE(adon): log the error
+    // NOTE(adon): yahoo. log the error
     console.error(error);
   }, this));
 };
@@ -700,8 +710,6 @@ ui.ComposeGlass.prototype.renderConfigureUserDialog_ = function(opt_uid) {
             action: constants.Actions.CONFIGURE_EXTENSION,
             content: opt_uid
           }), goog.nullFunction, this.errorCallback_);
-        } else {
-          this.saveDraftTimer_.stop();
         }
       }, this),
       ui.dialogs.InputType.NONE);
@@ -710,13 +718,15 @@ ui.ComposeGlass.prototype.renderConfigureUserDialog_ = function(opt_uid) {
 
 
 /**
- * Put the subject back to original compose
- * @param {Event} evt The key event
+ * Put the email header back to original compose
+ * @param {{to: (Array.<e2e.ext.YmailType.EmailUser>|undefined),
+ *     cc: (Array.<e2e.ext.YmailType.EmailUser>|undefined),
+ *     subject: (string|undefined)}} header
+ * @return {!goog.async.Deferred} The deferred API result
  * @private
  */
-ui.ComposeGlass.prototype.forwardSubject_ = function(evt) {
-  this.api_.req('draft.set', {subject: evt.target.value}).
-      addErrback(this.errorCallback_);
+ui.ComposeGlass.prototype.setHeader_ = function(header) {
+  return this.api_.req('draft.set', header).addErrback(this.errorCallback_);
 };
 
 
@@ -884,7 +894,9 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
       this.registerDisposable(
           utils.addAnimationDelayedListener(subjectElem,
               goog.events.EventType.KEYUP,
-              goog.bind(this.forwardSubject_, this)));
+              goog.bind(function() {
+                this.setHeader_({subject: subjectElem.value});
+              }, this)));
     }
   }
 };
@@ -1079,12 +1091,13 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
       return;
     case keyCodeEnum.S:         // Send by Cmd + S
       if (!agentSpecificMeta) { break; }
-      this.saveDraft_();
+      this.saveDraft_(true);
       evt.preventDefault();
       evt.stopPropagation();
       return;
     case keyCodeEnum.ESC:       // Close Conversation
-      this.saveDraft_(goog.bind(this.forwardKeyEvent_, this, evt));
+      this.saveDraft_(false, goog.bind(this.forwardKeyEvent_, this, evt));
+      this.editor_.dispatchEvent(goog.editor.Field.EventType.BLUR);
       return;
   }
 
@@ -1101,7 +1114,8 @@ ui.ComposeGlass.prototype.handleKeyEvent_ = function(evt) {
       case keyCodeEnum.E:         // Archive Conversation
       case keyCodeEnum.M:         // Inbox
       case keyCodeEnum.N:         // New Compose
-        this.saveDraft_(goog.bind(this.forwardKeyEvent_, this, evt));
+        this.saveDraft_(false, goog.bind(this.forwardKeyEvent_, this, evt));
+        this.editor_.dispatchEvent(goog.editor.Field.EventType.BLUR);
         return;
     }
     this.forwardKeyEvent_(evt);
