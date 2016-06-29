@@ -21,7 +21,6 @@
 goog.provide('e2e.coname.KeyData');
 goog.provide('e2e.coname.QuorumRequirement');
 goog.provide('e2e.coname.RealmAuth');
-goog.provide('e2e.coname.RealmAuthType');
 goog.provide('e2e.coname.RealmConfig');
 goog.provide('e2e.coname.VerificationPolicy');
 goog.provide('e2e.coname.getRealmByDomain');

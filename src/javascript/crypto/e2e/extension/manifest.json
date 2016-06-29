@@ -9,7 +9,8 @@
     "notifications",
     "webRequest",
     "webRequestBlocking",
-    "https://*.keyserver.yahoo.com:*/*",
+    "https://localhost:4443/*",
+    "https://*.keyserver.yahoo.com/*",
     "https://*.mail.yahoo.com/*"
   ],
   "optional_permissions": [

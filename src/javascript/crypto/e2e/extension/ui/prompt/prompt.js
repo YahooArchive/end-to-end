@@ -181,7 +181,7 @@ ui.Prompt.prototype.processSelectedContent_ =
     //@yahoo
     case constants.Actions.REPORT_ISSUE:
       chrome.tabs.create({
-        url: 'http://yo/e2e-support',
+        url: 'https://help.yahoo.com/kb/yahoo-account',
         active: true
       }, goog.nullFunction);
       break;

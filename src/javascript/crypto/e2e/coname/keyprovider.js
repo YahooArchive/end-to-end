@@ -27,7 +27,6 @@ goog.provide('e2e.coname.KeyProvider');
 goog.require('e2e.async.Result');
 goog.require('e2e.coname');
 goog.require('e2e.coname.Client');
-goog.require('e2e.ext.config');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.array');
 goog.require('goog.async.DeferredList');
@@ -50,6 +49,7 @@ e2e.coname.KeyProvider = function() {
 };
 
 var ConameKeyProvider = e2e.coname.KeyProvider;
+
 
 /**
  * Imports public key to the key server.
