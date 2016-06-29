@@ -287,7 +287,8 @@ e2e.coname.Client.prototype.req_ = function(
   }
 
   var result = new e2e.async.Result;
-  goog.net.XhrIo.send(realm.addr + relUrl, goog.bind(function(e) {
+  var url = realm.addr + relUrl + '?' + e2e.ext.utils.getUAString();
+  goog.net.XhrIo.send(url, goog.bind(function(e) {
     var xhr = e.target, statusCode = xhr.getStatus();
     if (xhr.getLastErrorCode() === goog.net.ErrorCode.NO_ERROR) {
       result.callback(xhr.getResponseText());

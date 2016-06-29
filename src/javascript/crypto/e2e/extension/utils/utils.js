@@ -315,4 +315,26 @@ utils.getConfig = function(property, callback, errback) {
   }), callback, errback);
 };
 
+
+/**
+ * Get the version string from the manifest settings
+ * @return {string}
+ */
+utils.getVersionString = function() {
+  var manifest = chrome.runtime && chrome.runtime.getManifest();
+  return manifest ? manifest.version : '';
+};
+
+
+/**
+ * Get the version string from the manifest settings
+ * @return {string}
+ */
+utils.getUAString = function() {
+  var manifest = chrome.runtime && chrome.runtime.getManifest();
+  return manifest ? ('ua=' + encodeURIComponent(manifest.name) +
+      '&v=' + encodeURIComponent(manifest.version)) : '';
+};
+
+
 });  // goog.scope
