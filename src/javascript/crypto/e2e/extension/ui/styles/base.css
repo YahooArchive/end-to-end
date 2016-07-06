@@ -21,14 +21,12 @@ body {
   color: YCOLOR_GREY_10;
   font-family: "Helvetica Neue","Segoe UI",Helvetica,Arial,"Lucida Grande",sans-serif;
   font-size: 14px;
-  font-weight: 300;
-  line-height: 1.4;
   margin: 0;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-.pgpActions button, #callbackDialog button {
+.pgpActions button, .modal-dialog button, #callbackDialog button {
   box-sizing: border-box;
   height: 32px;
   line-height: 30px;
@@ -46,17 +44,20 @@ body {
 }
 
 .pgpActions button:hover,
+.modal-dialog button:hover,
 #callbackDialog button:hover {
   background-color: BTN_PRIMARY_HOVER;
 }
 
 .pgpActions button:disabled,
+.modal-dialog button:disabled,
 #callbackDialog button:disabled {
   background-color: BTN_PRIMARY_INACTIVE;
   color: BTN_PRIMARY_INACTIVE_TEXT;
 }
 
 .pgpActions button.cancel,
+.modal-dialog button.cancel,
 #callbackDialog button.cancel/*,
 button.options,
 button.save*/ {
@@ -66,6 +67,7 @@ button.save*/ {
 }
 
 .pgpActions button.cancel:hover,
+.modal-dialog button.cancel:hover,
 #callbackDialog button.cancel:hover/*,
 button.options:hover,
 button.save:hover*/ {
@@ -330,10 +332,7 @@ input:focus {
 
 
 .user-content:not(.loader) {
-  padding-bottom: 5px;
   margin: 2px 21px 0 0;
-  font-family: Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif;
-  white-space: initial;
 }
 
 .richtext p {

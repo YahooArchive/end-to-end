@@ -22,16 +22,25 @@ body {
   margin-top: 4px;
 }
 
+
 div.user-content:not(.loader) {
-  margin: 0 46px 0 27px;
   cursor: default;
   color: #000;
-  line-height: normal;
-  font-family: monospace;
-  font-size: 14px;
   white-space: pre-line;
   word-wrap: break-word;
   font-weight: normal;
+}
+
+div.richtext.user-content:not(.loader) {
+  margin: 0 20px 0 0;
+  font-family: "Helvetica Neue","Segoe UI",Helvetica,Arial,"Lucida Grande",sans-serif;
+  font-size: 14px;
+}
+
+div.user-content:not(.loader):not(.richtext) {
+  margin: 0 46px 0 27px;
+  font-family: monospace;
+  font-size: 14px;
 }
 
 div.user-content.transparent + div#callbackDialog {
