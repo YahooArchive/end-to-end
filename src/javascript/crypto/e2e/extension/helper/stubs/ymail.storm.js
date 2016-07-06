@@ -725,8 +725,7 @@ YmailApi.StormUI.DraftApi.prototype.send = function(draft) {
 
 /**
  * @param {boolean} isExpandQuoted
- * @return {?goog.async.Deferred.<{
- *   body: !string, from: !YmailType.EmailUser, sentDate: !number}>}
+ * @return {?goog.async.Deferred.<e2e.ext.YmailType.Quoted>}
  */
 YmailApi.StormUI.DraftApi.prototype.getQuoted = function(isExpandQuoted) {
   var origin = this.composeView_.draft.origin,

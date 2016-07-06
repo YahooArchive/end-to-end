@@ -517,9 +517,7 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
   this.editor_.setHtml(false, this.draft_.body, true);
 
   // display show original message, and install the click handler
-  if (this.draft_.hasQuoted) {
-    this.setQuotedTextHandlers_(this.api_.req('draft.getQuoted', true));
-  }
+  this.draft_.hasQuoted && this.setQuotedTextHandlers_();
 };
 
 
@@ -829,10 +827,9 @@ ui.ComposeGlass.prototype.lackPublicKeys_ = function(
 /**
  * Renders show original message, and install the click handler that can expand
  * the quoted message.
- * @param {goog.async.Deferred<e2e.ext.YmailType.Quoted>} quotedMessage
  * @private
  */
-ui.ComposeGlass.prototype.setQuotedTextHandlers_ = function(quotedMessage) {
+ui.ComposeGlass.prototype.setQuotedTextHandlers_ = function() {
   var editorElement = this.editor_.getElement();
   this.dateFormat_ || (this.dateFormat_ = new goog.i18n.DateTimeFormat(
       goog.i18n.DateTimeFormat.Format.FULL_DATE
@@ -845,7 +842,7 @@ ui.ComposeGlass.prototype.setQuotedTextHandlers_ = function(quotedMessage) {
       goog.dom.getElement(constants.ElementId.QUOTED_TEXT),
       goog.events.EventType.CLICK,
       goog.bind(function() {
-        quotedMessage.addCallbacks(function(quoted) {
+        this.api_.req('draft.getQuoted', true).addCallbacks(function(quoted) {
           var sentDate = new Date(quoted.sentDate * 1000);
           goog.dom.classlist.remove(
               editorElement, constants.CssClass.HAS_QUOTED);
