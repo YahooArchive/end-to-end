@@ -471,7 +471,7 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
 
   var request = /** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.ENCRYPT_SIGN,
-    content: this.editor_.getCleanContents(),
+    content: this.editor_.getWrappedCleanContents(),
     currentUser: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
   });
 

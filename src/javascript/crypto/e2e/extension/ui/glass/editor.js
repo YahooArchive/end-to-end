@@ -375,6 +375,22 @@ ui.RichTextEditor.prototype.setPreferences = function(pref) {
 
 
 /**
+ * Retrieve the HTML contents and encloses them with the default font family
+ * and size.
+ * @return {!string} The wrapped HTML contents
+ */
+ui.RichTextEditor.prototype.getWrappedCleanContents = function() {
+  var style = this.getElement().style;
+  var div = this.getEditableDomHelper().createDom('div', {
+    innerHTML: this.getCleanContents()
+  });
+  div.style.fontFamily = style.fontFamily;
+  div.style.fontSize = style.fontSize;
+  return div.outerHTML;
+};
+
+
+/**
  * Scroll up the editor, and trigger the iframe to resize. Throttled to happen
  * no more than 4 times per second.
  * @param {boolean=} opt_skipForcedScroll Whether to skip scrolling by delta
