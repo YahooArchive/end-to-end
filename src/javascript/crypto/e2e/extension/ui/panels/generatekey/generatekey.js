@@ -23,7 +23,6 @@ goog.provide('e2e.ext.ui.panels.GenerateKey');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.templates.panels.generatekey');
-goog.require('e2e.ext.utils.action'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');

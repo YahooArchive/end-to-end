@@ -234,7 +234,7 @@ panels.KeyringMgmtFull.prototype.removeKey = function(
 
           if (fpElem && typeElem) {
             var keyType = goog.string.contains(
-                                      typeElem.textContent, pubString) ?
+            typeElem.textContent, pubString) ?
                 e2e.openpgp.KeyRing.Type.PUBLIC :
                 goog.string.contains(typeElem.textContent, privString) ?
                     e2e.openpgp.KeyRing.Type.PRIVATE :

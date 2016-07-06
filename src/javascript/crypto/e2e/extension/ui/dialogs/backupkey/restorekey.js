@@ -30,7 +30,6 @@ goog.require('e2e.ext.utils.text'); //@yahoo
 goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.events.EventType');
-goog.require('goog.string'); //@yahoo
 goog.require('goog.style');
 goog.require('soy');
 

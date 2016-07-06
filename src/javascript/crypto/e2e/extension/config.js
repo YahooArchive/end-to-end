@@ -25,20 +25,30 @@ goog.require('goog.crypt.base64');
 
 
 /**
- * Keyserver config
+ * Config
  * @const {!Object<string, *>}
  */
 e2e.ext.config = {};
 
 
-/* The name of the cookie used to authenticate users to the keyserver. */
+/**
+ * The name of the cookie used to authenticate users to the keyserver.
+ * @type {!string}
+ */
 e2e.ext.config.AUTH_COOKIE = 'YBY';
 
 
-/* Some location that has access to the auth cookie. */
+/**
+ * Some location that has access to the auth cookie.
+ * @type {!string}
+ */
 e2e.ext.config.AUTH_DEFAULT_ORIGIN = 'https://mail.yahoo.com';
 
 
+/**
+ * CONAME Config
+ * @const {!Object<string, *>}
+ */
 e2e.ext.config.CONAME = {};
 
 

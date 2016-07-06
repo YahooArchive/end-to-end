@@ -337,7 +337,7 @@ ui.RichTextEditor.prototype.cleanPasteContents_ = function(evt) {
 
     return false;
   }
-  
+
   return true;
 };
 

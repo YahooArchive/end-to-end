@@ -29,6 +29,7 @@ goog.require('e2e.ext.ui.Glass');
 e2e.ext.ui.glass.bootstrap = false;
 
 if (!goog.isDef(window.glass)) {
+  /** @type {e2e.ext.ui.Glass} */
   window.glass = new e2e.ext.ui.Glass();
   window.glass.decorate(document.documentElement);
   e2e.ext.ui.glass.bootstrap = true;

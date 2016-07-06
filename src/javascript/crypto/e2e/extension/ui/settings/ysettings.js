@@ -23,6 +23,7 @@ goog.require('e2e.async.Result');
 goog.require('e2e.cipher.Algorithm');
 goog.require('e2e.coname.getRealmByEmail');
 goog.require('e2e.ext.constants');
+goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass'); //@yahoo
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.Settings');
@@ -31,6 +32,8 @@ goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.dialogs.SyncConfirmation');
 goog.require('e2e.ext.ui.templates.dialogs.importconfirmation');
 goog.require('e2e.ext.utils');
+goog.require('e2e.ext.utils.Error');
+goog.require('e2e.ext.utils.action');
 goog.require('e2e.ext.utils.text');
 goog.require('e2e.openpgp.KeyRing'); //@yahoo
 goog.require('e2e.signer.Algorithm');
@@ -293,8 +296,8 @@ ui.Settings.prototype.displaySignupPanels_ = function() {
       constants.ElementId.GENERATE_KEY_FORM);
   var signupPrompt = goog.dom.getElement(
       constants.ElementId.SIGNUP_PROMPT);
-    goog.dom.classlist.add(signupPrompt, hiddenClass);
-    goog.dom.classlist.remove(signupForm, hiddenClass);
+  goog.dom.classlist.add(signupPrompt, hiddenClass);
+  goog.dom.classlist.remove(signupForm, hiddenClass);
 };
 
 
@@ -431,7 +434,7 @@ ui.ySettings.prototype.importKeyring_ = function(file) {
               }, this);
               this.keyringMgmtPanel_.resetControls();
             }, this));
-      
+
         // @yahoo switch to advanced mode when only public key is imported
         isPubKeyBlock && goog.dom.classlist.remove(
             document.documentElement, constants.CssClass.LITE_MODE);
@@ -478,7 +481,7 @@ ui.ySettings.prototype.renderMatchRemoteKeysCallback_ = function(
             break;
           case 'false': // import remote keys
             goog.async.DeferredList.gatherResults(
-                goog.array.map(remoteOnlyKeys, 
+                goog.array.map(remoteOnlyKeys,
                     function(/** @type {!e2e.openpgp.Key} */ k) {
                       return this.importKey(goog.nullFunction, k.serialized);
                     }, this.pgpContext_)).

@@ -27,6 +27,7 @@ goog.require('e2e.coname.ProtoBuf');
 goog.require('e2e.coname.sha3');
 goog.require('e2e.coname.verifyLookup');
 goog.require('e2e.ext.config');
+goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.random');
 goog.require('goog.array');

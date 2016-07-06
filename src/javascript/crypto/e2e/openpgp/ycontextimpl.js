@@ -27,6 +27,7 @@ goog.require('e2e.openpgp.ContextImpl');
 goog.require('e2e.openpgp.KeyRing');
 goog.require('e2e.openpgp.asciiArmor');
 goog.require('e2e.openpgp.block.EncryptedMessage');
+goog.require('e2e.openpgp.block.TransferableSecretKey');
 goog.require('e2e.openpgp.block.factory');
 goog.require('goog.array');
 goog.require('goog.asserts');
