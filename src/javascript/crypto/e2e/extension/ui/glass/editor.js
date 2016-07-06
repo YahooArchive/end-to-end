@@ -116,7 +116,7 @@ ui.RichTextEditor.prototype.makeEditableInternal = function() {
       }, goog.nullFunction, goog.bind(this.displayFailure_, this)));
 
   // resize the glass and scroll up if content needs more space
-  this.listen(goog.editor.Field.EventType.DELAYEDCHANGE,
+  goog.events.listen(this.getElement(), goog.events.EventType.INPUT,
       goog.bind(this.resize, this, false));
 
   // listen to beforepaste events
