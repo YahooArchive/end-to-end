@@ -266,8 +266,8 @@ ui.ComposeGlassWrapper.prototype.installGlass = function() {
 
   var glassFrame = this.getGlassFrame();
   // must be after setResizeAndScrollEventHandlers_().
-  // 292 assumes that the editor is sized with its min-height (i.e., 100)
-  this.setHeight(292);
+  // This number assumes that the editor is sized with its min-height
+  this.setHeight(378);
   // insert the glass into dom, and focus it
   goog.dom.insertSiblingBefore(glassFrame, this.targetElem);
   glassFrame.focus();
