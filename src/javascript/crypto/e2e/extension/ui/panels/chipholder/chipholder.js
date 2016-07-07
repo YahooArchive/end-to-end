@@ -171,21 +171,12 @@ panels.ChipHolder.prototype.enterDocument = function() {
   // var renderer = this.autoComplete_.getRenderer();
   // renderer.setAnchorElement(this.getElement());
 
-  this.getHandler().listen(
-      this.getElement(),
-      goog.events.EventType.CLICK,
-      this.focus,
-      true);
-
-  this.getHandler().listen(
-      this.shadowInputElem_,
-      goog.events.EventType.KEYDOWN,
-      this.increaseInputArea_);
-
-  this.getHandler().listen(
-      this.keyHandler_,
-      goog.events.KeyHandler.EventType.KEY,
-      this.handleKeyEvent_);
+  this.getHandler().
+      listen(this.getElement(), goog.events.EventType.CLICK, this.focus, true).
+      listen(this.shadowInputElem_, goog.events.EventType.INPUT,
+          this.increaseInputArea_).
+      listen(this.keyHandler_, goog.events.KeyHandler.EventType.KEY,
+          this.handleKeyEvent_);
 
   // @yahoo ccRecipients do not have renderEncryptionPassphraseCallback_
   if (this.renderEncryptionPassphraseCallback_) {
