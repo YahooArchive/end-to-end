@@ -20,7 +20,7 @@ goog.provide('e2e.ext.ui.RichTextEditor');
 
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.PGPHtmlMessage');
-goog.require('e2e.ext.ui.editor.DomPurifier');
+goog.require('e2e.ext.ui.editor.Purifier');
 goog.require('e2e.ext.ui.editor.LinkDialogPlugin');
 goog.require('e2e.ext.ui.editor.LinkEditPlugin');
 goog.require('e2e.ext.ui.editor.SpacesTabHandler');
@@ -75,7 +75,7 @@ ui.RichTextEditor = function(composeGlass, id, toolbarId, opt_doc) {
   this.registerPlugin(new goog.editor.plugins.ListTabHandler());
   this.registerPlugin(new goog.editor.plugins.UndoRedo());
   this.registerPlugin(new ui.editor.SpacesTabHandler());
-  this.registerPlugin(new ui.editor.DomPurifier());
+  this.registerPlugin(new ui.editor.Purifier());
 
   this.registerPlugin(new ui.editor.LinkDialogPlugin());
   this.registerPlugin(new ui.editor.LinkEditPlugin());

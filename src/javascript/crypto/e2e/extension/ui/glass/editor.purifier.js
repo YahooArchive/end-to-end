@@ -16,7 +16,7 @@
  * @fileoverview Editor plugin to purify DOM and HTML
  */
 
-goog.provide('e2e.ext.ui.editor.DomPurifier');
+goog.provide('e2e.ext.ui.editor.Purifier');
 
 goog.require('e2e.ext.utils.DomPurifier');
 goog.require('goog.editor.Plugin');
@@ -29,25 +29,25 @@ goog.require('goog.editor.Plugin');
  * @constructor
  * @extends {goog.editor.Plugin}
  */
-e2e.ext.ui.editor.DomPurifier = function(opt_domParser) {
+e2e.ext.ui.editor.Purifier = function(opt_domParser) {
   goog.base(this);
 
   this.domParser_ = opt_domParser || new DOMParser();
   this.domPurifier_ = new e2e.ext.utils.DomPurifier();
 };
-goog.inherits(e2e.ext.ui.editor.DomPurifier, goog.editor.Plugin);
+goog.inherits(e2e.ext.ui.editor.Purifier, goog.editor.Plugin);
 
 
 /** @override */
-e2e.ext.ui.editor.DomPurifier.prototype.getTrogClassId = function() {
-  return 'DomPurifier';
+e2e.ext.ui.editor.Purifier.prototype.getTrogClassId = function() {
+  return 'Purifier';
 };
 
 
 /**
  * @override
  */
-e2e.ext.ui.editor.DomPurifier.prototype.prepareContentsHtml = function(
+e2e.ext.ui.editor.Purifier.prototype.prepareContentsHtml = function(
     html) {
   var doc = this.domParser_.parseFromString(html, 'text/html');
   this.cleanContentsDom(/** @type {!Element} */ (doc.body));
@@ -58,7 +58,7 @@ e2e.ext.ui.editor.DomPurifier.prototype.prepareContentsHtml = function(
 /**
  * @override
  */
-e2e.ext.ui.editor.DomPurifier.prototype.cleanContentsDom = function(
+e2e.ext.ui.editor.Purifier.prototype.cleanContentsDom = function(
     fieldCopy) {
   return this.domPurifier_.cleanContentsDom(fieldCopy);
 };
