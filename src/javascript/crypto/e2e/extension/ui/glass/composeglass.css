@@ -668,6 +668,7 @@ body {
   border: solid 1px #ddd;
   padding: 3px 3px 2px 3px;
   width: 380px;
+  z-index: 2147483647;
 }
 
 .ac-row {
