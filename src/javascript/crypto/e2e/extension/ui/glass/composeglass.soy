@@ -20,6 +20,8 @@
  * @param fromLabel The label to describe the "From:" select box.
  * @param toLabel The label to describe the "To:"
  * @param ccLabel The label to describe the "Cc:"
+ * @param showCCLabel The label to describe "CC"
+ * @param hideCCLabel The label to describe "Hide CC"
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field.
  * @param loadingLabel The label for loading message.
@@ -40,6 +42,8 @@
       {param subjectLabel: $subjectLabel /}
       {param toLabel: $toLabel /}
       {param ccLabel: $ccLabel /}
+      {param showCCLabel: $showCCLabel /}
+      {param hideCCLabel: $hideCCLabel /}
       {param loadingLabel: $loadingLabel /}
       {param showOriginalLabel: $showOriginalLabel /}
       {param signerCheckboxTitle: $signerCheckboxTitle /}
@@ -59,6 +63,8 @@
  * @param fromLabel The label to describe the "From:" select box.
  * @param toLabel The label to describe the "To:"
  * @param ccLabel The label to describe the "Cc:"
+ * @param showCCLabel The label to describe "CC"
+ * @param hideCCLabel The label to describe "Hide CC"
  * @param subject The value of the subject field.
  * @param subjectLabel The label for the subject field.
  * @param loadingLabel The label for loading message.
@@ -79,10 +85,12 @@
     </div>
     <div id="{e2e.ext.constants.ElementId.TO_LABEL}">
       <span>{$toLabel}</span>
+      <span class="{e2e.ext.constants.CssClass.TOGGLE_CC_LABEL}">{$showCCLabel}</span>
       <div id="{e2e.ext.constants.ElementId.CHIP_HOLDER}"></div>
     </div>
-    <div id="{e2e.ext.constants.ElementId.CC_LABEL}">
+    <div id="{e2e.ext.constants.ElementId.CC_LABEL}" style="display: none;">
       <span>{$ccLabel}</span>
+      <span class="{e2e.ext.constants.CssClass.TOGGLE_CC_LABEL}">{$hideCCLabel}</span>
       <div id="{e2e.ext.constants.ElementId.CC_CHIP_HOLDER}"></div>
     </div>
     {if isNonnull($subject)}

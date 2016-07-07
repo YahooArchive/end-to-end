@@ -27,12 +27,10 @@ goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.constants.PGPHtmlMessage');
+goog.require('e2e.ext.ui.ChipHolders'); //@yahoo
 goog.require('e2e.ext.ui.RichTextEditor');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
-goog.require('e2e.ext.ui.panels.Chip');
-goog.require('e2e.ext.ui.panels.ChipHolder');
-goog.require('e2e.ext.ui.panels.ChipHolderInputHandler'); //@yahoo
 goog.require('e2e.ext.ui.templates.composeglass');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.Error');
@@ -48,13 +46,10 @@ goog.require('goog.editor.Field');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes'); //@yahoo
-goog.require('goog.html.SafeUrl'); //@yahoo
 goog.require('goog.i18n.DateTimeFormat'); //@yahoo
 goog.require('goog.object');
 goog.require('goog.style');
 goog.require('goog.ui.Component');
-goog.require('goog.ui.ac.AutoComplete'); //@yahoo
-goog.require('goog.ui.ac.Renderer'); //@yahoo
 goog.require('goog.userAgent'); //@yahoo
 goog.require('soy');
 
@@ -63,11 +58,11 @@ goog.scope(function() {
 var constants = e2e.ext.constants;
 var ext = e2e.ext;
 var messages = e2e.ext.messages;
-var panels = e2e.ext.ui.panels;
 var templates = e2e.ext.ui.templates.composeglass;
 var ui = e2e.ext.ui;
 var utils = e2e.ext.utils;
 var dialogs = e2e.ext.ui.dialogs;
+var panels = ui.panels;
 
 
 
@@ -102,18 +97,11 @@ ui.ComposeGlass = function(origin, api) {
   this.defaultSender_ = null;
 
   /**
-   * A holder for the intended recipients of a PGP message.
-   * @type {panels.ChipHolder}
+   * A multiple holders for the intended recipients of a PGP message.
+   * @type {ui.ChipHolders}
    * @private
    */
-  this.chipHolder_ = null;
-
-  /**
-   * A holder for the intended cc recipients of a PGP message.
-   * @type {panels.ChipHolder}
-   * @private
-   */
-  this.ccChipHolder_ = null;
+  this.chipHolders_ = null;
 
   /**
    * The message API instance
@@ -135,6 +123,8 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
     fromLabel: chrome.i18n.getMessage('promptFromLabel'),
     toLabel: chrome.i18n.getMessage('promptRecipientsPlaceholder'),
     ccLabel: chrome.i18n.getMessage('promptCCRecipientsPlaceholder'),
+    showCCLabel: chrome.i18n.getMessage('promptShowCCLabel'),
+    hideCCLabel: chrome.i18n.getMessage('promptHideCCLabel'),
     actionButtonTitle: chrome.i18n.getMessage(
         'promptEncryptSignActionLabel'),
     actionFormatTextTitle: chrome.i18n.getMessage(
@@ -270,57 +260,27 @@ ui.ComposeGlass.prototype.enterDocument = function() {
  */
 ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
   return new goog.Promise(function(resolve, reject) {
-    // var allAvailableRecipients = goog.object.getKeys(searchResult);
-    // var recipientsEmailMap =
-    //     this.getRecipientsEmailMap_(allAvailableRecipients);
-    // goog.array.forEach(providedRecipients, function(recipient) {
-    //   if (recipientsEmailMap.hasOwnProperty(recipient)) {
-    //     goog.array.extend(intendedRecipients,
-    //       recipientsEmailMap[recipient]);
-    //   }
-    // });
-    this.chipHolder_ = new panels.ChipHolder(
-        goog.array.map(this.draft_.to || [], utils.text.userObjectToUid),
-        goog.bind(this.getAutoComplete_, this),
-        // @yahoo enhanced ChipHolder with dynamic validation
+
+    this.chipHolders_ = new ui.ChipHolders(
+        this.draft_.to,
+        [].concat(this.draft_.cc, this.draft_.bcc),
+        goog.bind(this.acRequestMatchingRows_, this),
         goog.bind(this.hasPublicKeys_, this),
         goog.bind(this.renderEncryptionPassphraseDialog_, this));
-    this.addChild(this.chipHolder_, false);
-    this.chipHolder_.decorate(
-        goog.dom.getElement(constants.ElementId.CHIP_HOLDER));
-
-    // @yahoo added cc recipients
-    this.ccChipHolder_ = new panels.ChipHolder(
-        goog.array.map([].concat(this.draft_.cc || [], this.draft_.bcc || []),
-            utils.text.userObjectToUid),
-        goog.bind(this.getAutoComplete_, this),
-        // @yahoo enhanced ChipHolder with dynamic validation
-        goog.bind(this.hasPublicKeys_, this),
-        null);
-    this.addChild(this.ccChipHolder_, false);
-    this.ccChipHolder_.decorate(
-        goog.dom.getElement(constants.ElementId.CC_CHIP_HOLDER));
-
-    this.createAutoComplete_();
+    this.addChild(this.chipHolders_, false);
+    this.chipHolders_.decorate(
+        goog.dom.getElement(constants.ElementId.COMPOSE_HEADER));
 
     //@yahoo handle auto save of recipients
-    this.getHandler().listen(this.chipHolder_,
-        goog.events.EventType.CHANGE,
-        function() {
+    this.getHandler().listen(this.chipHolders_,
+        goog.events.EventType.CHANGE, function(evt) {
           // @yahoo save the recipients
-          this.setHeader_({
-            to: utils.text.uidsToObjects(
-                this.chipHolder_.getSelectedUids(true))
-          });
-        });
-    this.getHandler().listen(this.ccChipHolder_,
-        goog.events.EventType.CHANGE,
-        function() {
-          // @yahoo save the recipients
-          this.setHeader_({
-            cc: utils.text.uidsToObjects(
-                this.ccChipHolder_.getSelectedUids(true))
-          });
+          var chipHolder = evt.target;
+          var recipients = utils.text.uidsToObjects(
+              chipHolder.getSelectedUids(true));
+          this.setHeader_(
+              chipHolder.getFieldType() === panels.ChipHolder.FIELD.CC ?
+                  {cc: recipients} : {to: recipients});
         });
 
     resolve();
@@ -389,11 +349,11 @@ ui.ComposeGlass.prototype.renderSigningKeys_ = function() {
  * @private
  */
 ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
-  // @yahoo added ccChipHolder. used ricttexteditor
-  if (this.chipHolder_.hasChildren() || this.ccChipHolder_.hasChildren()) {
+  // @yahoo used ricttexteditor
+  if (this.chipHolders_.hasChildren()) {
     this.editor_.focusAndPlaceCursorAtStart();
   } else {
-    this.chipHolder_.focus();
+    this.chipHolders_.focus();
   }
 };
 
@@ -434,8 +394,7 @@ ui.ComposeGlass.prototype.renderEncryptionPassphraseConfirmDialog_ =
       goog.bind(function(confirmedPassphrase) {
         goog.dispose(confirmDialog);
         if (passphrase == confirmedPassphrase) {
-          var chip = new panels.Chip(passphrase, true);
-          this.chipHolder_.addChip(chip);
+          this.chipHolders_.addPassphraseChip(passphrase);
         } else {
           var errorDialog = new dialogs.Generic(
               chrome.i18n.getMessage('keyMgmtPassphraseMismatchLabel'),
@@ -475,15 +434,9 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
     currentUser: goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value
   });
 
-  if (this.chipHolder_) {
-    request.recipients = this.chipHolder_.getSelectedUids();
-    request.encryptPassphrases = this.chipHolder_.getProvidedPassphrases();
-  }
-
-  // @yahoo added ccChipHolder
-  if (this.ccChipHolder_ && this.ccChipHolder_.hasChildren()) {
-    request.recipients = request.recipients.concat(
-        this.ccChipHolder_.getSelectedUids());
+  if (this.chipHolders_) {
+    request.recipients = this.chipHolders_.getAllUids();
+    request.encryptPassphrases = this.chipHolders_.getProvidedPassphrases();
   }
 
   var signerCheck = goog.dom.getElement(constants.ElementId.SIGN_MESSAGE_CHECK);
@@ -492,9 +445,7 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
   // @yahoo sendExtensionRequest is used instead of actionExecutor
   utils.sendExtensionRequest(request, goog.bind(function(encrypted) {
     this.editor_.makeUneditable();
-    this.chipHolder_.lock();
-    // @yahoo added ccChipHolder
-    this.ccChipHolder_.lock();
+    this.chipHolders_.lock();
     var signCheckbox = goog.dom.getElement(
         constants.ElementId.SIGN_MESSAGE_CHECK);
     signCheckbox.disabled = true;
@@ -532,9 +483,9 @@ ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(
   // @yahoo recipients can be broken down as object of name and email
   // var recipients = this.chipHolder_.getSelectedUids();
   var recipients = utils.text.uidsToObjects(
-                       this.chipHolder_.getSelectedUids());
+      this.chipHolders_.getUids(panels.ChipHolder.FIELD.TO));
   var ccRecipients = utils.text.uidsToObjects(
-                         this.ccChipHolder_.getSelectedUids());
+      this.chipHolders_.getUids(panels.ChipHolder.FIELD.CC));
   var subject = goog.dom.getElement(constants.ElementId.SUBJECT) ?
       goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
 
@@ -573,9 +524,9 @@ ui.ComposeGlass.prototype.saveDraft_ = function(
 
   // @yahoo save the recipients too
   var recipients = utils.text.uidsToObjects(
-                       this.chipHolder_.getSelectedUids(true));
+      this.chipHolders_.getUids(panels.ChipHolder.FIELD.TO, true));
   var ccRecipients = utils.text.uidsToObjects(
-                         this.ccChipHolder_.getSelectedUids(true));
+      this.chipHolders_.getUids(panels.ChipHolder.FIELD.CC, true));
 
   // @yahoo signal to user we're encrypting
   var saveDraftMsg = this.getElementByClass(constants.CssClass.SAVE_DRAFT_MSG);
@@ -737,10 +688,9 @@ ui.ComposeGlass.prototype.switchToUnencrypted_ = function() {
       goog.dom.getElement(constants.ElementId.SUBJECT).value : undefined;
   var signer = goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value;
   var recipients = utils.text.uidsToObjects(
-                       this.chipHolder_.getSelectedUids());
-  //@yahoo added ccChipHolder
+      this.chipHolders_.getUids(panels.ChipHolder.FIELD.TO));
   var ccRecipients = utils.text.uidsToObjects(
-                         this.ccChipHolder_.getSelectedUids());
+      this.chipHolders_.getUids(panels.ChipHolder.FIELD.CC));
 
   // @yahoo used the ymail API to setDraft
   this.api_.req('draft.set', {
@@ -900,76 +850,19 @@ ui.ComposeGlass.prototype.setConversationDependentEventHandlers_ = function(
 
 
 /**
- * Factory function for building an autocomplete widget for the Chips.
- * @return {!goog.ui.ac.AutoComplete} A new autocomplete object.
- * @private
- */
-ui.ComposeGlass.prototype.createAutoComplete_ = function() {
-  // must be called after chipHolder_ and ccChipHolder_ are rendered
-  var chipHolder = this.chipHolder_,
-      ccChipHolder = this.ccChipHolder_,
-      chipHolderElem = chipHolder.getElement(),
-      ccChipHolderElem = ccChipHolder.getElement();
-
-  // @yahoo used autosuggest api instead of a static allUids
-  var renderer = new goog.ui.ac.Renderer(undefined, {
-    renderRow: function(row, token, elem) {
-      var text = e2e.ext.utils.text.userObjectToUid(row.data);
-      var imageUrl = goog.html.SafeUrl.sanitize(row.data.imageUrl);
-      // imageUrl is encodeURI()-ed, and it's thus safe to put inside url("")
-      elem.style.backgroundImage = 'url("' + row.data.imageUrl + '")';
-      goog.dom.setTextContent(elem, text);
-    }
-  });
-  renderer.setAnchorElement(chipHolderElem);
-  renderer.setAnchorElement(ccChipHolderElem);
-
-  var inputHandler = new ui.panels.ChipHolderInputHandler(function(value) {
-    var target = this.getAutoComplete().getTarget();
-    return (target.classList.contains('to') ? chipHolder : ccChipHolder).
-        handleNewChipValue(value);
-  }, goog.bind(this.hasRecipients_, this));
-
-  var autoComplete = new goog.ui.ac.AutoComplete(this, renderer, inputHandler);
-  // autoComplete.setTriggerSuggestionsOnUpdate(true);
-  autoComplete.listen(goog.ui.ac.AutoComplete.EventType.UPDATE, function(evt) {
-    this.dismiss();
-    this.getSelectionHandler().update(true);
-  });
-  inputHandler.attachAutoComplete(autoComplete);
-  inputHandler.attachInputs(
-      chipHolderElem.querySelector('input'),
-      ccChipHolderElem.querySelector('input'));
-  return (this.autoComplete_ = autoComplete);
-};
-
-
-/**
- * Retrieve the autocomplete widget for the Chips.
- * @return {!goog.ui.ac.AutoComplete} The autocomplete object.
- * @private
- */
-ui.ComposeGlass.prototype.getAutoComplete_ = function() {
-  return this.autoComplete_;
-};
-
-
-/**
  * Implements the requestMatchingRows() api for recipient autocompletion
  * @param {string} token
  * @param {number} maxMatches
  * @param {function(string, !Array<string>)} matchHandler
+ * @private
  */
-ui.ComposeGlass.prototype.requestMatchingRows = function(
+ui.ComposeGlass.prototype.acRequestMatchingRows_ = function(
     token, maxMatches, matchHandler) {
-  var currentRecipients = [].concat(
-      this.chipHolder_.getSelectedUids(true),
-      this.ccChipHolder_.getSelectedUids(true));
-
   this.api_.req('autosuggest.search', {
     from: utils.text.extractValidEmail(
         goog.dom.getElement(constants.ElementId.SIGNER_SELECT).value),
-    to: goog.array.map(currentRecipients, utils.text.extractValidEmail),
+    to: goog.array.map(this.chipHolders_.getAllUids(true),
+        utils.text.extractValidEmail),
     query: token
   }).addCallbacks(
       function(contacts) {
@@ -985,16 +878,6 @@ ui.ComposeGlass.prototype.requestMatchingRows = function(
           this.displayFailure(err);
         }
       }, this);
-};
-
-
-/**
- * Determines whether there're any recipients
- * @return {!boolean}
- * @private
- */
-ui.ComposeGlass.prototype.hasRecipients_ = function() {
-  return this.chipHolder_.hasChildren() || this.ccChipHolder_.hasChildren();
 };
 
 
@@ -1203,18 +1086,16 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
   goog.dom.classlist.add(this.getElementByClass(
       constants.CssClass.BUTTONS_CONTAINER), constants.CssClass.HIDDEN);
 
-  // given no chipholder or there exists a session passphrase
-  if ((!this.chipHolder_ && !this.ccChipHolder_) ||
-      this.chipHolder_.getProvidedPassphrases().length > 0) {
+  // given there exists a session passphrase
+  if (this.chipHolders_.getProvidedPassphrases().length > 0) {
     this.encryptSign_();
     return;
   }
 
-  var selectedUids = this.chipHolder_.getSelectedUids();
-  var selectedCCUids = this.ccChipHolder_.getSelectedUids();
+  var selectedUids = this.chipHolders_.getAllUids();
 
   // warn the user there're no recipients
-  if (selectedUids.length === 0 && selectedCCUids.length === 0) {
+  if (selectedUids.length === 0) {
     this.displayFailure(
         new utils.Error('no recipients', 'promptNoEncryptionTarget'));
     return;
@@ -1226,7 +1107,7 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
   // omitted errors from lackPublicKeys_, and thus no errback will be called
   // as errors regarding lacking of public keys or keyserver connection error
   // should not prohibit users from sending emails in plaintext
-  this.lackPublicKeys_(selectedUids.concat(selectedCCUids), true).
+  this.lackPublicKeys_(selectedUids, true).
       addCallback(function(invalidRecipients) {
         if (invalidRecipients.length === 0) {
           this.encryptSign_();

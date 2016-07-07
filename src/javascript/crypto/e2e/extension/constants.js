@@ -251,8 +251,8 @@ e2e.ext.constants.CssClass = {
   MENU_BUTTON: 'menu-button',
   POPOUT_BUTTON: 'popout-button',
   PASSPHRASE_ENCRYPTION_LINK: 'passphraseEncryptionLink',
+  TOGGLE_CC_LABEL: 'showHideCC', //@yahoo
   RICHTEXT: 'richtext', //@yahoo
-  CC_LINK: 'ccLink', //@yahoo
   LOADER: 'loader', //@yahoo
   BOTTOM_NOTIFICATION: 'bottom-notification', //@yahoo
   TOOLBAR: 'toolbar', //@yahoo

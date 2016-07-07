@@ -43,6 +43,7 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
 
 /**
  * Constructor for the chip holder.
+ * @param {!panels.ChipHolder.FIELD} fieldType The field type, i.e., TO, or CC.
  * @param {!Array.<string>} selectedUids The UIDs that have already been
  *     selected.
  * @param {!function():!goog.ui.ac.AutoComplete} getAutoComplete An
@@ -55,9 +56,16 @@ var templates = e2e.ext.ui.templates.panels.chipholder;
  * @constructor
  * @extends {goog.ui.Component}
  */
-panels.ChipHolder = function(selectedUids, getAutoComplete, hasKeysCallback,
-    renderEncryptionPassphraseCallback) {
+panels.ChipHolder = function(fieldType, selectedUids,
+    getAutoComplete, hasKeysCallback, renderEncryptionPassphraseCallback) {
   goog.base(this);
+
+  /**
+   * The field type.
+   * @type {!panels.ChipHolder.FIELD}
+   * @private
+   */
+  this.fieldType_ = fieldType;
 
   /**
    * The UIDs that have already been selected by the user.
@@ -120,6 +128,25 @@ panels.ChipHolder.prototype.autoComplete_ = null;
  * @private
  */
 panels.ChipHolder.prototype.keyHandler_ = null;
+
+
+/**
+ * The recipient chipholder concerned
+ * @enum {number}
+ */
+panels.ChipHolder.FIELD = {
+  'TO': 1,
+  'CC': 2
+};
+
+
+/**
+ * Returns the field type
+ * @return {!panels.ChipHolder.FIELD}
+ */
+panels.ChipHolder.prototype.getFieldType = function() {
+  return this.fieldType_;
+};
 
 
 /** @override */

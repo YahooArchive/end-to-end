@@ -397,6 +397,14 @@
     "message": "Subject",
     "description": "The label to describe the subject of the message."
   },
+  "promptShowCCLabel": {
+    "message": "CC",
+    "description": "The label to let user click to display the CC field."
+  },
+  "promptHideCCLabel": {
+    "message": "Hide CC",
+    "description": "The label to let user click to hide the CC field."
+  },
   "promptShowOriginalLabel": {
     "message": "Show original message",
     "description": "The label to let user click to quote the original message he is replying to."
