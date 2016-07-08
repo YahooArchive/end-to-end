@@ -109,7 +109,7 @@ ui.ChipHolders.prototype.decorateInternal = function(elem) {
   this.createAutoComplete_();
 
   // hide the cc field if no cc recipients are given
-  this.setCCShown_(this.ccChipHolder_.hasChildren());
+  this.setCCShown_(this.ccChipHolder_.hasChildren(), false);
 };
 
 
@@ -120,9 +120,9 @@ ui.ChipHolders.prototype.enterDocument = function() {
   // install the handlers for show and hide cc links
   this.getHandler().
       listen(this.holderDisplayLabel_, goog.events.EventType.CLICK,
-          goog.bind(this.setCCShown_, this, true)).
+          goog.bind(this.setCCShown_, this, true, true)).
       listen(this.ccHolderDisplayLabel_, goog.events.EventType.CLICK,
-          goog.bind(this.setCCShown_, this, false)).
+          goog.bind(this.setCCShown_, this, false, false)).
       // display hide CC link depending on existence of cc recipients
       listen(this.ccChipHolder_, goog.events.EventType.CHANGE,
           goog.bind(this.showHideCC_, this));
@@ -133,13 +133,17 @@ ui.ChipHolders.prototype.enterDocument = function() {
  * Toggles the display of the CC field
  * @param {!boolean} isShown True to display the element in its default style,
  *     false to disable rendering the element.
+ * @param {!boolean} isFocusedOnCC Whether to focus on the CC field on shown.
  * @private
  */
-ui.ChipHolders.prototype.setCCShown_ = function(isShown) {
+ui.ChipHolders.prototype.setCCShown_ = function(isShown, isFocusedOnCC) {
   goog.style.setElementShown(this.ccHolderElem_.parentElement, isShown);
   goog.style.setElementShown(this.holderDisplayLabel_, !isShown);
 
-  isShown && this.showHideCC_();
+  if (isShown) {
+    isFocusedOnCC && this.ccChipHolder_.focus();
+    this.showHideCC_();
+  }
 };
 
 
