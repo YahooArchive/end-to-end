@@ -89,8 +89,12 @@ body {
 }
 
 #fromHolder,
-#composeHeader {
+#composeHeader,
+.conversation #subjectHolder {
   border-bottom: 1px solid #D7D5D5;
+}
+.conversation #composeHeader {
+  border: none;
 }
 #ccLabel, 
 #subjectHolder {
@@ -312,7 +316,7 @@ body {
 }
 
 
-#pgpBody .pgpActions {
+.pgpActions {
   padding: 0;
   position: fixed;
   z-index: 2147483647;
@@ -662,17 +666,6 @@ body {
   text-decoration: underline;
 }
 
-.CCLink {
-  font-size: .75rem;
-  padding-right: 3px;
-  margin: 9px 0 -24px;
-}
-
-.CCLink:hover {
-  text-decoration: underline;
-}
-
-
 .ac-renderer {
   box-shadow: none;
   border: solid 1px #ddd;
@@ -694,4 +687,18 @@ body {
 
 .conversation #save-esc-button {
   display: none;
+}
+
+.conversation #pgpBody {
+  padding: 5px 10px;
+}
+
+.conversation #encryptr-icon label:before,
+.conversation #encryptr-icon>div {
+  right: 35px;
+}
+
+.conversation .toolbar {
+  padding-left: 24px;
+  padding-right: 24px;
 }
