@@ -86,6 +86,11 @@ html.lite div#keyringOptionsDiv button[id] {
   display: block;
 }
 
+html.lite div#keyringOptionsDiv button:hover {
+  background: none;
+  color: -webkit-link;
+}
+
 html.lite div#keyringOptionsDiv button#generate-key {
   margin: 8px 0 4px;
 }

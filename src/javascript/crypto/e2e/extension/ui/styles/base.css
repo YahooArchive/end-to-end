@@ -26,7 +26,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.pgpActions button, .modal-dialog button, #callbackDialog button {
+.pgpActions button,
+.modal-dialog button, #callbackDialog button,
+#storedKeys button, #pgpGenerateKey button {
   box-sizing: border-box;
   height: 32px;
   line-height: 30px;
@@ -45,20 +47,26 @@ body {
 
 .pgpActions button:hover,
 .modal-dialog button:hover,
-#callbackDialog button:hover {
+#callbackDialog button:hover,
+#storedKeys button:hover,
+#pgpGenerateKey button:hover {
   background-color: BTN_PRIMARY_HOVER;
 }
 
 .pgpActions button:disabled,
 .modal-dialog button:disabled,
-#callbackDialog button:disabled {
+#callbackDialog button:disabled,
+#storedKeys button:disabled,
+#pgpGenerateKey button:disabled {
   background-color: BTN_PRIMARY_INACTIVE;
   color: BTN_PRIMARY_INACTIVE_TEXT;
 }
 
 .pgpActions button.cancel,
 .modal-dialog button.cancel,
-#callbackDialog button.cancel/*,
+#callbackDialog button.cancel,
+#storedKeys button.cancel,
+#pgpGenerateKey button.cancel/*,
 button.options,
 button.save*/ {
   box-shadow: 0 2px #ABAEB7;
@@ -68,7 +76,9 @@ button.save*/ {
 
 .pgpActions button.cancel:hover,
 .modal-dialog button.cancel:hover,
-#callbackDialog button.cancel:hover/*,
+#callbackDialog button.cancel:hover,
+#storedKeys button.cancel:hover,
+#pgpGenerateKey button.cancel:hover/*,
 button.options:hover,
 button.save:hover*/ {
   background-color: BTN_CANCEL_HOVER;

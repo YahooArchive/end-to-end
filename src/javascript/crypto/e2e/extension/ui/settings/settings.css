@@ -32,6 +32,7 @@
 
 #pgpBody input[type="checkbox"] {
   margin-right: 5px;
+  width: initial;
 }
 
 #pgpBody input[type="text"] {
