@@ -42,10 +42,11 @@ goog.scope(function() {
 
 /**
  * Constructor for the coname key provider.
+ * @param {string=} opt_keyName The key name of the keyData Map
  * @constructor
  */
-e2e.coname.KeyProvider = function() {
-  this.client_ = new e2e.coname.Client();
+e2e.coname.KeyProvider = function(opt_keyName) {
+  this.client_ = new e2e.coname.Client(opt_keyName);
 };
 
 var ConameKeyProvider = e2e.coname.KeyProvider;
