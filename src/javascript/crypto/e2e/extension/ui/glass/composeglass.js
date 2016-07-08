@@ -31,6 +31,7 @@ goog.require('e2e.ext.ui.ChipHolders'); //@yahoo
 goog.require('e2e.ext.ui.RichTextEditor');
 goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
+goog.require('e2e.ext.ui.panels.ChipHolder');
 goog.require('e2e.ext.ui.templates.composeglass');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.Error');
@@ -43,7 +44,6 @@ goog.require('goog.async.Throttle');
 goog.require('goog.dom');
 goog.require('goog.dom.classlist');
 goog.require('goog.editor.Field');
-goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.events.KeyCodes'); //@yahoo
 goog.require('goog.i18n.DateTimeFormat'); //@yahoo
@@ -203,19 +203,16 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           goog.editor.Field.EventType.DELAYEDCHANGE,
           goog.bind(throttledSave_.fire, throttledSave_)).
       //@yahoo checks for key missing before calling EncryptSign
-      listen(
-          this.getElementByClass(constants.CssClass.ACTION),
+      listen(this.getElementByClass(constants.CssClass.ACTION),
           goog.events.EventType.CLICK,
           goog.bind(this.keyMissingWarningThenEncryptSign_, this)).
       //@yahoo has a restore button
-      listenOnce(
-          goog.dom.getElement(
+      listenOnce(goog.dom.getElement(
               constants.ElementId.ENCRYPTR_ICON).querySelector('label'),
           goog.events.EventType.CLICK,
           goog.bind(this.switchToUnencrypted_, this)).
       //@yahoo has a hidden add passphrase button
-      listen(
-          goog.dom.getElement(constants.ElementId.ADD_PASSPHRASE_BUTTON),
+      listen(goog.dom.getElement(constants.ElementId.ADD_PASSPHRASE_BUTTON),
           goog.events.EventType.CLICK,
           goog.bind(function() {
             // close the keyMissingDialog if it's there
@@ -225,18 +222,16 @@ ui.ComposeGlass.prototype.enterDocument = function() {
             this.renderEncryptionPassphraseDialog_();
           }, this)).
       //@yahoo allows discarding the draft
-      listen(
-          goog.dom.getElement(constants.ElementId.DRAFT_DELETE_BUTTON),
+      listen(goog.dom.getElement(constants.ElementId.DRAFT_DELETE_BUTTON),
           goog.events.EventType.CLICK,
-          goog.bind(this.discard, this));
-
-  // @yahoo handle and forward keydown events
-  goog.events.listen(document.documentElement, goog.events.EventType.KEYDOWN,
-      goog.bind(this.handleKeyEvent_, this));
-  // @yahoo forward focus events
-  goog.events.listen(document.documentElement, goog.events.EventType.FOCUS,
-      goog.bind(this.forwardEvent_, this, {type: 'focus'}));
-
+          goog.bind(this.discard, this)).
+      //@yahoo handle and forward keydown events
+      listen(this.getElement(), goog.events.EventType.KEYDOWN,
+          goog.bind(this.handleKeyEvent_, this)).
+      // clear prior failure when any item is on clicked or focused
+      listen(this.getElement(),
+          [goog.events.EventType.CLICK, goog.events.EventType.FOCUS],
+          goog.bind(this.displayFailure, this, null), true);
 
   //@yahoo save encrypted draft when it is closed externally
   this.api_.setRequestHandler('evt.close', goog.bind(function() {
@@ -244,11 +239,6 @@ ui.ComposeGlass.prototype.enterDocument = function() {
     this.saveDraft_();
   }, this));
 
-  // clear prior failure when any item is on clicked or focused
-  this.getHandler().listen(
-      this.getElement(),
-      [goog.events.EventType.CLICK, goog.events.EventType.FOCUS],
-      goog.bind(this.displayFailure, this, null), true);
 };
 
 
@@ -271,9 +261,9 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
     this.chipHolders_.decorate(
         goog.dom.getElement(constants.ElementId.COMPOSE_HEADER));
 
-    //@yahoo handle auto save of recipients
-    this.getHandler().listen(this.chipHolders_,
-        goog.events.EventType.CHANGE, function(evt) {
+    this.getHandler().
+        //@yahoo handle auto save of recipients
+        listen(this.chipHolders_, goog.events.EventType.CHANGE, function(evt) {
           // @yahoo save the recipients
           var chipHolder = evt.target;
           var recipients = utils.text.uidsToObjects(
@@ -888,6 +878,8 @@ ui.ComposeGlass.prototype.acRequestMatchingRows_ = function(
 ui.ComposeGlass.prototype.displayFailure = function(error) {
   // @yahoo hide loading
   this.displayActionButtons_();
+  // @yahoo send a focus to the iframe
+  this.forwardEvent_({type: 'focus'});
 
   var errorDiv = goog.dom.getElement(constants.ElementId.ERROR_DIV);
   var encryptrIcon = goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON).
