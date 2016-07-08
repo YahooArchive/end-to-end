@@ -83,7 +83,7 @@ ui.Prompt = function() {
   }, {
     value: constants.Actions.REPORT_ISSUE,
     title: chrome.i18n.getMessage('actionReportIssue') +
-        utils.getVersionString() // added version
+        ' (v' + utils.getVersionString() + ')' // added version
   }];
 };
 goog.inherits(ui.Prompt, goog.ui.Component);

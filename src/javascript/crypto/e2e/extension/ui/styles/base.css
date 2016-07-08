@@ -272,6 +272,7 @@ input:focus {
   padding: 0 10px 0 45px;
   margin: 15px 0;
   color: YCOLOR_WHITE;
+  line-height: 32px;
 }
 
 .overlayDialog textarea {
