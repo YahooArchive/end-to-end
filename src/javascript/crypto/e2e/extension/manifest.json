@@ -2,14 +2,13 @@
   "manifest_version": 2,
   "name": "Yahoo Mail Encrypted (alpha)",
   "description": "__MSG_extDescription__",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "permissions": [
     "activeTab",
     "cookies",
     "notifications",
     "webRequest",
     "webRequestBlocking",
-    "https://localhost:4443/*",
     "https://*.keyserver.yahoo.com/*",
     "https://*.mail.yahoo.com/*"
   ],
@@ -23,7 +22,7 @@
     "default_icon": "images/yahoo/icon-128.png",
     "default_popup": "prompt.html"
   },
-  "content_security_policy": "default-src 'self'; img-src *; media-src *; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.keyserver.yahoo.com:4443 https://localhost:4443; referrer no-referrer;",
+  "content_security_policy": "default-src 'self'; img-src *; media-src *; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.keyserver.yahoo.com:4443; referrer no-referrer;",
   "content_scripts": [
     {
       "matches": ["https://*.mail.yahoo.com/*"],
