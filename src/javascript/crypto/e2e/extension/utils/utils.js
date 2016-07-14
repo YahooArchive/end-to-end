@@ -21,6 +21,8 @@
 goog.provide('e2e.ext.utils');
 goog.provide('e2e.ext.utils.Error');
 
+
+goog.require('e2e.ext.chrome.runtime');
 goog.require('e2e.ext.constants');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.ElementId');
@@ -31,6 +33,23 @@ goog.scope(function() {
 var constants = e2e.ext.constants;
 var messages = e2e.ext.messages;
 var utils = e2e.ext.utils;
+
+
+/**
+ * Message required in case extension reloaded or shutdown
+ * @type {string}
+ * @const
+ */
+utils.EXT_NAME = chrome.i18n.getMessage('extName');
+
+
+/**
+ * Message required in case extension reloaded or shutdown
+ * @type {string}
+ * @const
+ */
+utils.GLASS_CANNOT_COMMUNICATE = chrome.i18n.getMessage(
+    'glassCannotCommunicate');
 
 
 /**
@@ -129,7 +148,7 @@ utils.displayFailure = function(opt_err) {
   if (opt_err instanceof Error) {
     // @yahoo This is specific to Ymail/Storm
     document.body.dispatchEvent(new CustomEvent('displayError', {
-      detail: '[' + chrome.i18n.getMessage('extName') + '] ' + opt_err.message
+      detail: '[' + utils.EXT_NAME + '] ' + opt_err.message
     }));
     // console.error(opt_err);
   }
@@ -146,7 +165,7 @@ utils.showNotification = function(msg, callback) {
   chrome.notifications.create(constants.ElementId.NOTIFICATION_SUCCESS, {
     type: 'basic',
     iconUrl: '/images/yahoo/icon-48.png',
-    title: chrome.i18n.getMessage('extName'),
+    title: utils.EXT_NAME,
     message: msg
   }, function() {
     window.setTimeout(function() {
@@ -166,36 +185,37 @@ utils.showNotification = function(msg, callback) {
  * @param {!function(Error)} errback
  */
 utils.sendExtensionRequest = function(args, callback, errback) {
-  var port = chrome.runtime.connect();
-  if (!port) {
-    errback(new Error(chrome.i18n.getMessage('glassCannotCommunicate')));
-    return;
-  }
+  e2e.ext.chrome.runtime.connect(function(port) {
+    if (!port) {
+      errback(new Error(utils.GLASS_CANNOT_COMMUNICATE));
+      return;
+    }
 
-  port.onDisconnect.addListener(function() {
-    port = null;
+    port.onDisconnect.addListener(function() {
+      port = null;
+    });
+    port.onMessage.addListener(/** @param {messages.ApiResponse} response */
+        function(response) {
+          if (args.action !== response.completedAction) {
+            return;
+          }
+          port.disconnect();
+
+          if (response.error) {
+            var error = new Error(response.error);
+            response.errorId && (error.messageId = response.errorId);
+            errback(error);
+            return;
+          }
+          try {
+            callback(response.content);
+          } catch (err) {
+            errback(err);
+          }
+        });
+
+    port.postMessage(args);
   });
-  port.onMessage.addListener(/** @param {messages.ApiResponse} response */
-      function(response) {
-        if (args.action !== response.completedAction) {
-          return;
-        }
-        port.disconnect();
-
-        if (response.error) {
-          var error = new Error(response.error);
-          response.errorId && (error.messageId = response.errorId);
-          errback(error);
-          return;
-        }
-        try {
-          callback(response.content);
-        } catch (err) {
-          errback(err);
-        }
-      });
-
-  port.postMessage(args);
 };
 
 
@@ -303,7 +323,16 @@ utils.addAnimationDelayedListener = function(
 
 
 /**
- * Execute the callback with the fetched config
+ * Caches the config retrieved from utils.getConfig
+ * @type {Object.<string, *>}
+ * @private
+ */
+utils.cachedConfig_ = {};
+
+
+/**
+ * Execute the callback with the config. When an error is encountered, return
+ * the last known config value, if any, otherwise return the error itself.
  * @param {!string} property The config property name
  * @param {!function(*)} callback The callback to receive the config value
  * @param {!function(Error)} errback The errback to call with Error
@@ -312,7 +341,13 @@ utils.getConfig = function(property, callback, errback) {
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.GET_PREFERENCE,
     content: property
-  }), callback, errback);
+  }), function(value) { // callback
+    utils.cachedConfig_[property] = value;
+    callback(value);
+  }, function(err) { // errback
+    var value = utils.cachedConfig_[property];
+    goog.isDef(value) ? callback(value) : errback(err);
+  });
 };
 
 

@@ -34,7 +34,11 @@ e2e.ext.helper.bootstrap = false;
 
 
 // Create the helper and start it.
-if (e2e.ext.utils.isContentScript() && !goog.isDef(window.helper)) {
+if (e2e.ext.utils.isContentScript()) {
+  if (goog.isDef(window.helper)) {
+    window.helper.removeAll();
+  }
+
   /** @type {!e2e.ext.YmailHelper} */
   window.helper = new e2e.ext.YmailHelper();
 

@@ -20,13 +20,17 @@ goog.provide('e2e.ext.ui.ChipHolders');
 
 /** @suppress {extraRequire} intentional import */
 goog.require('e2e.ext.YmailType'); //@yahoo
+goog.require('e2e.ext.constants.CssClass');
+goog.require('e2e.ext.constants.ElementId');
 goog.require('e2e.ext.ui.panels.Chip');
 goog.require('e2e.ext.ui.panels.ChipHolder');
 goog.require('e2e.ext.ui.panels.ChipHolderInputHandler'); //@yahoo
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
 goog.require('goog.dom');
+goog.require('goog.events.EventType');
 goog.require('goog.html.SafeUrl'); //@yahoo
+goog.require('goog.style');
 goog.require('goog.ui.Component');
 goog.require('goog.ui.ac.AutoComplete'); //@yahoo
 goog.require('goog.ui.ac.Renderer'); //@yahoo
@@ -155,7 +159,6 @@ ui.ChipHolders.prototype.showHideCC_ = function() {
   goog.style.setElementShown(
       this.ccHolderDisplayLabel_, !this.ccChipHolder_.hasChildren());
 };
-
 
 
 /**

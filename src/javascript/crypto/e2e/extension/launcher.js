@@ -26,6 +26,7 @@ goog.provide('e2e.ext.Launcher');
 goog.provide('e2e.ext.yExtensionLauncher'); //@yahoo
 
 goog.require('e2e.ext.api.Api');
+goog.require('e2e.ext.config');
 goog.require('e2e.ext.yPreferences'); //@yahoo
 goog.require('goog.array'); //@yahoo
 goog.require('goog.async.Deferred');
@@ -289,10 +290,17 @@ ext.AppLauncher.prototype.createWindow = function(url, isForeground, callback) {
 ext.yExtensionLauncher = function(pgpContext, preferencesStorage) {
   this.configureWebRequests();
 
-  chrome.runtime.onInstalled.addListener(goog.bind(this.onInstall, this));
-
   ext.yExtensionLauncher.base(this, 'constructor', pgpContext,
       preferencesStorage);
+
+  /**
+   * The URL of the default WebMail Application
+   * @type {!string}
+   * @private
+   */
+  this.defaultUrl_ = e2e.ext.config.CONAME.realms[0].URL;
+
+  this.insertContentScript();
 };
 goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 
@@ -303,13 +311,13 @@ goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
  */
 ext.yExtensionLauncher.prototype.configureWebRequests = function() {
   // TODO: redirect non-e2e.mail.yahoo.com to e2e.mail.yahoo.com
-  chrome.webRequest.onBeforeRequest.addListener(function(details) {
+  chrome.webRequest.onBeforeRequest.addListener(goog.bind(function(details) {
     if (details.url && details.url.indexOf('encryptr') !== -1) {
       return /** @type {!BlockingResponse} */ ({
-        redirectUrl: 'https://mail.yahoo.com/'
+        redirectUrl: this.defaultUrl_
       });
     }
-  },
+  }, this),
   /** @type {!RequestFilter} */ ({
     urls: ['https://*.mail.yahoo.com/*'],
     types: ['main_frame'] // mainframe access only
@@ -320,10 +328,11 @@ ext.yExtensionLauncher.prototype.configureWebRequests = function() {
 
 
 /**
- * Open a new tab to display the setup page
+ * Open a new tab to display the WebMail application, when the keyring has no
+ * private keys.
  * @protected
  */
-ext.yExtensionLauncher.prototype.openSetupPage = function() {
+ext.yExtensionLauncher.prototype.openWebMail = function() {
   // @yahoo open welcome screen when there's no private key
   var ctx = this.getContext();
   ctx.getAllKeys(true).addCallback(function(keyMap) {
@@ -332,7 +341,7 @@ ext.yExtensionLauncher.prototype.openSetupPage = function() {
     });
   }).addCallback(function(hasNoPrivateKeys) {
     if (hasNoPrivateKeys) {
-      this.createWindow('settings.html', true, goog.nullFunction);
+      this.createWindow(this.defaultUrl_, true, goog.nullFunction);
     }
   }, this);
 };
@@ -340,40 +349,30 @@ ext.yExtensionLauncher.prototype.openSetupPage = function() {
 
 /**
  * Inject helper script to all ymail tabs after installation. If none is there,
- * open the setup page
- * @param {Object} detail It details the OnInstalledReason
+ * and there're no private keys being setup, open the WebMail
  * @protected
  */
-ext.yExtensionLauncher.prototype.onInstall = function(detail) {
-  detail = /** @type {{reason: !string}} */ (detail);
-  if (detail.reason !== 'install') {
-    return;
-  }
-
+ext.yExtensionLauncher.prototype.insertContentScript = function() {
   chrome.tabs.query({}, goog.bind(function(tabs) {
     // Inject the content script to every ymail tab, if any
     var tabResults = goog.array.map(tabs, function(tab) {
       var result = new goog.async.Deferred;
       try {
-        if (goog.isDef(tab.id)) {
-          chrome.tabs.executeScript(
-              tab.id,
-              {file: chrome.runtime.getURL('helper_binary.js')},
-              function(ret) {
-                result.callback(!chrome.runtime.lastError && goog.isDef(ret));
-              });
-        }
+        goog.isDef(tab.id) && chrome.tabs.executeScript(
+            tab.id, {file: 'helper_binary.js'}, function(ret) {
+              result.callback(!chrome.runtime.lastError && goog.isDef(ret));
+            });
       } catch (e) {
         result.callback(false);
       }
       return result;
     });
 
-    // If no ymail tab is found, open the setup page
+    // If no tab is found to have WebMail, open it
     goog.async.DeferredList.gatherResults(tabResults).
         addCallback(function(injected) {
           if (!goog.array.contains(injected, true)) {
-            this.openSetupPage();
+            this.openWebMail();
           }
         }, this);
   }, this));

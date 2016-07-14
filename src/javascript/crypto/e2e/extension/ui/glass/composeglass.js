@@ -23,6 +23,7 @@ goog.require('e2e.async.Result');
 goog.require('e2e.ext.MessageApi');
 /** @suppress {extraRequire} intentional import */
 goog.require('e2e.ext.YmailType'); //@yahoo
+goog.require('e2e.ext.chrome.i18n');
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.CssClass');
 goog.require('e2e.ext.constants.ElementId');
@@ -119,25 +120,27 @@ ui.ComposeGlass.prototype.decorateInternal = function(elem) {
 
   // @yahoo renders the HTML
   soy.renderElement(elem, templates.main, {
-    signerCheckboxTitle: chrome.i18n.getMessage('promptSignMessageAs'),
-    fromLabel: chrome.i18n.getMessage('promptFromLabel'),
-    toLabel: chrome.i18n.getMessage('promptRecipientsPlaceholder'),
-    ccLabel: chrome.i18n.getMessage('promptCCRecipientsPlaceholder'),
-    showCCLabel: chrome.i18n.getMessage('promptShowCCLabel'),
-    hideCCLabel: chrome.i18n.getMessage('promptHideCCLabel'),
-    actionButtonTitle: chrome.i18n.getMessage(
+    signerCheckboxTitle: e2e.ext.chrome.i18n.getMessage('promptSignMessageAs'),
+    fromLabel: e2e.ext.chrome.i18n.getMessage('promptFromLabel'),
+    toLabel: e2e.ext.chrome.i18n.getMessage('promptRecipientsPlaceholder'),
+    ccLabel: e2e.ext.chrome.i18n.getMessage('promptCCRecipientsPlaceholder'),
+    showCCLabel: e2e.ext.chrome.i18n.getMessage('promptShowCCLabel'),
+    hideCCLabel: e2e.ext.chrome.i18n.getMessage('promptHideCCLabel'),
+    actionButtonTitle: e2e.ext.chrome.i18n.getMessage(
         'promptEncryptSignActionLabel'),
-    actionFormatTextTitle: chrome.i18n.getMessage(
+    actionFormatTextTitle: e2e.ext.chrome.i18n.getMessage(
         'actionFormatTextTitle'),
-    actionDraftDeleteTitle: chrome.i18n.getMessage(
+    actionDraftDeleteTitle: e2e.ext.chrome.i18n.getMessage(
         'actionDraftDeleteTitle'),
     subject: '',
-    subjectLabel: chrome.i18n.getMessage('promptSubjectLabel'),
-    loadingLabel: chrome.i18n.getMessage('promptLoadingLabel'),
-    showOriginalLabel: chrome.i18n.getMessage('promptShowOriginalLabel'),
-    unsupportedAttachmentLabel: chrome.i18n.getMessage(
+    subjectLabel: e2e.ext.chrome.i18n.getMessage('promptSubjectLabel'),
+    loadingLabel: e2e.ext.chrome.i18n.getMessage('promptLoadingLabel'),
+    showOriginalLabel:
+        e2e.ext.chrome.i18n.getMessage('promptShowOriginalLabel'),
+    unsupportedAttachmentLabel: e2e.ext.chrome.i18n.getMessage(
         'promptunsupportedAttachmentLabel'),
-    encryptrMessage: chrome.i18n.getMessage('promptEncryptrBodyOnlyMessage')
+    encryptrMessage:
+        e2e.ext.chrome.i18n.getMessage('promptEncryptrBodyOnlyMessage')
   });
 };
 
@@ -227,11 +230,7 @@ ui.ComposeGlass.prototype.enterDocument = function() {
           goog.bind(this.discard, this)).
       //@yahoo handle and forward keydown events
       listen(this.getElement(), goog.events.EventType.KEYDOWN,
-          goog.bind(this.handleKeyEvent_, this)).
-      // clear prior failure when any item is on clicked or focused
-      listen(this.getElement(),
-          [goog.events.EventType.CLICK, goog.events.EventType.FOCUS],
-          goog.bind(this.displayFailure, this, null), true);
+          goog.bind(this.handleKeyEvent_, this));
 
   //@yahoo save encrypted draft when it is closed externally
   this.api_.setRequestHandler('evt.close', goog.bind(function() {
@@ -356,7 +355,7 @@ ui.ComposeGlass.prototype.focusRelevantElement_ = function() {
 ui.ComposeGlass.prototype.renderEncryptionPassphraseDialog_ =
     function() {
   var passphraseDialog = new dialogs.Generic(
-      chrome.i18n.getMessage('promptEncryptionPassphraseMessage'),
+      e2e.ext.chrome.i18n.getMessage('promptEncryptionPassphraseMessage'),
       goog.bind(function(passphrase) {
         goog.dispose(passphraseDialog);
         if (passphrase.length > 0) {
@@ -365,8 +364,8 @@ ui.ComposeGlass.prototype.renderEncryptionPassphraseDialog_ =
       }, this),
       dialogs.InputType.SECURE_TEXT,
       '',
-      chrome.i18n.getMessage('actionEnterPassphrase'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
+      e2e.ext.chrome.i18n.getMessage('actionEnterPassphrase'),
+      e2e.ext.chrome.i18n.getMessage('actionCancelPgpAction'));
   this.renderDialog(passphraseDialog);
 };
 
@@ -380,14 +379,15 @@ ui.ComposeGlass.prototype.renderEncryptionPassphraseDialog_ =
 ui.ComposeGlass.prototype.renderEncryptionPassphraseConfirmDialog_ =
     function(passphrase) {
   var confirmDialog = new dialogs.Generic(
-      chrome.i18n.getMessage('promptEncryptionPassphraseConfirmMessage'),
+      e2e.ext.chrome.i18n.getMessage(
+          'promptEncryptionPassphraseConfirmMessage'),
       goog.bind(function(confirmedPassphrase) {
         goog.dispose(confirmDialog);
         if (passphrase == confirmedPassphrase) {
           this.chipHolders_.addPassphraseChip(passphrase);
         } else {
           var errorDialog = new dialogs.Generic(
-              chrome.i18n.getMessage('keyMgmtPassphraseMismatchLabel'),
+              e2e.ext.chrome.i18n.getMessage('keyMgmtPassphraseMismatchLabel'),
               function() {
                 goog.dispose(errorDialog);
               },
@@ -397,8 +397,8 @@ ui.ComposeGlass.prototype.renderEncryptionPassphraseConfirmDialog_ =
       }, this),
       dialogs.InputType.SECURE_TEXT,
       '',
-      chrome.i18n.getMessage('actionEnterPassphrase'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
+      e2e.ext.chrome.i18n.getMessage('actionEnterPassphrase'),
+      e2e.ext.chrome.i18n.getMessage('actionCancelPgpAction'));
   this.renderDialog(confirmDialog);
 };
 
@@ -520,7 +520,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(
 
   // @yahoo signal to user we're encrypting
   var saveDraftMsg = this.getElementByClass(constants.CssClass.SAVE_DRAFT_MSG);
-  saveDraftMsg.textContent = chrome.i18n.getMessage(
+  saveDraftMsg.textContent = e2e.ext.chrome.i18n.getMessage(
       'promptEncryptSignEncryptingDraftLabel');
 
   // @yahoo sendExtensionRequest is used instead of actionExecutor
@@ -531,7 +531,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(
     currentUser: signer
   }), goog.bind(function(encrypted) {
     // @yahoo signal to user we're saving
-    saveDraftMsg.textContent = chrome.i18n.getMessage(
+    saveDraftMsg.textContent = e2e.ext.chrome.i18n.getMessage(
         'promptEncryptSignSavingDraftLabel');
 
     var draft = e2e.openpgp.asciiArmor.markAsDraft(encrypted);
@@ -548,7 +548,7 @@ ui.ComposeGlass.prototype.saveDraft_ = function(
           draft + constants.PGPHtmlMessage.WRAPPER_CLOSE
     }).addCallbacks(function() {
       // @yahoo signal to user the encrypted draft is saved
-      saveDraftMsg.textContent = chrome.i18n.getMessage(
+      saveDraftMsg.textContent = e2e.ext.chrome.i18n.getMessage(
           'promptEncryptSignSaveEncryptedDraftLabel',
           new Date().toLocaleTimeString().replace(/:\d\d? /, ' '));
       // @yahoo trigger the completion callback
@@ -610,7 +610,7 @@ ui.ComposeGlass.prototype.renderDialog = function(dialog) {
 ui.ComposeGlass.prototype.renderPassphraseDialog =
     function(uid) {
   var result = new e2e.async.Result();
-  var dialog = new dialogs.Generic(chrome.i18n.getMessage(
+  var dialog = new dialogs.Generic(e2e.ext.chrome.i18n.getMessage(
       'promptPassphraseCallbackMessage', uid),
       function(passphrase) {
         goog.dispose(dialog);
@@ -618,8 +618,8 @@ ui.ComposeGlass.prototype.renderPassphraseDialog =
       },
       dialogs.InputType.SECURE_TEXT,
       '',
-      chrome.i18n.getMessage('actionEnterPassphrase'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
+      e2e.ext.chrome.i18n.getMessage('actionEnterPassphrase'),
+      e2e.ext.chrome.i18n.getMessage('actionCancelPgpAction'));
   this.renderDialog(dialog);
   return result;
 };
@@ -639,7 +639,7 @@ ui.ComposeGlass.prototype.renderConfigureUserDialog_ = function(opt_uid) {
   !opt_uid && (opt_uid = utils.text.userObjectToUid(this.defaultSender_));
 
   var dialog = new dialogs.Generic(
-      chrome.i18n.getMessage('promptNoEncryptionKeysFound', opt_uid),
+      e2e.ext.chrome.i18n.getMessage('promptNoEncryptionKeysFound', opt_uid),
       goog.bind(function(decision) { //@yahoo opens config if clicked ok
         goog.dispose(dialog);
         this.configureUserDialogRendered_ = false;
@@ -790,7 +790,7 @@ ui.ComposeGlass.prototype.setQuotedTextHandlers_ = function() {
           this.editor_.appendHtml('<br><br>', 'qtdSeparateBR');
 
           var replyHeader = '<div><font size="2" face="Arial">' +
-              chrome.i18n.getMessage('promptReplyHeader', [
+              e2e.ext.chrome.i18n.getMessage('promptReplyHeader', [
                 this.dateFormat_.format(sentDate),
                 this.timeFormat_.format(sentDate),
                 utils.text.userObjectToUid(quoted.from).replace(/</g, '&lt;')
@@ -872,7 +872,7 @@ ui.ComposeGlass.prototype.acRequestMatchingRows_ = function(
 
 
 /**
- * Displays an error message to the user.
+ * Displays an error message to the user for 5 seconds.
  * @param {Error} error The error to display.
  */
 ui.ComposeGlass.prototype.displayFailure = function(error) {
@@ -884,18 +884,18 @@ ui.ComposeGlass.prototype.displayFailure = function(error) {
   var errorDiv = goog.dom.getElement(constants.ElementId.ERROR_DIV);
   var encryptrIcon = goog.dom.getElement(constants.ElementId.ENCRYPTR_ICON).
       querySelector('label');
-  if (error) {
-    var errorMsg = goog.isDef(error.messageId) ?
-        chrome.i18n.getMessage(error.messageId) : error.message;
-    utils.errorHandler(error);
-    errorDiv.textContent = errorMsg;
 
-    //@yahoo
+  if (error) {
+    errorDiv.textContent = goog.isDef(error.messageId) && chrome.i18n ?
+        e2e.ext.chrome.i18n.getMessage(error.messageId) : error.message;
     encryptrIcon.classList.add(constants.CssClass.ERROR);
-  } else {
-    errorDiv.textContent = '';
-    //@yahoo
-    encryptrIcon.classList.remove(constants.CssClass.ERROR);
+
+    //@yahoo clear the message after 5 seconds
+    this.errorMessageTimer_ && window.clearTimeout(this.errorMessageTimer_);
+    this.errorMessageTimer_ = window.setTimeout(function() {
+      errorDiv.textContent = '';
+      encryptrIcon.classList.remove(constants.CssClass.ERROR);
+    }, 5000);
   }
 };
 
@@ -1138,7 +1138,7 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
       }).join(', ');
 
   // disabled per message passphrase encryption for now
-  // var msg = chrome.i18n.getMessage(
+  // var msg = e2e.ext.chrome.i18n.getMessage(
   //     'composeGlassAddPassphraseForRecipients', recipientString).
   //     replace('\n', '<br>').
   //     replace(/#add#([^#]*)#/,
@@ -1146,7 +1146,7 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
   //         constants.ElementId.ADD_PASSPHRASE_BUTTON +
   //         '">$1</label>');
 
-  var msg = chrome.i18n.getMessage(
+  var msg = e2e.ext.chrome.i18n.getMessage(
       'composeGlassConfirmRecipients', recipientString);
 
   var dialog = new ui.dialogs.Generic(
@@ -1168,8 +1168,8 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
       }, this),
       ui.dialogs.InputType.NONE,
       undefined,
-      chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'),
-      chrome.i18n.getMessage('actionCancelPgpAction'));
+      e2e.ext.chrome.i18n.getMessage('composeGlassSendUnencryptedMessage'),
+      e2e.ext.chrome.i18n.getMessage('actionCancelPgpAction'));
 
   this.keyMissingDialog_ = dialog;
   this.renderDialog(dialog);

@@ -29,8 +29,8 @@ goog.require('e2e.ext.ui.ComposeGlassWrapper');
 goog.require('e2e.ext.ui.GlassWrapper');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.text');
-goog.require('goog.Disposable');
 goog.require('goog.array');
+goog.require('goog.events.EventHandler');
 goog.require('goog.string');
 
 goog.scope(function() {
@@ -45,26 +45,28 @@ var ui = ext.ui;
 /**
  * Constructor for the Ymail Helper
  * @constructor
- * @extends {goog.Disposable}
+ * @extends {goog.events.EventHandler}
  */
 ext.YmailHelper = function() {
+  goog.base(this);
 
   // assummed ymail storm
   this.injectStub('ymail.storm.js');
 
   var body = document.body;
-  body.addEventListener('openCompose',
-      goog.bind(this.installAutoComposeGlass, this), true);
-  body.addEventListener('openEncryptedCompose',
-      goog.bind(this.installComposeGlass, this), true);
-  body.addEventListener('openMessage',
-      goog.bind(this.installReadGlasses, this), true);
-  body.addEventListener('queryPublicKey',
-      goog.bind(this.queryPublicKey, this), true);
-  body.addEventListener('loadUser',
-      goog.bind(this.loadUser, this), true);
+  this.
+      listen(body, 'openCompose',
+          this.createEventListener_(this.installAutoComposeGlass), true).
+      listen(body, 'openEncryptedCompose',
+          this.createEventListener_(this.installComposeGlass), true).
+      listen(body, 'openMessage',
+          this.createEventListener_(this.installReadGlasses), true).
+      listen(body, 'queryPublicKey',
+          this.createEventListener_(this.queryPublicKey), true).
+      listen(body, 'loadUser',
+          this.createEventListener_(this.loadUser), true);
 };
-goog.inherits(ext.YmailHelper, goog.Disposable);
+goog.inherits(ext.YmailHelper, goog.events.EventHandler);
 
 
 /**
@@ -173,12 +175,12 @@ ext.YmailHelper.prototype.installReadGlasses = function(evt, opt_limit) {
   var blobs = elem.querySelectorAll(constants.PGPHtmlMessage.SELECTOR);
   if (blobs.length > 0) {
     goog.array.forEach(blobs, function(elem) {
-      utils.text.isolateAsciiArmors(elem, function(armor) {
+      utils.text.isolateAsciiArmors(elem, goog.bind(function(armor) {
         var glassWrapper = new ui.GlassWrapper(elem, stubApi, armor, true);
-        window.helper && window.helper.registerDisposable(glassWrapper);
+        this.registerDisposable(glassWrapper);
         glassWrapper.installGlass();
-      }, undefined, 1);
-    });
+      }, this), undefined, 1);
+    }, this);
 
     return;
   }
@@ -187,11 +189,11 @@ ext.YmailHelper.prototype.installReadGlasses = function(evt, opt_limit) {
     // TODO: support rich text and let PGP message quotable
     var message = detail.body + detail.quotedBody;
 
-    utils.text.isolateAsciiArmors(elem, function(armor) {
+    utils.text.isolateAsciiArmors(elem, goog.bind(function(armor) {
       var glassWrapper = new ui.GlassWrapper(elem, stubApi, armor);
-      window.helper && window.helper.registerDisposable(glassWrapper);
+      this.registerDisposable(glassWrapper);
       glassWrapper.installGlass();
-    }, message, opt_limit);
+    }, this), message, opt_limit);
 
     elem.focus();
 
@@ -249,6 +251,33 @@ ext.YmailHelper.prototype.loadUser = function(evt) {
     }
   }, utils.displayFailure);
 
+};
+
+
+/**
+ * Remove the event listeners, and close opened glasses
+ * @override
+ */
+ext.YmailHelper.prototype.removeAll = function() {
+  goog.base(this, 'removeAll');
+};
+
+
+/**
+ * Invoke the handler if the extension is enabled. Otherwise, ignore the action
+ * and display an error.
+ * @param {Function} handler The handler to trigger.
+ * @return {function(Event)}
+ * @private
+ */
+ext.YmailHelper.prototype.createEventListener_ = function(handler) {
+  return goog.bind(function(evt) {
+    if (!chrome.runtime.connect()) {
+      this.removeAll();
+      return;
+    }
+    handler.call(this, evt.getBrowserEvent());
+  }, this);
 };
 
 

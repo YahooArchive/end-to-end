@@ -32,6 +32,7 @@ goog.require('e2e.ext.MessageApi');
 /** @suppress {extraRequire} intentional import */
 goog.require('e2e.ext.YmailType');
 goog.require('goog.async.Deferred');
+goog.require('goog.disposable.IDisposable');
 goog.require('goog.string');
 
 
@@ -195,9 +196,17 @@ YmailApi.StormUI.AutoSuggest;
  * Constructor for serving APIs to/from the extension.
  * @param {YmailApi.StormUI.YUI} Y
  * @param {YmailApi.StormUI.NeoConfig} NeoConfig
+ * @implements {goog.disposable.IDisposable}
  * @constructor
  */
 YmailApi.StormUI = function(Y, NeoConfig) {
+  /**
+   * Whether this is already disposed.
+   * @type {!boolean}
+   * @private
+   */
+  this.disposed_ = false;
+
   if (!Y || !NeoConfig) {
     throw new Error('YUI not found. Is it YMail Storm?');
   }
@@ -211,6 +220,12 @@ YmailApi.StormUI = function(Y, NeoConfig) {
   this.dispatchLoadUser();
 
   this.monitorExtensionEvents_();
+
+  /**
+   * @type {Array.<YmailApi.StormUI.ComposeApi>}
+   * @private
+   */
+  this.composeApis_ = [];
 
   Y.use('event', goog.bind(this.monitorStormEvents_, this));
 };
@@ -229,6 +244,10 @@ YmailApi.StormUI.Selector = {
 };
 
 
+/** @desc extension is disabled. */
+YmailApi.StormUI.MSG_DISABLED = goog.getMsg('Extension disabled.');
+
+
 /**
  * Capture events that are dispatched from the extension
  * @private
@@ -244,6 +263,7 @@ YmailApi.StormUI.prototype.monitorExtensionEvents_ = function() {
   var body = document.body;
   body.addEventListener('displayWarning', this.displayWarning_, false);
   body.addEventListener('displayError', this.displayError_, false);
+  body.addEventListener('dispose', this.dispose, false);
 };
 
 
@@ -267,25 +287,29 @@ YmailApi.StormUI.prototype.monitorStormEvents_ = function(Y) {
  * @protected
  */
 YmailApi.StormUI.prototype.dispatchOpenCompose = function(data) {
+  if (this.isDisposed()) {
+    return;
+  }
   var composeView = data.context,
       elem = composeView.baseNode.getDOMNode(),
       msgBody = composeView.editor.getContent(),
-      oMsg = composeView.draft.origin.oMsg;
-  var apiId = goog.string.getRandomString();
+      apiId = goog.string.getRandomString(),
+      composeEventInit = {
+        detail: {
+          apiId: apiId,
+          isEncryptedDraft: YmailApi.utils.isLikelyPGP(msgBody)
+        },
+        bubbles: true
+      };
 
-  elem.dispatchEvent(new CustomEvent('openCompose', {
-    detail: {
-      apiId: apiId,
-      isEncryptedDraft: YmailApi.utils.isLikelyPGP(msgBody)
-    },
-    bubbles: true
-  }));
+  elem.dispatchEvent(new CustomEvent('openCompose', composeEventInit));
 
   // add a lock icon to fire openEncryptedCompose when clicked
-  this.addEncryptrIcon(elem);
+  this.addEncryptrIcon(elem, composeEventInit);
 
   // build an API that wraps the native features provided by Storm
-  new YmailApi.StormUI.ComposeApi(this, composeView, apiId);
+  this.composeApis_.push(
+      new YmailApi.StormUI.ComposeApi(this, composeView, apiId));
 };
 
 
@@ -298,6 +322,9 @@ YmailApi.StormUI.prototype.dispatchOpenCompose = function(data) {
  */
 YmailApi.StormUI.prototype.dispatchOpenMessage = function(
     evt, data, baseNode) {
+  if (this.isDisposed()) {
+    return;
+  }
   // TODO: when rich text is supported. get HTML thru API.
   var node = baseNode.getDOMNode(),
       bodyNode = node.querySelector('.thread-body,.base-card-body'),
@@ -333,8 +360,8 @@ YmailApi.StormUI.prototype.dispatchOpenMessage = function(
 
     this.log('yme_read');
 
-    this.initApi(apiId, function() {
-      this.setRequestHandler('evt.trigger', triggerEvent);
+    var messageApi = this.initApi(apiId, function() {
+      messageApi.setRequestHandler('evt.trigger', triggerEvent);
     });
   }
 
@@ -400,17 +427,28 @@ YmailApi.StormUI.prototype.addCSS = function() {
 
 
 /**
- * Add encryptr icon to compose, firing encrypted-compose event when clicked.
+ * Add encryptr icon to compose, firing the openEncryptedCompose event when
+ * clicked.
  * @param {Element} target The compose element
+ * @param {{detail: *, bubbles: (boolean|undefined),
+ *     cancellable: (boolean|undefined)}} eventInit The compose event init
  * @protected
  */
-YmailApi.StormUI.prototype.addEncryptrIcon = function(target) {
+YmailApi.StormUI.prototype.addEncryptrIcon = function(target, eventInit) {
   var textArea = target.querySelector(YmailApi.StormUI.Selector.EDITOR);
   var encryptrIcon = document.createElement('div');
+  var clickHandler = goog.bind(function(evt) {
+    if (this.isDisposed()) {
+      this.displayFailure(YmailApi.StormUI.MSG_DISABLED);
+      encryptrIcon.parentElement.removeChild(encryptrIcon);
+      encryptrIcon.removeEventListener('click', clickHandler, false);
+      return;
+    }
+    target.dispatchEvent(
+        new CustomEvent('openEncryptedCompose', eventInit));
+  }, this);
+  encryptrIcon.addEventListener('click', clickHandler, false);
   encryptrIcon.classList.add('icon', 'icon-encrypt');
-  encryptrIcon.addEventListener('click', function() {
-    target.dispatchEvent(new CustomEvent('openEncryptedCompose'));
-  }, false);
 
   textArea.parentElement.insertBefore(encryptrIcon, textArea);
 };
@@ -434,17 +472,64 @@ YmailApi.StormUI.prototype.displayFailure = function(message, opt_type) {
 
 
 /**
+ * @return {boolean} Whether the object has been disposed of.
+ * @override
+ */
+YmailApi.StormUI.prototype.isDisposed = function() {
+  return this.disposed_;
+};
+
+
+/**
  * Dispose this instance
  */
 YmailApi.StormUI.prototype.dispose = function() {
+  if (this.isDisposed()) {
+    return;
+  }
+  this.disposed_ = true;
+
   this.yuiEventListeners_.forEach(function(listener) {
     listener.detach();
   });
   this.yuiEventListeners_ = null;
 
+  this.composeApis_ = [];
+
   var body = document.body;
   body.removeEventListener('displayWarning', this.displayWarning_, false);
   body.removeEventListener('displayError', this.displayError_, false);
+  body.removeEventListener('dispose', this.dispose, false);
+};
+
+
+/**
+ * Remove the associated instance of ComposeApi from the bookkeeping list, so
+ * it would not be handed over.
+ * @param {YmailApi.StormUI.ComposeApi} composeApi The instance to remove.
+ */
+YmailApi.StormUI.prototype.composeApiClosed = function(composeApi) {
+  var i = this.composeApis_.indexOf(composeApi);
+  if (i >= 0) {
+    this.composeApis_.splice(i, 1);
+  }
+};
+
+
+/**
+ * Revive all composes with the APIs that loaded the last
+ * @param {YmailApi.StormUI} newInstance
+ */
+YmailApi.StormUI.prototype.handoverComposeApis = function(newInstance) {
+  for (var i = 0, composeApi; composeApi = this.composeApis_[i]; i++) {
+    if (composeApi.composeView_.header !== null) {
+      composeApi.registerImplementations_.call(composeApi,
+          composeApi.main_, composeApi.composeView_, composeApi.stats);
+      newInstance.composeApis_.push(composeApi);
+    } else {
+      composeApi.dispose();
+    }
+  }
 };
 
 
@@ -470,17 +555,20 @@ YmailApi.StormUI.prototype.triggerEvent = function(
 /**
  * Bootstrap the MessageAPI
  * @param {!string} apiId The API id
- * @param {!function(this:e2e.ext.MessageApi)} onReadyCallback Callback when
+ * @param {!function(this:YmailApi.StormUI)} onReadyCallback Callback when
  *     the MessageApi instance is done bootstrapping
  * @return {!e2e.ext.MessageApi} The initiatied Message API
  */
 YmailApi.StormUI.prototype.initApi = function(apiId, onReadyCallback) {
   var api = new e2e.ext.MessageApi(apiId);
   api.bootstrapClient(YmailApi.utils.isSameOrigin, goog.bind(function(err) {
-    if (err instanceof Error) {
+    if (err instanceof e2e.ext.MessageApi.TimeoutError) {
+      this.dispose();
+      return this.displayFailure(YmailApi.StormUI.MSG_DISABLED, 'error');
+    } else if (err instanceof Error) {
       return this.displayFailure(err.message, 'error');
     }
-    onReadyCallback.call(api);
+    onReadyCallback.call(this);
   }, this));
   return api;
 };
@@ -505,8 +593,10 @@ YmailApi.StormUI.prototype.log = function(name, opt_tags) {
  * @param {YmailApi.StormUI.ComposeView} composeView
  * @param {!string} apiId The Message API id
  * @constructor
+ * @implements {goog.disposable.IDisposable}
  */
 YmailApi.StormUI.ComposeApi = function(main, composeView, apiId) {
+  this.disposed_ = false;
   this.main_ = main;
   this.composeView_ = composeView;
 
@@ -518,23 +608,34 @@ YmailApi.StormUI.ComposeApi = function(main, composeView, apiId) {
   this.dispatchQueryPublicKey_ = goog.bind(main.dispatchQueryPublicKey, main);
   this.displayFailure_ = goog.bind(main.displayFailure, main);
 
-  this.messageApi_ = main.initApi(apiId, function() {
-    // register the implementations in the Message API
-    var draftApi = new YmailApi.StormUI.DraftApi(main, composeView, stats);
-    var autosuggestApi = new YmailApi.StormUI.AutoSuggestApi(main);
-
-    this.getRequestHandler().addAll({
-      'draft.get': goog.bind(draftApi.get, draftApi),
-      'draft.set': goog.bind(draftApi.set, draftApi),
-      'draft.save': goog.bind(draftApi.save, draftApi),
-      'draft.send': goog.bind(draftApi.send, draftApi),
-      'draft.getQuoted': goog.bind(draftApi.getQuoted, draftApi),
-      'draft.discard': goog.bind(draftApi.discard, draftApi),
-      'evt.trigger': goog.bind(main.triggerEvent, main, composeView.baseNode),
-      'autosuggest.search': goog.bind(autosuggestApi.search, autosuggestApi)
-    });
-  });
+  this.messageApi_ = main.initApi(apiId, goog.bind(
+      this.registerImplementations_, this, main, composeView, stats));
   this.monitorComposeEvents_();
+};
+
+
+/**
+ * @param {YmailApi.StormUI} main
+ * @param {YmailApi.StormUI.ComposeView} composeView
+ * @param {e2e.ext.YmailType.SendStats} stats
+ * @private
+ */
+YmailApi.StormUI.ComposeApi.prototype.registerImplementations_ = function(
+    main, composeView, stats) {
+  // register the implementations in the Message API
+  var draftApi = new YmailApi.StormUI.DraftApi(main, composeView, stats);
+  var autosuggestApi = new YmailApi.StormUI.AutoSuggestApi(main);
+
+  this.messageApi_.getRequestHandler().addAll({
+    'draft.get': goog.bind(draftApi.get, draftApi),
+    'draft.set': goog.bind(draftApi.set, draftApi),
+    'draft.save': goog.bind(draftApi.save, draftApi),
+    'draft.send': goog.bind(draftApi.send, draftApi),
+    'draft.getQuoted': goog.bind(draftApi.getQuoted, draftApi),
+    'draft.discard': goog.bind(draftApi.discard, draftApi),
+    'evt.trigger': goog.bind(main.triggerEvent, main, composeView.baseNode),
+    'autosuggest.search': goog.bind(autosuggestApi.search, autosuggestApi)
+  });
 };
 
 
@@ -546,7 +647,7 @@ YmailApi.StormUI.ComposeApi.prototype.monitorComposeEvents_ = function() {
       api = this.messageApi_,
       stats = this.stats;
 
-  var recipientObservers = [
+  this.recipientObservers_ = [
     this.monitorRecipients_(YmailApi.StormUI.Selector.TO),
     this.monitorRecipients_(YmailApi.StormUI.Selector.CC),
     this.monitorRecipients_(YmailApi.StormUI.Selector.BCC)
@@ -579,14 +680,7 @@ YmailApi.StormUI.ComposeApi.prototype.monitorComposeEvents_ = function() {
   }, this));
 
   // on close
-  composeView.on('closeChange', function() {
-    api.req('evt.close').addCallback(function() {
-      recipientObservers.forEach(function(observer) {
-        observer.disconnect();
-      });
-      api.dispose();
-    });
-  });
+  composeView.on('closeChange', goog.bind(this.dispose, this));
 };
 
 
@@ -609,6 +703,34 @@ YmailApi.StormUI.ComposeApi.prototype.monitorRecipients_ = function(selector) {
       {childList: true});
 
   return observer;
+};
+
+
+/**
+ * @return {boolean} Whether the object has been disposed of.
+ * @override
+ */
+YmailApi.StormUI.ComposeApi.prototype.isDisposed = function() {
+  return this.disposed_;
+};
+
+
+/**
+ * Dispose this instance
+ */
+YmailApi.StormUI.ComposeApi.prototype.dispose = function() {
+  if (!this.isDisposed()) {
+    this.disposed_ = true;
+    var api = this.messageApi_;
+    api.req('evt.close').addCallback(function() {
+      this.recipientObservers_.forEach(function(observer) {
+        observer.disconnect();
+      });
+      api.dispose();
+    }, this);
+
+    this.main_.composeApiClosed(this);
+  }
 };
 
 
@@ -894,7 +1016,13 @@ YmailApi.bootstrap = function() {
   if (win.NeoConfig) { // Storm
     if (win.yui) {
       YmailApi.bootstraped_ = true;
-      win.YmeMain = new YmailApi.StormUI(win.yui, win.NeoConfig);
+      // dispose the original YmailApi if one existed
+      var newYmeMain = new YmailApi.StormUI(win.yui, win.NeoConfig);
+      if (win.YmeMain && win.YmeMain.handoverComposeApis) {
+        win.YmeMain.handoverComposeApis(newYmeMain);
+        win.YmeMain.dispose();
+      }
+      win.YmeMain = newYmeMain;
       return;
     }
 

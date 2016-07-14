@@ -20,9 +20,9 @@ goog.provide('e2e.ext.ui.RichTextEditor');
 
 goog.require('e2e.ext.constants.Actions');
 goog.require('e2e.ext.constants.PGPHtmlMessage');
-goog.require('e2e.ext.ui.editor.Purifier');
 goog.require('e2e.ext.ui.editor.LinkDialogPlugin');
 goog.require('e2e.ext.ui.editor.LinkEditPlugin');
+goog.require('e2e.ext.ui.editor.Purifier');
 goog.require('e2e.ext.ui.editor.SpacesTabHandler');
 goog.require('e2e.ext.ui.editor.Toolbars');
 goog.require('e2e.ext.utils');

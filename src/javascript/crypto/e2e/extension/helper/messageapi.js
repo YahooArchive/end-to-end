@@ -110,7 +110,7 @@ ext.MessageApi.REQUEST_TIMEOUT = 30000;
  * @type {number}
  * @const
  */
-ext.MessageApi.BOOTSTRAP_TIMEOUT = 10000;
+ext.MessageApi.BOOTSTRAP_TIMEOUT = 5000;
 
 
 /**
@@ -140,6 +140,7 @@ ext.MessageApi.prototype.bootstrapServer = function(
         return;
       }
       bootstrapReceived = true;
+      this.timeoutHandler_ && window.clearTimeout(this.timeoutHandler_);
       if (msgEvent.target) {
         this.port_ = msgEvent.target;
         this.port_.addEventListener('message',
@@ -175,7 +176,8 @@ ext.MessageApi.prototype.bootstrapServer = function(
     target: null,
     timeout: true
   };
-  setTimeout(goog.bind(initChannelListener, this, timeoutEvent),
+  this.timeoutHandler_ = setTimeout(
+      goog.bind(initChannelListener, this, timeoutEvent),
       ext.MessageApi.BOOTSTRAP_TIMEOUT);
 };
 
@@ -194,6 +196,7 @@ ext.MessageApi.prototype.bootstrapClient = function(
         e.data.api == this.name_ &&
         e.data.version == this.version_) {
       window.removeEventListener('message', initChannelListener);
+      this.timeoutHandler_ && window.clearTimeout(this.timeoutHandler_);
 
       if (e.ports && e.ports.length == 1) {
         this.port_ = e.ports[0];
@@ -216,19 +219,18 @@ ext.MessageApi.prototype.bootstrapClient = function(
   // Set a timeout for a function that would simulate an 'api not available'
   // response. If the response was processed before the timeout,
   // initChannelListener will just silently bail out.
-  var timeoutEvent = {
-    data: {
-      api: this.name_,
-      version: this.version_
-    },
-    timeout: true,
-    ports: null
-  };
-
-  setTimeout(goog.bind(function() {
+  this.timeoutHandler_ = setTimeout(goog.bind(function() {
     // disable origin check during timeout
     originCheckCallback = function() {return true;};
-    goog.bind(initChannelListener, this, timeoutEvent);
+    initChannelListener({
+      data: {
+        api: this.name_,
+        version: this.version_
+      },
+      timeout: true,
+      ports: null
+    });
+
   }, this), ext.MessageApi.BOOTSTRAP_TIMEOUT);
 
   window.addEventListener('message', initChannelListener, false);
