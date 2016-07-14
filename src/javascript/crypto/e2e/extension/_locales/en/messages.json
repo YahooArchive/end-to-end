@@ -574,7 +574,7 @@
     "description": "Message warning user that some recipients are missing keys."
   },
   "composeGlassSendUnencryptedMessage": {
-    "message": "Send in plaintext",
+    "message": "Send unencrypted",
     "description": "Ask user to send the message unencrypted."
   },
   "conameConnectionError": {
