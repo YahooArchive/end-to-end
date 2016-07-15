@@ -156,20 +156,8 @@ dialogs.Generic.prototype.createDom = function() {
 dialogs.Generic.prototype.decorateInternal = function(elem) {
   this.setElementInternal(elem);
 
-  // @yahoo surrond anything before the first line break with <p></p>
-  var message = this.message_;
-  if (goog.isString(message)) {
-    var pos = message.indexOf('\n');
-    this.message_ = templates.dialogContent(pos === -1 ?
-        {header: message} :
-        {
-          header: message.substring(0, pos),
-          body: message.substring(pos + 1)
-        });
-  }
-
   soy.renderElement(elem, templates.dialog, {
-    message: this.message_,
+    message: this.wrapFirstLineWithParagraphTag_(this.message_),
     inputFieldType: this.inputType_,
     inputPlaceholder: this.placeholder_,
     actionButtonTitle: this.actionButtonTitle_,
@@ -179,6 +167,34 @@ dialogs.Generic.prototype.decorateInternal = function(elem) {
   });
 
   this.inputElem_ = this.getElementByClass(constants.CssClass.DIALOG_INPUT);
+};
+
+
+/**
+ * Wrap the first line with <p></p>
+ * @param {string|soydata.SanitizedHtml} message
+ * @return {string|soydata.SanitizedHtml}
+ * @private
+ */
+dialogs.Generic.prototype.wrapFirstLineWithParagraphTag_ = function(message) {
+  var isSanitizedContent = message instanceof soydata.SanitizedHtml;
+  if (isSanitizedContent) {
+    message = message.getContent();
+  }
+
+  if (goog.isString(message)) {
+    var pos = message.indexOf('\n');
+    var body = message.substring(pos + 1);
+    return templates.dialogContent(pos === -1 ?
+        {header: message} :
+        {
+          header: message.substring(0, pos),
+          body: isSanitizedContent ?
+              soydata.VERY_UNSAFE.ordainSanitizedHtml(body) :
+              body
+        });
+  }
+  return message;
 };
 
 

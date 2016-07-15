@@ -124,7 +124,7 @@ input:focus {
   border: 1px solid YCOLOR_GREY_6;
   border-radius: 5px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  padding: 10px;
+  padding: 15px;
   position: absolute;
 }
 
@@ -285,8 +285,12 @@ input:focus {
   top: 0;
   left: 0;
   width: 100%;
-  height: 0;
+  height: 100%;
   background: rgba(50, 50, 50, 0.2);
+}
+
+#callbackDialog:empty {
+  display: none;
 }
 
 #pgpBody.transparent + div#callbackDialog {
