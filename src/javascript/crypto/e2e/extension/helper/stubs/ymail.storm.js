@@ -755,7 +755,7 @@ YmailApi.StormUI.DraftApi = function(main, composeView, stats) {
  */
 YmailApi.StormUI.DraftApi.prototype.get = function() {
   var composeView = this.composeView_;
-  var draft = composeView.draft, originAction = draft.origin.action;
+  var draft = composeView.draft;
   var header = composeView.header.getHeader();
 
   return /** @type {YmailType.Draft} */ ({
@@ -774,9 +774,8 @@ YmailApi.StormUI.DraftApi.prototype.get = function() {
       };
     }),
     pref: composeView.editor.getDefaultFontInfo(),
-    hasQuoted: Boolean(draft.origin.oMsg) &&
-        (originAction === 'reply' || originAction === 'reply_all' ||
-            originAction === 'edit')
+    hasQuoted: Boolean(draft.origin.oMsg &&
+        composeView.baseNode.one('.compose-quoted-text'))
   });
 };
 
