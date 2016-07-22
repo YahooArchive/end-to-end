@@ -34,6 +34,7 @@ goog.require('e2e.ext.ui.dialogs.Generic');
 goog.require('e2e.ext.ui.dialogs.InputType');
 goog.require('e2e.ext.ui.panels.ChipHolder');
 goog.require('e2e.ext.ui.templates.composeglass');
+goog.require('e2e.ext.ui.templates.dialogs.generic');
 goog.require('e2e.ext.utils');
 goog.require('e2e.ext.utils.Error');
 goog.require('e2e.ext.utils.text');
@@ -60,6 +61,7 @@ var constants = e2e.ext.constants;
 var ext = e2e.ext;
 var messages = e2e.ext.messages;
 var templates = e2e.ext.ui.templates.composeglass;
+var dialogContent = e2e.ext.ui.templates.dialogs.generic.dialogContent;
 var ui = e2e.ext.ui;
 var utils = e2e.ext.utils;
 var dialogs = e2e.ext.ui.dialogs;
@@ -1146,11 +1148,14 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
   //         constants.ElementId.ADD_PASSPHRASE_BUTTON +
   //         '">$1</label>');
 
-  var msg = e2e.ext.chrome.i18n.getMessage(
-      'composeGlassConfirmRecipients', recipientString);
-
   var dialog = new ui.dialogs.Generic(
-      soydata.VERY_UNSAFE.ordainSanitizedHtml(msg),
+      dialogContent({
+        header: e2e.ext.chrome.i18n.getMessage(
+            'composeGlassConfirmRecipientsHeader'),
+        body: soydata.VERY_UNSAFE.ordainSanitizedHtml(
+            e2e.ext.chrome.i18n.getMessage(
+                'composeGlassConfirmRecipients', recipientString))
+      }),
       goog.bind(function(userAction) {
         this.sendButtonClicked_ = false;
         this.keyMissingDialog_.dispose();

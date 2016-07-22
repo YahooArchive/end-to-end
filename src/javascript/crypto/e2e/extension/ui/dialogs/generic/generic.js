@@ -173,25 +173,17 @@ dialogs.Generic.prototype.decorateInternal = function(elem) {
 /**
  * Wrap the first line with <p></p>
  * @param {string|soydata.SanitizedHtml} message
- * @return {string|soydata.SanitizedHtml}
+ * @return {soydata.SanitizedHtml}
  * @private
  */
 dialogs.Generic.prototype.wrapFirstLineWithParagraphTag_ = function(message) {
-  var isSanitizedContent = message instanceof soydata.SanitizedHtml;
-  if (isSanitizedContent) {
-    message = message.getContent();
-  }
-
   if (goog.isString(message)) {
     var pos = message.indexOf('\n');
-    var body = message.substring(pos + 1);
     return templates.dialogContent(pos === -1 ?
         {header: message} :
         {
           header: message.substring(0, pos),
-          body: isSanitizedContent ?
-              soydata.VERY_UNSAFE.ordainSanitizedHtml(body) :
-              body
+          body: message.substring(pos + 1)
         });
   }
   return message;
