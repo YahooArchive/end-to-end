@@ -102,7 +102,7 @@ if [ ! -d protobufjs ]; then
   curl https://raw.githubusercontent.com/yahoo/coname/master/proto/client.proto -O
 
   # remove gogoproto import
-  sed 's/import "gogoproto\/gogo.proto";//' client.proto > client-js.proto
+  sed 's/import "github\.com\/maditya\/protobuf\/gogoproto\/gogo\.proto";//' client.proto > client-js.proto
 
   # generate coname-client.proto.json
   npm install protobufjs
