@@ -191,6 +191,8 @@ body {
   min-height: 100px;
   outline: none;
   padding: 9px 50px 9px 28px;
+  overflow-y: auto;
+  margin: 0;
 }
 
 #editor.has-quoted {
@@ -691,6 +693,10 @@ body {
 
 .conversation #pgpBody {
   padding: 5px 10px;
+}
+
+.conversation #editor {
+  overflow-y: hidden;
 }
 
 .conversation #encryptr-icon label:before,
