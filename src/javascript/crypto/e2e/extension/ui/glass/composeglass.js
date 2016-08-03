@@ -436,7 +436,6 @@ ui.ComposeGlass.prototype.encryptSign_ = function() {
 
   // @yahoo sendExtensionRequest is used instead of actionExecutor
   utils.sendExtensionRequest(request, goog.bind(function(encrypted) {
-    this.editor_.makeUneditable();
     this.chipHolders_.lock();
     var signCheckbox = goog.dom.getElement(
         constants.ElementId.SIGN_MESSAGE_CHECK);
@@ -472,6 +471,10 @@ ui.ComposeGlass.prototype.loadSelectedContent_ = function() {
  */
 ui.ComposeGlass.prototype.insertMessageIntoPage_ = function(
     content, wasEncrypted) {
+  // @yahoo disabled for now, as a missing subject dialog preventing the send
+  // action would result in uneditable editor.
+  // this.editor_.makeUneditable();
+
   // @yahoo recipients can be broken down as object of name and email
   // var recipients = this.chipHolder_.getSelectedUids();
   var recipients = utils.text.uidsToObjects(
@@ -1114,7 +1117,6 @@ ui.ComposeGlass.prototype.keyMissingWarningThenEncryptSign_ = function() {
           // send unencrypted if the user endorsed it
           this.renderKeyMissingWarningDialog_(invalidRecipients).
               addCallback(function() {
-                this.editor_.makeUneditable();
                 this.insertMessageIntoPage_(
                     this.editor_.getCleanContents(), false);
               }, this);
