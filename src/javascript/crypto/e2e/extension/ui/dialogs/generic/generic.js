@@ -213,27 +213,22 @@ dialogs.Generic.prototype.enterDocument = function() {
   }
   goog.style.setPosition(elem, position);
 
+  // @yahoo added shortcut keys
+  this.getHandler().listen(this.getElement(), goog.events.EventType.KEYDOWN,
+      goog.bind(this.handleKeyEvent_, this));
+
   if (this.inputElem_) {
     // Autofocus works only on one element in a document, so we focus().
     this.inputElem_.focus();
     this.keyboardHandler_ =
         new goog.ui.KeyboardShortcutHandler(this.inputElem_);
     this.keyboardHandler_.registerShortcut('enter', goog.events.KeyCodes.ENTER);
-    this.getHandler().listenOnce(
-        this.keyboardHandler_,
-        goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
-        goog.partial(this.invokeCallback, false));
-  } else {
-    // @yahoo added Enter as shortcut key for the default action
-    this.keyboardHandler_ =
-        new goog.ui.KeyboardShortcutHandler(parentElem);
-    this.keyboardHandler_.registerShortcut('enter', goog.events.KeyCodes.ENTER);
+    this.keyboardHandler_.setAlwaysStopPropagation(true);
     this.getHandler().listenOnce(
         this.keyboardHandler_,
         goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
         goog.partial(this.invokeCallback, false));
   }
-  this.keyboardHandler_.setAlwaysStopPropagation(true);
 
   // @yahoo focus on the first input element of all callbacks
   this.focusOnFirstDialog(); //@yahoo
@@ -248,16 +243,26 @@ dialogs.Generic.prototype.enterDocument = function() {
         this.getElementByClass(constants.CssClass.CANCEL),
         goog.events.EventType.CLICK,
         goog.partial(this.invokeCallback, true));
-
-    // @yahoo added Escape as the cancel shortcut key
-    this.keyboardEscHandler_ = new goog.ui.KeyboardShortcutHandler(parentElem);
-    this.keyboardEscHandler_.setAlwaysStopPropagation(true);
-    this.keyboardEscHandler_.registerShortcut('esc', goog.events.KeyCodes.ESC);
-    this.getHandler().listenOnce(
-        this.keyboardEscHandler_,
-        goog.ui.KeyboardShortcutHandler.EventType.SHORTCUT_TRIGGERED,
-        goog.partial(this.invokeCallback, true));
   }
+};
+
+
+/**
+ * Handle the shortcut keys. //@yahoo
+ * @param {goog.events.BrowserEvent} evt The keydown event to handle.
+ * @private
+ */
+dialogs.Generic.prototype.handleKeyEvent_ = function(evt) {
+  switch (evt.keyCode) {
+    case goog.events.KeyCodes.ENTER:
+      this.invokeCallback(false);
+    break;
+    case goog.events.KeyCodes.ESC:
+      this.invokeCallback(true);
+    break;
+  }
+
+  evt.stopPropagation();
 };
 
 
