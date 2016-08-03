@@ -52,7 +52,6 @@
     {param unsupportedAttachmentLabel: $unsupportedAttachmentLabel /}
     {param encryptrMessage: $encryptrMessage /}
   {/call}
-  <div id="{e2e.ext.constants.ElementId.CALLBACK_DIALOG}"></div>
 {/template}
 
 
@@ -105,6 +104,7 @@
   <div id="{e2e.ext.constants.ElementId.EDITOR}" class="{e2e.ext.constants.CssClass.USER_CONTENT}"></div>
   <div id="{e2e.ext.constants.ElementId.QUOTED_TEXT}" title="{$showOriginalLabel}">{$showOriginalLabel}</div>
 </div>
+<div class="{e2e.ext.constants.CssClass.DIALOG_OVERLAY}"></div>
 <div class="{e2e.ext.constants.CssClass.PROMPT_ACTIONS}">
   <div class="{e2e.ext.constants.CssClass.BOTTOM_NOTIFICATION}{sp}{e2e.ext.constants.CssClass.HIDDEN}">
     <span class="{e2e.ext.constants.CssClass.LOADER}"></span>
@@ -135,5 +135,7 @@
     </label>
     <button id="{e2e.ext.constants.ElementId.ADD_PASSPHRASE_BUTTON}">Passphrase</button>
   </div>
+  <div class="{e2e.ext.constants.CssClass.DIALOG_OVERLAY}"></div>
+  <div id="{e2e.ext.constants.ElementId.FIXED_CALLBACK_DIALOG}"></div>
 </div>
 {/template}

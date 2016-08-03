@@ -595,7 +595,8 @@ ui.ComposeGlass.prototype.setApiRequestHandler = function(call, callback) {
  * @protected
  */
 ui.ComposeGlass.prototype.renderDialog = function(dialog) {
-  var popupElem = goog.dom.getElement(constants.ElementId.CALLBACK_DIALOG);
+  var popupElem = goog.dom.getElement(
+      constants.ElementId.FIXED_CALLBACK_DIALOG);
   this.addChild(dialog, false);
   dialog.render(popupElem);
 };
@@ -916,6 +917,7 @@ ui.ComposeGlass.prototype.resize = function(opt_skipForcedScroll) {
       scrollByDeltaHeight: !opt_skipForcedScroll &&
           this.actionBar_.style.top !== 'auto' // i.e., floating over text
     }).addErrback(this.errorCallback_);
+    this.editor_.focus();
   }
 };
 
@@ -927,13 +929,14 @@ ui.ComposeGlass.prototype.resize = function(opt_skipForcedScroll) {
  * @private
  */
 ui.ComposeGlass.prototype.setActionBarPosition_ = function(offset) {
-  var yOffset = offset.y, actionBarStyle = this.actionBar_.style;
+  var yOffset = offset.y,
+      actionBarStyle = this.actionBar_.style,
+      isFloating = false;
   if (goog.isDef(yOffset)) {
-    // 210 is the min value to give up smart scrolling but affix it at bottom
-    yOffset = yOffset < window.innerHeight &&
-        yOffset > (goog.style.getPosition(this.editor_.getElement()).y + 210) ?
-            (yOffset - 101) + 'px' :
-            'auto';
+    // 160 is the min value to give up smart scrolling but affix it at bottom
+    isFloating = yOffset < window.innerHeight &&
+        yOffset > (goog.style.getPosition(this.editor_.getElement()).y + 160);
+    yOffset = isFloating ? (yOffset - 101) + 'px' : 'auto';
     if (actionBarStyle.top != yOffset) {
       actionBarStyle.top = yOffset;
     }
@@ -1161,8 +1164,6 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
         this.keyMissingDialog_.dispose();
         this.keyMissingDialog_ = null;
 
-        goog.dom.classlist.remove(this.getElement(),
-                                  constants.CssClass.UNCLICKABLE);
         // hide loading
         this.displayActionButtons_();
 
@@ -1178,10 +1179,6 @@ ui.ComposeGlass.prototype.renderKeyMissingWarningDialog_ = function(
 
   this.keyMissingDialog_ = dialog;
   this.renderDialog(dialog);
-
-  // Set the background element to be unclickable.
-  goog.dom.classlist.add(this.getElement(),
-      constants.CssClass.UNCLICKABLE);
 
   return result;
 };

@@ -105,6 +105,7 @@ e2e.ext.constants.ElementId = {
   KEYRING_PASSPHRASE_CONFIRM_DIV: 'keyringPassphraseConfirmDiv',
   ERROR_DIV: 'errorDiv',
   CALLBACK_DIALOG: 'callbackDialog',
+  FIXED_CALLBACK_DIALOG: 'fixedCallbackDialog', //@yahoo
   COMPOSE_HEADER: 'composeHeader', //@yahoo
   CHIP_HOLDER: 'chipHolder',
   CC_CHIP_HOLDER: 'ccChipHolder', //@yahoo
@@ -260,6 +261,7 @@ e2e.ext.constants.CssClass = {
   TOOLBAR_BUTTON_ACTIVE: 'goog-toolbar-button-active', //@yahoo
   TOOLBAR_SEPARATOR: 'toolbar-separator', //@yahoo
   TOOLBAR_TRIANGLE: 'toolbar-triangle', //@yahoo
+  DIALOG_OVERLAY: 'dialog-overlay', //@yahoo
 
   /** Error messages **/
   ERROR: 'error',

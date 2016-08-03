@@ -200,6 +200,8 @@ dialogs.Generic.prototype.enterDocument = function() {
     goog.dom.classlist.add(body, constants.CssClass.TRANSPARENT);
   }
 
+  goog.dom.classlist.add(document.body, constants.CssClass.UNCLICKABLE);
+
   var elem = this.getElement();
   var position = goog.style.getPosition(elem);
   var parentElem = this.getParent().getElement();
@@ -267,6 +269,7 @@ dialogs.Generic.prototype.exitDocument = function() {
   //@yahoo remove the transparent class if it's the only callback dialog left
   if (body && this.getElement().parentNode.childNodes.length === 1) {
     goog.dom.classlist.remove(body, constants.CssClass.TRANSPARENT);
+    goog.dom.classlist.remove(document.body, constants.CssClass.UNCLICKABLE);
   }
 
   goog.base(this, 'exitDocument');

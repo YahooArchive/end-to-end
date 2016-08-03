@@ -119,30 +119,31 @@ input:focus {
 }
 
 #callbackDialog > div,
-.overlayDialog {
+#fixedCallbackDialog > div {
   background-color: YCOLOR_WHITE;
   border: 1px solid YCOLOR_GREY_6;
   border-radius: 5px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   padding: 15px;
   position: absolute;
-}
-
-#callbackDialog > div {
   width: 550px;
   max-height: 75%;
   overflow-y: auto;
   overflow-x: hidden;
+  word-wrap: break-word;
 }
 
 #callbackDialog input[type="password"],
-#callbackDialog input[type="text"] {
+#callbackDialog input[type="text"],
+#fixedCallbackDialog input[type="password"],
+#fixedCallbackDialog input[type="text"] {
   border: 1px solid YCOLOR_GREY_6;
   margin: 5px 0;
   width: 540px;
 }
 
-#callbackDialog {
+#callbackDialog,
+#fixedCallbackDialog {
   pointer-events: auto;
 }
 
@@ -289,7 +290,8 @@ input:focus {
   background: rgba(50, 50, 50, 0.2);
 }
 
-#callbackDialog:empty {
+#callbackDialog:empty,
+#fixedCallbackDialog:empty {
   display: none;
 }
 
@@ -303,7 +305,8 @@ input:focus {
   margin: 8% auto;
 }
 
-#callbackDialog > div p:first-child {
+#callbackDialog > div p:first-child,
+#fixedCallbackDialog > div p:first-child {
   font-size: 105%;
   font-weight: 500;
   margin: 0 0 15px 0;
