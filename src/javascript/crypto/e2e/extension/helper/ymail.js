@@ -54,8 +54,7 @@ ext.YmailHelper = function() {
   this.injectStub('ymail.storm.js');
 
   var body = document.body;
-  this.
-      listen(body, 'openCompose',
+  this.listen(body, 'openCompose',
           this.createEventListener_(this.installAutoComposeGlass), true).
       listen(body, 'openEncryptedCompose',
           this.createEventListener_(this.installComposeGlass), true).
@@ -64,7 +63,8 @@ ext.YmailHelper = function() {
       listen(body, 'queryPublicKey',
           this.createEventListener_(this.queryPublicKey), true).
       listen(body, 'loadUser',
-          this.createEventListener_(this.loadUser), true);
+          this.createEventListener_(this.loadUser), true).
+      listen(body, 'disposeYmailHelper', goog.bind(this.removeAll, this));
 };
 goog.inherits(ext.YmailHelper, goog.events.EventHandler);
 
@@ -78,11 +78,17 @@ ext.YmailHelper.prototype.injectStub = function(stubFilename) {
     return;
   }
 
+  if (document.querySelector('script[data-helper="' + stubFilename + '"]')) {
+    document.body.dispatchEvent(new CustomEvent('disposeYmailHelper'));
+  }
+
   var script = document.createElement('script');
   script.src = chrome.runtime.getURL('stubs/' + stubFilename);
+  script.setAttribute('data-helper', stubFilename);
   script.setAttribute('data-version', chrome.runtime.getManifest().version);
   // assumed "run_at" "document_end". refer to manifest.json for details
   document.head.appendChild(script);
+
 
   this.stubInjected_ = true;
 };

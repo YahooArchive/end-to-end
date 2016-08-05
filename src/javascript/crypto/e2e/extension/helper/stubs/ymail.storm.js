@@ -489,10 +489,12 @@ YmailApi.StormUI.prototype.dispose = function() {
   }
   this.disposed_ = true;
 
-  this.yuiEventListeners_.forEach(function(listener) {
-    listener.detach();
-  });
-  this.yuiEventListeners_ = null;
+  if (this.yuiEventListeners_) {
+    this.yuiEventListeners_.forEach(function(listener) {
+      listener.detach();
+    });
+    this.yuiEventListeners_ = null;
+  }
 
   this.composeApis_ = [];
 
@@ -523,7 +525,7 @@ YmailApi.StormUI.prototype.composeApiClosed = function(composeApi) {
 YmailApi.StormUI.prototype.handoverComposeApis = function(newInstance) {
   for (var i = 0, composeApi; composeApi = this.composeApis_[i]; i++) {
     if (composeApi.composeView_.header !== null) {
-      composeApi.registerImplementations_.call(composeApi,
+      composeApi.registerImplementations(
           composeApi.main_, composeApi.composeView_, composeApi.stats);
       newInstance.composeApis_.push(composeApi);
     } else {
@@ -609,18 +611,18 @@ YmailApi.StormUI.ComposeApi = function(main, composeView, apiId) {
   this.displayFailure_ = goog.bind(main.displayFailure, main);
 
   this.messageApi_ = main.initApi(apiId, goog.bind(
-      this.registerImplementations_, this, main, composeView, stats));
+      this.registerImplementations, this, main, composeView, stats));
   this.monitorComposeEvents_();
 };
 
 
 /**
+ * Register the implementations for the APIs
  * @param {YmailApi.StormUI} main
  * @param {YmailApi.StormUI.ComposeView} composeView
  * @param {e2e.ext.YmailType.SendStats} stats
- * @private
  */
-YmailApi.StormUI.ComposeApi.prototype.registerImplementations_ = function(
+YmailApi.StormUI.ComposeApi.prototype.registerImplementations = function(
     main, composeView, stats) {
   // register the implementations in the Message API
   var draftApi = new YmailApi.StormUI.DraftApi(main, composeView, stats);
@@ -1016,10 +1018,12 @@ YmailApi.bootstrap = function() {
     if (win.yui) {
       YmailApi.bootstraped_ = true;
       // dispose the original YmailApi if one existed
-      var newYmeMain = new YmailApi.StormUI(win.yui, win.NeoConfig);
-      if (win.YmeMain && win.YmeMain.handoverComposeApis) {
-        win.YmeMain.handoverComposeApis(newYmeMain);
-        win.YmeMain.dispose();
+      var oldYmeMain = win.YmeMain,
+          newYmeMain = new YmailApi.StormUI(win.yui, win.NeoConfig);
+      if (oldYmeMain && oldYmeMain.handoverComposeApis) {
+        oldYmeMain.handoverComposeApis(newYmeMain);
+        // oldYmeMain.handoverReadApis(newYmeMain);
+        oldYmeMain.dispose();
       }
       win.YmeMain = newYmeMain;
       return;

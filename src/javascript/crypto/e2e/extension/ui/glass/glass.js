@@ -340,8 +340,9 @@ ui.Glass.prototype.setEncryptrMessage_ = function(result) {
 ui.Glass.prototype.resizeGlass_ = function() {
   var height = goog.style.getComputedStyle(document.documentElement, 'height');
   this.api_ && this.api_.req(
-      'ctrl.resizeGlass', {height: parseInt(height, 10)}).
-      addErrback(this.displayFailure_, this);
+      'ctrl.resizeGlass', {height: parseInt(height, 10)});
+  // removed addErrback(this.displayFailure_, this) to avoid deadlock
+  // when an api request results in an error triggering displayFailure_ again
 };
 
 
