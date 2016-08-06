@@ -64,7 +64,7 @@ e2e.ext.config.CONAME.RealmAuthType = {
 e2e.ext.config.CONAME.realms = [{
   'realm_name': 'yahoo',
   'domains': ['yahoo-inc.com'],
-  'addr': 'https://alpha.keyserver.yahoo.com:4443',
+  'addr': 'https://alpha.keyserver.yahoo.com:443',
   'auth': {
     'type': e2e.ext.config.CONAME.RealmAuthType.SAML,
     'startRelUrl': '/saml',
