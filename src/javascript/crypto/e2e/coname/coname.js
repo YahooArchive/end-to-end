@@ -20,6 +20,7 @@
 
 goog.provide('e2e.coname.KeyData');
 goog.provide('e2e.coname.QuorumRequirement');
+goog.provide('e2e.coname.RawRealmConfig');
 goog.provide('e2e.coname.RealmAuth');
 goog.provide('e2e.coname.RealmConfig');
 goog.provide('e2e.coname.VerificationPolicy');
@@ -34,6 +35,7 @@ goog.require('e2e.ecc.PrimeCurve');
 goog.require('e2e.ext.config');
 goog.require('e2e.ext.utils.text');
 goog.require('goog.array');
+goog.require('goog.object');
 
 
 /**
@@ -78,10 +80,10 @@ e2e.coname.RealmAuth;
 
 
 /**
- * The structure of Realm Config
+ * The domain-specific Realm Config
  * @typedef {{
  *    realm_name: !string,
- *    domains: !Array.<string>,
+ *    domain: !string,
  *    addr: !string,
  *    auth: e2e.coname.RealmAuth,
  *    URL: !string,
@@ -94,6 +96,26 @@ e2e.coname.RealmAuth;
  * }}
  */
 e2e.coname.RealmConfig;
+
+
+/**
+ * The structure of Raw Realm Config, to be mingled by getRealmByDomain to
+ * become RealmConfig.
+ * @typedef {{
+ *    realm_name: !string,
+ *    domains: !Array.<string>,
+ *    addr: !string,
+ *    auth: Object.<string, e2e.coname.RealmAuth>,
+ *    URL: !string,
+ *    VRFPublic: !e2e.ByteArray,
+ *    verification_policy: e2e.coname.VerificationPolicy,
+ *    epoch_time_to_live: number,
+ *    tree_nonce: (undefined|e2e.ByteArray),
+ *    passphrase: ?string,
+ *    newPassphrase: ?string
+ * }}
+ */
+e2e.coname.RawRealmConfig;
 
 
 /**
@@ -139,7 +161,8 @@ e2e.coname.flattenRealmQuorums_ = function(quorums) {
  */
 e2e.coname.getRealmByDomain = function(domain) {
   domain = domain.toLowerCase();
-  var ret = e2e.coname.realmConfig_[domain] || null;
+  var ret = /** @type {?e2e.coname.RealmConfig} */ (
+      e2e.coname.realmConfig_[domain] || null);
 
   // if the realm is found in cache, immediately return it
   if (ret) {
@@ -171,7 +194,18 @@ e2e.coname.getRealmByDomain = function(domain) {
     realm.verification_policy.quorum_list = e2e.coname.flattenRealmQuorums_(
         realm.verification_policy.quorum);
 
-    e2e.coname.realmConfig_[domain] = ret = realm;
+    // does a flat clone on the object
+    var clonedRealm = goog.object.clone(realm);
+
+    // flatten auth to use the domain-specific config
+    clonedRealm.auth = realm.auth[domain] || realm.auth['default'];
+
+    // little clean up
+    clonedRealm.domains = undefined;
+    clonedRealm.domain = domain;
+
+    ret = e2e.coname.realmConfig_[domain] = /**
+        @type {e2e.coname.RealmConfig} */ (clonedRealm);
 
     return true;
   });

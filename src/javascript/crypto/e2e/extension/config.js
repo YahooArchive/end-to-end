@@ -60,15 +60,26 @@ e2e.ext.config.CONAME.RealmAuthType = {
 };
 
 
-/** @type {!Array<e2e.coname.RealmConfig>} */
+/** @type {!Array<e2e.coname.RawRealmConfig>} */
 e2e.ext.config.CONAME.realms = [{
   'realm_name': 'yahoo',
-  'domains': ['yahoo-inc.com'],
+  'domains': [
+    'yahoo-inc.com',
+    'ymail.com', 'rocketmail.com',
+    'yahoo.com', 'yahoo.com.hk'
+  ],
   'addr': 'https://alpha.keyserver.yahoo.com:443',
   'auth': {
-    'type': e2e.ext.config.CONAME.RealmAuthType.SAML,
-    'startRelUrl': '/saml',
-    'endRelUrl': '/samlsso'
+    'yahoo-inc.com': {
+      'type': e2e.ext.config.CONAME.RealmAuthType.SAML,
+      'startRelUrl': '/saml',
+      'endRelUrl': '/samlsso'
+    },
+    'default': {
+      'type': e2e.ext.config.CONAME.RealmAuthType.OPENID,
+      'startRelUrl': '/oidc',
+      'endRelUrl': '/oidcsso'
+    }
   },
   'URL': 'https://mail.yahoo.com',
   'VRFPublic': goog.crypt.base64.decodeStringToByteArray(

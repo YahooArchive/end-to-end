@@ -239,7 +239,7 @@ e2e.coname.Client.encodeUpdateRequest_ = function(
       user_id: email,
       quorum_requirement: realm.verification_policy.quorum
     }
-    // email_proof to be completed by req_ based on realm.auth.type
+    // email_proof to be completed by req_ based on type in realm.auth
   };
 
 };
@@ -273,17 +273,26 @@ e2e.coname.Client.prototype.req_ = function(
     opt_data = {};
   }
 
-  if (relUrl === '/update') {
-    if (realm.auth.type === e2e.ext.config.CONAME.RealmAuthType.SAML &&
-        !goog.isDef(opt_data.email_proof)) {
-      var tokenResult = goog.isDef(realm.auth.token) ?
-          e2e.async.Result.toResult(realm.auth.token) :
-          this.auth_(realm);
+  if (relUrl === '/update' && !goog.isDef(opt_data.email_proof)) {
+    switch (realm.auth.type) {
+      case e2e.ext.config.CONAME.RealmAuthType.SAML:
+        var tokenResult = goog.isDef(realm.auth.token) ?
+            e2e.async.Result.toResult(realm.auth.token) :
+            this.auth_(realm);
 
-      return tokenResult.addCallback(function(token) {
-        opt_data.email_proof = {saml_response: token};
-        return this.req_(realm, method, relUrl, timeout, opt_data);
-      }, this);
+        return tokenResult.addCallback(function(token) {
+          opt_data.email_proof = {saml_response: token};
+          return this.req_(realm, method, relUrl, timeout, opt_data);
+        }, this);
+      case e2e.ext.config.CONAME.RealmAuthType.OPENID:
+        var tokenResult = goog.isDef(realm.auth.token) ?
+            e2e.async.Result.toResult(realm.auth.token) :
+            this.auth_(realm);
+
+        return tokenResult.addCallback(function(token) {
+          opt_data.email_proof = {oidc_token: token};
+          return this.req_(realm, method, relUrl, timeout, opt_data);
+        }, this);
     }
   }
 
@@ -323,18 +332,26 @@ e2e.coname.Client.prototype.req_ = function(
  * @private
  */
 e2e.coname.Client.prototype.auth_ = function(realm) {
-  var result = this.createAuthWindow_(
-      realm.addr + realm.auth.startRelUrl,
-      realm.addr + realm.auth.endRelUrl);
+  var authUrl = realm.addr + realm.auth.startRelUrl,
+      destUrl = realm.addr + realm.auth.endRelUrl;
 
-  // TODO: also support openid type
-  if (realm.auth.type === e2e.ext.config.CONAME.RealmAuthType.SAML) {
-    // cache the SAMLResponse as the authentication token
-    return result.addCallback(function(formData) {
-      return (realm.auth.token = formData['SAMLResponse'][0].toString());
-    });
+  // cache the returned authentication token
+  switch (realm.auth.type) {
+    case e2e.ext.config.CONAME.RealmAuthType.SAML:
+      return this.createAuthWindow_(authUrl, destUrl).
+          addCallback(function(req) {
+            return (realm.auth.token =
+                req.formData['SAMLResponse'][0].toString());
+          });
+    case e2e.ext.config.CONAME.RealmAuthType.OPENID:
+      return this.createAuthWindow_(
+          authUrl + '?domain=' + encodeURIComponent(realm.domain), destUrl).
+          addCallback(function(req) {
+            // anything after #id_token= will be used as the token
+            return (realm.auth.token = req.url.split('#id_token=')[1]);
+          });
   }
-  return result;
+  throw Error('Unsupported authentication type');
 };
 
 
@@ -343,9 +360,10 @@ e2e.coname.Client.prototype.auth_ = function(realm) {
  * Invokes the callback when the user has successfully authenticated.
  * @param {!string} authUrl The URL for authentication.
  * @param {!string} destUrl The URL when the user is authenticated.
- * @return {!e2e.async.Result<?Object<string, Array<string>>>} The parsed form
- *     data, as specified in https://developer.chrome.com/extensions/
- *     webRequest#event-onBeforeRequest
+ * @return {!e2e.async.Result<{url: string,
+ *     formData:?Object<string, Array<string>>}>} The url and parsed form data,
+ *     as specified in https://developer.chrome.com/extensions/webRequest
+ *     #event-onBeforeRequest
  * @private
  */
 e2e.coname.Client.prototype.createAuthWindow_ = function(authUrl, destUrl) {
@@ -370,8 +388,11 @@ e2e.coname.Client.prototype.createAuthWindow_ = function(authUrl, destUrl) {
 
       details.error ?
           authResult.errback(new Error(details.error)) :
-          authResult.callback(
-              details.requestBody && details.requestBody.formData || null);
+          authResult.callback({
+            url: details.url,
+            formData: details.requestBody &&
+                details.requestBody.formData || null
+          });
 
       delete authResults[authUrl];
       // cancel the request
