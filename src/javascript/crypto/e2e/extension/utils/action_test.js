@@ -103,36 +103,3 @@ function testGetContext() {
   utils.getContext(callback);
   mockControl.$verifyAll();
 }
-
-
-//@yahoo
-function testGetUserYmailAddressFromPage() {
-  var expected = 'yzhu@yahoo-inc.com';
-  window.NeoConfig = {
-    emailAddress: 'yzhu@yahoo-inc.com'
-  };
-
-  stubs.set(e2e.ext.utils.text, 'isYmailOrigin', function() {return true;});
-
-  asyncTestCase.waitForAsync('Waiting to get email address from page');
-  utils.getUserYmailAddress(function(result) {
-    assertEquals(expected, result);
-    asyncTestCase.continueTesting();
-  });
-}
-
-//@yahoo
-function testGetUserYmailAddressFromYBY() {
-  var expected = 'yzhu@yahoo-inc.com';
-  var yby = 'YBY=id%3Dfoo%26userid%3Dyzhu%26sign%3Dbar%7Cip0.0.0.0%7C;';
-
-  stubs.setPath('chrome.cookies.get', function(request, cb) {
-    cb({value: yby});
-  });
-
-  asyncTestCase.waitForAsync('Waiting to get email address from YBY');
-  utils.getUserYmailAddress(function(result) {
-    assertEquals(expected, result);
-    asyncTestCase.continueTesting();
-  });
-}

@@ -21,9 +21,11 @@
 goog.provide('e2e.ext.actions.ConfigureExtension');
 
 goog.require('e2e.ext.actions.Action');
+goog.require('e2e.ext.utils');
 
 goog.scope(function() {
 var actions = e2e.ext.actions;
+var utils = e2e.ext.utils;
 
 
 
@@ -34,18 +36,15 @@ var actions = e2e.ext.actions;
  */
 actions.ConfigureExtension = function() {};
 
-
 /** @inheritDoc */
 actions.ConfigureExtension.prototype.execute =
     function(ctx, request, requestor, callback, errorCallback) {
 
-  chrome.tabs.create({
-    url: 'settings.html#' + encodeURIComponent(request.content),
-    active: true
-  }, goog.nullFunction);
-
+  utils.action.getLauncher(function(launcher) {
+    launcher.showSettingsPage();
+  }, errorCallback);
+  
   callback(true);
-
 };
 
 });  // goog.scope

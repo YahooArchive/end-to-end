@@ -66,6 +66,12 @@ var importTemplates = e2e.ext.ui.templates.dialogs.importconfirmation;
  */
 ui.ySettings = function() {
   goog.base(this);
+
+  /**
+   * User IDs collected from all of the opened tabs
+   * @type {Array.<string>}
+   */
+  this.uids_ = [];
 };
 goog.inherits(ui.ySettings, ui.Settings);
 
@@ -84,15 +90,13 @@ ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
 
   //@yahoo added click handlers
   this.getHandler().
-      listen(
-          goog.dom.getElement(constants.ElementId.GENERATE_KEY),
+      listen(goog.dom.getElement(constants.ElementId.GENERATE_KEY),
           goog.events.EventType.CLICK,
           function() {
             document.querySelector(
                 '#pgpGenerateKey button.action').click();
           }).
-      listen(
-          this.getElementByClass(constants.CssClass.TOGGLE_OPTIONS),
+      listen(this.getElementByClass(constants.CssClass.TOGGLE_OPTIONS),
           goog.events.EventType.CLICK,
           function(evt) {
             var htmlElement = document.documentElement,
@@ -105,20 +109,58 @@ ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
           });
 
 
-  //@yahoo when an User ID is supplied thru location.hash
-  // trigger the key resolution dialogs
-  var uid;
-  if (location.hash) {
-    uid = decodeURIComponent(location.hash.substring(1));
-    uid = utils.text.normalizeUid(uid);
-    uid && this.syncWithRemote(uid, 'load');
-  }
+  // //@yahoo User ID should always be provided through location.hash
+  // if (location.hash) {
+  //   var uid = utils.text.normalizeUid(
+  //       decodeURIComponent(location.hash.substring(1)));
+  //   if (uid) {
+  //     // trigger the key resolution dialogs
+  //     this.syncWithRemote(uid, 'load');
+  //     this.populateSignupUid_(uid);
+  //     return;
+  //   }
+  // }
 
-  //@yahoo Prefill the input with uid supplied thru location.hash,
-  //       or default user's email retrieved from cookies
-  utils.action.getUserYmailAddress(goog.bind(function(defaultEmail) {
-    this.populateSignupUid_(uid || '<' + defaultEmail + '>');
-  }, this));
+
+  utils.action.getLauncher(goog.bind(function(launcher) {
+    launcher = /** @type {ext.yExtensionLauncher} */ (launcher);
+
+    // first focus on webmail
+    launcher.focusOnWebmail().addCallback(function() {
+      // move to a popup window if it's not in a popup yet
+      chrome.tabs.getCurrent(function(tab) {
+        chrome.windows.get(tab.windowId, function(win) {
+          if (win.type === 'popup') {
+            // shift the focus from webmail back to the settings page
+            chrome.windows.update(win.id, {focused: true});
+            chrome.tabs.update(tab.id, {active: true});
+          } else {
+            chrome.windows.create({
+              tabId: tab.id,
+              width: 840,
+              height: 500,
+              type: 'popup',
+              focused: true
+            });
+          }
+        })
+      });
+    })
+
+    launcher.getUserIDs().addCallback(function(uids) {
+      this.uids_ = uids;
+
+      var uid = uids[0];
+
+      // trigger the key resolution dialogs
+      this.syncWithRemote(uid, 'load');
+      this.populateSignupUid_(uid);
+
+    }, this);
+
+  }, this), goog.bind(this.displayFailure_, this));
+
+
 };
 
 

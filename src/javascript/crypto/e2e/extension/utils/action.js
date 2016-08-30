@@ -116,70 +116,7 @@ action.getPreferences = function(callback, errorCallback, opt_scope) {
  * @param {!function((string|undefined|null))} callback
  */
 action.getUserYmailAddress = function(callback) {
-  var email;
-  try {
-    // If this is called in the context of a ymail page, get the email from
-    // NeoConfig
-    if (e2e.ext.utils.text.isYmailOrigin(window.location.href) &&
-        typeof window.NeoConfig === 'object' &&
-        window.NeoConfig.emailAddress) {
-      email = e2e.ext.utils.text.extractValidYahooEmail(
-          window.NeoConfig.emailAddress);
-      callback(email);
-    } else {
-      action.getAddressFromYBY_(callback);
-    }
-  } catch (ex) {
-    console.warn('Error getting ymail address from page', ex);
-    try {
-      action.getAddressFromYBY_(callback);
-    } catch (e) {
-      console.warn('Error getting ymail address from YBY', e);
-      callback(undefined);
-    }
-  }
-};
-
-
-/**
- * //@yahoo
- * Tries to get an email address from the YBY cookie. Only useful for yahoo-inc
- * users right now. Sorry open source.
- * @param {!function((string|undefined|null))} callback
- * @private
- */
-action.getAddressFromYBY_ = function(callback) {
-  var email;
-
-  if (!chrome.cookies || !chrome.cookies.get) {
-    // Someone tried to call this from a content script. Abort.
-    callback(email);
-    return;
-  }
-
-  chrome.cookies.get({url: e2e.ext.constants.Keyserver.DEFAULT_LOCATION,
-    name: e2e.ext.constants.Keyserver.AUTH_COOKIE},
-  function(cookie) {
-    var params;
-    var param;
-    var i;
-    var yby = cookie ? cookie.value : undefined;
-
-    if (typeof yby === 'string') {
-      // Extract userid out of the YBY cookie
-      params = goog.string.urlDecode(yby).split('&');
-      for (i = 0; i < params.length; i++) {
-        param = params[i].split('=');
-        if (param[0] === 'userid') {
-          // TODO: This may be at a different yahoo domain!
-          email = [param[1], 'yahoo-inc.com'].join('@');
-          break;
-        }
-      }
-    }
-
-    callback(email);
-  });
+  callback('');
 };
 
 });  // goog.scope

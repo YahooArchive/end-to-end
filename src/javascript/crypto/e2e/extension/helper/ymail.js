@@ -246,14 +246,12 @@ ext.YmailHelper.prototype.loadUser = function(evt) {
   utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
     action: constants.Actions.SYNC_KEYS,
     content: uid
-  }), function(response) {
-    if (response === false) {
-      if (window.confirm(chrome.i18n.getMessage('confirmUserSyncKeys', uid))) {
-        utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
-          action: constants.Actions.CONFIGURE_EXTENSION,
-          content: uid
-        }), goog.nullFunction, utils.displayFailure);
-      }
+  }), function(isInSync) {
+    if (!isInSync) {
+      utils.sendExtensionRequest(/** @type {!messages.ApiRequest} */ ({
+        action: constants.Actions.CONFIGURE_EXTENSION,
+        content: uid
+      }), goog.nullFunction, utils.displayFailure);
     }
   }, utils.displayFailure);
 

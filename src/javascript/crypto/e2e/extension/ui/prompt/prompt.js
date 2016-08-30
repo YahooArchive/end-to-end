@@ -166,10 +166,9 @@ ui.Prompt.prototype.processSelectedContent_ =
       break;
     //@yahoo
     case constants.Actions.CONFIGURE_EXTENSION:
-      chrome.tabs.create({
-        url: 'settings.html',
-        active: true
-      }, goog.nullFunction);
+      utils.sendExtensionRequest(
+          /** @type {!messages.ApiRequest} */ ({action: action}),
+          goog.nullFunction, goog.nullFunction);
       break;
     //@yahoo
     case constants.Actions.LOCK_KEYRING:

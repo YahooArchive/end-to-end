@@ -300,7 +300,7 @@ ext.yExtensionLauncher = function(pgpContext, preferencesStorage) {
    */
   this.defaultUrl_ = e2e.ext.config.CONAME.realms[0].URL;
 
-  this.insertContentScript();
+  this.injectContentScripts({file: 'helper_binary.js'});
 };
 goog.inherits(ext.yExtensionLauncher, ext.ExtensionLauncher);
 
@@ -328,55 +328,176 @@ ext.yExtensionLauncher.prototype.configureWebRequests = function() {
 
 
 /**
- * Open a new tab to display the WebMail application, when the keyring has no
- * private keys.
+ * Inject content script to every Webmail tab.
+ * @param {{file: (string|undefined), code: (string|undefined)}} details
+ *     Details of the script to inject. Refer to 
+ *     https://developer.chrome.com/extensions/tabs#method-executeScript
+ *     for the definition of details.
+ * @param {chrome.tabs.QueryInfo=} opt_queryInfo The queryInfo to filter
+ *     out tabs that we are interested in.
+ * @return {goog.async.Deferred.<Array<?{result: *, tab: Tab}>>} Those tabs
+ *     that the extension can inject script, and its execution result.
  * @protected
  */
-ext.yExtensionLauncher.prototype.openWebMail = function() {
-  // @yahoo open welcome screen when there's no private key
-  var ctx = this.getContext();
-  ctx.getAllKeys(true).addCallback(function(keyMap) {
-    return !goog.structs.some(keyMap, function(keys) {
-      return goog.array.some(keys, function(k) { return k.key.secret; });
-    });
-  }).addCallback(function(hasNoPrivateKeys) {
-    if (hasNoPrivateKeys) {
-      this.createWindow(this.defaultUrl_, true, goog.nullFunction);
-    }
-  }, this);
-};
-
-
-/**
- * Inject helper script to all ymail tabs after installation. If none is there,
- * and there're no private keys being setup, open the WebMail
- * @protected
- */
-ext.yExtensionLauncher.prototype.insertContentScript = function() {
-  chrome.tabs.query({}, goog.bind(function(tabs) {
+ext.yExtensionLauncher.prototype.injectContentScripts = function(
+    details, opt_queryInfo) {
+  var allResults = new goog.async.Deferred;
+  chrome.tabs.query(opt_queryInfo || {}, function(tabs) {
     // Inject the content script to every ymail tab, if any
     var tabResults = goog.array.map(tabs, function(tab) {
       var result = new goog.async.Deferred;
       try {
         goog.isDef(tab.id) && chrome.tabs.executeScript(
-            tab.id, {file: 'helper_binary.js'}, function(ret) {
-              result.callback(!chrome.runtime.lastError && goog.isDef(ret));
+            tab.id, details, function(ret) {
+              result.callback(!chrome.runtime.lastError && goog.isDef(ret)
+                  ? {result: ret, tab: tab} : null);
             });
       } catch (e) {
-        result.callback(false);
+        result.callback(null);
       }
       return result;
     });
 
-    // If no tab is found to have WebMail, open it
+    // filter out those unrelated tabs
     goog.async.DeferredList.gatherResults(tabResults).
-        addCallback(function(injected) {
-          if (!goog.array.contains(injected, true)) {
-            this.openWebMail();
-          }
-        }, this);
+        addCallbacks(function(tabs) {
+          allResults.callback(
+              goog.array.filter(tabs, function(tab) { return tab !== null; }));
+        }, allResults.errback, allResults);
+
+  });
+
+  return allResults;
+};
+
+
+/**
+ * Focus on the first (top-most) webmail tab found, or open one.
+ * @return {goog.async.Deferred.<Tab>} The focused tab
+ */
+ext.yExtensionLauncher.prototype.focusOnWebmail = function() {
+  return this.injectContentScripts({code: 'helper && helper.getUser()'}).
+      addCallback(function(tabResults) {
+        if (tabResults.length === 0 || !tabResults[0].result[0]) {
+          var result = new goog.async.Deferred;
+          this.createWindow(
+              this.defaultUrl_, true, goog.bind(result.callback, result));
+          return result;
+        } else {
+          // select the tab on topmost window, or the first tab found
+          var tab = (goog.array.find(tabResults, function(tabResult) {
+            return tabResult.tab.lastFocusedWindow && tabResult.tab.active;
+          }) || tabResults[0].tab);
+          chrome.windows.update(tab.windowId, {focused: true});
+          chrome.tabs.update(tab.id, {active: true});
+          return tab;
+        }
+      }, this);
+};
+
+
+/**
+ * Open the settings page if none is there. Otherwise, focus and reload the
+ * existing one.
+ */
+ext.yExtensionLauncher.prototype.showSettingsPage = function() {
+  var tabResult = this.settingsTabResult_;
+
+  // no such window is found, possibly closed
+  if (tabResult) {
+    tabResult.addCallback(function(tab) {
+      // focus and reload the existing tab
+      chrome.windows.update(tab.windowId, {focused: true});
+      chrome.tabs.reload(tab.id);
+    });
+    return;
+  }
+
+  tabResult = this.settingsTabResult_ = new goog.async.Deferred;
+
+  // open a new window for settings
+  chrome.windows.create({
+    url: 'settings.html',
+    width: 840,
+    height: 500,
+    focused: true,
+    type: 'popup'
+  }, goog.bind(function(win) {
+    var tab = win.tabs[0];
+    
+    // clear the record of settings tab when it is closed
+    var windowRemoved = goog.bind(function(winId) {
+      if (winId === tab.windowId) {
+        this.settingsTabResult_ = null;
+        chrome.windows.onRemoved.removeListener(windowRemoved);
+      }
+    }, this);
+    chrome.windows.onRemoved.addListener(windowRemoved);
+
+    tabResult.callback(tab);
+    
   }, this));
 };
+
+
+/**
+ * Focus on a webmail tab if no private keys are configured. The content script
+ * injected is responsible for opening the welcome screen.
+ * @override
+ */
+ext.yExtensionLauncher.prototype.showWelcomeScreen = function() {
+  // in case no private keys are setup locally
+  this.getContext().getAllKeys(true).addCallback(function(keyMap) {
+    return !goog.structs.some(keyMap, function(keys) {
+      return goog.array.some(keys, function(k) { return k.key.secret; });
+    });
+  }).addCallback(function(hasNoPrivateKeys) {
+    hasNoPrivateKeys && this.focusOnWebmail();
+  }, this);
+};
+
+
+/**
+ * Get the current user id according to the topmost webmail tab
+ * @return {goog.async.Deferred.<{name: string, email: string}>}
+ */
+ext.yExtensionLauncher.prototype.getCurrentUserID = function() {
+  return this.focusOnWebmail().addCallback(function(tab) {
+    var result = new goog.async.Deferred;
+    chrome.tabs.executeScript(
+        tab.id, {code: 'helper && helper.getUser()'}, function(ret) {
+          if (!chrome.runtime.lastError && ret && ret[0]) {
+            result.callback(ret[0].result);
+          } else {
+            result.errback(new Error('Failed to retrieve user id'));
+          }
+        });
+    return result;
+  });
+};
+
+
+/**
+ * Collect unique uids in all opened webmail tabs
+ * @return {goog.async.Deferred.<Array.<string>>}
+ */
+ext.yExtensionLauncher.prototype.getUserIDs = function() {
+  return this.injectContentScripts({code: 'helper && helper.getUser()'}).
+      addCallback(function(results) {
+        results = /** @type {Array.<{
+          result: {email: string, name: string}, tab: Tab}>} */ (results);
+        // deduplicate based on email address
+        goog.array.removeDuplicates(results, undefined, function(tabResult) {
+          return tabResult.result && tabResult.result[0] &&
+              tabResult.result[0].email;
+        });
+        // convert it to User Id
+        return goog.array.map(results, function(tabResult) {
+          return e2e.ext.utils.text.userObjectToUid(tabResult.result[0]);
+        });
+      });
+};
+
 
 
 /**
@@ -389,9 +510,5 @@ ext.yExtensionLauncher.prototype.stop = function() {
   this.getContext().keyring_ = null;
   this.updatePassphraseWarning();
 };
-
-
-/** @override */
-ext.yExtensionLauncher.prototype.showWelcomeScreen = goog.nullFunction;
 
 });  // goog.scope

@@ -216,25 +216,6 @@ utils.parseUid = function(uidOrEmail) {
 
 
 /**
- * Extracts a valid yahoo-inc email address.
- * @param {string} recipient "username <email> string"
- * @return {?string} Valid email or null
- */
-utils.extractValidYahooEmail = function(recipient) {
-  var email = utils.extractValidEmail(recipient);
-  var domain;
-  if (email) {
-    domain = email.split('@')[1].toLowerCase();
-    // TODO: This needs other yahoo domains like yahoo.jp
-    if (domain === 'yahoo-inc.com' || domain === 'yahoo.com') {
-      return email;
-    }
-  }
-  return null;
-};
-
-
-/**
  * Map an array of emails in string to array of objects, of which each has a
  * name and email address.
  * @param {Array.<string>} uids array of "username &lt;email&gt;" string.

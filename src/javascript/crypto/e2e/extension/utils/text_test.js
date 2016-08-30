@@ -100,14 +100,6 @@ function testExtractValidEmail() {
       utils.extractValidEmail('fails#e2e.regexp.vali@dation.com'));
 }
 
-function testExtractValidYahooEmail() {
-  assertEquals(null,
-               utils.extractValidYahooEmail('test@google.com'));
-  assertEquals('a@yahoo-inc.com',
-               utils.extractValidYahooEmail('a@yahoo-inc.com'));
-  assertEquals('test@yahoo-INC.COM',
-               utils.extractValidYahooEmail('"user" <test@yahoo-INC.COM>'));
-}
 
 function testGetValidEmailAddressesFromString() {
   assertArrayEquals(validEmails,
