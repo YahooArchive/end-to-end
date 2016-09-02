@@ -419,9 +419,10 @@ YmailApi.StormUI.prototype.addCSS = function() {
       '.plaintext-below{border-bottom:1px solid #CCC;padding-bottom:5px}' +
       // '.has-key {color: #00B777}' + // disabled coloring for now
       // '.no-key {color: #EF2E1A}' + // no need to color in red
-      '.icon-encrypt {position:relative;float:right;padding:0;opacity:.6}' +
-      '.icon-encrypt:hover {opacity:1}' +
-      '.icon-encrypt + .cm-rtetext {padding-right:25px}'));
+      '.icon-insecure:before {content: "\\e92a"}' +
+      '.icon-insecure {position:relative;float:right;padding:0;opacity:.6}' +
+      '.icon-insecure:hover {opacity:1}' +
+      '.icon-insecure + .cm-rtetext {padding-right:25px}'));
   document.head.appendChild(style);
 };
 
@@ -448,7 +449,7 @@ YmailApi.StormUI.prototype.addEncryptrIcon = function(target, eventInit) {
         new CustomEvent('openEncryptedCompose', eventInit));
   }, this);
   encryptrIcon.addEventListener('click', clickHandler, false);
-  encryptrIcon.classList.add('icon', 'icon-encrypt');
+  encryptrIcon.classList.add('icon', 'icon-insecure');
 
   textArea.parentElement.insertBefore(encryptrIcon, textArea);
 };
