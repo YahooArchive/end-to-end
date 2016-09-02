@@ -94,19 +94,19 @@ panels.GenerateKey.prototype.decorateInternal = function(elem) {
   goog.base(this, 'decorateInternal', elem);
   elem.id = constants.ElementId.GENERATE_KEY_FORM;
 
-  var genKeyEmailLabel = goog.string.htmlEscape(
-      chrome.i18n.getMessage('genKeyEmailLabel'));
-  genKeyEmailLabel = genKeyEmailLabel.
-      replace(/\n/g, '<br>').
-      replace(/#email#([^#]*)#/,
-          '<span id="' + constants.ElementId.EMAIL_ADDRESS + '">$1</span>').
-      replace(/#import#([^#]*)#/,
-          '<label for="' + constants.ElementId.KEYRING_IMPORT +
-          '">$1</label>');
+  // var genKeyEmailLabel = goog.string.htmlEscape(
+  //     chrome.i18n.getMessage('genKeyEmailLabel'));
+  // genKeyEmailLabel = genKeyEmailLabel.
+  //     replace(/\n/g, '<br>');
+  //     replace(/#email#([^#]*)#/,
+  //         '<span id="' + constants.ElementId.EMAIL_ADDRESS + '">$1</span>').
+  //     replace(/#import#([^#]*)#/,
+  //         '<label for="' + constants.ElementId.KEYRING_IMPORT +
+  //         '">$1</label>');
 
   soy.renderElement(elem, templates.generateKeyForm, {
     sectionTitle: this.sectionTitle_,
-    emailLabel: soydata.VERY_UNSAFE.ordainSanitizedHtml(genKeyEmailLabel),
+    emailLabel: chrome.i18n.getMessage('genKeyEmailLabel'),
     commentsLabel: chrome.i18n.getMessage('genKeyCommentsLabel'),
     actionButtonTitle: this.actionButtonTitle_,
     signupCancelButtonTitle: chrome.i18n.getMessage('actionCancelPgpAction')

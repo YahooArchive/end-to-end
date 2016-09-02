@@ -330,11 +330,11 @@
     "description": "Ask the user to enter a valid username."
   },
   "genKeyTitle": {
-    "message": "Welcome!",
+    "message": "Welcome to Yahoo Mail Encrypted!",
     "description": "A section title indicating where the user can generate a new PGP key."
   },
   "genKeyEmailLabel": {
-    "message": "A key pair is required for encrypting emails to and from #email#your email address#.\nClick below to create a key pair. Or you can #import#import a key pair#.",
+    "message": "This service encrypts message body to keep it confidential between only you and recipients, and so:\n\n• The encrypted message bodies are not readable by Yahoo\n• Search is disabled in encrypted message bodies (searching over recipient and subject works as is)\n• Expect seeing cryptic text in other devices such as mobile\n\nLet's start with using ",
     "description": "A sentence fragment prompting the user to sign up."
   },
   "genKeyPassphraseLabel": {
@@ -342,7 +342,7 @@
     "description": "A noun indicating where the user needs to specify a passphrase for her new PGP key."
   },
   "genKeyGenerateButtonLabel": {
-    "message": "Create a new key pair",
+    "message": "Sign up",
     "description": "A verb prompting the user to register to receive secret messages."
   },
   "promptInvalidUserIdError": {

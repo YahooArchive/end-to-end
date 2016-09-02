@@ -37,8 +37,7 @@ html.lite div#pgpGenerateKey:not(.hidden)+div#storedKeys,
 html.lite div#keyringOptionsDiv button.fb-import,
 html.lite div#keyringOptionsDiv button.keyring-export,
 html.lite div#keyringOptionsDiv button.keyring-passphrase-change,
-html.lite div#storedKeys > h1,
-html.lite input.email {
+html.lite div#storedKeys > h1 {
   display: none;
 }
 

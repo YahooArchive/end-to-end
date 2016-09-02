@@ -120,9 +120,9 @@ e2e.ext.constants.ElementId = {
   EDITOR_TOOLBAR: 'editorToolbar', //@yahoo
 
   /* Used in settings page //@yahoo */
+  UID_DATALIST: 'uid-datalist', //@yahoo
   GENERATE_KEY: 'generate-key',
   KEYRING_IMPORT: 'keyring-import',
-  EMAIL_ADDRESS: 'email-address',
 
   /* Used to display menus in the UI. */
   MENU_CONTAINER: 'menu-container',

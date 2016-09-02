@@ -45,6 +45,7 @@ goog.require('goog.dom.classlist'); //@yahoo
 goog.require('goog.events.EventType'); //@yahoo
 goog.require('goog.functions');
 goog.require('goog.string');
+goog.require('soy');
 
 goog.scope(function() {
 var ext = e2e.ext;
@@ -150,11 +151,16 @@ ui.ySettings.prototype.renderTemplate_ = function(pgpKeys) {
     launcher.getUserIDs().addCallback(function(uids) {
       this.uids_ = uids;
 
-      var uid = uids[0];
+      // trigger key resolution dialogs if any for every uid one after another
+      var syncChain = new goog.async.Deferred;
+      goog.array.forEach(uids, function(uid) {
+        syncChain.addCallback(function() {
+          return this.syncWithRemote(uid, 'load');
+        }, this);
+      }, this);
+      syncChain.callback(true);
 
-      // trigger the key resolution dialogs
-      this.syncWithRemote(uid, 'load');
-      this.populateSignupUid_(uid);
+      this.populateUids_(uids);
 
     }, this);
 
@@ -292,6 +298,7 @@ ui.ySettings.prototype.removeKey_ = function(
  * Updates the keyserver as needed after key generation and import
  * @param {string} keyUid The key UID to render.
  * @param {string=} opt_intention The intention to trigger syncWithRemote
+ * @return {!e2e.async.Result.<boolean>} Whether it is in sync ultimately.
  * @suppress {accessControls}
  */
 ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
@@ -299,32 +306,36 @@ ui.ySettings.prototype.syncWithRemote = function(keyUid, opt_intention) {
   var uidObj = utils.text.parseUid(keyUid);
   var constFunction = goog.functions.constant;
   if (uidObj && e2e.coname.getRealmByEmail(uidObj.email) !== null) {
-    this.pgpContext_.searchPrivateKey(keyUid).addCallbacks(function(privKeys) {
-
-      if (opt_intention === 'load' || opt_intention === 'remove' ||
-          privKeys.length !== 0) {
-        this.pgpContext_.syncWithRemote(keyUid,
-            goog.bind(function() {
-              // No keys at both server and client. This is a new account
-              if (opt_intention === 'load' && privKeys.length === 0) {
-                this.displaySignupPanels_();
-                return e2e.async.Result.toResult(null);
-              }
-              // no reqAction when it's in-sync
-              return e2e.async.Result.toResult('noop');
-            }, this),
-            // make an update if the inconsistency is acknowledged
-            opt_intention === 'keygen' || opt_intention === 'remove' ?
-                constFunction(e2e.async.Result.toResult('overwriteRemote')) :
-                goog.bind(this.renderConfirmSyncKeysCallback_, this)).
-            addCallbacks(function(reqActionResult) {
-              reqActionResult !== null && utils.showNotification(
-                  chrome.i18n.getMessage('keyUpdateSuccessMsg'),
-                  goog.nullFunction);
-            }, this.displayFailure_, this);
-      }
-    }, this.displayFailure_, this);
+    return this.pgpContext_.searchPrivateKey(keyUid).
+        addCallbacks(function(privKeys) {
+          if (opt_intention === 'load' || opt_intention === 'remove' ||
+              privKeys.length !== 0) {
+            return this.pgpContext_.syncWithRemote(keyUid,
+                goog.bind(function() {
+                  // No keys at both server and client. This is a new account
+                  if (opt_intention === 'load' && privKeys.length === 0) {
+                    this.displaySignupPanels_();
+                    return e2e.async.Result.toResult(null);
+                  }
+                  // no reqAction when it's in-sync
+                  return e2e.async.Result.toResult('noop');
+                }, this),
+                // make an update if the inconsistency is acknowledged
+                opt_intention === 'keygen' || opt_intention === 'remove' ?
+                    constFunction(
+                        e2e.async.Result.toResult('overwriteRemote')) :
+                    goog.bind(this.renderConfirmSyncKeysCallback_, this)).
+                addCallbacks(function(reqActionResult) {
+                  reqActionResult !== null && utils.showNotification(
+                      chrome.i18n.getMessage('keyUpdateSuccessMsg'),
+                      goog.nullFunction);
+                  return reqActionResult !== null;
+                }, this.displayFailure_, this);
+          }
+          return false;
+        }, this.displayFailure_, this);
   }
+  return e2e.async.Result.toResult(false);
 };
 
 
@@ -344,21 +355,24 @@ ui.Settings.prototype.displaySignupPanels_ = function() {
 
 
 /**
- * Populates the uid of sign up panel
- * @param {!string} uid
+ * Populates the uids collected from different tabs
+ * @param {!Array<string>} uids
  * @private
  */
-ui.Settings.prototype.populateSignupUid_ = function(uid) {
+ui.Settings.prototype.populateUids_ = function(uids) {
   var input = goog.dom.getElement(constants.ElementId.GENERATE_KEY_FORM).
-      getElementsByClassName(constants.CssClass.EMAIL),
-      elem = goog.dom.getElement(constants.ElementId.EMAIL_ADDRESS);
+      getElementsByClassName(constants.CssClass.EMAIL);
 
   if (input) {
-    input[0].value = uid;
+    input[0].value = uids[0];
   }
-  if (elem) {
-    elem.innerText = uid;
-  }
+
+  var datalistElem = goog.dom.getElement(constants.ElementId.UID_DATALIST);
+
+  goog.array.forEach(uids, function(uid) {
+    datalistElem.appendChild(
+        goog.dom.createDom(goog.dom.TagName.OPTION, {value: uid}));
+  });
 };
 
 

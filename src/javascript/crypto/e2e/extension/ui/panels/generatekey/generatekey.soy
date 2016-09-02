@@ -26,12 +26,17 @@
   {if $sectionTitle}
     <h1>{$sectionTitle}</h1>
   {/if}
-  <div>{$emailLabel|changeNewlineToBr}</div>
-  <input type="text"
+  <div>
+    {$emailLabel|changeNewlineToBr}
+    <input type="text"
          name="{e2e.ext.constants.CssClass.EMAIL}"
-         class="{e2e.ext.constants.CssClass.EMAIL}">
-  <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
-  <button class="{e2e.ext.constants.CssClass.CANCEL}
+         class="{e2e.ext.constants.CssClass.EMAIL}"
+         list="{e2e.ext.constants.ElementId.UID_DATALIST}">
+  </div>
+  <div>
+    <button class="{e2e.ext.constants.CssClass.ACTION}">{$actionButtonTitle}</button>
+    <button class="{e2e.ext.constants.CssClass.CANCEL}
                  {sp}{e2e.ext.constants.CssClass.HIDDEN}">{$signupCancelButtonTitle}
+  </div>
   </button>
 {/template}
