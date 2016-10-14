@@ -332,6 +332,9 @@ e2e.coname.Client.prototype.req_ = function(
  * @private
  */
 e2e.coname.Client.prototype.auth_ = function(realm) {
+  // remove any existing token
+  delete realm.auth.token;
+
   var authUrl = realm.addr + realm.auth.startRelUrl,
       destUrl = realm.addr + realm.auth.endRelUrl;
 
