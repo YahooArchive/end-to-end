@@ -272,6 +272,10 @@ ui.ComposeGlass.prototype.renderEncryptionKeys_ = function() {
           this.setHeader_(
               chipHolder.getFieldType() === panels.ChipHolder.FIELD.CC ?
                   {cc: recipients} : {to: recipients});
+
+          // chipHolders itself can fire a change event,
+          // when CC field is expanded or collapsed
+          this.resize(false, true);
         });
 
     resolve();
@@ -911,8 +915,9 @@ ui.ComposeGlass.prototype.displayFailure = function(error) {
  * from covered by the action bar.
  * @param {boolean=} opt_skipForcedScroll Whether to skip scrolling by delta
  *     height
+ * @param {boolean=} opt_skipEditorFocus Whether to skip focusing on the editor
  */
-ui.ComposeGlass.prototype.resize = function(opt_skipForcedScroll) {
+ui.ComposeGlass.prototype.resize = function(opt_skipForcedScroll, opt_skipEditorFocus) {
   var height = document.body.clientHeight + 101;
   if (height !== window.innerHeight) {
     this.api_.req('ctrl.resizeGlass', {
@@ -920,7 +925,7 @@ ui.ComposeGlass.prototype.resize = function(opt_skipForcedScroll) {
       scrollByDeltaHeight: !opt_skipForcedScroll &&
           this.actionBar_.style.top !== 'auto' // i.e., floating over text
     }).addErrback(this.errorCallback_);
-    this.editor_.focus();
+    !opt_skipEditorFocus && this.editor_.focus();
   }
 };
 

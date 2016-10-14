@@ -145,8 +145,12 @@ ui.ChipHolders.prototype.setCCShown_ = function(isShown, isFocusedOnCC) {
   goog.style.setElementShown(this.holderDisplayLabel_, !isShown);
 
   if (isShown) {
-    isFocusedOnCC && this.ccChipHolder_.focus();
     this.showHideCC_();
+    isFocusedOnCC && this.ccChipHolder_.focus();
+    this.ccChipHolder_.dispatchEvent(goog.events.EventType.CHANGE);
+  } else {
+    this.chipHolder_.focus();
+    this.chipHolder_.dispatchEvent(goog.events.EventType.CHANGE);
   }
 };
 
